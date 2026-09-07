@@ -1,0 +1,16 @@
+from typing import Protocol
+
+from app.domain.entities.records import Company
+from app.domain.repositories.entity import EntityRepository
+
+
+class CompanyRepository(EntityRepository[Company], Protocol):
+    def find_by_owner(self, owner_id: int) -> Company | None: ...
+
+    def find_by_nit(self, nit: str) -> Company | None: ...
+
+    def count(self) -> int: ...
+
+    def first_fifty(self) -> list[Company]: ...
+
+    def list_owned(self, owner_id: int | None) -> list[Company]: ...
