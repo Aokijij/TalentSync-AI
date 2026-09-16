@@ -50,6 +50,23 @@ def login(
     return use_cases.login(payload=payload.model_dump(), db=db, security=security)
 
 
+@router.post("/admin/login", response_model=TokenResponse)
+@limiter.limit("30/hour")
+def admin_login(
+    request: Request,
+    payload: LoginRequest,
+    db: UnitOfWork = Depends(get_unit_of_work),
+    *,
+    security: AccountSecurity = Depends(get_account_security),
+) -> TokenResponse:
+    return use_cases.login(
+        payload=payload.model_dump(),
+        db=db,
+        security=security,
+        admin_channel=True,
+    )
+
+
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)) -> User:
     return use_cases.me(current_user=current_user)

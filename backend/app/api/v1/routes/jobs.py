@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
-from app.api.schemas.job import JobCreate, JobResponse, JobUpdate
+from app.api.schemas.job import JobCreate, JobResponse, JobUpdate, JobReopen
 from app.api.schemas.recommendation import RecommendationResponse
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
@@ -78,6 +78,17 @@ def delete_job(
     db: UnitOfWork = Depends(get_unit_of_work),
 ) -> None:
     return use_cases.delete_job(job_id=job_id, current_user=current_user, db=db)
+
+
+@router.post("/{job_id}/reopen", response_model=JobResponse)
+def reopen_job(
+    job_id: int,
+    payload: JobReopen,
+    current_user: User = Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)),
+    db: UnitOfWork = Depends(get_unit_of_work),
+    nlp: TextAnalysis = Depends(get_text_analysis),
+):
+    return use_cases.reopen_job(job_id, payload.mode, current_user, db, nlp=nlp)
 
 
 @router.post("/{job_id}/match", response_model=RecommendationResponse)

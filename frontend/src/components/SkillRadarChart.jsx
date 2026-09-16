@@ -71,7 +71,7 @@ export function SkillRadarChart({
         </div>
         {matchPercentage != null ? (
           <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1 text-sm font-bold text-[var(--accent)]">
-            {Math.round(matchPercentage)}% match
+            {Math.round(matchPercentage)}% de compatibilidad
           </span>
         ) : null}
       </div>

@@ -27,8 +27,9 @@ export function AuthProvider({ children }) {
     loadUser();
   }, []);
 
-  async function login(email, password) {
-    const { data } = await api.post("/auth/login", { email, password });
+  async function login(email, password, options = {}) {
+    const endpoint = options.admin ? "/auth/admin/login" : "/auth/login";
+    const { data } = await api.post(endpoint, { email, password });
     localStorage.setItem("talentsync_token", data.access_token);
     const me = await api.get("/auth/me");
     setUser(me.data);

@@ -6,19 +6,21 @@ from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Application, User
 
 STATUS_LABELS = {
-    "submitted": "Recibida",
-    "seen": "Vista por la empresa",
+    "submitted": "Postulación recibida",
+    "seen": "Postulación recibida",
     "reviewing": "En revisión",
-    "shortlisted": "Preseleccionada",
-    "technical_interview": "Entrevista técnica",
-    "psychometric_test": "Prueba psicotécnica",
-    "accepted": "Aceptada",
-    "hired": "Contratado",
-    "rejected": "Descartada",
+    "shortlisted": "En revisión",
+    "technical_interview": "Entrevista",
+    "psychometric_test": "Entrevista",
+    "accepted": "Seleccionado",
+    "hired": "Seleccionado",
+    "rejected": "No seleccionado",
 }
 LEGACY_STAGE_STATUS = {
     "submitted": ApplicationStatus.SUBMITTED,
+    "reviewing": ApplicationStatus.REVIEWING,
     "shortlisted": ApplicationStatus.SHORTLISTED,
+    "interview": ApplicationStatus.TECHNICAL_INTERVIEW,
     "technical_interview": ApplicationStatus.TECHNICAL_INTERVIEW,
     "psychometric_test": ApplicationStatus.PSYCHOMETRIC_TEST,
     "hired": ApplicationStatus.HIRED,
@@ -40,6 +42,11 @@ def apply_to_job(
         user_id=current_user.id, job_id=payload["job_id"], pipeline_stage=first_stage
     )
     db.add(application)
+    invitation = db.notifications.find_unread(
+        current_user.id, "candidate_invitation", f"/vacantes/{job.id}"
+    )
+    if invitation:
+        invitation.is_read = True
     db.add(
         db.notifications.new(
             user_id=job.company.owner_user_id,
@@ -125,7 +132,31 @@ def update_status(
     status_changed = application.status != previous_status
     stage_changed = application.pipeline_stage != previous_stage
     interview_changed = application.interview_at != previous_interview
-    if status_changed or stage_changed or interview_changed:
+    if (status_changed or stage_changed) and application.status != ApplicationStatus.REJECTED:
+        application.resolution_reason = None
+    if application.status == ApplicationStatus.HIRED and (
+        status_changed or stage_changed
+    ):
+        application.resolution_reason = None
+        if any(
+            stage.get("id") == "hired"
+            for stage in application.job.pipeline_stages or []
+        ):
+            application.pipeline_stage = "hired"
+        selected_company = application.job.company.name
+        db.add(
+            db.notifications.new(
+                user_id=application.user_id,
+                type="application_selected",
+                title="¡Fuiste seleccionado!",
+                body=(
+                    f"{selected_company} te seleccionó para {application.job.title}. "
+                    "La empresa se pondrá en contacto contigo para los siguientes pasos."
+                ),
+                action_url=f"/postulaciones?focus={application.id}",
+            )
+        )
+    elif status_changed or stage_changed or interview_changed:
         current_status = (
             application.status.value
             if hasattr(application.status, "value")
@@ -141,7 +172,17 @@ def update_status(
                 current_status, current_status
             )
             title = f"Proceso: {stage_title}"
-            body = f"Tu postulación a {application.job.title} avanzó a {stage_title.lower()}."
+            company_name = application.job.company.name
+            previous_label = STATUS_LABELS.get(
+                previous_status.value
+                if hasattr(previous_status, "value")
+                else str(previous_status),
+                "la etapa anterior",
+            )
+            body = (
+                f"{company_name} actualizó tu postulación a {application.job.title}: "
+                f"pasó de {previous_label.lower()} a {stage_title.lower()}."
+            )
         db.add(
             db.notifications.new(
                 user_id=application.user_id,

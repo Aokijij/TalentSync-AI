@@ -29,5 +29,6 @@ class ApplicationResponse(BaseModel):
     interview_at: datetime | None = None
     pipeline_stage: str | None = None
     pipeline_stage_title: str | None = None
+    resolution_reason: str | None = None
 
     model_config = {"from_attributes": True}

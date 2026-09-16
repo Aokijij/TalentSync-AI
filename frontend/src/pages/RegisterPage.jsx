@@ -1,7 +1,6 @@
 import {
   BriefcaseBusiness,
   Building2,
-  CheckCircle2,
   LockKeyhole,
   Mail,
   UserRound,
@@ -10,6 +9,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
+import { BrandLogo } from "../components/brand/BrandLogo.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
@@ -61,17 +61,11 @@ export function RegisterPage() {
           aria-label="Beneficios de TalentSync"
         >
           <div>
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-sky-100 text-sky-900">
-                <CheckCircle2 size={22} aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-white">TalentSync</p>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-200">
-                  Tu siguiente paso
-                </p>
-              </div>
-            </div>
+            <BrandLogo
+              size="lg"
+              subtitle="Tu siguiente paso"
+              tone="inverse"
+            />
             <p className="mt-16 text-sm font-bold uppercase tracking-[0.16em] text-sky-300">
               Registro guiado
             </p>
@@ -82,7 +76,7 @@ export function RegisterPage() {
             </h1>
             <p className="mt-5 max-w-md text-base leading-7 text-sky-100">
               {isCompany
-                ? "Publica vacantes, identifica compatibilidad y gestiona el pipeline desde un solo lugar."
+                ? "Publica vacantes, identifica compatibilidad y gestiona cada proceso desde un solo lugar."
                 : "Agrega una base profesional hoy; podrás enriquecer tu perfil y CV después."}
             </p>
           </div>
@@ -91,7 +85,7 @@ export function RegisterPage() {
               Un perfil, decisiones más precisas
             </p>
             <p className="mt-1 text-sm leading-5 text-sky-100">
-              Mantén tus habilidades actualizadas para que el ranking sea
+              Mantén tus habilidades actualizadas para que las recomendaciones sean
               realmente útil.
             </p>
           </div>

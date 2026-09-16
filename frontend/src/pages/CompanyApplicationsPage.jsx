@@ -21,6 +21,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
+import { ReopenJobModal } from "../components/ReopenJobModal.jsx";
 
 const stageAccents = [
   "var(--accent)",
@@ -34,12 +35,11 @@ const stageAccents = [
 ];
 
 const defaultStages = [
-  { id: "submitted", title: "Nuevos" },
-  { id: "shortlisted", title: "Preseleccionados" },
-  { id: "technical_interview", title: "Entrevista técnica" },
-  { id: "psychometric_test", title: "Prueba psicotécnica" },
+  { id: "submitted", title: "Recibidas" },
+  { id: "reviewing", title: "En revisión" },
+  { id: "interview", title: "Entrevista" },
   { id: "hired", title: "Contratados" },
-  { id: "rejected", title: "Descartados" },
+  { id: "rejected", title: "No seleccionados" },
 ];
 
 function columnsFor(job) {
@@ -52,11 +52,15 @@ function columnsFor(job) {
 }
 
 function applicationStage(item) {
-  if (item.pipeline_stage) return item.pipeline_stage;
+  const stage = item.pipeline_stage || item.status;
   return (
-    { seen: "submitted", reviewing: "shortlisted", accepted: "hired" }[
-      item.status
-    ] || item.status
+    {
+      seen: "submitted",
+      shortlisted: "reviewing",
+      technical_interview: "interview",
+      psychometric_test: "interview",
+      accepted: "hired",
+    }[stage] || stage
   );
 }
 
@@ -72,6 +76,11 @@ export function CompanyApplicationsPage() {
   const [overColumn, setOverColumn] = useState(null);
   const [showJobPicker, setShowJobPicker] = useState(false);
   const [showStageEditor, setShowStageEditor] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState({});
+  const [confirmCoverage, setConfirmCoverage] = useState(false);
+  const [showReopen, setShowReopen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     api
@@ -113,6 +122,13 @@ export function CompanyApplicationsPage() {
         (item) => item.status === "submitted",
       );
       setApplications(applicationsResponse.data);
+      const focused = searchParams.get("focus");
+      if (focused) {
+        const focusedApplication = applicationsResponse.data.find(
+          (item) => String(item.id) === focused,
+        );
+        if (focusedApplication) setSelected(focusedApplication);
+      }
       if (hasUnseen)
         api
           .put(`/applications/jobs/${jobId}/mark-seen`)
@@ -152,28 +168,74 @@ export function CompanyApplicationsPage() {
     setJobId(String(job.id));
     setSearchParams({ job: String(job.id) });
     setShowJobPicker(false);
+    setPendingChanges({});
+    setMessage("");
   }
 
-  async function update(applicationId, changes) {
-    const previous = applications;
+  function queueUpdate(applicationId, changes) {
     setApplications((current) =>
       current.map((item) =>
         item.id === applicationId ? { ...item, ...changes } : item,
       ),
     );
+    setPendingChanges((current) => ({
+      ...current,
+      [applicationId]: { ...(current[applicationId] || {}), ...changes },
+    }));
+    setMessage("");
+    return true;
+  }
+
+  async function savePendingChanges() {
+    const entries = Object.entries(pendingChanges);
+    if (!entries.length) return;
+    setSaving(true);
+    setError("");
     try {
-      await api.put(`/applications/${applicationId}/status`, changes);
+      await Promise.all(
+        entries.map(([applicationId, changes]) =>
+          api.put(`/applications/${applicationId}/status`, changes),
+        ),
+      );
+      setPendingChanges({});
       await loadApplications();
-      return true;
+      setMessage(
+        `${entries.length} cambio${entries.length === 1 ? "" : "s"} guardado${entries.length === 1 ? "" : "s"}. Las notificaciones ya fueron enviadas.`,
+      );
     } catch (requestError) {
-      setApplications(previous);
       setError(
         getApiErrorMessage(
           requestError,
-          "No fue posible actualizar al candidato",
+          "No fue posible guardar todos los cambios",
         ),
       );
-      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function coverJob() {
+    if (!selectedJob || Object.keys(pendingChanges).length) return;
+    setSaving(true);
+    setError("");
+    try {
+      const { data } = await api.patch(`/jobs/${selectedJob.id}`, {
+        status: "filled",
+      });
+      setJobs((current) =>
+        current.map((job) => (job.id === data.id ? data : job)),
+      );
+      await loadApplications();
+      setMessage(
+        "Vacante marcada como cubierta. Las postulaciones restantes fueron finalizadas y notificadas.",
+      );
+    } catch (requestError) {
+      setError(
+        getApiErrorMessage(requestError, "No fue posible cubrir la vacante"),
+      );
+    } finally {
+      setSaving(false);
+      setConfirmCoverage(false);
     }
   }
 
@@ -225,7 +287,7 @@ export function CompanyApplicationsPage() {
     if (draggedId == null) return;
     const application = applications.find((item) => item.id === draggedId);
     if (application && applicationStage(application) !== columnId)
-      update(draggedId, { pipeline_stage: columnId });
+      queueUpdate(draggedId, { pipeline_stage: columnId });
     setDraggedId(null);
     setOverColumn(null);
   }
@@ -234,12 +296,17 @@ export function CompanyApplicationsPage() {
     <div className="space-y-6">
       <PageHeader
         kicker="Proceso de selección"
-        title="Kanban de reclutamiento"
-        description="Gestiona cada vacante con etapas configurables y movimientos en tiempo real."
+        title="Tablero de candidatos"
+        description="Organiza cada vacante por etapas y revisa fácilmente el avance de cada persona."
       />
       {error ? (
         <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-[var(--error)]">
           {error}
+        </p>
+      ) : null}
+      {message ? (
+        <p className="rounded-[var(--radius-lg)] border border-[var(--success)] bg-[var(--success)]/10 px-4 py-3 text-[var(--success)]">
+          {message}
         </p>
       ) : null}
 
@@ -262,6 +329,40 @@ export function CompanyApplicationsPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {Object.keys(pendingChanges).length ? (
+            <button
+              type="button"
+              className="button-primary"
+              disabled={saving}
+              onClick={savePendingChanges}
+            >
+              <Save size={16} />
+              {saving
+                ? "Guardando…"
+                : `Guardar y notificar (${Object.keys(pendingChanges).length})`}
+            </button>
+          ) : null}
+          {selectedJob ? (
+            <button
+              type="button"
+              className="button-secondary"
+              disabled={
+                saving ||
+                Object.keys(pendingChanges).length > 0 ||
+                (selectedJob.status !== "filled" && !applications.some((item) => applicationStage(item) === "hired"))
+              }
+              title={
+                Object.keys(pendingChanges).length
+                  ? "Guarda primero los movimientos pendientes"
+                  : selectedJob.status === "filled" ? "Elige si deseas continuar el proceso o publicar una nueva vacante" : "Finaliza el proceso cuando ya estén todas las personas contratadas"
+              }
+              onClick={() => selectedJob.status === "filled" ? setShowReopen(true) : setConfirmCoverage(true)}
+            >
+              {selectedJob.status === "filled"
+                ? "Reabrir vacante cubierta"
+                : "Marcar como cubierta"}
+            </button>
+          ) : null}
           <button
             type="button"
             className="button-secondary"
@@ -286,7 +387,7 @@ export function CompanyApplicationsPage() {
       {jobId ? (
         <section
           className="overflow-x-auto pb-3"
-          aria-label="Tablero Kanban de candidatos"
+          aria-label="Tablero de candidatos por etapas"
         >
           <div
             className="grid gap-4"
@@ -329,7 +430,9 @@ export function CompanyApplicationsPage() {
                       columns={columns}
                       onDragStart={() => setDraggedId(item.id)}
                       onOpen={() => setSelected(item)}
-                      onMove={(status) => update(item.id, { status })}
+                      onMove={(pipelineStage) =>
+                        queueUpdate(item.id, { pipeline_stage: pipelineStage })
+                      }
                     />
                   ))}
                 </div>
@@ -374,11 +477,21 @@ export function CompanyApplicationsPage() {
           application={selected}
           onClose={() => setSelected(null)}
           onDelete={() => remove(selected.id)}
-          onSave={async (changes) => {
-            if (await update(selected.id, changes)) setSelected(null);
+          onSave={(changes) => {
+            queueUpdate(selected.id, changes);
+            setSelected(null);
           }}
         />
       ) : null}
+      <ConfirmModal
+        open={confirmCoverage}
+        title="Marcar la vacante como cubierta"
+        description="Esta acción cierra el proceso. Las personas que no estén en Contratados pasarán a No seleccionados y recibirán la notificación correspondiente. Úsala solo cuando ya hayas completado todas las contrataciones necesarias."
+        confirmLabel="Sí, cubrir vacante y notificar"
+        onClose={() => setConfirmCoverage(false)}
+        onConfirm={coverJob}
+      />
+      {showReopen && selectedJob && <ReopenJobModal job={selectedJob} onClose={() => setShowReopen(false)} onReopened={async (job, mode) => { setJobs((current) => mode === "continue" ? current.map((item) => item.id === job.id ? job : item) : [...current, job]); selectJob(job); setMessage(mode === "continue" ? "Vacante reactivada. Los candidatos y sus seguimientos se conservaron, sin notificar cambios." : "Nueva vacante activa, sin candidatos. El proceso anterior conserva su historial."); }} />}
     </div>
   );
 }
@@ -400,9 +513,9 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
           className="mt-0.5 shrink-0 text-[var(--muted)]"
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-bold text-[var(--ink-strong)]">
+          <button type="button" className="truncate text-left font-bold text-[var(--ink-strong)] hover:text-[var(--accent)] hover:underline" onClick={onOpen}>
             {item.candidate_name || `Candidato #${item.user_id}`}
-          </p>
+          </button>
           <p className="mt-1 text-xs text-[var(--muted)]">
             Postulado {new Date(item.created_at).toLocaleDateString("es-CO")}
           </p>
@@ -413,7 +526,7 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
           <div className="flex items-center justify-between text-xs font-semibold">
             <span className="flex items-center gap-1 text-[var(--muted)]">
               <Sparkles size={13} />
-              Match NLP
+              Compatibilidad
             </span>
             <span className="text-[var(--accent)]">{Math.round(score)}%</span>
           </div>
@@ -436,7 +549,7 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
         </button>
         <Link
           className="button-ghost button-sm !px-2"
-          to={`/empresa/candidatos/${item.user_id}`}
+          to={`/empresa/candidatos/${item.user_id}?job=${item.job_id}`}
           aria-label="Ver perfil"
         >
           <UserRound size={16} />
@@ -546,7 +659,7 @@ function JobPickerModal({ jobs, selectedId, onSelect, onClose }) {
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-bold ${job.status === "active" ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}
                       >
-                        {job.status === "active" ? "Activa" : "Pausada"}
+                        {job.status === "active" ? "Activa" : job.status === "filled" ? "Cubierta" : "Pausada"}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right">
@@ -620,7 +733,7 @@ function StageEditorModal({ stages: initialStages, counts, onSave, onClose }) {
         <section className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">
           <div className="flex items-start justify-between">
             <div>
-              <p className="section-kicker">Configuración del Kanban</p>
+              <p className="section-kicker">Configuración del tablero</p>
               <h2 className="mt-1 text-2xl font-bold">Editar etapas</h2>
               <p className="mt-1 text-sm text-[var(--muted)]">
                 Crea, elimina, renombra y reorganiza las fases de esta vacante.
@@ -732,7 +845,7 @@ function StageEditorModal({ stages: initialStages, counts, onSave, onClose }) {
       <ConfirmModal
         open={confirmSave}
         title="Actualizar las etapas"
-        description="Se guardarán la estructura, los nombres y el orden del Kanban únicamente para esta vacante. Los candidatos conservarán su fase actual."
+        description="Se guardarán la estructura, los nombres y el orden del tablero únicamente para esta vacante. Los candidatos conservarán su fase actual."
         confirmLabel="Sí, actualizar etapas"
         onClose={() => setConfirmSave(false)}
         onConfirm={() =>

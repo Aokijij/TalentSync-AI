@@ -18,6 +18,10 @@ const typeMeta = {
   application_status: { label: "Cambio de etapa", icon: FileCheck2 },
   application_received: { label: "Nueva candidatura", icon: UserPlus },
   application_updated: { label: "Actualización de proceso", icon: FileCheck2 },
+  application_selected: { label: "Selección", icon: CheckCheck },
+  application_not_selected: { label: "Proceso finalizado", icon: FileCheck2 },
+  candidate_invitation: { label: "Invitación", icon: UserPlus },
+  company_job_match: { label: "Nueva oportunidad", icon: Sparkles },
 };
 
 export function NotificationsPage() {
@@ -28,12 +32,12 @@ export function NotificationsPage() {
   async function load() {
     try {
       const { data } = await api.get("/notifications", {
-        params: { unread_only: true },
+        params: { unread_only: false },
       });
       setItems(data);
       window.dispatchEvent(
         new CustomEvent("talentsync:notifications-changed", {
-          detail: { count: data.length },
+          detail: { count: data.filter((item) => !item.is_read).length },
         }),
       );
     } catch (requestError) {
@@ -52,11 +56,13 @@ export function NotificationsPage() {
   async function openNotification(item) {
     try {
       await api.put(`/notifications/${item.id}/read`);
-      const remaining = items.filter((current) => current.id !== item.id);
-      setItems(remaining);
+      const updated = items.map((current) =>
+        current.id === item.id ? { ...current, is_read: true } : current,
+      );
+      setItems(updated);
       window.dispatchEvent(
         new CustomEvent("talentsync:notifications-changed", {
-          detail: { count: remaining.length },
+          detail: { count: updated.filter((current) => !current.is_read).length },
         }),
       );
       const fallback =
@@ -79,7 +85,9 @@ export function NotificationsPage() {
   async function markAllRead() {
     try {
       await api.put("/notifications/read-all");
-      setItems([]);
+      setItems((current) =>
+        current.map((item) => ({ ...item, is_read: true })),
+      );
       window.dispatchEvent(
         new CustomEvent("talentsync:notifications-changed", {
           detail: { count: 0 },
@@ -100,9 +108,9 @@ export function NotificationsPage() {
       <PageHeader
         kicker="Actividad"
         title="Notificaciones"
-        description="Solo mostramos novedades pendientes. Al abrir una, desaparecerá de esta bandeja."
+        description="Consulta novedades, invitaciones y cambios de tus procesos con el contexto necesario."
         actions={
-          items.length ? (
+          items.some((item) => !item.is_read) ? (
             <button
               type="button"
               onClick={markAllRead}
@@ -133,7 +141,7 @@ export function NotificationsPage() {
             </h2>
             <p className="text-sm text-[var(--muted)]">
               {items.length
-                ? `${items.length} novedad${items.length === 1 ? "" : "es"} sin leer`
+                ? `${items.filter((item) => !item.is_read).length} sin leer · ${items.length} en total`
                 : "Estás al día"}
             </p>
           </div>
@@ -150,7 +158,7 @@ export function NotificationsPage() {
                 type="button"
                 key={item.id}
                 onClick={() => openNotification(item)}
-                className="group flex w-full gap-4 bg-[var(--accent)]/[0.04] px-5 py-5 text-left transition-colors hover:bg-[var(--accent)]/10"
+                className={`group flex w-full gap-4 px-5 py-5 text-left transition-colors hover:bg-[var(--accent)]/10 ${item.is_read ? "bg-[var(--surface)]" : "bg-[var(--accent)]/[0.06]"}`}
               >
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
                   <Icon size={18} />
@@ -159,6 +167,7 @@ export function NotificationsPage() {
                   <span className="inline-flex rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--accent)]">
                     {meta.label}
                   </span>
+                  {!item.is_read ? <span className="ml-2 inline-flex rounded-full bg-[var(--success)]/10 px-2 py-0.5 text-[10px] font-bold uppercase text-[var(--success)]">Nueva</span> : null}
                   <p className="mt-2 font-bold text-[var(--ink-strong)]">
                     {item.title}
                   </p>
@@ -185,7 +194,7 @@ export function NotificationsPage() {
                 No tienes notificaciones pendientes
               </p>
               <p className="mt-1 text-sm text-[var(--muted)]">
-                Los próximos cambios de etapa aparecerán aquí.
+                Las próximas invitaciones y actualizaciones aparecerán aquí.
               </p>
             </div>
           ) : null}

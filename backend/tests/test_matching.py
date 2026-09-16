@@ -5,9 +5,11 @@ import pytest
 from app.domain.services.matching import (
     combined_match,
     is_relevant_candidate_recommendation,
+    professional_context_alignment,
     recommend_category,
     recommendation_reasons,
     required_skill_coverage,
+    language_coverage,
 )
 
 
@@ -46,8 +48,54 @@ def test_reason_metadata_order_and_matching_weights_are_stable():
     profile = SimpleNamespace(skills=["Python"], profession="Desarrollador")
     job = SimpleNamespace(skills=["Python", "SQL"], title="Desarrollador Python")
     reasons = recommendation_reasons(profile, job, semantic=75, skill_score=50)
-    assert reasons[:2] == ["score:skills:50", "score:semantic:75"]
-    assert "Tu experiencia/profesión se alinea con el cargo" in reasons
-    assert "Skills fuertes: python" in reasons
-    assert "Para subir tu match: trabaja sql" in reasons
+    assert reasons[:2] == ["score:skills:50", "score:context:75"]
+    assert "Tu experiencia y profesión se alinean con el cargo" in reasons
+    assert "Habilidades que ya cumples: python" in reasons
+    assert "Habilidades por fortalecer: sql" in reasons
     assert combined_match(75, 50) == 60
+
+
+def test_professional_context_rewards_related_roles_and_experience():
+    aligned_profile = SimpleNamespace(
+        profession="Desarrolladora backend",
+        experience="Diseño y desarrollo de APIs con Python para servicios financieros",
+        education="Ingeniería de sistemas",
+        experiences=[{"role": "Desarrolladora Python", "description": "APIs y bases de datos"}],
+        educations=[],
+        certifications=[],
+    )
+    unrelated_profile = SimpleNamespace(
+        profession="Diseñadora gráfica",
+        experience="Ilustración editorial y campañas publicitarias",
+        education="Diseño visual",
+        experiences=[],
+        educations=[],
+        certifications=[],
+    )
+    job = SimpleNamespace(
+        title="Desarrollador Python",
+        description="Construcción de APIs para servicios financieros",
+        requirements="Experiencia en backend y bases de datos",
+        sector="Tecnología",
+    )
+
+    aligned = professional_context_alignment(aligned_profile, job, semantic=60)
+    unrelated = professional_context_alignment(unrelated_profile, job, semantic=60)
+
+    assert aligned > unrelated
+    assert 0 <= unrelated <= 100
+    assert 0 <= aligned <= 100
+
+
+def test_language_levels_affect_matching_only_when_required():
+    profile = SimpleNamespace(languages=[{"name": "inglés", "level": "B1"}])
+    job = SimpleNamespace(languages=[{"name": "inglés", "level": "B2"}])
+    assert language_coverage(profile, job) == 75
+    assert combined_match(50, 100, 75) == 82.5
+    profile.languages[0]["level"] = "NATIVE"
+    assert language_coverage(profile, job) == 100
+    profile.languages = []
+    assert language_coverage(profile, job) == 0
+    job.languages = []
+    assert language_coverage(profile, job) is None
+    assert combined_match(50, 100) == 80

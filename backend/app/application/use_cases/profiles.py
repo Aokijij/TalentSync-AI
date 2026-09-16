@@ -1,8 +1,10 @@
 from datetime import datetime
+from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from app.application.errors import UseCaseError
-from app.application.ports.services import ResumeReader, TextAnalysis, UploadedResume
+from app.application.ports.services import ImageStorage, ResumeReader, TextAnalysis, UploadedResume
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
@@ -47,6 +49,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork) -> d
         "email": candidate.email,
         "profession": profile.profession,
         "skills": profile.skills or [],
+        "languages": profile.languages or [],
         "experience": profile.experience,
         "education": profile.education,
         "location": profile.location,
@@ -62,6 +65,9 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork) -> d
         "cv_text": profile.cv_text,
         "cv_filename": profile.cv_filename,
         "cv_uploaded_at": profile.cv_uploaded_at,
+        "photo_url": profile.photo_url,
+        "resume_style": profile.resume_style,
+        "resume_color": profile.resume_color,
     }
 
 
@@ -71,6 +77,7 @@ def update_my_profile(
     profile = current_user.profile or db.profiles.new(user_id=current_user.id)
     profile.profession = payload["profession"]
     profile.skills = normalize_skills(payload["skills"])
+    profile.languages = payload.get("languages", [])
     profile.experience = payload["experience"]
     profile.education = payload["education"]
     profile.location = payload["location"]
@@ -83,6 +90,8 @@ def update_my_profile(
     profile.experiences = payload["experiences"] or []
     profile.educations = payload["educations"] or []
     profile.certifications = payload["certifications"] or []
+    profile.resume_style = payload["resume_style"]
+    profile.resume_color = payload.get("resume_color", "default")
     text = " ".join(
         filter(
             None,
@@ -102,6 +111,57 @@ def update_my_profile(
     db.commit()
     db.refresh(profile)
     return profile
+
+
+def upload_photo(
+    file, current_user: User, db: UnitOfWork, *, storage: ImageStorage
+) -> Profile:
+    allowed_types = {
+        "image/jpeg": ("jpg", b"\xff\xd8\xff"),
+        "image/png": ("png", b"\x89PNG\r\n\x1a\n"),
+        "image/webp": ("webp", b"RIFF"),
+    }
+    image_type = allowed_types.get(file.content_type or "")
+    if image_type is None:
+        raise UseCaseError(
+            status_code=400, detail="La foto debe ser JPG, PNG o WebP"
+        )
+    extension, signature = image_type
+    content = file.file.read(3 * 1024 * 1024 + 1)
+    if not content:
+        raise UseCaseError(status_code=400, detail="La imagen está vacía")
+    if len(content) > 3 * 1024 * 1024:
+        raise UseCaseError(status_code=400, detail="La imagen no puede superar 3 MB")
+    if not content.startswith(signature) or (
+        extension == "webp" and content[8:12] != b"WEBP"
+    ):
+        raise UseCaseError(status_code=400, detail="El archivo no es una imagen válida")
+
+    profile = current_user.profile or db.profiles.new(user_id=current_user.id)
+    filename = f"user_{current_user.id}_{uuid4().hex}.{extension}"
+    storage.save("profile_photos", filename, content, file.content_type)
+    profile.photo_filename = filename
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+
+def profile_photo_content(
+    user_id: int, db: UnitOfWork, *, storage: ImageStorage
+) -> tuple[bytes, str]:
+    user = db.users.get(user_id)
+    profile = user.profile if user else None
+    if profile is None or not profile.photo_filename:
+        raise UseCaseError(status_code=404, detail="Foto de perfil no encontrada")
+    filename = Path(profile.photo_filename).name
+    media_type = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+    }.get(Path(filename).suffix.lower(), "application/octet-stream")
+    return storage.read("profile_photos", filename), media_type
 
 
 def upload_cv(

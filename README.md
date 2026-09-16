@@ -1,12 +1,16 @@
+<p align="center">
+  <img src="frontend/public/brand/talentsync-mark.png" alt="Logo de TalentSync AI" width="112" />
+</p>
+
 # TalentSync AI
 
 Plataforma de gestión y recomendación laboral que conecta perfiles profesionales con vacantes. Permite cargar una hoja de vida en PDF, revisar la información extraída, recibir recomendaciones y dar seguimiento a procesos de selección.
 
 ## Funcionalidades
 
-- **Candidatos:** registro, perfil profesional, carga de CV, búsqueda de vacantes, recomendaciones, postulaciones y notificaciones.
-- **Empresas:** perfil de organización, publicación de vacantes, búsqueda de talento, comparación de candidatos y seguimiento por etapas configurables.
-- **Administración:** métricas, análisis de actividad y gestión de usuarios, empresas y vacantes.
+- **Candidatos:** registro, perfil profesional, foto, hoja de vida con tres estilos, búsqueda de vacantes, recomendaciones, postulaciones, empresas seguidas y notificaciones con contexto.
+- **Empresas:** perfil público ampliado, publicación de vacantes, búsqueda e invitación de talento compatible, comparación de candidatos y seguimiento por etapas configurables.
+- **Administración:** acceso independiente por URL, métricas, análisis de actividad y gestión de usuarios, empresas y vacantes.
 - **Interfaz:** navegación según el rol, filtros por ubicación y sector, indicadores de compatibilidad y temas claro y oscuro.
 
 ## Tecnologías y arquitectura
@@ -35,9 +39,12 @@ backend/
   scripts/               Herramientas de administración
   tests/                 Pruebas de API, dominio e infraestructura
 frontend/
+  public/
+    brand/               Identidad visual y favicon
   src/
     api/                 Cliente HTTP
     components/          Controles y gráficos
+      brand/             Componentes reutilizables de marca
     constants/           Sectores y ubicaciones
     contexts/            Autenticación y tema
     hooks/               Lógica reutilizable
@@ -56,9 +63,9 @@ scripts/                 Arranque local desde PowerShell
 - PostgreSQL instalado localmente o accesible desde un servidor.
 - Git para clonar el repositorio.
 
-La aplicación se ejecuta directamente con Python y Node.js; el repositorio no requiere contenedores.
+Para desarrollo local, la aplicación se ejecuta directamente con Python y Node.js.
+Docker se utiliza para construir la imagen desplegable en Azure.
 
-El directorio local `docs/` contiene material de entregas y apoyo del proyecto, pero está excluido por `.gitignore` y no se publicará en el repositorio. También quedan fuera los archivos `.env`, las bases de datos locales, los CV cargados, los entornos virtuales y las compilaciones.
 
 ## Instalación local
 
@@ -143,7 +150,7 @@ Las plantillas `.env.example` se incluyen en el repositorio. Los archivos `.env`
 | `DATABASE_URL` | Conexión PostgreSQL o SQLite |
 | `SECRET_KEY` | Clave de firma de los tokens JWT; obligatoria, mínimo 32 caracteres |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Vigencia del token, 120 minutos por defecto |
-| `UPLOAD_DIR` | Directorio donde se guardan los CV, relativo a `backend/` al iniciar desde esa carpeta |
+| `UPLOAD_DIR` | Directorio donde se guardan los CV y las fotos de perfil, relativo a `backend/` al iniciar desde esa carpeta |
 | `CORS_ORIGINS` | Lista JSON con los orígenes del frontend permitidos |
 | `CV_PARSER` | `docling`, `auto` o `pypdf` |
 | `CV_OCR_ENABLED` | Activa OCR en el procesamiento con Docling |
@@ -166,13 +173,21 @@ Para crear una cuenta administradora, ejecuta desde `backend/`, después de apli
 
 La herramienta solicita y confirma la contraseña sin mostrarla en pantalla. Crea una cuenta nueva con la contraseña almacenada como hash bcrypt; rechaza correos existentes para evitar sobrescribir cuentas o cambiar sus permisos.
 
+El acceso administrativo no se muestra en la navegación pública. Se abre directamente en
+[http://localhost:5173/acceso-administracion](http://localhost:5173/acceso-administracion).
+Las cuentas de candidatos y empresas no pueden iniciar sesión por esa dirección, y las
+cuentas administradoras no pueden entrar por el formulario público.
+
 El flujo principal es:
 
 1. La empresa completa su perfil y publica una vacante con requisitos, sector y etapas de selección.
 2. El candidato completa su perfil y carga un CV en PDF de hasta 5 MB.
 3. La aplicación extrae texto y datos profesionales; el candidato puede revisar y editar su perfil.
-4. El motor compara perfiles y vacantes y presenta compatibilidad, habilidades coincidentes y brechas.
-5. El candidato se postula y la empresa gestiona el proceso; los cambios generan notificaciones dentro de la aplicación.
+4. La aplicación compara perfiles y vacantes y presenta compatibilidad, habilidades coincidentes y aspectos del contexto profesional por fortalecer.
+5. El candidato puede seguir empresas y elegir la compatibilidad mínima para recibir avisos de nuevas vacantes.
+6. La empresa puede invitar a una persona con alta compatibilidad a postularse y gestionar el proceso en el tablero de candidatos.
+7. La empresa prepara los movimientos y los confirma con **Guardar cambios y notificar**. Contratar una persona no descarta a las demás ni cubre automáticamente la vacante. La empresa decide cuándo marcarla como cubierta.
+8. Una vacante cubierta puede reabrirse conservando candidatos y seguimientos, o publicarse como un proceso nuevo sin modificar el historial anterior.
 
 ## Extracción de CV y matching
 
@@ -180,11 +195,13 @@ Docling reconstruye la estructura del documento y utiliza EasyOCR cuando corresp
 
 La primera ejecución puede descargar modelos y tardar más. Forzar OCR de página completa aumenta el trabajo de procesamiento. Los resultados dependen de la calidad del PDF; los datos del perfil siguen siendo editables.
 
-La normalización y las heurísticas extraen habilidades, experiencia, formación, ubicación y otros campos. `HashingVectorizer` genera vectores de 384 dimensiones y el matching combina:
+La normalización y las heurísticas extraen habilidades, experiencia, formación, ubicación y otros campos. `HashingVectorizer` genera vectores de 384 dimensiones y la compatibilidad combina:
 
 ```text
-compatibilidad = 0.60 × cobertura de habilidades + 0.40 × similitud textual
+compatibilidad = 0.60 × cobertura de habilidades + 0.40 × contexto profesional
 ```
+
+Si la vacante pide idiomas, los pesos son 60% habilidades, 30% contexto profesional y 10% cobertura de los niveles de idioma. La empresa y el candidato usan el mismo cálculo. Los idiomas y sus niveles se registran por separado de las habilidades técnicas.
 
 Los resultados incluyen motivos, categorías y filtros de relevancia. Las reglas se encuentran en `backend/app/domain/services/matching.py`; la persistencia y el ordenamiento se coordinan en `backend/app/application/use_cases/matching.py`.
 
@@ -237,7 +254,76 @@ El repositorio contiene el código funcional y las migraciones, pero todavía re
 - añadir correo transaccional si se necesitan avisos fuera de la aplicación;
 - incorporar monitorización, registros centralizados, límites de tamaño y revisión de dependencias.
 
+## Despliegue en Azure
+
+El repositorio incluye una imagen Docker que compila React y lo sirve desde la misma
+URL que FastAPI. El script `scripts/deploy-azure.ps1` crea o actualiza:
+
+- Azure Container Apps para la aplicación;
+- Azure Database for PostgreSQL Flexible Server;
+- Azure Blob Storage privado para los CV;
+- Azure Container Registry para las imágenes.
+
+Requisitos: Azure CLI, una sesión iniciada con `az login` y permisos para crear
+recursos y asignaciones de roles. Desde la raíz del repositorio ejecuta:
+
+```powershell
+.\scripts\deploy-azure.ps1
+```
+
+La ubicación predeterminada es `eastus2` y se puede cambiar con `-Location`. El
+script crea una réplica mínima para evitar arranques en frío. Para un entorno de
+prueba de menor costo, usa `-ScaleToZero`; la primera solicitud después de un
+periodo inactivo tardará más. Las credenciales se generan durante el primer
+despliegue y quedan guardadas como secretos de Container Apps, nunca en archivos
+del repositorio.
+
+El contenedor usa `pypdf` para mantener el tamaño y el tiempo de arranque
+controlados. Extrae correctamente PDF con texto seleccionable; el OCR de documentos
+escaneados requiere una imagen separada con las dependencias completas.
+
 No se incluyen cuentas precargadas, vacantes de ejemplo ni datos de prueba. Crea los usuarios desde la interfaz y la cuenta administradora mediante `scripts/create_admin.py`.
+
+## Actualizar la instalación existente en Azure
+
+La aplicación usa Container Apps y un registro privado de imágenes. Para actualizarla, usa `scripts/update-production.ps1`; el script de `deploy-azure.ps1` se reserva para el aprovisionamiento inicial. No ejecutes semillas ni reinicies la base de datos en producción.
+
+Antes de publicar:
+
+1. Ejecuta las pruebas, lint, compilación y auditorías. El workflow `.github/workflows/ci.yml` también comprueba una construcción Docker con Python 3.13 y Node 22; no despliega automáticamente.
+2. Verifica un punto de recuperación reciente de PostgreSQL y los archivos existentes. Las migraciones hasta `0017_languages` conservan los datos, simplifican las etapas conocidas y añaden presentación e idiomas. Los flujos personalizados no se sustituyen.
+3. Las fotos, logos y portadas nuevos se guardan en Blob Storage privado con `AZURE_STORAGE_ACCOUNT_URL` y `AZURE_STORAGE_CONTAINER`. La identidad administrada necesita **Storage Blob Data Contributor**, igual que para los CV. En desarrollo, sin esa URL, se conservan en `UPLOAD_DIR`. Los archivos antiguos que estén solo en el disco de una revisión deben copiarse al contenedor Blob con los mismos nombres y prefijos `profile_photos/` o `company_images/` antes de retirarla, o volverse a subir. Este cambio no recupera archivos que Azure ya haya eliminado.
+4. Revisa el diff y crea un commit con todos los cambios de esta versión, incluidas las migraciones, los nuevos componentes y los archivos de configuración. No incluyas `.env`, `.azure`, uploads ni cachés. Espera a que CI termine correctamente al subirlo a GitHub.
+
+Desde PowerShell 7, en la raíz del proyecto:
+
+```powershell
+./scripts/update-production.ps1 -WhatIf
+./scripts/update-production.ps1 -BackupVerified
+```
+
+La primera orden solo consulta el destino y muestra la operación prevista. La segunda exige un árbol Git limpio, pide confirmación y publica una imagen etiquetada con el commit. Mantiene los secretos, la base de datos, la identidad, el escalado y los dominios existentes. Comprueba que la **nueva** revisión esté lista y responda `/health`, no solo la anterior. Después revisa login, idiomas, fotos, recomendaciones y movimientos del tablero en la URL pública, sin enviar notificaciones de prueba a usuarios reales.
+
+El script muestra la imagen y revisión anteriores para diagnóstico y recuperación. No ejecuta un rollback automático ni baja migraciones: recuperar una versión antigua requiere comprobar antes la compatibilidad con el esquema y, si fuera necesario, restaurar una copia de la base.
+
+### Dirección pública
+
+La dirección generada actual es `https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io`. Para usar una dirección propia corta en Container Apps necesitas controlar un dominio o subdominio, configurar su DNS y vincular el certificado administrado. Consulta [la documentación de Azure sobre dominios y certificados](https://learn.microsoft.com/en-us/azure/container-apps/custom-domains-managed-certificates).
+
+El frontend se publica por separado en Cloudflare Pages y la API permanece en Azure. El nombre previsto es `talentsync-ai.pages.dev`; verifica el subdominio que Cloudflare asigna al crear el proyecto. No requiere comprar un dominio. El estado real del despliegue se consulta en Cloudflare; esta configuración por sí sola no confirma una publicación.
+
+### Publicar el frontend en Cloudflare Pages
+
+Crea un proyecto Pages llamado `talentsync-ai` con subida directa y rama de producción `main`. Compila desde `frontend/` con `VITE_API_URL=https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io/api/v1` y publica únicamente el contenido de `frontend/dist`. Pages resuelve las rutas de React hacia `index.html` sin añadir un `404.html` raíz. Consulta [subida directa](https://developers.cloudflare.com/pages/get-started/direct-upload/) y [rutas SPA](https://developers.cloudflare.com/pages/configuration/serving-pages/).
+
+Para las siguientes versiones, inicia sesión manualmente con `npx wrangler@4.132.0 login` y usa los scripts desde un commit limpio:
+
+```powershell
+./scripts/update-production.ps1 -BackupVerified -FrontendOrigin https://talentsync-ai.pages.dev
+./scripts/deploy-cloudflare.ps1
+```
+
+El primer script actualiza Azure y añade el origen HTTPS de Pages a CORS conservando los orígenes existentes. El segundo compila con la dirección absoluta de la API, comprueba CORS y publica `dist` con el identificador del commit. Si Cloudflare asigna otro subdominio, pásalo con `-FrontendOrigin` a ambos scripts y el nombre real del proyecto con `-ProjectName` al segundo. No se permiten orígenes comodín de previews contra producción. Los tokens de Cloudflare se guardan fuera de Git; nunca deben incluirse en variables `VITE_*`.
 
 ## Problemas frecuentes
 

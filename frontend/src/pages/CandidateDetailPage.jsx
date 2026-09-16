@@ -8,11 +8,14 @@ import {
   Mail,
   MapPin,
   Phone,
+  Sparkles,
   UserRound,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
-import { api, getApiErrorMessage } from "../api/client.js";
+import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
+import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
+import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 
 const availabilityLabels = {
   immediate: "Inmediata",
@@ -30,20 +33,34 @@ const modalityLabels = {
 
 export function CandidateDetailPage() {
   const { userId } = useParams();
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get("job");
   const navigate = useNavigate();
   const [candidate, setCandidate] = useState(null);
+  const [match, setMatch] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api
-      .get(`/profiles/candidates/${userId}`)
-      .then(({ data }) => setCandidate(data))
+    const profileRequest = api.get(`/profiles/candidates/${userId}`);
+    const matchRequest = jobId
+      ? api
+          .get(`/recommendations/jobs/${jobId}/candidates`)
+          .then(({ data }) =>
+            data.find((item) => String(item.user_id) === String(userId)),
+          )
+          .catch(() => null)
+      : Promise.resolve(null);
+    Promise.all([profileRequest, matchRequest])
+      .then(([{ data }, candidateMatch]) => {
+        setCandidate(data);
+        setMatch(candidateMatch || null);
+      })
       .catch((requestError) =>
         setError(
           getApiErrorMessage(requestError, "No fue posible cargar el perfil"),
         ),
       );
-  }, [userId]);
+  }, [jobId, userId]);
 
   if (error)
     return (
@@ -72,46 +89,55 @@ export function CandidateDetailPage() {
         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
       >
         <ArrowLeft size={16} />
-        Volver al ranking
+        Volver a candidatos recomendados
       </button>
       <section className="page-hero">
-        <div className="flex flex-wrap items-start gap-5">
-          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]">
-            <UserRound size={30} />
-          </div>
-          <div>
-            <p className="section-kicker">Perfil de candidato</p>
-            <h1 className="mt-2 font-display text-3xl font-semibold text-[var(--ink-strong)]">
-              {candidate.name}
-            </h1>
-            <p className="mt-2 text-[var(--muted)]">
-              {candidate.profession || "Perfil profesional"}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
-              <span className="inline-flex items-center gap-1.5">
-                <Mail size={15} />
-                {candidate.email}
-              </span>
-              {candidate.phone && (
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-start gap-5">
+            <CandidatePhoto key={`${userId}:${candidate.photo_url}`} candidate={candidate} />
+            <div>
+              <p className="section-kicker">Perfil de candidato</p>
+              <h1 className="mt-2 font-display text-3xl font-semibold text-[var(--ink-strong)]">
+                {candidate.name}
+              </h1>
+              <p className="mt-2 text-[var(--muted)]">
+                {candidate.profession || "Perfil profesional"}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                 <span className="inline-flex items-center gap-1.5">
-                  <Phone size={15} />
-                  {candidate.phone}
+                  <Mail size={15} />
+                  {candidate.email}
                 </span>
-              )}
-              {candidate.location && (
+                {candidate.phone && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Phone size={15} />
+                    {candidate.phone}
+                  </span>
+                )}
+                {candidate.location && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin size={15} />
+                    {candidate.location}
+                  </span>
+                )}
                 <span className="inline-flex items-center gap-1.5">
-                  <MapPin size={15} />
-                  {candidate.location}
+                  <Award size={15} />
+                  {availabilityLabels[candidate.availability] ||
+                    candidate.availability ||
+                    "Disponibilidad por definir"}
                 </span>
-              )}
-              <span className="inline-flex items-center gap-1.5">
-                <Award size={15} />
-                {availabilityLabels[candidate.availability] ||
-                  candidate.availability ||
-                  "Disponibilidad por definir"}
-              </span>
+              </div>
             </div>
           </div>
+          {match ? (
+            <div className="w-full rounded-[var(--radius-xl)] border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-4 lg:w-72">
+              <p className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--ink-strong)]">
+                <Sparkles size={16} className="text-[var(--accent)]" />
+                Compatibilidad para esta vacante
+              </p>
+              <CompatibilityBar value={match.match_percentage} />
+            </div>
+          ) : null}
         </div>
       </section>
       <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
@@ -174,6 +200,7 @@ export function CandidateDetailPage() {
           />
         </div>
         <aside className="space-y-5">
+          <section className="surface-card p-5"><h2 className="mb-3 font-bold">Idiomas</h2><LanguagesEditor value={candidate.languages || []} editing={false} /></section>
           <section className="surface-card p-5">
             <h2 className="font-bold text-[var(--ink-strong)]">
               Habilidades verificadas
@@ -219,6 +246,13 @@ export function CandidateDetailPage() {
       </section>
     </div>
   );
+}
+
+function CandidatePhoto({ candidate }) {
+  const [failed, setFailed] = useState(false);
+  return <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--accent)]/10 text-[var(--accent)]">
+    {candidate.photo_url && !failed ? <img src={apiFileUrl(candidate.photo_url)} alt={`Foto de ${candidate.name}`} className="h-full w-full object-cover" onError={() => setFailed(true)} /> : <UserRound size={36} />}
+  </div>;
 }
 
 function Timeline({ title, icon: Icon, items = [], empty, render }) {

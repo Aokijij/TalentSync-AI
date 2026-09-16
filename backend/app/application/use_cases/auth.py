@@ -100,13 +100,24 @@ def register(
 
 
 def login(
-    payload: dict[str, Any], db: UnitOfWork, *, security: AccountSecurity
+    payload: dict[str, Any],
+    db: UnitOfWork,
+    *,
+    security: AccountSecurity,
+    admin_channel: bool = False,
 ) -> dict:
     user = db.users.find_by_email(payload["email"])
     if user is None or not security.verify_password(
         payload["password"], user.password_hash
     ):
         raise UseCaseError(status_code=401, detail="Credenciales invalidas")
+    if admin_channel and user.role != UserRole.ADMIN:
+        raise UseCaseError(status_code=401, detail="Credenciales invalidas")
+    if not admin_channel and user.role == UserRole.ADMIN:
+        raise UseCaseError(
+            status_code=403,
+            detail="La cuenta administradora utiliza un acceso independiente",
+        )
     return dict(
         access_token=security.create_access_token(str(user.id), user.role.value)
     )

@@ -35,6 +35,9 @@ export function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [matches, setMatches] = useState({});
+  const [profileSkills, setProfileSkills] = useState([]);
+  const [onlyMySkills, setOnlyMySkills] = useState(false);
+  const [minCompatibility, setMinCompatibility] = useState(0);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState({
     modality: "",
@@ -56,9 +59,15 @@ export function JobsPage() {
         api
           .get("/recommendations/me/jobs", { params: { include_all: true } })
           .catch(() => ({ data: [] })),
+        api.get("/profiles/me").catch(() => ({ data: { skills: [] } })),
       );
     Promise.all(requests)
-      .then(([jobsResponse, applicationsResponse, recommendationsResponse]) => {
+      .then(([
+        jobsResponse,
+        applicationsResponse,
+        recommendationsResponse,
+        profileResponse,
+      ]) => {
         setJobs(jobsResponse.data);
         setApplications(applicationsResponse.data);
         setMatches(
@@ -69,6 +78,7 @@ export function JobsPage() {
             ]),
           ),
         );
+        setProfileSkills(profileResponse?.data?.skills ?? []);
       })
       .catch(() => setJobs([]));
   }, [user?.role]);
@@ -88,6 +98,9 @@ export function JobsPage() {
 
   const filteredJobs = useMemo(() => {
     const term = query.toLowerCase().trim();
+    const candidateSkills = new Set(
+      profileSkills.map((skill) => skill.toLowerCase().trim()),
+    );
     return jobs
       .filter((job) => {
         const matchesTerm =
@@ -95,6 +108,9 @@ export function JobsPage() {
           `${job.title} ${job.company_name} ${job.description} ${job.requirements} ${(job.skills || []).join(" ")}`
             .toLowerCase()
             .includes(term);
+        const hasCandidateSkill = (job.skills || []).some((skill) =>
+          candidateSkills.has(skill.toLowerCase().trim()),
+        );
         return (
           matchesTerm &&
           (!filters.modality || job.modality === filters.modality) &&
@@ -102,14 +118,24 @@ export function JobsPage() {
             job.employment_type === filters.employment_type) &&
           (!filters.sector || job.sector === filters.sector) &&
           (!filters.department || job.department === filters.department) &&
-          (!filters.location || job.location === filters.location)
+          (!filters.location || job.location === filters.location) &&
+          (!onlyMySkills || hasCandidateSkill) &&
+          (matches[job.id] ?? 0) >= minCompatibility
         );
       })
       .sort(
         (first, second) =>
           (matches[second.id] ?? -1) - (matches[first.id] ?? -1),
       );
-  }, [jobs, query, filters, matches]);
+  }, [
+    jobs,
+    query,
+    filters,
+    matches,
+    profileSkills,
+    onlyMySkills,
+    minCompatibility,
+  ]);
 
   const pages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
   const visibleJobs = filteredJobs.slice(
@@ -235,6 +261,37 @@ export function JobsPage() {
             </select>
           </Filter>
         </div>
+        {user?.role === "candidate" ? (
+          <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-lg)] bg-[var(--surface-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-semibold text-[var(--ink-strong)]">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-[var(--accent)]"
+                checked={onlyMySkills}
+                onChange={(event) => {
+                  setOnlyMySkills(event.target.checked);
+                  setPage(1);
+                }}
+              />
+              Mostrar vacantes que coincidan con al menos una de mis habilidades
+            </label>
+            <label className="flex items-center gap-2 text-sm font-semibold text-[var(--muted)]">
+              Compatibilidad mínima
+              <select
+                className="field-control input-sm w-24"
+                value={minCompatibility}
+                onChange={(event) => {
+                  setMinCompatibility(Number(event.target.value));
+                  setPage(1);
+                }}
+              >
+                {[0, 40, 50, 60, 70, 80, 90].map((value) => (
+                  <option key={value} value={value}>{value}%</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null}
       </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -314,9 +371,12 @@ function JobCard({ job, match, applied, showMatch }) {
     <article className="surface-card flex flex-col p-5 transition-colors hover:border-[var(--accent)]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
+          <Link
+            to={`/empresas/${job.company_id}`}
+            className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--accent)] hover:underline"
+          >
             {job.company_name ?? "Empresa"}
-          </p>
+          </Link>
           <h2 className="mt-1 text-lg font-bold">{job.title}</h2>
         </div>
         {applied ? (

@@ -6,11 +6,13 @@ import {
   Search,
   UsersRound,
   RefreshCw,
+  Send,
   UserRound,
 } from "lucide-react";
 
 import { api } from "../api/client.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
+import { languageLevelLabel } from "../constants/languages.js";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 export function CompanyCandidatesPage() {
@@ -20,6 +22,8 @@ export function CompanyCandidatesPage() {
   const [candidates, setCandidates] = useState([]);
   const [job, setJob] = useState(null);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [invitingId, setInvitingId] = useState(null);
 
   const [query, setQuery] = useState("");
 
@@ -47,6 +51,31 @@ export function CompanyCandidatesPage() {
     load();
   }, [jobId]);
 
+  async function invite(candidate) {
+    setError("");
+    setMessage("");
+    setInvitingId(candidate.user_id);
+    try {
+      await api.post(
+        `/recommendations/jobs/${jobId}/candidates/${candidate.user_id}/invite`,
+      );
+      setCandidates((current) =>
+        current.map((item) =>
+          item.user_id === candidate.user_id
+            ? { ...item, has_pending_invitation: true }
+            : item,
+        ),
+      );
+      setMessage(`Invitación enviada a ${candidate.name}.`);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.detail || "No fue posible enviar la invitación",
+      );
+    } finally {
+      setInvitingId(null);
+    }
+  }
+
   const filtered = useMemo(() => {
     const term = query.toLowerCase().trim();
     if (!term) return candidates;
@@ -67,8 +96,8 @@ export function CompanyCandidatesPage() {
               Aspirantes para {job?.title ?? `vacante #${jobId}`}
             </h1>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Mostramos quienes se postularon y talento aún no postulado con más
-              de 60% de compatibilidad.
+              Consulta quienes se postularon e invita a perfiles con al menos
+              50% de compatibilidad.
             </p>
           </div>
           <span className="rounded-full border border-[var(--line)] px-3 py-1 text-[var(--muted)]">
@@ -82,6 +111,7 @@ export function CompanyCandidatesPage() {
           {error}
         </p>
       )}
+      {message ? <p className="rounded-[var(--radius-md)] border border-[var(--success)] bg-[var(--success)]/10 px-3 py-2 text-sm text-[var(--success)]">{message}</p> : null}
 
       <section className="surface-card p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -89,10 +119,10 @@ export function CompanyCandidatesPage() {
             <Search size={18} className="text-[var(--muted)]" />
             <div>
               <h2 className="font-semibold text-[var(--ink)]">
-                Filtrar por nombre/skills
+                Filtrar por nombre o habilidad
               </h2>
               <p className="text-sm text-[var(--muted)]">
-                Busca dentro del ranking de esta vacante.
+                Busca dentro de los candidatos recomendados para esta vacante.
               </p>
             </div>
           </div>
@@ -124,11 +154,10 @@ export function CompanyCandidatesPage() {
           <Flame size={20} className="text-[var(--warning)]" />
           <div>
             <h2 className="font-semibold text-[var(--ink)]">
-              Mapa de calor de coincidencias críticas
+              Comparación de habilidades principales
             </h2>
             <p className="text-sm text-[var(--muted)]">
-              Más intensidad indica mayor cobertura de los requisitos
-              principales.
+              Cada marca muestra si el perfil incluye una habilidad solicitada.
             </p>
           </div>
         </div>
@@ -142,7 +171,7 @@ export function CompanyCandidatesPage() {
         <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-4">
           <UsersRound size={20} className="text-[var(--accent)]" />
           <h2 className="font-semibold text-[var(--ink)]">
-            Ranking de aspirantes
+            Candidatos recomendados
           </h2>
         </div>
 
@@ -163,7 +192,7 @@ export function CompanyCandidatesPage() {
                   {candidate.profession ?? "Perfil profesional"}
                 </p>
                 <p className="mt-2 text-xs text-[var(--muted)]">
-                  Skills:{" "}
+                  Habilidades:{" "}
                   {(candidate.skills ?? []).join(", ") || "Sin habilidades"}
                 </p>
                 <p className="mt-2 text-xs text-[var(--muted)]">
@@ -176,18 +205,28 @@ export function CompanyCandidatesPage() {
                 {candidate.has_applied ? (
                   <Link
                     className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline hover-lift"
-                    to={`/empresa/candidatos/${candidate.user_id}`}
+                    to={`/empresa/candidatos/${candidate.user_id}?job=${jobId}`}
                   >
                     <UserRound size={15} />
                     Ver perfil completo
                   </Link>
                 ) : (
-                  <p className="mt-3 text-xs text-[var(--muted)]">
-                    Perfil completo disponible cuando se postule a esta vacante.
-                  </p>
+                  <button
+                    type="button"
+                    className="button-primary button-sm mt-3"
+                    disabled={candidate.has_pending_invitation || invitingId === candidate.user_id}
+                    onClick={() => invite(candidate)}
+                  >
+                    <Send size={14} />
+                    {candidate.has_pending_invitation
+                      ? "Invitación enviada"
+                      : invitingId === candidate.user_id
+                        ? "Enviando…"
+                        : "Invitar a postularse"}
+                  </button>
                 )}
               </div>
-              <CompatibilityBar value={candidate.match_percentage} />
+              <div className="space-y-3"><CompatibilityBar value={candidate.match_percentage} />{job?.languages?.length ? <div className="text-xs text-[var(--muted)]"><p className="mb-1 font-semibold">Idiomas solicitados</p>{job.languages.map((item) => { const actual = candidate.languages?.find((language) => language.name === item.name); return <p className="mt-1" key={item.name}><span className="capitalize">{item.name}</span>: mínimo {item.level} · Su nivel: {actual ? languageLevelLabel(actual.level) : "sin registrar"}</p>; })}</div> : null}</div>
             </article>
           ))}
 
@@ -199,7 +238,7 @@ export function CompanyCandidatesPage() {
               </p>
               <p className="mt-1 text-sm text-[var(--muted)]">
                 Todavía no hay postulaciones ni perfiles externos con más del
-                60% de compatibilidad{query ? " para esta búsqueda" : ""}.
+                50% de compatibilidad{query ? " para esta búsqueda" : ""}.
               </p>
             </div>
           ) : null}
@@ -212,7 +251,7 @@ export function CompanyCandidatesPage() {
           className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-800 hover:underline"
           onClick={() => navigate("/empresa")}
         >
-          ← Volver al dashboard
+          ← Volver al inicio
         </button>
       </div>
     </div>
@@ -254,7 +293,7 @@ function CandidateHeatmap({ candidates, requiredSkills }) {
                 {skill}
               </th>
             ))}
-            <th className="px-5 py-3 text-center">Match</th>
+            <th className="px-5 py-3 text-center">Compatibilidad</th>
           </tr>
         </thead>
         <tbody>

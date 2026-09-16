@@ -6,6 +6,7 @@ venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest_tmp*/
 .ruff_cache/
 .mypy_cache/
 .coverage
@@ -20,9 +21,13 @@ uploads/
 node_modules/
 dist/
 .vite/
+.wrangler/
+.dev.vars
+.dev.vars.*
 coverage/
 *.log
 logs/
+.azure/
 .DS_Store
 Thumbs.db
 .idea/
@@ -31,6 +36,7 @@ Thumbs.db
 /docs/
 /output/
 /tmp/
+.tmp/
 /backups/
 *.doc
 *.docx

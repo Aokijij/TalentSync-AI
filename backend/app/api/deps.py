@@ -10,6 +10,7 @@ from app.domain.entities.enums import UserRole
 from app.infrastructure.database.models import User
 from app.infrastructure.database.session import get_db
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
+from app.infrastructure.images import get_image_storage
 from app.infrastructure.nlp.resumes import ResumeReader
 from app.infrastructure.nlp.text_processor import text_processor
 from app.infrastructure.security.accounts import AccountSecurity

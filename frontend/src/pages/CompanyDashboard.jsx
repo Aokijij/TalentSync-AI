@@ -13,15 +13,15 @@ import { api } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 
 const statusLabels = {
-  submitted: "Nueva",
-  seen: "Vista",
+  submitted: "Recibida",
+  seen: "Recibida",
   reviewing: "En revisión",
-  shortlisted: "Preseleccionada",
+  shortlisted: "En revisión",
   technical_interview: "Entrevista",
-  psychometric_test: "Prueba",
+  psychometric_test: "Entrevista",
   hired: "Contratado",
-  accepted: "Aceptada",
-  rejected: "Descartada",
+  accepted: "Contratado",
+  rejected: "No seleccionado",
 };
 
 export function CompanyDashboard() {
@@ -62,33 +62,27 @@ export function CompanyDashboard() {
   const funnel = useMemo(
     () => [
       {
-        label: "Nuevos",
+        label: "Recibidas",
         value: applications.filter((item) =>
           ["submitted", "seen"].includes(item.status),
         ).length,
       },
       {
-        label: "Preselección",
+        label: "En revisión",
         value: applications.filter((item) =>
           ["reviewing", "shortlisted"].includes(item.status),
         ).length,
       },
       {
         label: "Entrevistas",
-        value: applications.filter(
-          (item) => item.status === "technical_interview",
-        ).length,
-      },
-      {
-        label: "Pruebas",
-        value: applications.filter(
-          (item) => item.status === "psychometric_test",
-        ).length,
-      },
-      {
-        label: "Contratados",
         value: applications.filter((item) =>
-          ["accepted", "hired"].includes(item.status),
+          ["technical_interview", "psychometric_test"].includes(item.status),
+        ).length,
+      },
+      {
+        label: "Finalizados",
+        value: applications.filter((item) =>
+          ["accepted", "hired", "rejected"].includes(item.status),
         ).length,
       },
     ],
@@ -132,16 +126,19 @@ export function CompanyDashboard() {
           icon={BriefcaseBusiness}
           label="Vacantes activas"
           value={stats.active}
+          to="/empresa/vacantes"
         />
         <Stat
           icon={UsersRound}
           label="Candidatos en proceso"
           value={stats.applicants}
+          to="/empresa/postulaciones"
         />
         <Stat
           icon={ClipboardList}
           label="Pendientes por revisar"
           value={stats.reviewing}
+          to="/empresa/postulaciones?stage=submitted"
         />
       </section>
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
@@ -163,9 +160,10 @@ export function CompanyDashboard() {
           </div>
           <div className="divide-y divide-[var(--line)]">
             {applications.slice(0, 5).map((item) => (
-              <div
+              <Link
                 key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+                to={`/empresa/postulaciones?job=${item.job_id}&focus=${item.id}`}
+                className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-[var(--surface-hover)]"
               >
                 <div>
                   <p className="font-semibold text-[var(--ink-strong)]">
@@ -178,7 +176,8 @@ export function CompanyDashboard() {
                 <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1.5 text-xs font-semibold text-[var(--accent)]">
                   {statusLabels[item.status] || item.status}
                 </span>
-              </div>
+                <ArrowRight size={16} className="text-[var(--muted)]" />
+              </Link>
             ))}
             {!applications.length ? (
               <p className="px-5 py-12 text-center text-sm text-[var(--muted)]">
@@ -198,7 +197,7 @@ export function CompanyDashboard() {
                 Siguiente acción
               </h2>
               <p className="text-sm text-[var(--muted)]">
-                Mantén tu pipeline en movimiento.
+                Mantén tus procesos de selección al día.
               </p>
             </div>
           </div>
@@ -206,12 +205,12 @@ export function CompanyDashboard() {
             <Quick
               to="/empresa/vacantes"
               title="Publicar una vacante"
-              detail="Activa el matching semántico."
+              detail="Encuentra personas compatibles con el cargo."
             />
             <Quick
               to="/empresa/talento"
               title="Revisar talento compatible"
-              detail="Prioriza por score y habilidades."
+              detail="Prioriza por porcentaje y habilidades."
             />
             <Quick
               to="/empresa/postulaciones"
@@ -225,7 +224,7 @@ export function CompanyDashboard() {
         <div className="surface-card p-5">
           <p className="section-kicker">Conversión</p>
           <h2 className="mt-1 text-xl font-bold text-[var(--ink-strong)]">
-            Embudo de selección
+            Avance de candidatos
           </h2>
           <div className="mt-5 space-y-4">
             {funnel.map((item) => (
@@ -285,9 +284,9 @@ export function CompanyDashboard() {
   );
 }
 
-function Stat({ icon: Icon, label, value }) {
+function Stat({ icon: Icon, label, value, to }) {
   return (
-    <article className="surface-card p-5">
+    <Link to={to} className="surface-card group relative block p-5 hover:border-[var(--accent)] focus-ring">
       <div className="grid h-10 w-10 place-items-center rounded-[var(--radius-lg)] bg-[var(--accent)]/10 text-[var(--accent)]">
         <Icon size={20} />
       </div>
@@ -295,7 +294,8 @@ function Stat({ icon: Icon, label, value }) {
         {value}
       </p>
       <p className="mt-1 text-sm text-[var(--muted)]">{label}</p>
-    </article>
+      <ArrowRight className="absolute right-5 top-5 text-[var(--muted)] transition-transform group-hover:translate-x-1 group-hover:text-[var(--accent)]" size={17} />
+    </Link>
   );
 }
 function Quick({ to, title, detail }) {

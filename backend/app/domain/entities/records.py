@@ -36,9 +36,14 @@ class Profile(Protocol):
     experiences: list[dict]
     educations: list[dict]
     certifications: list[dict]
+    languages: list[dict]
     cv_text: str | None
     cv_filename: str | None
     cv_uploaded_at: datetime | None
+    photo_filename: str | None
+    photo_url: str | None
+    resume_style: str
+    resume_color: str
     embedding: list[float] | None
     updated_at: datetime
     user: User
@@ -50,8 +55,29 @@ class Company(Protocol):
     name: str
     nit: str
     description: str | None
+    website: str | None
+    sector: str | None
+    size: str | None
+    location: str | None
+    mission: str | None
+    values: list[str]
+    benefits: list[str]
+    logo_filename: str | None
+    cover_filename: str | None
+    logo_url: str | None
+    cover_url: str | None
     owner: User
     jobs: list["Job"]
+
+
+class CompanyFollower(Protocol):
+    id: int
+    candidate_user_id: int
+    company_id: int
+    min_match: float
+    created_at: datetime
+    candidate: User
+    company: Company
 
 
 class Job(Protocol):
@@ -69,6 +95,7 @@ class Job(Protocol):
     status: str
     benefits: list[str]
     pipeline_stages: list[dict] | None
+    languages: list[dict]
     skills: list[str]
     embedding: list[float] | None
     created_at: datetime
@@ -91,6 +118,7 @@ class Application(Protocol):
     recruiter_notes: str | None
     interview_at: datetime | None
     pipeline_stage: str | None
+    resolution_reason: str | None
     user: User
     job: Job
 
@@ -118,6 +146,8 @@ class Recommendation(Protocol):
     def skill_match_percentage(self) -> float: ...
     @property
     def semantic_match_percentage(self) -> float: ...
+    @property
+    def professional_context_percentage(self) -> float: ...
 
 
 class Notification(Protocol):

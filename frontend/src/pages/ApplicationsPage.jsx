@@ -3,7 +3,6 @@ import {
   CalendarClock,
   Check,
   Clock3,
-  Eye,
   FileCheck2,
   SearchCheck,
   XCircle,
@@ -15,22 +14,22 @@ import { PageHeader } from "../components/PageHeader.jsx";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
 
 const statusLabel = {
-  submitted: "Enviada",
-  seen: "Vista por la empresa",
+  submitted: "Postulación recibida",
+  seen: "Postulación recibida",
   reviewing: "En revisión",
-  shortlisted: "Preseleccionada",
-  technical_interview: "Entrevista técnica",
-  psychometric_test: "Prueba psicotécnica",
-  accepted: "Aceptada",
-  hired: "Contratado",
-  rejected: "Descartada",
+  shortlisted: "En revisión",
+  technical_interview: "Entrevista",
+  psychometric_test: "Entrevista",
+  accepted: "Seleccionado",
+  hired: "Seleccionado",
+  rejected: "No seleccionado",
 };
 
 const progressByStatus = {
   submitted: 0,
-  seen: 1,
-  reviewing: 2,
-  shortlisted: 2,
+  seen: 0,
+  reviewing: 1,
+  shortlisted: 1,
   technical_interview: 2,
   psychometric_test: 2,
   accepted: 3,
@@ -38,11 +37,14 @@ const progressByStatus = {
   rejected: 3,
 };
 const steps = [
-  { label: "Enviada", icon: FileCheck2 },
-  { label: "Vista", icon: Eye },
-  { label: "En proceso", icon: SearchCheck },
+  { label: "Postulada", icon: FileCheck2 },
+  { label: "En revisión", icon: SearchCheck },
+  { label: "Entrevista", icon: CalendarClock },
   { label: "Resultado", icon: Check },
 ];
+
+const finalStatuses = ["rejected", "accepted", "hired"];
+const interviewStatuses = ["technical_interview", "psychometric_test"];
 
 export function ApplicationsPage() {
   const [searchParams] = useSearchParams();
@@ -78,14 +80,18 @@ export function ApplicationsPage() {
     [jobs],
   );
   const activeCount = applications.filter(
-    (item) => !["rejected", "accepted", "hired"].includes(item.status),
+    (item) => !finalStatuses.includes(item.status),
   ).length;
   const visibleApplications = applications.filter(
     (item) =>
       filter === "all" ||
       (filter === "active"
-        ? !["rejected", "accepted", "hired"].includes(item.status)
-        : item.status === filter),
+        ? !finalStatuses.includes(item.status)
+        : filter === "interview"
+          ? interviewStatuses.includes(item.status)
+          : filter === "finalized"
+            ? finalStatuses.includes(item.status)
+            : true),
   );
 
   async function withdraw(applicationId) {
@@ -100,7 +106,7 @@ export function ApplicationsPage() {
     <div className="space-y-6">
       <PageHeader
         kicker="Seguimiento"
-        title="Pipeline de postulaciones"
+        title="Seguimiento de postulaciones"
         description="Sigue cada proceso desde el envío hasta la decisión final en una línea de tiempo clara."
       />
       <section className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
@@ -131,13 +137,8 @@ export function ApplicationsPage() {
           >
             <option value="all">Todos</option>
             <option value="active">En curso</option>
-            <option value="submitted">Enviadas</option>
-            <option value="seen">Vistas</option>
-            <option value="shortlisted">Preseleccionadas</option>
-            <option value="technical_interview">Entrevista técnica</option>
-            <option value="psychometric_test">Prueba psicotécnica</option>
-            <option value="hired">Contratado</option>
-            <option value="rejected">Descartadas</option>
+            <option value="interview">Con entrevista</option>
+            <option value="finalized">Finalizadas</option>
           </select>
         </label>
       </section>
@@ -147,6 +148,9 @@ export function ApplicationsPage() {
           const job = jobsById.get(application.job_id);
           const currentIndex = progressByStatus[application.status] ?? 0;
           const rejected = application.status === "rejected";
+          const selected = ["accepted", "hired"].includes(application.status);
+          const anotherSelected =
+            application.resolution_reason === "another_candidate_selected";
           return (
             <article
               id={`application-${application.id}`}
@@ -177,15 +181,15 @@ export function ApplicationsPage() {
                 >
                   {rejected ? <XCircle size={16} /> : <Clock3 size={16} />}Etapa
                   actual:{" "}
-                  {application.pipeline_stage_title ||
-                    statusLabel[application.status] ||
-                    application.status}
+                  {anotherSelected
+                    ? "Finalizada: se seleccionó a otra persona"
+                    : statusLabel[application.status] || "En revisión"}
                 </span>
               </div>
 
               <div
                 className="relative mt-7 grid grid-cols-4 gap-2"
-                aria-label={`Progreso: ${application.pipeline_stage_title || statusLabel[application.status] || application.status}`}
+                aria-label={`Progreso: ${statusLabel[application.status] || "En revisión"}`}
               >
                 <div className="absolute left-[12.5%] right-[12.5%] top-5 h-1 rounded-full bg-[var(--line)]" />
                 <div
@@ -208,7 +212,11 @@ export function ApplicationsPage() {
                       <span
                         className={`mt-2 text-[11px] font-bold sm:text-xs ${reached ? "text-[var(--ink-strong)]" : "text-[var(--muted)]"}`}
                       >
-                        {rejected && index === 3 ? "Descartada" : step.label}
+                        {rejected && index === 3
+                          ? "No seleccionado"
+                          : selected && index === 3
+                            ? "Seleccionado"
+                            : step.label}
                       </span>
                     </div>
                   );
@@ -227,7 +235,11 @@ export function ApplicationsPage() {
                     </p>
                   ) : (
                     <p className="text-sm text-[var(--muted)]">
-                      Te notificaremos cuando la empresa actualice el proceso.
+                      {anotherSelected
+                        ? "La empresa cubrió esta vacante con otra persona. Esta postulación ya finalizó."
+                        : selected
+                          ? "Fuiste seleccionado. La empresa se pondrá en contacto contigo para continuar."
+                          : "Te notificaremos cuando la empresa actualice el proceso."}
                     </p>
                   )}
                 </div>

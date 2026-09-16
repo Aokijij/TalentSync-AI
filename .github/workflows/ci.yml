@@ -1,0 +1,61 @@
+name: Validación de producción
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm audit --audit-level=high
+      - run: npm run build
+        env:
+          VITE_API_URL: /api/v1
+
+  backend:
+    runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: ci-only-not-a-production-secret-key-2026
+      DATABASE_URL: sqlite:///./ci.sqlite3
+      CV_PARSER: pypdf
+      CV_OCR_ENABLED: 'false'
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: python -m pip install -r requirements-dev.txt pip-audit
+      - run: python -m pytest tests -q
+      - run: python -m pip_audit -r requirements-lite.txt --progress-spinner off
+      - run: python -m alembic upgrade head
+      - run: python -m alembic current
+
+  container:
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --tag talentsync:ci .

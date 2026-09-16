@@ -10,18 +10,19 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
+import { BrandLogo } from "../components/brand/BrandLogo.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const signals = [
   {
     icon: BrainCircuit,
-    title: "Ranking con evidencia",
+    title: "Compatibilidad explicada",
     detail: "Habilidades y contexto, no solo palabras clave.",
   },
   {
     icon: ScanSearch,
-    title: "Lectura de CV",
+    title: "Análisis de hoja de vida",
     detail: "Convierte tu experiencia en señales accionables.",
   },
   {
@@ -68,26 +69,20 @@ export function LoginPage() {
           aria-label="Presentación de TalentSync"
         >
           <div>
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-sky-100 text-sky-900">
-                <BrainCircuit size={22} aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-white">TalentSync</p>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-200">
-                  Inteligencia laboral
-                </p>
-              </div>
-            </div>
+            <BrandLogo
+              size="lg"
+              subtitle="Inteligencia laboral"
+              tone="inverse"
+            />
             <p className="mt-16 text-sm font-bold uppercase tracking-[0.16em] text-sky-300">
-              Sistema de señales
+              Decisiones más claras
             </p>
             <h1 className="mt-4 max-w-md text-balance text-4xl font-bold text-white">
               El talento correcto merece un proceso más claro.
             </h1>
             <p className="mt-5 max-w-md text-base leading-7 text-sky-100">
-              Una plataforma de matching que transforma perfiles y vacantes en
-              decisiones trazables.
+              Una plataforma que convierte perfiles y vacantes en decisiones
+              claras y fáciles de revisar.
             </p>
           </div>
           <div className="grid gap-3">

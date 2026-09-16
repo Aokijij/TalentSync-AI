@@ -104,7 +104,7 @@ export function ProfileCompletionRing({ profile, compact = false }) {
         </p>
         <p className="mt-1 text-sm text-[var(--muted)]">
           {result.percentage === 100
-            ? "Tu información está lista para el matching."
+            ? "Tu información está lista para comparar con vacantes."
             : `Completa ${result.missing[0]?.toLowerCase()} para mejorar tus recomendaciones.`}
         </p>
         {!compact ? (

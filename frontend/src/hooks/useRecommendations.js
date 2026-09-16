@@ -25,9 +25,13 @@ export function selectRecommendations(
       const tagCategory = categoryTag ? categoryTag.split(":")[1] : null;
       const strongSkills =
         (
-          reasons.find((reason) =>
-            reason.toLowerCase().includes("skills fuertes"),
-          ) ?? ""
+          reasons.find((reason) => {
+            const normalized = reason.toLowerCase();
+            return (
+              normalized.includes("habilidades que ya cumples") ||
+              normalized.includes("skills fuertes")
+            );
+          }) ?? ""
         ).length > 0;
       return {
         ...recommendation,

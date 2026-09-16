@@ -6,12 +6,14 @@ import {
   Clock3,
   MapPin,
   Send,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
+import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 
 export function JobDetailPage() {
   const { jobId } = useParams();
@@ -72,9 +74,13 @@ export function JobDetailPage() {
       <section className="surface-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
-            <p className="text-sm font-semibold text-[var(--accent)]">
-              {job.company_name}
-            </p>
+            {user?.role === "candidate" || user?.role === "admin" ? (
+              <Link className="text-sm font-semibold text-[var(--accent)] hover:underline" to={`/empresas/${job.company_id}`}>
+                {job.company_name} · Ver empresa
+              </Link>
+            ) : (
+              <p className="text-sm font-semibold text-[var(--accent)]">{job.company_name}</p>
+            )}
             <h1 className="mt-1 text-3xl font-bold">{job.title}</h1>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[var(--muted)]">
               <span className="flex items-center gap-1">
@@ -84,8 +90,9 @@ export function JobDetailPage() {
               </span>
               <span className="flex items-center gap-1">
                 <Clock3 size={16} />
-                {job.employment_type}
+                {{ full_time: "Tiempo completo", part_time: "Medio tiempo", contract: "Contrato", internship: "Prácticas", temporary: "Temporal" }[job.employment_type] || "Tipo de contrato no especificado"}
               </span>
+              <span className="flex items-center gap-1"><BriefcaseBusiness size={16} />{{ remote: "Remoto", hybrid: "Híbrido", onsite: "Presencial" }[job.modality] || "Modalidad no especificada"}</span>
               <span className="flex items-center gap-1">
                 <CircleDollarSign size={16} />
                 {job.salary
@@ -103,7 +110,7 @@ export function JobDetailPage() {
             <div className="w-full max-w-64 rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface-subtle)] p-3">
               <CompatibilityBar value={match.match_percentage} />
               <p className="mt-2 px-1 text-xs text-[var(--muted)]">
-                Compatibilidad basada en contexto y habilidades.
+                Compatibilidad basada en tu trayectoria, habilidades{job.languages?.length ? " e idiomas" : ""}.
               </p>
             </div>
           ) : null}
@@ -142,6 +149,7 @@ export function JobDetailPage() {
               </p>
             ))}
           </div>
+          <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="mb-3 font-semibold">Idiomas y nivel mínimo</h2><LanguagesEditor value={job.languages || []} editing={false} required /></div>
           {user?.role === "candidate" ? (
             <>
               {alreadyApplied ? (

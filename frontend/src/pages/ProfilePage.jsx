@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
+import { languageLevelLabel } from "../constants/languages.js";
 import {
   Award,
   BookOpen,
@@ -7,18 +9,21 @@ import {
   Download,
   Edit3,
   Eye,
+  ImagePlus,
   Mail,
   MapPin,
   Phone,
   Plus,
+  Palette,
   Save,
   Trash2,
   Upload,
 } from "lucide-react";
-import { api } from "../api/client.js";
+import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ProfileCompletionRing } from "../components/ProfileCompletionRing.jsx";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
+import { getResumePalette, getResumePalettes } from "../constants/resumePalettes.js";
 import {
   COLOMBIA_LOCATIONS,
   COLOMBIAN_DEPARTMENTS,
@@ -41,6 +46,11 @@ const availabilityLabels = {
   one_month: "En 30 días",
   negotiable: "Fecha acordada",
 };
+const modalityLabels = {
+  remote: "Remoto",
+  hybrid: "Híbrido",
+  onsite: "Presencial",
+};
 const normalize = (data) => ({
   ...data,
   availability: ["Immediate", "Inmediate", "Inmediata"].includes(
@@ -52,6 +62,9 @@ const normalize = (data) => ({
   experiences: data.experiences || [],
   educations: data.educations || [],
   certifications: data.certifications || [],
+  languages: data.languages || [],
+  resume_style: data.resume_style || "classic",
+  resume_color: getResumePalette(data.resume_style, data.resume_color).id,
 });
 
 export function ProfilePage() {
@@ -63,6 +76,7 @@ export function ProfilePage() {
   const [skill, setSkill] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [photoVersion, setPhotoVersion] = useState(0);
   useEffect(() => {
     Promise.all([api.get("/profiles/me"), api.get("/auth/me")])
       .then(([profileResponse, accountResponse]) => {
@@ -90,13 +104,14 @@ export function ProfilePage() {
     setSkill("");
   };
   async function save() {
+    setError("");
     try {
       const { data } = await api.put("/profiles/me", profile);
       setProfile(normalize(data));
       setEditing(false);
       setMessage("Hoja de vida actualizada correctamente");
-    } catch {
-      setError("No fue posible actualizar la hoja de vida");
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, "No fue posible actualizar la hoja de vida"));
     }
   }
   async function upload(event) {
@@ -116,6 +131,22 @@ export function ProfilePage() {
       setError(e.response?.data?.detail || "No fue posible procesar el PDF");
     }
   }
+  async function uploadPhoto(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append("file", file);
+    setError("");
+    try {
+      const { data } = await api.post("/profiles/me/photo", form);
+      setProfile(normalize(data));
+      setPhotoVersion((current) => current + 1);
+      setEditing(true);
+      setMessage("Foto agregada. Guarda el perfil para conservar los demás cambios.");
+    } catch (requestError) {
+      setError(requestError.response?.data?.detail || "No fue posible guardar la foto");
+    }
+  }
   function exportPdf() {
     setPreviewMode(true);
     setEditing(false);
@@ -130,7 +161,7 @@ export function ProfilePage() {
       <PageHeader
         kicker="Perfil profesional"
         title="Mi hoja de vida"
-        description="Tu hoja de vida mejora el matching y las recomendaciones."
+        description="Personaliza tu presentación y mantén tu experiencia clara para recibir mejores recomendaciones."
         actions={
           <div className="flex gap-2">
             <label className="button-secondary cursor-pointer hover-lift pressed focus-ring">
@@ -183,7 +214,71 @@ export function ProfilePage() {
         <ProfileCompletionRing profile={profile} compact />
       </section>
       {previewMode ? (
-        <ResumePreview profile={profile} name={name} email={email} />
+        <section className="surface-card print-hidden p-5">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex items-center gap-4">
+            {profile.photo_url ? (
+              <img
+                src={`${apiFileUrl(profile.photo_url)}?v=${photoVersion}`}
+                alt="Foto de perfil"
+                className="h-20 w-20 rounded-2xl object-cover ring-2 ring-[var(--line)]"
+              />
+            ) : (
+              <span className="grid h-20 w-20 place-items-center rounded-2xl bg-[var(--surface-subtle)] text-[var(--muted)]">
+                <ImagePlus size={28} />
+              </span>
+            )}
+            <div>
+              <h2 className="font-bold">Presentación de la hoja de vida</h2>
+              <p className="mt-1 text-sm text-[var(--muted)]">Agrega una foto y elige el diseño que mejor te represente.</p>
+              <label className="button-secondary button-sm mt-3 cursor-pointer">
+                <ImagePlus size={15} /> Cambiar foto
+                <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} />
+              </label>
+            </div>
+          </div>
+          <div className="space-y-4 lg:w-72 lg:shrink-0">
+          <label className="block text-sm font-semibold text-[var(--muted)]">
+            <span className="mb-1 flex items-center gap-2"><Palette size={16} /> Estilo</span>
+            <select
+              className="field-control"
+              value={profile.resume_style}
+              onChange={(event) => {
+                const nextStyle = event.target.value;
+                setProfile((current) => ({ ...current, resume_style: nextStyle, resume_color: getResumePalette(nextStyle, current.resume_color).id }));
+                setEditing(true);
+              }}
+            >
+              <option value="classic">Clásico profesional</option>
+              <option value="modern">Moderno</option>
+              <option value="minimal">Minimalista</option>
+            </select>
+          </label>
+          <fieldset>
+            <legend className="text-sm font-semibold text-[var(--muted)]">Color del diseño</legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {getResumePalettes(profile.resume_style).map((palette) => (
+                <button
+                  key={palette.id}
+                  type="button"
+                  aria-label={`Color ${palette.label}`}
+                  aria-pressed={profile.resume_color === palette.id}
+                  title={palette.label}
+                  className={`grid h-10 w-10 place-items-center rounded-full border-2 outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${profile.resume_color === palette.id ? "border-[var(--accent)]" : "border-[var(--line)]"}`}
+                  onClick={() => { update("resume_color", palette.id); setEditing(true); }}
+                >
+                  <span className="grid h-7 w-7 place-items-center rounded-full text-white" style={{ backgroundColor: palette.swatch }}>{profile.resume_color === palette.id ? <CheckCircle2 size={17} /> : null}</span>
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-[var(--muted)]">{getResumePalette(profile.resume_style, profile.resume_color).label} · Guarda para conservar tu elección.</p>
+          </fieldset>
+          </div>
+          </div>
+        </section>
+      ) : null}
+      {previewMode ? (
+        <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
       ) : (
         <article className="mx-auto max-w-5xl overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
           <header className="bg-[var(--success)]/10 p-6 sm:p-8">
@@ -255,16 +350,16 @@ export function ProfilePage() {
                         className="border-b bg-transparent"
                         value={profile.phone || ""}
                         onChange={(e) => update("phone", e.target.value)}
-                        placeholder="Telefono"
+                        placeholder="Teléfono"
                       />
                     ) : (
-                      profile.phone || "Telefono no registrado"
+                      profile.phone || "Teléfono no registrado"
                     )}
                   </span>
                 </div>
               </div>
               <span className="rounded-full bg-[var(--success)]/20 px-3 py-1.5 text-xs font-semibold text-[var(--success)]">
-                Perfil NLP activo
+                Perfil listo para comparar
               </span>
             </div>
           </header>
@@ -278,7 +373,7 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
-            <Section icon={BookOpen} title="Formacion academica">
+            <Section icon={BookOpen} title="Formación académica">
               <Items
                 type="educations"
                 profile={profile}
@@ -296,6 +391,7 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
+            <Section icon={BookOpen} title="Idiomas"><LanguagesEditor value={profile.languages} editing={editing} onChange={(value) => update("languages", value)} /></Section>
             <Section icon={BriefcaseBusiness} title="Habilidades">
               <div className="flex flex-wrap gap-2">
                 {profile.skills.map((item) => (
@@ -437,7 +533,7 @@ export function ProfilePage() {
                     <span className="block text-xs font-bold uppercase text-[var(--muted)]">
                       Modalidad
                     </span>
-                    {profile.preferred_modality || "Sin definir"}
+                    {modalityLabels[profile.preferred_modality] || "Sin definir"}
                   </p>
                   <p>
                     <span className="block text-xs font-bold uppercase text-[var(--muted)]">
@@ -590,40 +686,84 @@ function Items({ type, profile, editing, update, updateItem }) {
   );
 }
 
-function ResumePreview({ profile, name, email }) {
+const resumeStyles = {
+  classic: {
+    header: "bg-slate-950 text-white",
+    photo: "rounded-xl",
+  },
+  modern: {
+    header: "bg-white text-slate-950",
+    photo: "rounded-full",
+  },
+  minimal: {
+    header: "bg-white text-slate-950",
+    photo: "rounded-full",
+  },
+};
+
+function ResumePreview({ profile, name, email, photoVersion }) {
+  const style = resumeStyles[profile.resume_style] || resumeStyles.classic;
+  const palette = getResumePalette(profile.resume_style, profile.resume_color);
+  const location = [profile.location, profile.department]
+    .filter(Boolean)
+    .join(", ");
+  const initials = String(name || "Candidato")
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
   return (
-    <article className="resume-print-area mx-auto max-w-4xl overflow-hidden bg-white text-slate-900 shadow-xl">
-      <header className="bg-sky-950 px-8 py-9 text-white sm:px-12">
-        <p className="text-4xl font-bold tracking-tight text-white">{name}</p>
-        <p className="mt-2 text-lg font-semibold text-sky-200">
-          {profile.profession || "Perfil profesional"}
-        </p>
-        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-sky-100">
-          <span>{email}</span>
-          {profile.phone ? <span>{profile.phone}</span> : null}
-          {profile.location ? <span>{profile.location}</span> : null}
+    <article
+      className={`resume-print-area resume-${profile.resume_style} mx-auto max-w-4xl overflow-hidden bg-white text-slate-900 shadow-2xl`}
+      style={palette.variables}
+    >
+      <header className={`resume-header ${style.header}`}>
+        <div className="resume-identity">
+          {profile.photo_url ? (
+            <img
+              src={`${apiFileUrl(profile.photo_url)}?v=${photoVersion}`}
+              alt=""
+              className={`resume-photo shrink-0 object-cover ${style.photo}`}
+            />
+          ) : (
+            <span className={`resume-photo resume-monogram ${style.photo}`}>
+              {initials}
+            </span>
+          )}
+          <div className="min-w-0">
+            <p className="resume-eyebrow">Hoja de vida</p>
+            <p className="resume-name">{name}</p>
+            <p className="resume-profession">
+              {profile.profession || "Perfil profesional"}
+            </p>
+          </div>
+        </div>
+        <div className="resume-contact-list">
+          {email ? <span><Mail size={14} />{email}</span> : null}
+          {profile.phone ? <span><Phone size={14} />{profile.phone}</span> : null}
+          {location ? <span><MapPin size={14} />{location}</span> : null}
         </div>
       </header>
-      <div className="grid gap-9 px-8 py-9 sm:grid-cols-[1fr_2fr] sm:px-12">
-        <aside className="space-y-8">
-          <ResumeSection title="Habilidades">
-            <div className="flex flex-wrap gap-2">
+      <div className="resume-body">
+        <aside className="resume-sidebar">
+          {profile.languages?.length ? <ResumeSection title="Idiomas" compact>{profile.languages.map((item, index) => <p className="resume-compact-item capitalize" key={index}><b>{item.name}</b><br />{languageLevelLabel(item.level)}</p>)}</ResumeSection> : null}
+          <ResumeSection title="Habilidades" compact>
+            <div className="resume-skills">
               {profile.skills.map((item) => (
-                <span
-                  key={item}
-                  className="rounded-md bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-900"
-                >
+                <span key={item} className="resume-skill">
                   {item}
                 </span>
               ))}
+              {!profile.skills.length ? <span className="text-sm opacity-70">Sin habilidades registradas</span> : null}
             </div>
           </ResumeSection>
           {profile.certifications?.length ? (
-            <ResumeSection title="Certificaciones">
+            <ResumeSection title="Certificaciones" compact>
               {profile.certifications.map((item, index) => (
-                <div key={`${item.name}-${index}`} className="mb-3">
-                  <p className="text-sm font-bold">{item.name}</p>
-                  <p className="text-xs text-slate-600">
+                <div key={`${item.name}-${index}`} className="resume-compact-item">
+                  <p className="font-bold">{item.name}</p>
+                  <p className="opacity-70">
                     {item.issuer}
                     {item.year ? ` · ${item.year}` : ""}
                   </p>
@@ -631,27 +771,41 @@ function ResumePreview({ profile, name, email }) {
               ))}
             </ResumeSection>
           ) : null}
+          {(profile.preferred_sector || profile.preferred_modality || profile.availability) ? (
+            <ResumeSection title="Preferencias" compact>
+              <div className="space-y-3 text-sm">
+                {profile.preferred_sector ? <p><b>Sector</b><span>{profile.preferred_sector}</span></p> : null}
+                {profile.preferred_modality ? <p><b>Modalidad</b><span>{modalityLabels[profile.preferred_modality] || profile.preferred_modality}</span></p> : null}
+                {profile.availability ? <p><b>Disponibilidad</b><span>{availabilityLabels[profile.availability] || profile.availability}</span></p> : null}
+              </div>
+            </ResumeSection>
+          ) : null}
         </aside>
-        <main className="space-y-8">
+        <main className="resume-main">
+          {profile.experience ? (
+            <ResumeSection title="Perfil profesional">
+              <p className="resume-summary">{profile.experience}</p>
+            </ResumeSection>
+          ) : null}
           {profile.experiences?.length ? (
             <ResumeSection title="Experiencia">
               {profile.experiences.map((item, index) => (
                 <div
                   key={`${item.company}-${index}`}
-                  className="mb-5 break-inside-avoid"
+                  className="resume-timeline-item break-inside-avoid"
                 >
-                  <div className="flex flex-wrap justify-between gap-2">
-                    <p className="font-bold">{item.role}</p>
-                    <p className="text-xs font-semibold text-slate-500">
+                  <div className="resume-item-heading">
+                    <div>
+                      <p className="resume-item-title">{item.role || "Cargo"}</p>
+                      <p className="resume-item-company">{item.company}</p>
+                    </div>
+                    <p className="resume-item-date">
                       {item.start_year}
                       {item.end_year ? ` - ${item.end_year}` : ""}
                     </p>
                   </div>
-                  <p className="text-sm font-semibold text-sky-800">
-                    {item.company}
-                  </p>
                   {item.description ? (
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                    <p className="resume-item-description">
                       {item.description}
                     </p>
                   ) : null}
@@ -664,15 +818,19 @@ function ResumePreview({ profile, name, email }) {
               {profile.educations.map((item, index) => (
                 <div
                   key={`${item.degree}-${index}`}
-                  className="mb-4 break-inside-avoid"
+                  className="resume-education-item break-inside-avoid"
                 >
-                  <p className="font-bold">{item.degree}</p>
-                  <p className="text-sm text-slate-600">
-                    {item.institution} · {item.start_year}
-                    {item.end_year ? ` - ${item.end_year}` : ""}
-                  </p>
+                  <div>
+                    <p className="resume-item-title">{item.degree}</p>
+                    <p className="resume-item-company">{item.institution}</p>
+                  </div>
+                  <p className="resume-item-date">{item.start_year}{item.end_year ? ` - ${item.end_year}` : ""}</p>
                 </div>
               ))}
+            </ResumeSection>
+          ) : profile.education ? (
+            <ResumeSection title="Formación">
+              <p className="resume-summary">{profile.education}</p>
             </ResumeSection>
           ) : null}
         </main>
@@ -681,12 +839,10 @@ function ResumePreview({ profile, name, email }) {
   );
 }
 
-function ResumeSection({ title, children }) {
+function ResumeSection({ title, children, compact = false }) {
   return (
-    <section>
-      <h2 className="mb-4 border-b-2 border-sky-900 pb-2 text-sm font-bold uppercase tracking-[0.14em] text-sky-950">
-        {title}
-      </h2>
+    <section className={compact ? "resume-section resume-section-compact" : "resume-section"}>
+      <h2>{title}</h2>
       {children}
     </section>
   );

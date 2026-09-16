@@ -1,4 +1,5 @@
 import axios from "axios";
+import { validationMessage } from "./errors.js";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000/api/v1",
@@ -20,11 +21,18 @@ export function getApiErrorMessage(
   if (typeof detail === "string") return detail;
   if (Array.isArray(detail)) {
     const messages = detail
-      .map((item) => (typeof item === "string" ? item : item?.msg))
+      .map(validationMessage)
       .filter(Boolean);
     if (messages.length) return messages.join(". ");
   }
   if (detail && typeof detail === "object" && typeof detail.msg === "string")
     return detail.msg;
   return fallback;
+}
+
+export function apiFileUrl(path) {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  const apiBase = new URL(api.defaults.baseURL, window.location.origin);
+  return new URL(path, apiBase.origin).toString();
 }

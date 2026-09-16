@@ -15,6 +15,7 @@ import {
 import { NavLink, Outlet } from "react-router-dom";
 
 import { api } from "../api/client.js";
+import { BrandLogo } from "../components/brand/BrandLogo.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
@@ -189,12 +190,7 @@ export function AppLayout() {
       </aside>
 
       <header className="sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-[var(--line)] bg-[var(--canvas)]/95 px-4 backdrop-blur lg:hidden">
-        <div>
-          <p className="font-bold text-[var(--ink-strong)]">TalentSync</p>
-          <p className="text-xs font-medium text-[var(--muted)]">
-            {copy.label}
-          </p>
-        </div>
+        <BrandLogo size="sm" subtitle={copy.label} />
         <div className="flex gap-2">
           <ThemeToggle compact />
           <button
@@ -243,19 +239,7 @@ export function AppLayout() {
 function Brand({ copy, user }) {
   return (
     <div>
-      <div className="flex items-center gap-3 px-2">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/90 text-[var(--sidebar)]">
-          <Sparkles size={19} aria-hidden="true" />
-        </div>
-        <div>
-          <p className="text-lg font-bold tracking-tight text-white">
-            TalentSync
-          </p>
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sidebar-muted)]">
-            IA para talento
-          </p>
-        </div>
-      </div>
+      <BrandLogo className="px-2" tone="inverse" />
       <div className="mt-7 rounded-xl border border-white/15 bg-black/10 px-3 py-3">
         <p className="truncate text-sm font-bold text-white">{user.name}</p>
         <p className="mt-1 text-xs text-[var(--sidebar-muted)]">{copy.label}</p>

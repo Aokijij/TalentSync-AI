@@ -1,8 +1,9 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth.js";
 import { AppLayout } from "../layouts/AppLayout.jsx";
 import { AdminDashboard } from "../pages/AdminDashboard.jsx";
+import { AdminLoginPage } from "../pages/AdminLoginPage.jsx";
 import { AdminManagementPage } from "../pages/AdminManagementPage.jsx";
 import { CandidateDashboard } from "../pages/CandidateDashboard.jsx";
 import { CandidateDetailPage } from "../pages/CandidateDetailPage.jsx";
@@ -12,6 +13,7 @@ import { CompanyJobsPage } from "../pages/CompanyJobsPage.jsx";
 import { CompanySettingsPage } from "../pages/CompanySettingsPage.jsx";
 import { CompanyTalentPage } from "../pages/CompanyTalentPage.jsx";
 import { CompanyCandidatesPage } from "../pages/CompanyCandidatesPage.jsx";
+import { CompanyProfilePage } from "../pages/CompanyProfilePage.jsx";
 import { JobsPage } from "../pages/JobsPage.jsx";
 import { JobDetailPage } from "../pages/JobDetailPage.jsx";
 import { LoginPage } from "../pages/LoginPage.jsx";
@@ -23,6 +25,7 @@ import { RegisterPage } from "../pages/RegisterPage.jsx";
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading)
     return (
@@ -30,7 +33,12 @@ function RequireAuth({ children }) {
         Cargando...
       </div>
     );
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    const adminArea = ["/admin", "/administracion"].some((path) =>
+      location.pathname.startsWith(path),
+    );
+    return <Navigate to={adminArea ? "/acceso-administracion" : "/login"} replace />;
+  }
   return children;
 }
 
@@ -51,6 +59,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/acceso-administracion" element={<AdminLoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/" element={<HomeRedirect />} />
 
@@ -134,6 +143,14 @@ export function AppRoutes() {
           }
         />
         <Route path="/vacantes/:jobId" element={<JobDetailPage />} />
+        <Route
+          path="/empresas/:companyId"
+          element={
+            <RequireRole roles={["candidate", "admin"]}>
+              <CompanyProfilePage />
+            </RequireRole>
+          }
+        />
         <Route
           path="/recomendaciones"
           element={

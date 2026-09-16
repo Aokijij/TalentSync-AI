@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     cv_ocr_force_full_page: bool = False
     cv_docling_timeout_seconds: float = 120
     cv_docling_min_text_chars: int = 200
+    static_dir: str | None = None
+    azure_storage_account_url: str | None = None
+    azure_storage_container: str = "cvs"
+    allowed_hosts: list[str] = Field(default_factory=lambda: ["*"])
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
     )

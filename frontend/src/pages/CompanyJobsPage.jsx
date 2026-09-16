@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BriefcaseBusiness,
   CalendarDays,
@@ -26,6 +26,9 @@ import {
   departmentForCity,
 } from "../constants/colombianCities.js";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
+import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
+import { ReopenJobModal } from "../components/ReopenJobModal.jsx";
+import { languageLevelLabel } from "../constants/languages.js";
 
 const NEW_JOB_DEFAULTS = {
   title: "",
@@ -38,6 +41,7 @@ const NEW_JOB_DEFAULTS = {
   employment_type: "full_time",
   sector: JOB_SECTORS[0],
   benefits: "",
+  languages: [],
 };
 
 export function CompanyJobsPage() {
@@ -60,6 +64,13 @@ export function CompanyJobsPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sectorFilter, setSectorFilter] = useState("all");
+  const [reopeningJob, setReopeningJob] = useState(null);
+  const [publishedJob, setPublishedJob] = useState(null);
+  const formErrorRef = useRef(null);
+
+  useEffect(() => {
+    if (showModal && error) formErrorRef.current?.scrollIntoView({ block: "center" });
+  }, [showModal, error]);
 
   async function load() {
     const [companyResponse, jobsResponse] = await Promise.all([
@@ -119,9 +130,13 @@ export function CompanyJobsPage() {
   }
 
   function submitJob(values) {
+    if (values.languages?.some((item) => item.name.trim().length < 2)) {
+      setError("Idiomas: escribe el nombre de cada idioma o elimina la fila vacía.");
+      return;
+    }
+    setError("");
     const payload = formPayload(values);
-    if (editingJob) setPendingSave(payload);
-    else persistJob(payload);
+    setPendingSave(payload);
   }
 
   async function persistJob(payload) {
@@ -133,12 +148,14 @@ export function CompanyJobsPage() {
         await api.patch(`/jobs/${editingJob.id}`, payload);
         setMessage("Vacante actualizada correctamente.");
       } else {
-        await api.post("/jobs", payload);
-        setMessage("Vacante publicada y analizada por el motor NLP.");
+        const { data } = await api.post("/jobs", payload);
+        setPublishedJob(data);
+        setMessage("Vacante publicada y comparada con los perfiles disponibles.");
       }
       closeForm();
       await load();
     } catch (requestError) {
+      setPendingSave(null);
       setError(
         getApiErrorMessage(requestError, "No fue posible guardar la vacante"),
       );
@@ -148,6 +165,7 @@ export function CompanyJobsPage() {
   }
 
   function openCreate() {
+    setError("");
     setEditingJob(null);
     setPendingSave(null);
     setShowPreview(false);
@@ -156,6 +174,7 @@ export function CompanyJobsPage() {
   }
 
   function editJob(job) {
+    setError("");
     setEditingJob(job);
     setPendingSave(null);
     setShowPreview(false);
@@ -176,6 +195,7 @@ export function CompanyJobsPage() {
   }
 
   async function toggle(job) {
+    if (job.status === "filled") { setReopeningJob(job); return; }
     try {
       await api.patch(`/jobs/${job.id}`, {
         status: job.status === "active" ? "paused" : "active",
@@ -259,6 +279,7 @@ export function CompanyJobsPage() {
             <option value="all">Todos los estados</option>
             <option value="active">Activas</option>
             <option value="paused">Pausadas</option>
+            <option value="filled">Cubiertas</option>
           </select>
           <select
             className="field-control"
@@ -333,13 +354,14 @@ export function CompanyJobsPage() {
             <form
               id="job-form"
               className="mt-6 space-y-5"
-              onSubmit={handleSubmit(submitJob)}
+              onSubmit={handleSubmit(submitJob, (errors) => setError(Object.values(errors).map((item) => item.message).join(". ") || "Completa los campos obligatorios."))}
             >
+              {error && <p ref={formErrorRef} role="alert" tabIndex={-1} className="sticky top-0 z-10 rounded-xl border border-[var(--error)] bg-[var(--surface)] p-4 text-sm text-[var(--error)]"><strong>No se guardó la vacante.</strong> {error}</p>}
               <Field label="Cargo">
                 <input
                   className="field-control"
                   placeholder="Ej. Analista financiero"
-                  {...register("title", { required: true })}
+                  {...register("title", { required: "Cargo: completa este campo", minLength: { value: 2, message: "Cargo: escribe al menos 2 caracteres" }, maxLength: { value: 180, message: "Cargo: usa como máximo 180 caracteres" }, setValueAs: (value) => value.trim() })}
                 />
               </Field>
               <div className="grid gap-5 md:grid-cols-2">
@@ -347,14 +369,14 @@ export function CompanyJobsPage() {
                   <textarea
                     className="field-control min-h-52 resize-y"
                     placeholder="Responsabilidades, equipo e impacto del cargo"
-                    {...register("description", { required: true })}
+                    {...register("description", { required: "Descripción: completa este campo", minLength: { value: 10, message: "Descripción: escribe al menos 10 caracteres" }, setValueAs: (value) => value.trim() })}
                   />
                 </Field>
                 <Field label="Requisitos y habilidades">
                   <textarea
                     className="field-control min-h-52 resize-y"
                     placeholder="Formación, experiencia y conocimientos requeridos"
-                    {...register("requirements", { required: true })}
+                    {...register("requirements", { required: "Requisitos: completa este campo", minLength: { value: 10, message: "Requisitos: escribe al menos 10 caracteres" }, setValueAs: (value) => value.trim() })}
                   />
                 </Field>
               </div>
@@ -436,6 +458,7 @@ export function CompanyJobsPage() {
                   </select>
                 </Field>
               </div>
+              <section className="rounded-xl border border-[var(--line)] p-4"><h3 className="mb-2 font-semibold">Idiomas requeridos</h3><LanguagesEditor value={preview.languages || []} onChange={(value) => setValue("languages", value)} required /></section>
               <Field label="Beneficios">
                 <input
                   className="field-control"
@@ -457,7 +480,7 @@ export function CompanyJobsPage() {
                   disabled={saving}
                 >
                   {editingJob ? <Edit3 size={16} /> : <Plus size={16} />}
-                  {editingJob ? "Guardar cambios" : "Publicar vacante"}
+                  {saving ? "Guardando…" : editingJob ? "Guardar cambios" : "Publicar vacante"}
                 </button>
               </footer>
             </form>
@@ -503,17 +526,19 @@ export function CompanyJobsPage() {
       />
       <ConfirmModal
         open={Boolean(pendingSave)}
-        title="Confirmar edición"
+        title={editingJob ? "Confirmar edición" : "Confirmar publicación"}
         description={
           editingJob
             ? `Se actualizará la vacante “${editingJob.title}” y se recalcularán sus habilidades y recomendaciones.`
-            : ""
+            : `Se publicará “${pendingSave?.title || "la vacante"}” y estará disponible para los candidatos. Los seguidores compatibles podrán recibir una notificación.`
         }
-        confirmLabel="Sí, guardar cambios"
+        confirmLabel={editingJob ? "Sí, guardar cambios" : "Sí, publicar vacante"}
         loading={saving}
         onClose={() => setPendingSave(null)}
         onConfirm={() => pendingSave && persistJob(pendingSave)}
       />
+      {publishedJob && <div className="fixed inset-0 z-[75] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-sm"><section role="dialog" aria-modal="true" aria-labelledby="published-title" className="w-full max-w-md rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl"><h2 id="published-title" className="text-xl font-bold text-[var(--success)]">Vacante publicada correctamente</h2><p className="mt-3 text-sm text-[var(--muted)]">“{publishedJob.title}” ya está activa y disponible para recibir postulaciones.</p><button type="button" className="button-primary mt-5 w-full" onClick={() => setPublishedJob(null)}>Entendido</button></section></div>}
+      {reopeningJob && <ReopenJobModal job={reopeningJob} onClose={() => setReopeningJob(null)} onReopened={async (_, mode) => { await load(); setMessage(mode === "continue" ? "Vacante activa. Se conservaron los candidatos y sus seguimientos, sin enviar notificaciones." : "Nueva vacante publicada. El proceso anterior conserva su historial."); }} />}
     </div>
   );
 }
@@ -546,9 +571,9 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
             <BriefcaseBusiness size={21} />
           </span>
           <span
-            className={`rounded-full px-2.5 py-1 text-xs font-bold ${job.status === "active" ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}
+            className={`rounded-full px-2.5 py-1 text-xs font-bold ${job.status === "active" ? "bg-[var(--success)]/10 text-[var(--success)]" : job.status === "filled" ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}
           >
-            {job.status === "active" ? "Activa" : "Pausada"}
+            {job.status === "active" ? "Activa" : job.status === "filled" ? "Cubierta" : "Pausada"}
           </span>
         </div>
         <Link
@@ -597,7 +622,7 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           to={`/empresa/vacantes/${job.id}/candidatos`}
         >
           <UsersRound size={15} />
-          Ver ranking ({job.applications_count ?? 0})
+          Ver candidatos ({job.applications_count ?? 0})
         </Link>
         <button
           type="button"
@@ -607,18 +632,16 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           <Edit3 size={15} />
           Editar
         </button>
-        <button
-          type="button"
-          className="button-secondary button-sm"
-          onClick={onToggle}
-        >
-          {job.status === "active" ? (
-            <PauseCircle size={15} />
-          ) : (
-            <PlayCircle size={15} />
-          )}
-          {job.status === "active" ? "Pausar" : "Activar"}
-        </button>
+        {(
+          <button
+            type="button"
+            className="button-secondary button-sm"
+            onClick={onToggle}
+          >
+            {job.status === "active" ? <PauseCircle size={15} /> : <PlayCircle size={15} />}
+            {job.status === "active" ? "Pausar" : job.status === "filled" ? "Reabrir" : "Activar"}
+          </button>
+        )}
         <button
           type="button"
           className="button-ghost button-sm ml-auto text-[var(--error)]"
@@ -686,6 +709,7 @@ function JobPreview({ values, companyName }) {
             {values.requirements || "Los requisitos clave aparecerán aquí."}
           </p>
         </div>
+        {values.languages?.length ? <div><h4 className="font-semibold">Idiomas y nivel mínimo</h4><div className="mt-2 space-y-2">{values.languages.map((item, index) => <p className="text-sm capitalize" key={index}>{item.name || "Idioma por definir"} · {languageLevelLabel(item.level)}</p>)}</div></div> : null}
         {benefits.length ? (
           <div>
             <p className="text-xs font-bold uppercase text-[var(--muted)]">

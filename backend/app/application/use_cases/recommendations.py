@@ -8,8 +8,10 @@ from app.application.use_cases.jobs import ensure_job_access
 from app.application.use_cases.matching import (
     rank_candidates_for_job,
     refresh_user_recommendations,
+    upsert_recommendation,
 )
-from app.domain.entities.records import Recommendation, User
+from app.domain.entities.enums import UserRole
+from app.domain.entities.records import Notification, Recommendation, User
 
 
 def profile_experience(profile) -> tuple[float | None, str | None]:
@@ -55,7 +57,7 @@ def ranked_candidates(
     ranked = []
     for user, percentage in rank_candidates_for_job(db, job, nlp=nlp):
         has_applied = user.id in applied_ids
-        if not has_applied and percentage <= 60:
+        if not has_applied and percentage < 50:
             continue
         years, summary = profile_experience(user.profile)
         ranked.append(
@@ -65,9 +67,14 @@ def ranked_candidates(
                 profession=user.profile.profession,
                 match_percentage=percentage,
                 skills=user.profile.skills or [],
+                languages=user.profile.languages or [],
                 experience_years=years,
                 experience_summary=summary,
                 has_applied=has_applied,
+                has_pending_invitation=db.notifications.find_unread(
+                    user.id, "candidate_invitation", f"/vacantes/{job.id}"
+                )
+                is not None,
             )
         )
     return sorted(
@@ -77,3 +84,54 @@ def ranked_candidates(
             -candidate["match_percentage"],
         ),
     )
+
+
+def invite_candidate(
+    job_id: int,
+    user_id: int,
+    current_user: User,
+    db: UnitOfWork,
+    *,
+    nlp: TextAnalysis,
+) -> Notification:
+    job = db.jobs.get(job_id)
+    if job is None:
+        raise UseCaseError(status_code=404, detail="Vacante no encontrada")
+    ensure_job_access(db, job, current_user)
+    candidate = db.users.get(user_id)
+    if (
+        candidate is None
+        or candidate.role != UserRole.CANDIDATE
+        or candidate.profile is None
+    ):
+        raise UseCaseError(status_code=404, detail="Candidato no encontrado")
+    if db.applications.find_for_user_job(user_id, job_id):
+        raise UseCaseError(
+            status_code=409, detail="El candidato ya se postuló a esta vacante"
+        )
+    recommendation = upsert_recommendation(db, candidate, job, nlp=nlp)
+    if recommendation.match_percentage < 50:
+        raise UseCaseError(
+            status_code=422,
+            detail="La invitación requiere al menos 50% de compatibilidad",
+        )
+    action_url = f"/vacantes/{job.id}"
+    existing = db.notifications.find_unread(
+        user_id, "candidate_invitation", action_url
+    )
+    if existing:
+        return existing
+    notification = db.notifications.new(
+        user_id=user_id,
+        type="candidate_invitation",
+        title=f"{job.company.name} te invita a postularte",
+        body=(
+            f"Tu perfil tiene {recommendation.match_percentage:.0f}% de compatibilidad "
+            f"con {job.title}. Revisa las condiciones y decide si deseas postularte."
+        ),
+        action_url=action_url,
+    )
+    db.add(notification)
+    db.commit()
+    db.refresh(notification)
+    return notification

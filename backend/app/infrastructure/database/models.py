@@ -45,6 +45,9 @@ class User(Base):
     notifications: Mapped[list["Notification"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    company_follows: Mapped[list["CompanyFollower"]] = relationship(
+        back_populates="candidate", cascade="all, delete-orphan"
+    )
 
 
 class Profile(Base):
@@ -68,15 +71,27 @@ class Profile(Base):
     experiences: Mapped[list[dict]] = mapped_column(JSON, default=list)
     educations: Mapped[list[dict]] = mapped_column(JSON, default=list)
     certifications: Mapped[list[dict]] = mapped_column(JSON, default=list)
+    languages: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     cv_text: Mapped[str | None] = mapped_column(Text)
     cv_filename: Mapped[str | None] = mapped_column(String(255))
     cv_uploaded_at: Mapped[datetime | None] = mapped_column(DateTime)
+    photo_filename: Mapped[str | None] = mapped_column(String(255))
+    resume_style: Mapped[str] = mapped_column(
+        String(30), default="classic", nullable=False
+    )
+    resume_color: Mapped[str] = mapped_column(
+        String(30), default="default", server_default="default", nullable=False
+    )
     embedding: Mapped[list[float] | None] = mapped_column(JSON)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
     user: Mapped[User] = relationship(back_populates="profile")
+
+    @property
+    def photo_url(self) -> str | None:
+        return f"/api/v1/profiles/{self.user_id}/photo" if self.photo_filename else None
 
 
 class Company(Base):
@@ -87,11 +102,55 @@ class Company(Base):
     name: Mapped[str] = mapped_column(String(180), nullable=False)
     nit: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
+    website: Mapped[str | None] = mapped_column(String(255))
+    sector: Mapped[str | None] = mapped_column(String(120))
+    size: Mapped[str | None] = mapped_column(String(80))
+    location: Mapped[str | None] = mapped_column(String(160))
+    mission: Mapped[str | None] = mapped_column(Text)
+    values: Mapped[list[str]] = mapped_column(JSON, default=list)
+    benefits: Mapped[list[str]] = mapped_column(JSON, default=list)
+    logo_filename: Mapped[str | None] = mapped_column(String(255))
+    cover_filename: Mapped[str | None] = mapped_column(String(255))
 
     owner: Mapped[User] = relationship()
     jobs: Mapped[list["Job"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"
     )
+    followers: Mapped[list["CompanyFollower"]] = relationship(
+        back_populates="company", cascade="all, delete-orphan"
+    )
+
+    @property
+    def logo_url(self) -> str | None:
+        return f"/api/v1/companies/{self.id}/logo" if self.logo_filename else None
+
+    @property
+    def cover_url(self) -> str | None:
+        return f"/api/v1/companies/{self.id}/cover" if self.cover_filename else None
+
+
+class CompanyFollower(Base):
+    __tablename__ = "company_followers"
+    __table_args__ = (
+        UniqueConstraint(
+            "candidate_user_id", "company_id", name="uq_company_follower"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    candidate_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
+    company_id: Mapped[int] = mapped_column(
+        ForeignKey("companies.id"), nullable=False, index=True
+    )
+    min_match: Mapped[float] = mapped_column(Float, default=60.0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
+
+    candidate: Mapped[User] = relationship(back_populates="company_follows")
+    company: Mapped[Company] = relationship(back_populates="followers")
 
 
 class Job(Base):
@@ -113,6 +172,7 @@ class Job(Base):
     status: Mapped[str] = mapped_column(String(30), default="active", nullable=False)
     benefits: Mapped[list[str]] = mapped_column(JSON, default=list)
     pipeline_stages: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    languages: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     skills: Mapped[list[str]] = mapped_column(JSON, default=list)
     embedding: Mapped[list[float] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
@@ -154,6 +214,7 @@ class Application(Base):
     recruiter_notes: Mapped[str | None] = mapped_column(Text)
     interview_at: Mapped[datetime | None] = mapped_column(DateTime)
     pipeline_stage: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    resolution_reason: Mapped[str | None] = mapped_column(String(80), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="applications")
     job: Mapped[Job] = relationship(back_populates="applications")
@@ -181,7 +242,10 @@ class Application(Base):
             )
             stage_id = {
                 "seen": "submitted",
-                "reviewing": "shortlisted",
+                "reviewing": "reviewing",
+                "shortlisted": "reviewing",
+                "technical_interview": "interview",
+                "psychometric_test": "interview",
                 "accepted": "hired",
             }.get(value, value)
         for stage in self.job.pipeline_stages or []:
@@ -224,7 +288,17 @@ class Recommendation(Base):
 
     @property
     def semantic_match_percentage(self) -> float:
-        return self._score_reason("semantic")
+        return self._score_reason("context") or self._score_reason("semantic")
+
+    @property
+    def professional_context_percentage(self) -> float:
+        return self._score_reason("context") or self._score_reason("semantic")
+
+    @property
+    def language_match_percentage(self) -> float | None:
+        if any(reason.startswith("score:languages:") for reason in self.reasons or []):
+            return self._score_reason("languages")
+        return None
 
 
 class Notification(Base):

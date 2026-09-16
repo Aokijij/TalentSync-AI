@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi.responses import Response
 
 from app.api.deps import (
     get_current_user,
+    get_image_storage,
     get_resume_reader,
     get_text_analysis,
     get_unit_of_work,
@@ -12,7 +14,7 @@ from app.api.schemas.profile import (
     ProfileResponse,
     ProfileUpdate,
 )
-from app.application.ports.services import ResumeReader, TextAnalysis
+from app.application.ports.services import ImageStorage, ResumeReader, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import profiles as use_cases
 from app.domain.entities.enums import UserRole
@@ -62,3 +64,27 @@ def upload_cv(
     return use_cases.upload_cv(
         file=file, current_user=current_user, db=db, nlp=nlp, resumes=resumes
     )
+
+
+@router.post("/me/photo", response_model=ProfileResponse)
+def upload_photo(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_roles(UserRole.CANDIDATE)),
+    db: UnitOfWork = Depends(get_unit_of_work),
+    storage: ImageStorage = Depends(get_image_storage),
+) -> Profile:
+    return use_cases.upload_photo(
+        file=file, current_user=current_user, db=db, storage=storage
+    )
+
+
+@router.get("/{user_id}/photo", response_class=Response)
+def get_profile_photo(
+    user_id: int,
+    db: UnitOfWork = Depends(get_unit_of_work),
+    storage: ImageStorage = Depends(get_image_storage),
+) -> Response:
+    content, media_type = use_cases.profile_photo_content(
+        user_id=user_id, db=db, storage=storage
+    )
+    return Response(content, media_type=media_type, headers={"Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff"})

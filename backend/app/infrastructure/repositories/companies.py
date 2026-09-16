@@ -1,4 +1,6 @@
-from app.infrastructure.database.models import Company
+from sqlalchemy.orm import joinedload
+
+from app.infrastructure.database.models import Company, CompanyFollower
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
@@ -24,3 +26,26 @@ class CompanyRepository(SqlAlchemyRepository[Company]):
         if owner_id is not None:
             query = query.filter(Company.owner_user_id == owner_id)
         return query.all()
+
+    def find_follow(
+        self, candidate_user_id: int, company_id: int
+    ) -> CompanyFollower | None:
+        return (
+            self.session.query(CompanyFollower)
+            .filter(
+                CompanyFollower.candidate_user_id == candidate_user_id,
+                CompanyFollower.company_id == company_id,
+            )
+            .first()
+        )
+
+    def new_follow(self, **values) -> CompanyFollower:
+        return CompanyFollower(**values)
+
+    def followers_for_company(self, company_id: int) -> list[CompanyFollower]:
+        return (
+            self.session.query(CompanyFollower)
+            .options(joinedload(CompanyFollower.candidate))
+            .filter(CompanyFollower.company_id == company_id)
+            .all()
+        )

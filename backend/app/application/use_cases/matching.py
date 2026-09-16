@@ -7,8 +7,18 @@ from app.domain.services.matching import (
     recommend_category,
     recommendation_reasons,
     required_skill_coverage,
+    professional_context_alignment,
+    language_coverage,
 )
 from app.domain.services.skills import skill_set
+
+
+def candidate_match(profile, job, *, nlp):
+    raw_semantic = nlp.similarity_percentage(profile.embedding, job.embedding)
+    context_score = professional_context_alignment(profile, job, raw_semantic)
+    skill_score = required_skill_coverage(profile.skills, job.skills)
+    language_score = language_coverage(profile, job)
+    return combined_match(context_score, skill_score, language_score), context_score, skill_score, language_score
 
 
 def upsert_recommendation(
@@ -16,9 +26,7 @@ def upsert_recommendation(
 ) -> Recommendation:
     if user.profile is None:
         raise ValueError("El candidato no tiene perfil profesional")
-    semantic = nlp.similarity_percentage(user.profile.embedding, job.embedding)
-    skill_score = required_skill_coverage(user.profile.skills, job.skills)
-    percentage = combined_match(semantic, skill_score)
+    percentage, context_score, skill_score, language_score = candidate_match(user.profile, job, nlp=nlp)
     recommendation = db.recommendations.find_for_user_job(user.id, job.id)
     if recommendation is None:
         recommendation = db.recommendations.new(
@@ -27,8 +35,21 @@ def upsert_recommendation(
         db.add(recommendation)
     recommendation.match_percentage = percentage
     recommendation.reasons = recommendation_reasons(
-        user.profile, job, semantic=semantic, skill_score=skill_score
+        user.profile, job, semantic=context_score, skill_score=skill_score
     )
+    if language_score is not None:
+        available = {item["name"]: item["level"] for item in user.profile.languages or []}
+        language_reasons = [f"score:languages:{language_score}"]
+        levels = {level: index for index, level in enumerate(["A1", "A2", "B1", "B2", "C1", "C2", "NATIVE"], start=1)}
+        for item in job.languages:
+            actual = available.get(item["name"], "sin registrar")
+            required_label = "Nativo" if item["level"] == "NATIVE" else item["level"]
+            actual_label = "Nativo" if actual == "NATIVE" else actual
+            if levels.get(actual, 0) >= levels[item["level"]]:
+                language_reasons.append(f"Cumples el idioma solicitado: {item['name']} (mínimo {required_label}, tu nivel {actual_label})")
+            else:
+                language_reasons.append(f"Idioma por fortalecer: {item['name']} (mínimo {required_label}, tu nivel {actual_label}). Registra tu nivel real o mejora hasta el nivel solicitado")
+        recommendation.reasons = recommendation.reasons + language_reasons
     recommendation.reasons = [
         f"categoria:{recommend_category(percentage, skill_score)}"
     ] + recommendation.reasons
@@ -79,9 +100,7 @@ def rank_candidates_for_job(
     users = db.users.candidates_with_profiles()
     ranked: list[tuple[User, float]] = []
     for user in users:
-        if user.profile and user.profile.embedding:
-            semantic = nlp.similarity_percentage(user.profile.embedding, job.embedding)
-            skill_score = required_skill_coverage(user.profile.skills, job.skills)
-            percentage = combined_match(semantic, skill_score)
+        if user.profile:
+            percentage, _, _, _ = candidate_match(user.profile, job, nlp=nlp)
             ranked.append((user, percentage))
     return sorted(ranked, key=lambda item: item[1], reverse=True)

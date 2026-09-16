@@ -24,7 +24,7 @@ const metricConfig = [
   { key: "active_jobs", label: "Vacantes activas", icon: BriefcaseBusiness },
   {
     key: "conversion_rate",
-    label: "Conversión NLP",
+    label: "Recomendaciones utilizadas",
     icon: ChartNoAxesCombined,
     suffix: "%",
   },
@@ -91,7 +91,7 @@ export function AdminDashboard() {
       <PageHeader
         kicker="Administración"
         title="Centro de control en tiempo real"
-        description="Métricas de crecimiento, desempeño del matching y salud técnica en una sola vista."
+        description="Crecimiento, efectividad de las recomendaciones y estado de la plataforma en una sola vista."
         actions={
           <div className="flex flex-wrap gap-2">
             <button
@@ -174,7 +174,7 @@ function ConversionBars({ recommendations, applications, hires }) {
   const max = Math.max(1, recommendations);
   const stages = [
     {
-      label: "Recomendaciones NLP",
+      label: "Recomendaciones generadas",
       value: recommendations,
       color: "bg-[var(--accent)]",
     },

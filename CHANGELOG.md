@@ -2,6 +2,24 @@
 
 All notable changes to the "TalentSync AI" project will be documented in this file.
 
+## [Unreleased] - 2026-09-15
+
+### Changed
+- Simplified candidate tracking with explicit confirmation of movements and notifications.
+- Added deliberate vacancy closure and reopening with preserved history or a new process.
+- Unified company/candidate compatibility, with separate language requirements and levels.
+- Improved talent search, mobile recommendations, company identity, and resume styles/colors.
+- Replaced native language suggestions with searchable, themed, keyboard-accessible controls.
+- Show uploaded candidate photos in the company's candidate profile view.
+
+### Production
+- Persist profile photos, company logos and covers in private Azure Blob Storage when configured.
+- Serialize PostgreSQL migrations across simultaneous container replicas.
+- Update vulnerable frontend, API, multipart, PDF and JWT dependencies.
+- Exclude local credentials, uploads and test caches from Git and Docker build contexts.
+- Add CI checks and a versioned, confirmation-gated update script for existing Azure resources.
+- Prepare Cloudflare Pages publication with an absolute Azure API URL and explicit CORS origin.
+
 ## [Unreleased] - 2026-09-07
 
 ### Changed

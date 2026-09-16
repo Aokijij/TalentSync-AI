@@ -4,10 +4,8 @@ import {
   ArrowRight,
   BriefcaseBusiness,
   Clock3,
-  Filter,
   Send,
   Sparkles,
-  SlidersHorizontal,
   TrendingUp,
 } from "lucide-react";
 
@@ -15,7 +13,6 @@ import { api } from "../api/client.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { MetricCard } from "../components/MetricCard.jsx";
 import { Button } from "../components/Button.jsx";
-import { Input } from "../components/Input.jsx";
 import {
   getProfileCompletion,
   ProfileCompletionRing,
@@ -23,14 +20,28 @@ import {
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
 import { Link } from "react-router-dom";
 
+const candidateStatusLabel = {
+  submitted: "Postulación recibida",
+  seen: "Postulación recibida",
+  reviewing: "En revisión",
+  shortlisted: "En revisión",
+  technical_interview: "Entrevista",
+  psychometric_test: "Entrevista",
+  accepted: "Seleccionado",
+  hired: "Seleccionado",
+  rejected: "No seleccionado",
+};
+
 export function CandidateDashboard() {
   const [recommendations, setRecommendations] = useState([]);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [message, setMessage] = useState("");
-  const [minMatch, setMinMatch] = useState(0);
-  const [onlyStrongSkills, setOnlyStrongSkills] = useState(false);
   const [expandedReasons, setExpandedReasons] = useState({});
+  const [minCompatibility] = useState(() => {
+    const saved = Number(localStorage.getItem("talentsync_recommendation_min"));
+    return [40, 50, 60, 70, 80, 90].includes(saved) ? saved : 40;
+  });
 
   const [profile, setProfile] = useState(null);
 
@@ -41,7 +52,9 @@ export function CandidateDashboard() {
       jobsResponse,
       profileResponse,
     ] = await Promise.all([
-      api.get("/recommendations/me/jobs").catch(() => ({ data: [] })),
+      api
+        .get("/recommendations/me/jobs", { params: { include_all: true } })
+        .catch(() => ({ data: [] })),
       api.get("/applications/me").catch(() => ({ data: [] })),
       api.get("/jobs").catch(() => ({ data: [] })),
       api.get("/profiles/me").catch(() => ({ data: null })),
@@ -63,8 +76,8 @@ export function CandidateDashboard() {
 
   const enriched = useRecommendations(
     recommendations,
-    minMatch,
-    onlyStrongSkills,
+    minCompatibility,
+    false,
   );
 
   const appliedJobIds = useMemo(
@@ -86,8 +99,12 @@ export function CandidateDashboard() {
 
   const stats = useMemo(() => {
     const total = applications.length;
-    const active = applications.filter((a) => a.status !== "rejected").length;
-    const accepted = applications.filter((a) => a.status === "accepted").length;
+    const active = applications.filter(
+      (a) => !["rejected", "accepted", "hired"].includes(a.status),
+    ).length;
+    const accepted = applications.filter((a) =>
+      ["accepted", "hired"].includes(a.status),
+    ).length;
     const rejected = applications.filter((a) => a.status === "rejected").length;
     return { total, active, accepted, rejected };
   }, [applications]);
@@ -106,27 +123,23 @@ export function CandidateDashboard() {
 
   const pipeline = useMemo(
     () => [
-      { label: "Enviadas", value: applications.length },
+      { label: "Postulaciones", value: applications.length },
       {
-        label: "En proceso",
+        label: "En revisión",
         value: applications.filter((item) =>
-          [
-            "seen",
-            "reviewing",
-            "shortlisted",
-            "technical_interview",
-            "psychometric_test",
-          ].includes(item.status),
+          ["seen", "reviewing", "shortlisted"].includes(item.status),
         ).length,
       },
       {
         label: "Entrevistas",
         value: applications.filter(
-          (item) => item.interview_at || item.status === "technical_interview",
+          (item) =>
+            item.interview_at ||
+            ["technical_interview", "psychometric_test"].includes(item.status),
         ).length,
       },
       {
-        label: "Logros",
+        label: "Seleccionado",
         value: applications.filter((item) =>
           ["accepted", "hired"].includes(item.status),
         ).length,
@@ -159,7 +172,7 @@ export function CandidateDashboard() {
               Vacantes alineadas a tu perfil
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-              El ranking compara tu CV y habilidades con cada vacante. Completa
+              Comparamos tu hoja de vida y habilidades con cada vacante. Completa
               el perfil para mejorar la precisión.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
@@ -167,7 +180,7 @@ export function CandidateDashboard() {
                 Perfil {profileCompletion}%
               </span>
               <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1.5 font-semibold text-[var(--accent)]">
-                NLP activo
+                Perfil analizado
               </span>
             </div>
             <div className="mt-4 h-1.5 rounded-full bg-[var(--muted)]/10">
@@ -185,17 +198,20 @@ export function CandidateDashboard() {
           <MetricCard
             label="Recomendaciones"
             value={enriched.length}
-            detail="Vacantes analizadas"
+            detail={`Desde ${minCompatibility}% de compatibilidad`}
+            to="/recomendaciones"
           />
           <MetricCard
             label="Postulaciones"
             value={stats.total}
             detail={`${stats.active} activas`}
+            to="/postulaciones"
           />
           <MetricCard
-            label="Mejor match"
+            label="Mayor compatibilidad"
             value={`${enriched[0]?.match_percentage?.toFixed?.(0) ?? 0}%`}
             detail="Compatibilidad más alta"
+            to="/recomendaciones"
           />
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -212,10 +228,10 @@ export function CandidateDashboard() {
             detail={`${stats.active} postulaciones activas`}
           />
           <DashboardAction
-            to="/perfil"
+            to="/recomendaciones"
             icon={Sparkles}
-            title="Afinar recomendaciones"
-            detail={`${profile?.skills?.length ?? 0} habilidades registradas`}
+            title="Ajustar recomendaciones"
+            detail={`Porcentaje mínimo: ${minCompatibility}%`}
           />
         </div>
       </section>
@@ -238,41 +254,13 @@ export function CandidateDashboard() {
                   Recomendaciones inteligentes
                 </h2>
                 <p className="text-sm text-[var(--muted)]">
-                  Ranking semántico para enfocar mejor tu búsqueda.
+                  Oportunidades ordenadas según tu experiencia y habilidades.
                 </p>
               </div>
             </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                <SlidersHorizontal size={16} className="text-[var(--muted)]" />
-                <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                  Match mínimo:
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    min={0}
-                    max={100}
-                    value={minMatch}
-                    onChange={(e) => setMinMatch(Number(e.target.value || 0))}
-                    className="w-20 input-md"
-                  />
-                </label>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setOnlyStrongSkills((v) => !v)}
-                className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-all duration-200 hover-lift pressed focus-ring ${
-                  onlyStrongSkills
-                    ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
-                    : "border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--accent)] hover:bg-[var(--surface-hover)]"
-                }`}
-              >
-                <Filter size={16} className="text-[var(--muted)]" />
-                Solo con mis skills
-              </button>
-            </div>
+            <Link to="/recomendaciones" className="button-secondary button-sm">
+              Recomendando desde {minCompatibility}%
+            </Link>
           </div>
 
           <div className="divide-y divide-[var(--line)]">
@@ -288,7 +276,7 @@ export function CandidateDashboard() {
                 item.category === "alta"
                   ? "Alta probabilidad"
                   : item.category === "buenas"
-                    ? "Buen match"
+                    ? "Buena compatibilidad"
                     : "Con brechas";
               const categoryTone =
                 item.category === "alta"
@@ -322,12 +310,14 @@ export function CandidateDashboard() {
                       ) : null}
                     </div>
 
-                    <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                    <p className="mt-1 line-clamp-3 text-sm leading-6 text-[var(--muted)] sm:line-clamp-2">
                       {job?.description ?? reasonsShort.join(". ")}
                     </p>
 
                     <div className="mt-2 space-y-2">
-                      <p className="text-xs text-[var(--muted)]">
+                      <p
+                        className={`text-xs text-[var(--muted)] ${isExpanded ? "" : "line-clamp-2"}`}
+                      >
                         {(isExpanded ? reasonsFull : reasonsShort).join(". ")}
                       </p>
                       {reasonsFull.length > 2 ? (
@@ -370,7 +360,8 @@ export function CandidateDashboard() {
                     <div className="border-t border-[var(--line)] pt-5 lg:col-span-3">
                       <MatchBreakdown
                         skillMatch={item.skill_match_percentage}
-                        semanticMatch={item.semantic_match_percentage}
+                        semanticMatch={item.professional_context_percentage ?? item.semantic_match_percentage}
+                        languageMatch={item.language_match_percentage}
                       />
                     </div>
                   ) : null}
@@ -379,7 +370,7 @@ export function CandidateDashboard() {
             })}
             {enriched.length === 0 ? (
               <div className="px-5 py-10 text-sm text-[var(--muted)]">
-                No encontramos vacantes con al menos 40% de afinidad para tu
+                No encontramos vacantes con al menos {minCompatibility}% de afinidad para tu
                 perfil. Completa tu experiencia y habilidades para mejorar la
                 búsqueda.
               </div>
@@ -406,7 +397,7 @@ export function CandidateDashboard() {
             </div>
             <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
               Sube un CV con texto seleccionable y agrega habilidades para
-              elevar la precisión del matching.
+              recibir recomendaciones más precisas.
             </p>
             <a
               className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline hover-lift"
@@ -433,7 +424,7 @@ export function CandidateDashboard() {
                       `Vacante #${application.job_id}`}
                   </p>
                   <p className="mt-1 text-xs text-[var(--muted)]">
-                    Estado: {application.status}
+                    Estado: {candidateStatusLabel[application.status] || "En revisión"}
                   </p>
                 </div>
               ))}

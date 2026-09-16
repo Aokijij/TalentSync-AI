@@ -1,8 +1,10 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.domain.entities.job_sectors import JOB_SECTORS
+from app.api.schemas.language import LanguageLevel, unique_languages
 
 
 class PipelineStage(BaseModel):
@@ -21,16 +23,17 @@ class PipelineStagesMixin(BaseModel):
 
 def default_pipeline_stages() -> list[PipelineStage]:
     return [
-        PipelineStage(id="submitted", title="Nuevos"),
-        PipelineStage(id="shortlisted", title="Preseleccionados"),
-        PipelineStage(id="technical_interview", title="Entrevista técnica"),
-        PipelineStage(id="psychometric_test", title="Prueba psicotécnica"),
+        PipelineStage(id="submitted", title="Recibidas"),
+        PipelineStage(id="reviewing", title="En revisión"),
+        PipelineStage(id="interview", title="Entrevista"),
         PipelineStage(id="hired", title="Contratados"),
-        PipelineStage(id="rejected", title="Descartados"),
+        PipelineStage(id="rejected", title="No seleccionados"),
     ]
 
 
 class JobCreate(PipelineStagesMixin):
+    languages: list[LanguageLevel] = Field(default_factory=list, max_length=20)
+    _unique_languages = field_validator("languages")(unique_languages)
     company_id: int | None = None
     title: str = Field(min_length=2, max_length=180)
     description: str = Field(min_length=10)
@@ -55,6 +58,8 @@ class JobCreate(PipelineStagesMixin):
 
 
 class JobUpdate(PipelineStagesMixin):
+    languages: list[LanguageLevel] | None = Field(default=None, max_length=20)
+    _unique_languages = field_validator("languages")(unique_languages)
     title: str | None = Field(default=None, min_length=2, max_length=180)
     description: str | None = Field(default=None, min_length=10)
     requirements: str | None = Field(default=None, min_length=10)
@@ -64,7 +69,7 @@ class JobUpdate(PipelineStagesMixin):
     modality: str | None = None
     employment_type: str | None = None
     sector: str | None = None
-    status: str | None = None
+    status: Literal["active", "paused", "filled", "closed"] | None = None
     benefits: list[str] | None = None
     pipeline_stages: list[PipelineStage] | None = Field(
         default=None, min_length=2, max_length=12
@@ -79,6 +84,7 @@ class JobUpdate(PipelineStagesMixin):
 
 
 class JobResponse(BaseModel):
+    languages: list[LanguageLevel] = Field(default_factory=list)
     id: int
     company_id: int
     company_name: str | None = None
@@ -99,3 +105,7 @@ class JobResponse(BaseModel):
     applications_count: int = 0
 
     model_config = {"from_attributes": True}
+
+
+class JobReopen(BaseModel):
+    mode: Literal["continue", "new"]

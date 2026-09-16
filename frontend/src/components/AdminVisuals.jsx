@@ -161,14 +161,14 @@ export function SemanticSkillGraph({ graph = { nodes: [], edges: [] } }) {
   if (!nodes.length)
     return (
       <p className="py-12 text-center text-sm text-[var(--muted)]">
-        Publica vacantes con habilidades para construir el grafo semántico.
+        Publica vacantes con habilidades para visualizar las relaciones del mercado.
       </p>
     );
   return (
     <figure aria-label="Relaciones entre habilidades presentes en las vacantes activas">
       <div>
         <h3 className="font-bold text-[var(--ink-strong)]">
-          Grafo semántico del mercado
+          Relación entre habilidades del mercado
         </h3>
         <p className="mt-1 text-sm text-[var(--muted)]">
           La cercanía se basa en habilidades que aparecen juntas en ofertas
@@ -239,7 +239,7 @@ export function SemanticSkillGraph({ graph = { nodes: [], edges: [] } }) {
 const serviceIcons = {
   "Base de datos": Database,
   Almacenamiento: HardDrive,
-  "Motor NLP": Sparkles,
+  "Análisis de perfiles": Sparkles,
 };
 export function InfrastructurePanel({ services = [] }) {
   return (

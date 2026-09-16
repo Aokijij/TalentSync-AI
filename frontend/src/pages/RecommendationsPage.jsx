@@ -3,10 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BriefcaseBusiness,
-  Filter,
   Send,
   Sparkles,
-  SlidersHorizontal,
   TrendingUp,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -25,9 +23,11 @@ export function RecommendationsPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [minCompatibility, setMinCompatibility] = useState(() => {
+    const saved = Number(localStorage.getItem("talentsync_recommendation_min"));
+    return [40, 50, 60, 70, 80, 90].includes(saved) ? saved : 40;
+  });
 
-  const [minMatch, setMinMatch] = useState(0);
-  const [onlyStrongSkills, setOnlyStrongSkills] = useState(false);
   const [expandedReasons, setExpandedReasons] = useState({});
 
   async function load() {
@@ -40,7 +40,7 @@ export function RecommendationsPage() {
         jobsResponse,
         profileResponse,
       ] = await Promise.all([
-        api.get("/recommendations/me/jobs"),
+        api.get("/recommendations/me/jobs", { params: { include_all: true } }),
         api.get("/applications/me"),
         api.get("/jobs"),
         api.get("/profiles/me"),
@@ -66,11 +66,13 @@ export function RecommendationsPage() {
     [jobs],
   );
 
-  const enriched = useRecommendations(
-    recommendations,
-    minMatch,
-    onlyStrongSkills,
-  );
+  const enriched = useRecommendations(recommendations, minCompatibility, false);
+
+  function changeMinimum(value) {
+    const next = Number(value);
+    setMinCompatibility(next);
+    localStorage.setItem("talentsync_recommendation_min", String(next));
+  }
 
   const appliedJobIds = useMemo(
     () => new Set(applications.map((application) => application.job_id)),
@@ -130,40 +132,24 @@ export function RecommendationsPage() {
                   Lista de empleo recomendada
                 </h2>
                 <p className="text-sm text-[var(--muted)]">
-                  Filtra por match y por habilidades fuertes.
+                  Ordenadas por compatibilidad con tu trayectoria y habilidades.
                 </p>
               </div>
             </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                <SlidersHorizontal size={16} className="text-[var(--muted)]" />
-                <label>
-                  Match mínimo:
-                  <input
-                    className="field-control input-sm ml-2 w-20"
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={minMatch}
-                    onChange={(e) => setMinMatch(Number(e.target.value || 0))}
-                  />
-                </label>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setOnlyStrongSkills((v) => !v)}
-                className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-all ${
-                  onlyStrongSkills
-                    ? "border-[var(--success)] bg-[var(--success)]/10 text-[var(--success)]"
-                    : "border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] hover:bg-[var(--muted)]/20"
-                }`}
+            <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">
+              Recomendar desde
+              <select
+                className="field-control input-sm w-24"
+                value={minCompatibility}
+                onChange={(event) => changeMinimum(event.target.value)}
               >
-                <Filter size={16} className="text-[var(--muted)]" />
-                Solo con mis skills
-              </button>
-            </div>
+                {[40, 50, 60, 70, 80, 90].map((value) => (
+                  <option key={value} value={value}>
+                    {value}%
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           <div className="divide-y divide-[var(--line)]">
@@ -179,7 +165,7 @@ export function RecommendationsPage() {
                 item.category === "alta"
                   ? "Alta probabilidad"
                   : item.category === "buenas"
-                    ? "Buen match"
+                    ? "Buena compatibilidad"
                     : "Con brechas";
               const categoryTone =
                 item.category === "alta"
@@ -215,7 +201,9 @@ export function RecommendationsPage() {
                     </p>
 
                     <div className="mt-2 space-y-2">
-                      <p className="text-xs text-[var(--muted)]">
+                      <p
+                        className={`text-xs text-[var(--muted)] ${isExpanded ? "" : "line-clamp-2"}`}
+                      >
                         {(isExpanded ? reasonsFull : reasonsShort).join(". ")}
                       </p>
                       {reasonsFull.length > 2 ? (
@@ -269,7 +257,8 @@ export function RecommendationsPage() {
                     <div className="grid gap-6 border-t border-[var(--line)] pt-5 lg:col-span-3 lg:grid-cols-2">
                       <MatchBreakdown
                         skillMatch={item.skill_match_percentage}
-                        semanticMatch={item.semantic_match_percentage}
+                        semanticMatch={item.professional_context_percentage ?? item.semantic_match_percentage}
+                        languageMatch={item.language_match_percentage}
                       />
                       <SkillRadarChart
                         candidateSkills={profile?.skills ?? []}
@@ -288,9 +277,9 @@ export function RecommendationsPage() {
                   size={20}
                   className="mx-auto mb-3 text-[var(--accent)]"
                 />
-                No encontramos vacantes suficientemente alineadas con tu perfil.
-                Completa tu experiencia y habilidades o revisa nuevas
-                oportunidades más adelante.
+                No hay vacantes que alcancen el {minCompatibility}% de
+                compatibilidad. Puedes reducir el porcentaje o completar mejor
+                tu experiencia y habilidades.
               </div>
             ) : null}
           </div>

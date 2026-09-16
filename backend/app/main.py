@@ -1,7 +1,10 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -23,9 +26,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=["*"]
-        if settings.environment == "development"
-        else ["talentsync.ai", "*.talentsync.ai"],
+        allowed_hosts=settings.allowed_hosts,
     )
 
     app.add_middleware(
@@ -46,6 +47,23 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, str]:
         return {"status": "ok", "service": settings.app_name}
+
+    if settings.static_dir:
+        static_dir = Path(settings.static_dir).resolve()
+        index_file = static_dir / "index.html"
+        assets_dir = static_dir / "assets"
+        if index_file.is_file():
+            if assets_dir.is_dir():
+                app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+            @app.get("/{full_path:path}", include_in_schema=False)
+            def serve_frontend(full_path: str):
+                if full_path == "api" or full_path.startswith("api/"):
+                    return JSONResponse(status_code=404, content={"detail": "Not Found"})
+                requested = (static_dir / full_path).resolve()
+                if requested.is_relative_to(static_dir) and requested.is_file():
+                    return FileResponse(requested)
+                return FileResponse(index_file)
 
     return app
 

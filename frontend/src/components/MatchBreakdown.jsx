@@ -26,30 +26,30 @@ function Signal({ label, value, weight, description, color }) {
   );
 }
 
-export function MatchBreakdown({ skillMatch = 0, semanticMatch = 0 }) {
+export function MatchBreakdown({ skillMatch = 0, semanticMatch = 0, languageMatch = null }) {
+  const hasLanguages = languageMatch !== null && languageMatch !== undefined;
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
       <h3 className="font-bold text-[var(--ink-strong)]">¿Cómo se calcula?</h3>
       <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
-        Tener todas las habilidades aporta 60 puntos. Los otros 40 comparan el
-        contexto completo: profesión, experiencia, formación y responsabilidades
-        del CV frente a la vacante.
+        {hasLanguages ? "Las habilidades aportan hasta 60 puntos, tu trayectoria hasta 30 y los idiomas hasta 10. El nivel registrado se compara con el mínimo solicitado." : "Tener todas las habilidades aporta 60 puntos. Los otros 40 comparan tu profesión, cargos, responsabilidades, formación y logros con la vacante."}
       </p>
       <div className="mt-4 space-y-4">
         <Signal
           label="Habilidades requeridas"
           value={skillMatch}
           weight={60}
-          description="Cobertura exacta de las skills de la oferta"
+          description="Cuántas habilidades solicitadas ya tienes"
           color="var(--success)"
         />
         <Signal
           label="Contexto profesional"
           value={semanticMatch}
-          weight={40}
-          description="Afinidad entre el CV y el contenido de la vacante"
+          weight={hasLanguages ? 30 : 40}
+          description="Relación entre tu trayectoria y las funciones del cargo"
           color="var(--accent)"
         />
+        {hasLanguages && <Signal label="Idiomas" value={languageMatch} weight={10} description="Tu nivel frente al mínimo solicitado por la empresa" color="var(--success)" />}
       </div>
     </section>
   );
