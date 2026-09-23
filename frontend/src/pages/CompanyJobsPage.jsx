@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BriefcaseBusiness,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   CircleDollarSign,
   Edit3,
   Eye,
@@ -65,6 +67,7 @@ export function CompanyJobsPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sectorFilter, setSectorFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [reopeningJob, setReopeningJob] = useState(null);
   const [publishedJob, setPublishedJob] = useState(null);
   const formErrorRef = useRef(null);
@@ -114,6 +117,12 @@ export function CompanyJobsPage() {
       }),
     [jobs, query, statusFilter, sectorFilter],
   );
+  const pageSize = 6;
+  const pageCount = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const visibleJobs = filteredJobs.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  useEffect(() => setPage(1), [query, statusFilter, sectorFilter]);
 
   function formPayload(values) {
     return {
@@ -136,12 +145,19 @@ export function CompanyJobsPage() {
       return;
     }
     const invalidQuestion = (values.application_questions || []).find(
-      (question) =>
-        question.prompt.trim().length < 5 ||
-        (question.type === "choice" && question.options.length < 2),
+      (question) => {
+        const normalizedOptions = (question.options || []).map((option) => option.trim());
+        return (
+          question.prompt.trim().length < 5 ||
+          (question.type === "choice" &&
+            (normalizedOptions.length < 2 ||
+              normalizedOptions.some((option) => !option) ||
+              new Set(normalizedOptions).size !== normalizedOptions.length))
+        );
+      },
     );
     if (invalidQuestion) {
-      setError("Preguntas de postulación: escribe una pregunta clara y al menos dos opciones cuando corresponda.");
+      setError("Preguntas de postulación: escribe una pregunta clara y, cuando corresponda, al menos dos opciones diferentes y completas.");
       return;
     }
     setError("");
@@ -313,7 +329,7 @@ export function CompanyJobsPage() {
           </select>
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
-          {filteredJobs.map((job) => (
+          {visibleJobs.map((job) => (
             <JobCard
               key={job.id}
               job={job}
@@ -333,6 +349,7 @@ export function CompanyJobsPage() {
             </div>
           ) : null}
         </div>
+        {filteredJobs.length > pageSize ? <nav className="surface-card mt-4 flex items-center justify-between p-4" aria-label="Paginación de vacantes publicadas"><p className="text-sm text-[var(--muted)]">Mostrando {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredJobs.length)} de {filteredJobs.length}</p><div className="flex items-center gap-2"><button type="button" className="button-secondary button-sm" disabled={safePage === 1} onClick={() => setPage((current) => current - 1)}><ChevronLeft size={15} />Anterior</button><span className="px-2 text-sm font-bold">{safePage} / {pageCount}</span><button type="button" className="button-secondary button-sm" disabled={safePage === pageCount} onClick={() => setPage((current) => current + 1)}>Siguiente<ChevronRight size={15} /></button></div></nav> : null}
       </section>
 
       {showModal ? (
@@ -589,8 +606,9 @@ function ScreeningQuestionsEditor({ value, onChange }) {
         options: [],
         keywords: [],
         preferred_options: [],
+        option_scores: {},
         positive_adjustment: 3,
-        negative_adjustment: -1,
+        negative_adjustment: 0,
       },
     ]);
   return (
@@ -598,7 +616,7 @@ function ScreeningQuestionsEditor({ value, onChange }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold">Preguntas antes de postularse</h3>
-          <p className="mt-1 text-sm text-[var(--muted)]">Son opcionales. Las respuestas pueden ajustar el porcentaje solo para tu equipo.</p>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">Añade solo las preguntas que ayuden a tomar una decisión. Las respuestas abiertas se revisan manualmente; en las preguntas con opciones puedes indicar cuánto aporta cada respuesta al orden interno.</p>
         </div>
         <button type="button" className="button-outline button-sm" disabled={value.length >= 10} onClick={add}><Plus size={15} />Agregar pregunta</button>
       </div>
@@ -608,22 +626,17 @@ function ScreeningQuestionsEditor({ value, onChange }) {
             <div className="flex items-start gap-3">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--accent)]/10 text-sm font-bold text-[var(--accent)]">{index + 1}</span>
               <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-[1fr_170px]">
-                <label className="text-sm font-semibold text-[var(--muted)]">Pregunta<input className="field-control mt-1" value={question.prompt} maxLength={300} placeholder="Ej. ¿Cuántos años has trabajado con Python?" onChange={(event) => update(index, { prompt: event.target.value })} /></label>
-                <label className="text-sm font-semibold text-[var(--muted)]">Tipo<select className="field-control mt-1" value={question.type} onChange={(event) => update(index, { type: event.target.value, options: [], preferred_options: [], keywords: [] })}><option value="open">Respuesta abierta</option><option value="choice">Opciones</option></select></label>
+                <label className="text-sm font-semibold text-[var(--muted)]">Pregunta<input className="field-control mt-1" value={question.prompt} maxLength={300} placeholder="Ej. ¿Tienes disponibilidad para trabajar los sábados?" onChange={(event) => update(index, { prompt: event.target.value })} /></label>
+                <label className="text-sm font-semibold text-[var(--muted)]">Tipo<select className="field-control mt-1" value={question.type} onChange={(event) => update(index, { type: event.target.value, options: [], preferred_options: [], keywords: [], option_scores: {}, positive_adjustment: 3, negative_adjustment: 0 })}><option value="open">Respuesta abierta</option><option value="choice">Elegir una opción</option></select></label>
               </div>
               <button type="button" className="button-ghost button-sm !px-2 text-[var(--error)]" onClick={() => remove(index)} aria-label="Eliminar pregunta"><Trash2 size={16} /></button>
             </div>
-            <div className="ml-11 mt-3 grid gap-3 md:grid-cols-2">
+            <div className="ml-11 mt-4 space-y-4">
               {question.type === "choice" ? (
-                <>
-                  <label className="text-sm font-semibold text-[var(--muted)]">Opciones, separadas por coma<input className="field-control mt-1" value={(question.options || []).join(", ")} onChange={(event) => { const options = event.target.value.split(",").map((item) => item.trim()).filter(Boolean); update(index, { options, preferred_options: (question.preferred_options || []).filter((item) => options.includes(item)) }); }} /></label>
-                  <label className="text-sm font-semibold text-[var(--muted)]">Respuesta que suma<select className="field-control mt-1" value={question.preferred_options?.[0] || ""} onChange={(event) => update(index, { preferred_options: event.target.value ? [event.target.value] : [] })}><option value="">No ajustar por respuesta</option>{(question.options || []).map((option) => <option key={option}>{option}</option>)}</select></label>
-                </>
+                <ChoiceOptions question={question} onChange={(changes) => update(index, changes)} />
               ) : (
-                <label className="text-sm font-semibold text-[var(--muted)] md:col-span-2">Palabras clave que suman, separadas por coma<input className="field-control mt-1" value={(question.keywords || []).join(", ")} placeholder="Ej. python, fastapi, django" onChange={(event) => update(index, { keywords: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+                <p className="rounded-lg border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-3 text-sm leading-6 text-[var(--muted)]">El candidato podrá explicar su respuesta con sus propias palabras. Tu equipo la verá completa y esta pregunta no modificará automáticamente la compatibilidad.</p>
               )}
-              <label className="text-sm font-semibold text-[var(--muted)]">Si coincide<input className="field-control mt-1" type="number" min="0" max="10" value={question.positive_adjustment ?? 3} onChange={(event) => update(index, { positive_adjustment: Number(event.target.value) })} /></label>
-              <label className="text-sm font-semibold text-[var(--muted)]">Si no coincide<input className="field-control mt-1" type="number" min="-10" max="0" value={question.negative_adjustment ?? -1} onChange={(event) => update(index, { negative_adjustment: Number(event.target.value) })} /></label>
               <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--ink-strong)]"><input type="checkbox" checked={question.required ?? true} onChange={(event) => update(index, { required: event.target.checked })} />Respuesta obligatoria</label>
             </div>
           </article>
@@ -631,6 +644,49 @@ function ScreeningQuestionsEditor({ value, onChange }) {
         {!value.length ? <p className="rounded-lg border border-dashed border-[var(--line)] px-4 py-6 text-center text-sm text-[var(--muted)]">No se pedirán respuestas adicionales.</p> : null}
       </div>
     </section>
+  );
+}
+
+function ChoiceOptions({ question, onChange }) {
+  const options = question.options || [];
+  const scoreFor = (option) => {
+    if (question.option_scores && Object.hasOwn(question.option_scores, option)) return Number(question.option_scores[option]);
+    if ((question.preferred_options || []).includes(option)) return Number(question.positive_adjustment ?? 3);
+    return Number(question.negative_adjustment ?? 0);
+  };
+  const rename = (position, label) => {
+    const previous = options[position];
+    const nextOptions = options.map((option, index) => index === position ? label : option);
+    const nextScores = Object.fromEntries(nextOptions.map((option, index) => [option, index === position ? scoreFor(previous) : scoreFor(option)]).filter(([option]) => option.trim()));
+    onChange({ options: nextOptions, option_scores: nextScores, preferred_options: [], keywords: [] });
+  };
+  const setScore = (option, score) => onChange({ option_scores: { ...(question.option_scores || Object.fromEntries(options.map((item) => [item, scoreFor(item)]))), [option]: Number(score) }, preferred_options: [], keywords: [] });
+  const removeOption = (position) => {
+    const removed = options[position];
+    const nextOptions = options.filter((_, index) => index !== position);
+    const nextScores = { ...(question.option_scores || {}) };
+    delete nextScores[removed];
+    onChange({ options: nextOptions, option_scores: nextScores, preferred_options: [] });
+  };
+  return (
+    <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><p className="text-sm font-bold text-[var(--ink-strong)]">Opciones de respuesta</p><p className="mt-1 text-xs leading-5 text-[var(--muted)]">Asigna un efecto solo si la respuesta aporta información objetiva. Cero puntos no cambia el orden.</p></div>
+        <button type="button" className="button-secondary button-sm" disabled={options.length >= 12} onClick={() => onChange({ options: [...options, ""], option_scores: { ...(question.option_scores || {}) } })}><Plus size={14} />Añadir opción</button>
+      </div>
+      <div className="mt-3 space-y-2">
+        {options.map((option, position) => (
+          <div key={position} className="grid gap-2 sm:grid-cols-[1fr_190px_auto] sm:items-center">
+            <input className="field-control" value={option} maxLength={120} aria-label={`Opción ${position + 1}`} placeholder={`Opción ${position + 1}`} onChange={(event) => rename(position, event.target.value)} />
+            <select className="field-control" aria-label={`Efecto de la opción ${position + 1}`} value={scoreFor(option)} onChange={(event) => setScore(option, event.target.value)}>
+              <option value="5">Favorece mucho (+5)</option><option value="3">Favorece (+3)</option><option value="0">No cambia (0)</option><option value="-3">Reduce (-3)</option><option value="-5">Reduce mucho (-5)</option>
+            </select>
+            <button type="button" className="button-ghost button-sm !px-2 text-[var(--error)]" onClick={() => removeOption(position)} aria-label={`Eliminar opción ${position + 1}`}><Trash2 size={15} /></button>
+          </div>
+        ))}
+        {!options.length ? <p className="rounded-lg border border-dashed border-[var(--line)] px-3 py-4 text-center text-sm text-[var(--muted)]">Añade al menos dos opciones, una por fila.</p> : null}
+      </div>
+    </div>
   );
 }
 

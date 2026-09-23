@@ -369,7 +369,7 @@ export function ProfilePage() {
               </span>
             </div>
           </header>
-          <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
+          <div className="grid gap-8 p-6 sm:p-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.9fr)]">
             <div className="space-y-8">
             <Section icon={Award} title="Experiencia laboral">
               <Items
@@ -390,7 +390,7 @@ export function ProfilePage() {
               />
             </Section>
             </div>
-            <aside className="space-y-8 rounded-[var(--radius-xl)] bg-[var(--surface-subtle)] p-5 lg:sticky lg:top-28 lg:self-start">
+            <aside className="space-y-8 rounded-[var(--radius-xl)] bg-[var(--surface-subtle)] p-5 sm:p-6 xl:sticky xl:top-28 xl:self-start">
             <Section icon={CheckCircle2} title="Certificaciones">
               <Items
                 type="certifications"
@@ -437,7 +437,7 @@ export function ProfilePage() {
                     onKeyDown={(e) =>
                       e.key === "Enter" && (e.preventDefault(), addSkill())
                     }
-                    placeholder="Ej. Python"
+                    placeholder="Ej. comunicación"
                   />
                   <button
                     className="button-secondary w-auto hover-lift pressed focus-ring"
@@ -592,6 +592,18 @@ function Items({ type, profile, editing, update, updateItem }) {
     issuer: "Entidad emisora",
     year: "Año de obtención",
   };
+  const labels = {
+    role: "Cargo",
+    company: "Empresa",
+    start_year: "Inicio",
+    end_year: "Finalización",
+    description: "Responsabilidades",
+    degree: "Título o carrera",
+    institution: "Institución",
+    name: "Certificación",
+    issuer: "Entidad emisora",
+    year: "Año de obtención",
+  };
   const text =
     type === "experiences"
       ? "experiencia"
@@ -610,25 +622,9 @@ function Items({ type, profile, editing, update, updateItem }) {
             <div className="grid gap-3 sm:grid-cols-2">
               {fields.map((field) =>
                 field === "description" ? (
-                  <textarea
-                    key={field}
-                    className="field-control input-md sm:col-span-2"
-                    placeholder={placeholders[field]}
-                    value={item[field] || ""}
-                    onChange={(event) =>
-                      updateItem(type, index, field, event.target.value)
-                    }
-                  />
+                  <label key={field} className="text-xs font-semibold text-[var(--muted)] sm:col-span-2">{labels[field]}<textarea className="field-control input-md mt-1 min-h-24" placeholder={placeholders[field]} value={item[field] || ""} onChange={(event) => updateItem(type, index, field, event.target.value)} /></label>
                 ) : (
-                  <input
-                    key={field}
-                    className="field-control input-md"
-                    placeholder={placeholders[field]}
-                    value={item[field] || ""}
-                    onChange={(event) =>
-                      updateItem(type, index, field, event.target.value)
-                    }
-                  />
+                  <label key={field} className="text-xs font-semibold text-[var(--muted)]">{labels[field]}<input className="field-control input-md mt-1" placeholder={placeholders[field]} value={item[field] || ""} onChange={(event) => updateItem(type, index, field, event.target.value)} /></label>
                 ),
               )}
             </div>

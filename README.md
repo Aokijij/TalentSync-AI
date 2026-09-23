@@ -20,7 +20,7 @@ El frontend se publica en Cloudflare Pages. La API, PostgreSQL y el almacenamien
 - Completar su perfil profesional y registrar idiomas con nivel.
 - Cargar una hoja de vida en PDF y corregir la información extraída.
 - Elegir estilo, fotografía y paleta de colores para la vista previa del CV.
-- Explorar vacantes por ubicación, modalidad, contrato, sector, salario y fecha de publicación.
+- Explorar vacantes con filtros progresivos por ubicación, modalidad, contrato, sector, rango salarial y fecha de publicación.
 - Consultar cuánto tiempo lleva publicada cada oportunidad y recibir recomendaciones ordenadas por compatibilidad.
 - Definir el porcentaje mínimo para sus recomendaciones y avisos.
 - Responder las preguntas de preselección que una empresa haya configurado antes de postularse.
@@ -30,8 +30,9 @@ El frontend se publica en Cloudflare Pages. La API, PostgreSQL y el almacenamien
 ### Empresa
 
 - Crear un perfil público con logo, portada, propósito, cultura y beneficios.
-- Publicar vacantes con modalidad, contrato, ubicación, habilidades, idiomas y preguntas opcionales de preselección.
-- Buscar talento por vacante, nombre, profesión, habilidad y porcentaje mínimo.
+- Publicar vacantes con modalidad, contrato, ubicación, habilidades, idiomas y preguntas opcionales de preselección. Las opciones se valoran individualmente y las respuestas abiertas se revisan de forma manual.
+- Buscar talento por vacante, nombre, profesión o habilidad; la lista de perfiles para invitar muestra compatibilidades desde 80%.
+- Revisar candidatos en una tabla paginada y comparar únicamente los cinco perfiles y habilidades más relevantes.
 - Invitar candidatos compatibles y revisar tanto el porcentaje base como el ajuste privado de preselección.
 - Preparar cambios de etapa y confirmarlos antes de enviar notificaciones.
 - Marcar una vacante como cubierta cuando el cupo esté completo.
@@ -61,7 +62,7 @@ compatibilidad = 60% habilidades + 30% contexto profesional + 10% nivel de idiom
 
 El contexto profesional combina similitud de texto con profesión, cargos, responsabilidades y formación. Los niveles de idioma se comparan de forma ordinal desde A1 hasta C2 y nativo. El porcentaje es orientativo: depende de la información registrada y no certifica competencias.
 
-Las preguntas de preselección no alteran el porcentaje público que ve el candidato. Sus respuestas generan un ajuste privado de hasta 20 puntos positivos o negativos que solo puede consultar la empresa. Las preguntas pueden ser abiertas, evaluadas por palabras clave, o de selección, evaluadas por opciones preferidas.
+Las preguntas de preselección no alteran el porcentaje público que ve el candidato. Las preguntas con opciones pueden aportar o restar puntos según la valoración configurada para cada respuesta; el ajuste privado se limita a 20 puntos y solo puede consultarlo la empresa. Las respuestas abiertas no se califican automáticamente porque requieren la revisión del equipo de selección.
 
 ## Arquitectura
 

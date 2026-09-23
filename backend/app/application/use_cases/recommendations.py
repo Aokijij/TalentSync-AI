@@ -47,7 +47,14 @@ def my_recommended_jobs(
 
 
 def ranked_candidates(
-    job_id: int, current_user: User, db: UnitOfWork, *, nlp: TextAnalysis
+    job_id: int,
+    current_user: User,
+    db: UnitOfWork,
+    *,
+    nlp: TextAnalysis,
+    minimum_match: float = 50,
+    audience: str = "all",
+    query: str | None = None,
 ) -> list[dict]:
     job = db.jobs.get(job_id)
     if job is None:
@@ -57,11 +64,14 @@ def ranked_candidates(
     ranked = []
     for user, percentage in rank_candidates_for_job(db, job, nlp=nlp):
         has_applied = user.id in applied_ids
-        if not has_applied and percentage < 50:
+        if audience == "applied" and not has_applied:
+            continue
+        if audience == "invite" and (has_applied or percentage < minimum_match):
+            continue
+        if audience == "all" and not has_applied and percentage < minimum_match:
             continue
         years, summary = profile_experience(user.profile)
-        ranked.append(
-            dict(
+        candidate = dict(
                 user_id=user.id,
                 name=user.name,
                 profession=user.profile.profession,
@@ -76,7 +86,17 @@ def ranked_candidates(
                 )
                 is not None,
             )
-        )
+        if query:
+            searchable = " ".join(
+                [
+                    candidate["name"],
+                    candidate["profession"] or "",
+                    " ".join(candidate["skills"]),
+                ]
+            ).lower()
+            if not all(term in searchable for term in query.lower().split()):
+                continue
+        ranked.append(candidate)
     return sorted(
         ranked,
         key=lambda candidate: (

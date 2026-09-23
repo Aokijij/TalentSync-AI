@@ -257,14 +257,14 @@ export function RegisterPage() {
                     <Field label="Profesión">
                       <input
                         className="field-control"
-                        placeholder="Desarrollador backend, analista de datos…"
+                        placeholder="Ej. auxiliar administrativo o diseñador"
                         {...register("profession")}
                       />
                     </Field>
                     <Field label="Habilidades">
                       <input
                         className="field-control"
-                        placeholder="Python, SQL, React, Excel"
+                        placeholder="Ej. comunicación, organización, trabajo en equipo"
                         {...register("skills")}
                       />
                       <p className="mt-1 text-xs text-[var(--muted)]">

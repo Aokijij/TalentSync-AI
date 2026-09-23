@@ -85,14 +85,14 @@ export function JobDetailPage() {
   return (
     <div className="space-y-6">
       <Link
-        to="/vacantes"
+        to={user?.role === "company" ? "/empresa/vacantes" : "/vacantes"}
         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
       >
         <ArrowLeft size={16} />
-        Volver a vacantes
+        {user?.role === "company" ? "Volver a mis vacantes" : "Volver a vacantes"}
       </Link>
       <section className="surface-card p-6">
-        <div className="flex flex-wrap items-start justify-between gap-5">
+        <div className={match ? "grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]" : "block"}>
           <div>
             {user?.role === "candidate" || user?.role === "admin" ? (
               <Link className="text-sm font-semibold text-[var(--accent)] hover:underline" to={`/empresas/${job.company_id}`}>
@@ -128,7 +128,7 @@ export function JobDetailPage() {
             </div>
           </div>
           {match ? (
-            <div className="w-full max-w-64 rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface-subtle)] p-3">
+            <div className="w-full rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
               <CompatibilityBar value={match.match_percentage} />
               <p className="mt-2 px-1 text-xs text-[var(--muted)]">
                 Compatibilidad basada en tu trayectoria, habilidades{job.languages?.length ? " e idiomas" : ""}.
@@ -137,7 +137,7 @@ export function JobDetailPage() {
           ) : null}
         </div>
       </section>
-      <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="surface-card space-y-6 p-6">
           <Info title="Descripción" text={job.description} />
           <Info title="Requisitos" text={job.requirements} />
@@ -167,7 +167,7 @@ export function JobDetailPage() {
                 <h2 className="mt-1 text-lg font-bold">{job.company_name}</h2>
                 <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--muted)]">{job.company_description || "La empresa todavía no ha publicado una descripción completa."}</p>
                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--muted)]">{job.company_location ? <span>{job.company_location}</span> : null}{job.company_size ? <span>{job.company_size}</span> : null}</div>
-                <div className="mt-4 flex flex-wrap gap-2"><Link className="button-outline button-sm" to={`/empresas/${job.company_id}`}>Ver perfil completo</Link>{job.company_website ? <a className="button-ghost button-sm" href={job.company_website} target="_blank" rel="noreferrer">Sitio web <ExternalLink size={14} /></a> : null}</div>
+                <div className="mt-4 flex flex-wrap gap-2"><Link className="button-outline button-sm" to={user?.role === "company" ? "/empresa/perfil" : `/empresas/${job.company_id}`}>{user?.role === "company" ? "Ir a mi perfil" : "Ver perfil completo"}</Link>{job.company_website ? <a className="button-ghost button-sm" href={job.company_website} target="_blank" rel="noreferrer">Sitio web <ExternalLink size={14} /></a> : null}</div>
               </div>
             </div>
           </div>

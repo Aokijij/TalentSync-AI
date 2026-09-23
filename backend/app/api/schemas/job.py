@@ -23,6 +23,8 @@ class ScreeningQuestionPublic(BaseModel):
     def validate_options(self):
         if self.type == "choice" and len(self.options) < 2:
             raise ValueError("Las preguntas con opciones necesitan al menos dos respuestas")
+        if self.type == "choice" and len(set(self.options)) != len(self.options):
+            raise ValueError("Las opciones de una pregunta no pueden repetirse")
         if self.type == "open" and self.options:
             raise ValueError("Las preguntas abiertas no usan opciones")
         return self
@@ -31,6 +33,7 @@ class ScreeningQuestionPublic(BaseModel):
 class ScreeningQuestionConfig(ScreeningQuestionPublic):
     keywords: list[str] = Field(default_factory=list, max_length=20)
     preferred_options: list[str] = Field(default_factory=list, max_length=12)
+    option_scores: dict[str, float] = Field(default_factory=dict, max_length=12)
     positive_adjustment: float = Field(default=3, ge=0, le=10)
     negative_adjustment: float = Field(default=-1, ge=-10, le=0)
 
@@ -40,8 +43,16 @@ class ScreeningQuestionConfig(ScreeningQuestionPublic):
             option not in self.options for option in self.preferred_options
         ):
             raise ValueError("La respuesta preferida debe pertenecer a las opciones")
+        if self.type == "choice" and any(
+            option not in self.options for option in self.option_scores
+        ):
+            raise ValueError("La valoración debe pertenecer a una opción existente")
+        if any(score < -10 or score > 10 for score in self.option_scores.values()):
+            raise ValueError("La valoración de cada opción debe estar entre -10 y 10")
         if self.type == "open" and self.preferred_options:
             raise ValueError("Las preguntas abiertas usan palabras clave")
+        if self.type == "open" and self.option_scores:
+            raise ValueError("Las preguntas abiertas no usan valoración automática")
         return self
 
 

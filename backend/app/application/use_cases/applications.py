@@ -30,13 +30,17 @@ def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
             raise UseCaseError(status_code=422, detail=f"Selecciona una opción válida para: {question['prompt']}")
         normalized_answer = _normalize(answer)
         if question.get("type") == "choice":
-            preferred = question.get("preferred_options", [])
-            if preferred:
-                adjustment += (
-                    question.get("positive_adjustment", 0)
-                    if answer in preferred
-                    else question.get("negative_adjustment", 0)
-                )
+            option_scores = question.get("option_scores") or {}
+            if option_scores:
+                adjustment += float(option_scores.get(answer, 0))
+            else:
+                preferred = question.get("preferred_options", [])
+                if preferred:
+                    adjustment += (
+                        question.get("positive_adjustment", 0)
+                        if answer in preferred
+                        else question.get("negative_adjustment", 0)
+                    )
         else:
             keywords = [_normalize(item) for item in question.get("keywords", []) if item.strip()]
             if keywords:

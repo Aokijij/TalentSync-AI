@@ -116,7 +116,7 @@ export function CompanyTalentPage() {
             </div>
             <div className="mt-4 grid items-end gap-4 sm:grid-cols-[1fr_180px_auto]">
               <label className="block text-xs font-semibold text-[var(--muted)]">Nombre, profesión o habilidad
-                <span className="relative mt-2 block"><Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" /><input className="field-control !pl-10" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej. Python o analista" /></span>
+                <span className="relative mt-2 block"><Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" /><input className="field-control !pl-10" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej. servicio al cliente o administración" /></span>
               </label>
               <label className="block text-xs font-semibold text-[var(--muted)]">Porcentaje mínimo
                 <select className="field-control mt-2" value={minMatch} onChange={(event) => setMinMatch(Number(event.target.value))}>{[0, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value ? `${value}% o más` : "Cualquier porcentaje"}</option>)}</select>

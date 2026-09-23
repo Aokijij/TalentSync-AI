@@ -196,9 +196,7 @@ def test_screening_questions_adjust_only_the_company_score(client):
                     "type": "choice",
                     "required": True,
                     "options": ["Sí", "No"],
-                    "preferred_options": ["Sí"],
-                    "positive_adjustment": 5,
-                    "negative_adjustment": -3,
+                    "option_scores": {"Sí": 5, "No": -3},
                 }
             ],
         },
@@ -207,6 +205,7 @@ def test_screening_questions_adjust_only_the_company_score(client):
     job = response.json()
     public_question = client.get(f"/api/v1/jobs/{job['id']}").json()["application_questions"][0]
     assert "preferred_options" not in public_question
+    assert "option_scores" not in public_question
     assert "positive_adjustment" not in public_question
     assert client.post("/api/v1/applications", headers=candidate_headers, json={"job_id": job["id"]}).status_code == 422
 
@@ -447,6 +446,36 @@ def test_talent_search_and_invitations_start_at_fifty_percent(client, monkeypatc
     assert len(ranked.json()) == expected_count
     invitation = client.post(f"/api/v1/recommendations/jobs/{job['id']}/candidates/{candidate['id']}/invite", headers=owner)
     assert invitation.status_code == invite_status, invitation.text
+
+
+def test_company_candidate_page_uses_eighty_percent_and_pagination_contract(client, monkeypatch):
+    from app.application.use_cases import recommendations
+
+    _, owner = company_account(client, "empresa-paginada")
+    first, _ = register(client, "perfil-destacado", profession="Coordinador comercial", skills=["Comunicación"])
+    second, _ = register(client, "perfil-regular", profession="Asistente comercial", skills=["Organización"])
+    job = create_job(client, owner)
+    monkeypatch.setattr(
+        recommendations,
+        "rank_candidates_for_job",
+        lambda db, job, *, nlp: [
+            (db.users.get(first["id"]), 86),
+            (db.users.get(second["id"]), 79),
+        ],
+    )
+
+    response = client.get(
+        f"/api/v1/recommendations/jobs/{job['id']}/candidates-page",
+        headers=owner,
+        params={"audience": "invite", "minimum_match": 80, "limit": 5, "offset": 0},
+    )
+    assert response.status_code == 200, response.text
+    page = response.json()
+    assert page["total"] == 1
+    assert page["limit"] == 5
+    assert page["offset"] == 0
+    assert [item["user_id"] for item in page["items"]] == [first["id"]]
+    assert page["top_candidates"] == page["items"]
 
 
 def test_hiring_keeps_process_open_until_company_marks_job_filled(client):

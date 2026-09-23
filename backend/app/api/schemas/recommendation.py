@@ -29,3 +29,11 @@ class RankedCandidate(BaseModel):
     has_applied: bool = False
     has_pending_invitation: bool = False
     languages: list[dict] = []
+
+
+class RankedCandidatePage(BaseModel):
+    items: list[RankedCandidate]
+    total: int
+    limit: int
+    offset: int
+    top_candidates: list[RankedCandidate]
