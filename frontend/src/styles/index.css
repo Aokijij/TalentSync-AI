@@ -140,7 +140,7 @@ html[data-theme="dark"] .brand-mark-shell {
 
 .resume-body {
   display: grid;
-  grid-template-columns: minmax(13rem, 0.82fr) minmax(0, 2fr);
+  grid-template-columns: minmax(14rem, 0.72fr) minmax(0, 2.25fr);
   min-height: 45rem;
 }
 
@@ -156,7 +156,7 @@ html[data-theme="dark"] .brand-mark-shell {
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  padding: 2.4rem 2.7rem;
+  padding: 2.4rem 3rem;
 }
 
 .resume-section h2 {

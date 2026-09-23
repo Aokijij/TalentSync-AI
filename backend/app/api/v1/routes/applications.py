@@ -5,6 +5,7 @@ from app.api.schemas.application import (
     ApplicationCreate,
     ApplicationResponse,
     ApplicationStatusUpdate,
+    CompanyApplicationResponse,
 )
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import applications as use_cases
@@ -35,7 +36,7 @@ def my_applications(
     return use_cases.my_applications(current_user=current_user, db=db)
 
 
-@router.get("/jobs/{job_id}", response_model=list[ApplicationResponse])
+@router.get("/jobs/{job_id}", response_model=list[CompanyApplicationResponse])
 def job_applications(
     job_id: int,
     current_user: User = Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)),

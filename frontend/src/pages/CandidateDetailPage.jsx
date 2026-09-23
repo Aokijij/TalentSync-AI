@@ -50,10 +50,13 @@ export function CandidateDetailPage() {
           )
           .catch(() => null)
       : Promise.resolve(null);
-    Promise.all([profileRequest, matchRequest])
-      .then(([{ data }, candidateMatch]) => {
+    const applicationRequest = jobId
+      ? api.get(`/applications/jobs/${jobId}`).then(({ data }) => data.find((item) => String(item.user_id) === String(userId))).catch(() => null)
+      : Promise.resolve(null);
+    Promise.all([profileRequest, matchRequest, applicationRequest])
+      .then(([{ data }, candidateMatch, application]) => {
         setCandidate(data);
-        setMatch(candidateMatch || null);
+        setMatch(application?.adjusted_match_percentage != null ? { ...candidateMatch, match_percentage: application.adjusted_match_percentage, base_match_percentage: application.base_match_percentage, screening_adjustment: application.screening_adjustment } : candidateMatch || null);
       })
       .catch((requestError) =>
         setError(
@@ -136,6 +139,7 @@ export function CandidateDetailPage() {
                 Compatibilidad para esta vacante
               </p>
               <CompatibilityBar value={match.match_percentage} />
+              {match.screening_adjustment ? <p className="mt-2 text-xs text-[var(--muted)]">Base {Math.round(match.base_match_percentage)}% · respuestas {match.screening_adjustment > 0 ? "+" : ""}{match.screening_adjustment} puntos. Este ajuste es privado para la empresa.</p> : null}
             </div>
           ) : null}
         </div>

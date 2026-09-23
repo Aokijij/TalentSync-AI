@@ -4,129 +4,173 @@
 
 # TalentSync AI
 
-Plataforma de gestión y recomendación laboral que conecta perfiles profesionales con vacantes. Permite cargar una hoja de vida en PDF, revisar la información extraída, recibir recomendaciones y dar seguimiento a procesos de selección.
+TalentSync AI es una plataforma de selección laboral para candidatos, empresas y administradores. Centraliza la hoja de vida, las vacantes, las postulaciones y el seguimiento de cada proceso. También calcula una compatibilidad explicable entre el perfil y la vacante para ayudar a ordenar oportunidades y candidatos; el resultado sirve como apoyo y no reemplaza la evaluación de la empresa.
 
-## Funcionalidades
+## Aplicación publicada
 
-- **Candidatos:** registro, perfil profesional, foto, hoja de vida con tres estilos, búsqueda de vacantes, recomendaciones, postulaciones, empresas seguidas y notificaciones con contexto.
-- **Empresas:** perfil público ampliado, publicación de vacantes, búsqueda e invitación de talento compatible, comparación de candidatos y seguimiento por etapas configurables.
-- **Administración:** acceso independiente por URL, métricas, análisis de actividad y gestión de usuarios, empresas y vacantes.
-- **Interfaz:** navegación según el rol, filtros por ubicación y sector, indicadores de compatibilidad y temas claro y oscuro.
+- Frontend: [https://talentsync-ai.pages.dev](https://talentsync-ai.pages.dev)
+- Estado de la API: [https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io/health](https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io/health)
 
-## Tecnologías y arquitectura
+El frontend se publica en Cloudflare Pages. La API, PostgreSQL y el almacenamiento privado de archivos se ejecutan en Azure.
 
-| Área | Tecnologías |
+## Qué puede hacer cada rol
+
+### Candidato
+
+- Completar su perfil profesional y registrar idiomas con nivel.
+- Cargar una hoja de vida en PDF y corregir la información extraída.
+- Elegir estilo, fotografía y paleta de colores para la vista previa del CV.
+- Explorar vacantes por ubicación, modalidad, contrato, sector, salario y fecha de publicación.
+- Consultar cuánto tiempo lleva publicada cada oportunidad y recibir recomendaciones ordenadas por compatibilidad.
+- Definir el porcentaje mínimo para sus recomendaciones y avisos.
+- Responder las preguntas de preselección que una empresa haya configurado antes de postularse.
+- Consultar postulaciones, empresas seguidas y notificaciones organizadas por categoría.
+- Exportar la hoja de vida con el nombre `Nombre - HV - TalentSync.pdf`.
+
+### Empresa
+
+- Crear un perfil público con logo, portada, propósito, cultura y beneficios.
+- Publicar vacantes con modalidad, contrato, ubicación, habilidades, idiomas y preguntas opcionales de preselección.
+- Buscar talento por vacante, nombre, profesión, habilidad y porcentaje mínimo.
+- Invitar candidatos compatibles y revisar tanto el porcentaje base como el ajuste privado de preselección.
+- Preparar cambios de etapa y confirmarlos antes de enviar notificaciones.
+- Marcar una vacante como cubierta cuando el cupo esté completo.
+- Reabrir una vacante con el mismo proceso o crear uno nuevo sin perder el historial.
+
+### Administración
+
+- Acceder desde una dirección independiente.
+- Consultar métricas de la plataforma.
+- Gestionar usuarios, empresas y vacantes según los permisos del rol.
+
+## Cómo funciona la compatibilidad
+
+El backend usa la misma función para la vista del candidato y para el ranking de la empresa. Así evita que un mismo perfil muestre porcentajes distintos para la misma vacante.
+
+Sin requisitos de idioma:
+
+```text
+compatibilidad = 60% habilidades requeridas + 40% contexto profesional
+```
+
+Cuando la vacante exige idiomas:
+
+```text
+compatibilidad = 60% habilidades + 30% contexto profesional + 10% nivel de idioma
+```
+
+El contexto profesional combina similitud de texto con profesión, cargos, responsabilidades y formación. Los niveles de idioma se comparan de forma ordinal desde A1 hasta C2 y nativo. El porcentaje es orientativo: depende de la información registrada y no certifica competencias.
+
+Las preguntas de preselección no alteran el porcentaje público que ve el candidato. Sus respuestas generan un ajuste privado de hasta 20 puntos positivos o negativos que solo puede consultar la empresa. Las preguntas pueden ser abiertas, evaluadas por palabras clave, o de selección, evaluadas por opciones preferidas.
+
+## Arquitectura
+
+| Capa | Tecnologías y responsabilidad |
 | --- | --- |
-| Frontend | React 19, Vite 6, React Router, Tailwind CSS, Axios y React Hook Form |
-| API | Python, FastAPI y Pydantic |
-| Persistencia | SQLAlchemy, Alembic y PostgreSQL; SQLite para desarrollo aislado y pruebas |
-| Autenticación | JWT y contraseñas protegidas con bcrypt |
-| Procesamiento de CV | Docling, EasyOCR y pypdf |
-| Matching | scikit-learn, HashingVectorizer y similitud coseno |
+| Frontend | React 19, React Router, Vite 6, Tailwind CSS, Axios y React Hook Form |
+| API | FastAPI, Pydantic y Uvicorn |
+| Dominio | Reglas de matching, habilidades, estados y contratos |
+| Aplicación | Casos de uso para autenticación, perfiles, vacantes, postulaciones y recomendaciones |
+| Persistencia | SQLAlchemy, Alembic y PostgreSQL; SQLite para pruebas aisladas |
+| Seguridad | JWT, bcrypt, autorización por rol y limitación de solicitudes |
+| Procesamiento de CV | pypdf en la imagen ligera; Docling y EasyOCR en la instalación completa |
+| Producción | Cloudflare Pages, Azure Container Apps, PostgreSQL Flexible Server y Blob Storage |
 
-El backend sigue una arquitectura por capas. El dominio define las reglas y los contratos; la aplicación coordina los casos de uso; la infraestructura implementa persistencia, seguridad y NLP; la API valida las solicitudes y proporciona las dependencias. En React se separan las pantallas, los componentes, los proveedores de contexto y los hooks.
+El backend mantiene separadas las reglas de negocio, los casos de uso, la infraestructura y las rutas HTTP. El frontend divide pantallas, componentes, contextos, hooks y acceso a la API. Esta separación permite probar las reglas sin depender de la interfaz.
 
 ```text
 backend/
   app/
-    api/                 Rutas HTTP, esquemas y dependencias
-    application/         Casos de uso y puertos de servicios
     domain/              Entidades, contratos y reglas de matching
+    application/         Casos de uso y puertos de servicios
     infrastructure/      Base de datos, repositorios, seguridad y NLP
-    core/                Configuración y limitación de solicitudes
-    main.py              Arranque de FastAPI
-  alembic/               Migraciones de base de datos
+    api/                  Rutas, esquemas y dependencias HTTP
+    core/                 Configuración y limitación de solicitudes
+  alembic/               Migraciones versionadas
   scripts/               Herramientas de administración
-  tests/                 Pruebas de API, dominio e infraestructura
+  tests/                 Pruebas de dominio, infraestructura y API
+
 frontend/
-  public/
-    brand/               Identidad visual y favicon
+  public/brand/          Logo y recursos de identidad
   src/
-    api/                 Cliente HTTP
-    components/          Controles y gráficos
-      brand/             Componentes reutilizables de marca
-    constants/           Sectores y ubicaciones
+    api/                 Cliente Axios y tratamiento de errores
+    components/          Controles reutilizables
+    constants/           Idiomas, sectores, ciudades y paletas
     contexts/            Autenticación y tema
     hooks/               Lógica reutilizable
-    layouts/             Estructura de navegación
-    pages/               Pantallas por rol
+    layouts/             Navegación por rol
+    pages/               Pantallas de candidato, empresa y administración
     routes/              Rutas y protección de acceso
     styles/              Estilos globales
-  tests/                 Pruebas de selección de recomendaciones
-scripts/                 Arranque local desde PowerShell
+  tests/                 Pruebas de utilidades de interfaz
+
+scripts/                 Desarrollo y despliegue desde PowerShell
 ```
 
-## Requisitos
+## Requisitos para desarrollo
 
 - Python 3.12 o 3.13.
 - Node.js 22 y npm.
-- PostgreSQL instalado localmente o accesible desde un servidor.
-- Git para clonar el repositorio.
+- Git.
+- PostgreSQL para un entorno persistente. SQLite también sirve para una prueba local aislada.
 
-Para desarrollo local, la aplicación se ejecuta directamente con Python y Node.js.
-Docker se utiliza para construir la imagen desplegable en Azure.
-
+Docker se usa para construir la imagen de producción; no es necesario para ejecutar el proyecto localmente.
 
 ## Instalación local
 
-Los siguientes comandos usan PowerShell y parten de una copia nueva del repositorio. Si ya tienes archivos `.env`, conserva sus valores en lugar de sobrescribirlos.
+Los comandos siguientes usan PowerShell y parten de una copia nueva. Si ya existen archivos `.env`, conserva sus valores.
 
-### 1. Preparar PostgreSQL
+### 1. Clonar el repositorio
 
-Conéctate como administrador mediante `psql` y crea un usuario y una base de datos para la aplicación:
-
-```sql
-CREATE ROLE talentsync LOGIN;
-\password talentsync
-CREATE DATABASE talentsync OWNER talentsync;
+```powershell
+git clone https://github.com/Aokijij/TalentSync-AI.git
+cd TalentSync-AI
 ```
 
-`\password` solicita la contraseña de forma interactiva. Guarda esos datos para configurar `DATABASE_URL`.
-
-### 2. Instalar y configurar el backend
-
-Desde la raíz del proyecto:
+### 2. Preparar el backend
 
 ```powershell
 cd backend
 py -3.13 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements-lite.txt
 Copy-Item .env.example .env
 ```
 
-Si utilizas Python 3.12, cambia `py -3.13` por `py -3.12`. En otros sistemas puedes crear el entorno con `python3 -m venv .venv` y utilizar `.venv/bin/python`.
+La instalación ligera utiliza `pypdf` y funciona con PDF que contienen texto seleccionable. Para habilitar Docling y OCR, instala `requirements.txt` y revisa las variables `CV_*`.
 
-Edita `backend/.env`:
+Para una prueba rápida con SQLite, edita `backend/.env`:
 
-- Sustituye `CHANGE_ME` en `DATABASE_URL` por la contraseña del usuario PostgreSQL. Los caracteres reservados de una contraseña deben codificarse para su uso en una URL.
-- Completa `SECRET_KEY` con un valor aleatorio de al menos 32 caracteres. Puedes generar uno con:
+```dotenv
+ENVIRONMENT=development
+DATABASE_URL=sqlite:///./talentsync.db
+SECRET_KEY=PEGA_AQUI_UNA_CLAVE_ALEATORIA_DE_AL_MENOS_32_CARACTERES
+CV_PARSER=pypdf
+CV_OCR_ENABLED=false
+CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173"]
+```
+
+Genera `SECRET_KEY` localmente:
 
 ```powershell
 .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-Para una instalación ligera, puedes instalar `requirements-lite.txt` en lugar de `requirements.txt` y configurar `CV_PARSER=pypdf`. Esta variante extrae la capa de texto del PDF y no realiza OCR.
-
-### 3. Crear las tablas e iniciar la API
-
-Desde `backend/`, con la base de datos disponible y el archivo `.env` configurado:
+Aplica las migraciones e inicia la API:
 
 ```powershell
 .\.venv\Scripts\python.exe -m alembic upgrade head
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Las migraciones crean el esquema. Las cuentas y las vacantes se crean al utilizar la aplicación.
+Comprueba estos puntos:
 
-- Estado del servicio: [http://localhost:8000/health](http://localhost:8000/health).
-- Documentación interactiva de la API: [http://localhost:8000/docs](http://localhost:8000/docs).
-- Contrato OpenAPI: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json).
+- [http://localhost:8000/health](http://localhost:8000/health)
+- [http://localhost:8000/docs](http://localhost:8000/docs)
+- [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
 
-Para desarrollo aislado sin un servidor PostgreSQL, configura `DATABASE_URL=sqlite:///./talentsync.db` antes de ejecutar las migraciones sobre una base nueva. Los comandos del backend son los mismos.
+### 3. Preparar el frontend
 
-### 4. Instalar e iniciar el frontend
-
-Abre otra terminal en la raíz del proyecto:
+Abre otra terminal en la raíz del repositorio:
 
 ```powershell
 cd frontend
@@ -135,201 +179,145 @@ Copy-Item .env.example .env
 npm run dev
 ```
 
-Abre [http://localhost:5173](http://localhost:5173). `frontend/.env` debe apuntar a la API mediante `VITE_API_URL=http://localhost:8000/api/v1`.
+`frontend/.env` debe contener:
 
-Después de la instalación inicial, puedes usar `scripts/dev-backend.ps1` y `scripts/dev-frontend.ps1`, cada uno en una terminal. El backend usa el puerto 8000 por defecto; para cambiarlo, ejecuta `./scripts/dev-backend.ps1 -Port 8007` y actualiza `VITE_API_URL` con el mismo puerto.
+```dotenv
+VITE_API_URL=http://127.0.0.1:8000/api/v1
+```
 
-## Configuración
+Abre [http://localhost:5173](http://localhost:5173). Después de la instalación inicial también puedes iniciar cada parte con `scripts/dev-backend.ps1` y `scripts/dev-frontend.ps1`.
 
-Las plantillas `.env.example` se incluyen en el repositorio. Los archivos `.env`, las bases de datos locales y los CV quedan excluidos del control de versiones.
+### 4. Usar PostgreSQL en local
+
+Crea un usuario y una base con un administrador de PostgreSQL:
+
+```sql
+CREATE ROLE talentsync LOGIN;
+\password talentsync
+CREATE DATABASE talentsync OWNER talentsync;
+```
+
+Luego configura `DATABASE_URL` con el formato `postgresql+psycopg://usuario:contraseña@servidor:5432/base`. Codifica los caracteres reservados de la contraseña para que formen una URL válida y vuelve a ejecutar las migraciones.
+
+## Variables de entorno principales
+
+### Backend
 
 | Variable | Uso |
 | --- | --- |
-| `APP_NAME` | Nombre mostrado por la API |
-| `ENVIRONMENT` | `development` durante el desarrollo local; controla también la validación de hosts |
+| `ENVIRONMENT` | Entorno de ejecución y validaciones asociadas |
 | `DATABASE_URL` | Conexión PostgreSQL o SQLite |
-| `SECRET_KEY` | Clave de firma de los tokens JWT; obligatoria, mínimo 32 caracteres |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Vigencia del token, 120 minutos por defecto |
-| `UPLOAD_DIR` | Directorio donde se guardan los CV y las fotos de perfil, relativo a `backend/` al iniciar desde esa carpeta |
-| `CORS_ORIGINS` | Lista JSON con los orígenes del frontend permitidos |
-| `CV_PARSER` | `docling`, `auto` o `pypdf` |
-| `CV_OCR_ENABLED` | Activa OCR en el procesamiento con Docling |
-| `CV_OCR_FORCE_FULL_PAGE` | Fuerza OCR de página completa |
-| `CV_DOCLING_TIMEOUT_SECONDS` | Tiempo límite configurado para Docling, 120 segundos por defecto |
-| `CV_DOCLING_MIN_TEXT_CHARS` | Umbral mínimo de texto usado por el modo `auto`, 200 por defecto |
-| `VITE_API_URL` | URL base del backend en el frontend, incluido `/api/v1` |
+| `SECRET_KEY` | Firma de JWT; es obligatoria y debe tener al menos 32 caracteres |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Vigencia de la sesión |
+| `UPLOAD_DIR` | Almacenamiento local de archivos durante desarrollo |
+| `AZURE_STORAGE_ACCOUNT_URL` | Cuenta de Blob Storage usada en producción |
+| `AZURE_STORAGE_CONTAINER` | Contenedor privado para CV e imágenes |
+| `ALLOWED_HOSTS` | Hosts HTTP aceptados por la API |
+| `CORS_ORIGINS` | Orígenes exactos que pueden llamar a la API desde el navegador |
+| `CV_PARSER` | `pypdf`, `docling` o `auto` |
+| `CV_OCR_ENABLED` | Activa OCR cuando el procesador lo admite |
 
-Reinicia el proceso correspondiente después de modificar su `.env`. Las variables `VITE_*` se incorporan al frontend y son visibles en el navegador; utiliza allí únicamente configuración pública.
+### Frontend
 
-## Cuentas y flujo de uso
+| Variable | Uso |
+| --- | --- |
+| `VITE_API_URL` | URL base de la API, incluido `/api/v1` |
 
-Los candidatos y las empresas crean su cuenta desde **Crear cuenta**. El registro de una empresa requiere su nombre y NIT. El registro público no permite crear administradores.
+Las variables `VITE_*` quedan incluidas en los archivos enviados al navegador. No guardes secretos en ellas ni agregues archivos `.env` al repositorio.
 
-Para crear una cuenta administradora, ejecuta desde `backend/`, después de aplicar las migraciones:
+## Flujo de uso
+
+1. La empresa completa su perfil, publica una vacante y, si lo necesita, añade preguntas de preselección.
+2. El candidato completa su perfil, registra idiomas y carga su CV.
+3. El backend extrae la información disponible y calcula la compatibilidad.
+4. El candidato revisa recomendaciones, responde las preguntas requeridas y decide a cuáles postularse.
+5. La empresa compara perfiles, respuestas y compatibilidad ajustada, invita talento y prepara movimientos en el tablero.
+6. El botón **Guardar cambios y notificar** confirma los movimientos pendientes.
+7. Contratar a una persona no rechaza a las demás ni cubre la vacante automáticamente.
+8. La empresa marca la vacante como cubierta cuando completa el cupo.
+9. Si necesita reabrirla, puede continuar con el historial existente o crear otro proceso.
+
+## Cuenta administradora
+
+El registro público solo crea candidatos y empresas. Para crear un administrador, ejecuta desde `backend/`:
 
 ```powershell
 .\.venv\Scripts\python.exe -m scripts.create_admin --name "Tu nombre" --email "tu-correo@tu-dominio.com"
 ```
 
-La herramienta solicita y confirma la contraseña sin mostrarla en pantalla. Crea una cuenta nueva con la contraseña almacenada como hash bcrypt; rechaza correos existentes para evitar sobrescribir cuentas o cambiar sus permisos.
-
-El acceso administrativo no se muestra en la navegación pública. Se abre directamente en
-[http://localhost:5173/acceso-administracion](http://localhost:5173/acceso-administracion).
-Las cuentas de candidatos y empresas no pueden iniciar sesión por esa dirección, y las
-cuentas administradoras no pueden entrar por el formulario público.
-
-El flujo principal es:
-
-1. La empresa completa su perfil y publica una vacante con requisitos, sector y etapas de selección.
-2. El candidato completa su perfil y carga un CV en PDF de hasta 5 MB.
-3. La aplicación extrae texto y datos profesionales; el candidato puede revisar y editar su perfil.
-4. La aplicación compara perfiles y vacantes y presenta compatibilidad, habilidades coincidentes y aspectos del contexto profesional por fortalecer.
-5. El candidato puede seguir empresas y elegir la compatibilidad mínima para recibir avisos de nuevas vacantes.
-6. La empresa puede invitar a una persona con alta compatibilidad a postularse y gestionar el proceso en el tablero de candidatos.
-7. La empresa prepara los movimientos y los confirma con **Guardar cambios y notificar**. Contratar una persona no descarta a las demás ni cubre automáticamente la vacante. La empresa decide cuándo marcarla como cubierta.
-8. Una vacante cubierta puede reabrirse conservando candidatos y seguimientos, o publicarse como un proceso nuevo sin modificar el historial anterior.
-
-## Extracción de CV y matching
-
-Docling reconstruye la estructura del documento y utiliza EasyOCR cuando corresponde. `pypdf` proporciona una ruta alternativa de extracción. El modo `auto` recurre a Docling cuando la capa de texto parece insuficiente; el modo `docling` intenta usarlo siempre.
-
-La primera ejecución puede descargar modelos y tardar más. Forzar OCR de página completa aumenta el trabajo de procesamiento. Los resultados dependen de la calidad del PDF; los datos del perfil siguen siendo editables.
-
-La normalización y las heurísticas extraen habilidades, experiencia, formación, ubicación y otros campos. `HashingVectorizer` genera vectores de 384 dimensiones y la compatibilidad combina:
-
-```text
-compatibilidad = 0.60 × cobertura de habilidades + 0.40 × contexto profesional
-```
-
-Si la vacante pide idiomas, los pesos son 60% habilidades, 30% contexto profesional y 10% cobertura de los niveles de idioma. La empresa y el candidato usan el mismo cálculo. Los idiomas y sus niveles se registran por separado de las habilidades técnicas.
-
-Los resultados incluyen motivos, categorías y filtros de relevancia. Las reglas se encuentran en `backend/app/domain/services/matching.py`; la persistencia y el ordenamiento se coordinan en `backend/app/application/use_cases/matching.py`.
-
-## API
-
-Las rutas funcionales comienzan con `/api/v1`. Las operaciones protegidas reciben el token mediante `Authorization: Bearer <token>`.
-
-| Grupo | Responsabilidad |
-| --- | --- |
-| `/auth` | Registro, inicio de sesión e identidad actual |
-| `/profiles` | Perfil profesional, CV y acceso autorizado a candidatos |
-| `/companies` | Información y gestión de empresas |
-| `/jobs` | Búsqueda, publicación y actualización de vacantes |
-| `/applications` | Postulaciones, etapas, notas y entrevistas |
-| `/recommendations` | Recomendaciones de vacantes y ranking de candidatos |
-| `/notifications` | Notificaciones y estado de lectura |
-| `/admin` | Métricas y gestión administrativa |
-
-Los parámetros, esquemas y permisos se pueden consultar en la documentación interactiva de la API.
+El comando solicita la contraseña sin mostrarla. El acceso administrativo se abre en `/acceso-administracion`; las cuentas de candidato y empresa no pueden ingresar allí.
 
 ## Pruebas y compilación
 
-Desde `backend/`:
+Backend:
 
 ```powershell
+cd backend
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider
 ```
 
-Las pruebas de integración usan SQLite en memoria y las de migraciones utilizan archivos temporales. La generación de SQL PostgreSQL se comprueba sin conectarse a un servidor. Estas pruebas no sustituyen la verificación de un despliegue PostgreSQL ni una ejecución completa del OCR.
-
-Desde `frontend/`:
+Frontend:
 
 ```powershell
-npm run lint
+cd frontend
 npm test
+npm run lint
 npm run build
 ```
 
-La compilación produce `frontend/dist`. `npm run preview` permite revisarla localmente. Para publicar la aplicación se necesita un servicio que ejecute la API y un alojamiento para los archivos estáticos con redirección de rutas hacia `index.html`. Al preparar producción, configura HTTPS, CORS, almacenamiento persistente de CV y los hosts permitidos en `backend/app/main.py` según tu dominio.
+Las pruebas de integración usan SQLite aislado. La generación de SQL de PostgreSQL se valida sin conectarse a producción. El repositorio aún no incluye una suite de navegador con Cypress o Playwright ni una campaña documentada de carga.
 
-## Antes de producción
+El workflow `.github/workflows/ci.yml` ejecuta pruebas, lint, auditorías, migraciones y una construcción Docker. CI valida el commit, pero no despliega automáticamente.
 
-El repositorio contiene el código funcional y las migraciones, pero todavía requiere una infraestructura de despliegue. Antes de exponerlo públicamente debes:
+## API
 
-- desplegar la API y el frontend en servicios con HTTPS;
-- usar PostgreSQL administrado y definir un proceso de copias de seguridad y restauración;
-- mover los CV a almacenamiento persistente y privado, con una política de retención;
-- configurar dominios, CORS, hosts permitidos y secretos fuera del repositorio;
-- añadir correo transaccional si se necesitan avisos fuera de la aplicación;
-- incorporar monitorización, registros centralizados, límites de tamaño y revisión de dependencias.
+Todas las rutas funcionales comienzan en `/api/v1`. Las operaciones protegidas reciben `Authorization: Bearer <token>`.
 
-## Despliegue en Azure
+| Grupo | Responsabilidad |
+| --- | --- |
+| `/auth` | Registro, inicio de sesión e identidad actual |
+| `/profiles` | Perfil, CV, idiomas y acceso autorizado a candidatos |
+| `/companies` | Perfil público y gestión de empresas |
+| `/jobs` | Métricas públicas, búsqueda avanzada, preguntas, publicación, cierre y reapertura de vacantes |
+| `/applications` | Postulaciones, respuestas de preselección, etapas, notas e entrevistas |
+| `/recommendations` | Vacantes sugeridas y ranking de candidatos |
+| `/notifications` | Avisos por categoría, paginación, estado de lectura y eliminación |
+| `/admin` | Métricas y gestión administrativa |
 
-El repositorio incluye una imagen Docker que compila React y lo sirve desde la misma
-URL que FastAPI. El script `scripts/deploy-azure.ps1` crea o actualiza:
+Consulta `/docs` para ver parámetros, esquemas y respuestas del contrato vigente.
 
-- Azure Container Apps para la aplicación;
-- Azure Database for PostgreSQL Flexible Server;
-- Azure Blob Storage privado para los CV;
-- Azure Container Registry para las imágenes.
+## Actualización de producción
 
-Requisitos: Azure CLI, una sesión iniciada con `az login` y permisos para crear
-recursos y asignaciones de roles. Desde la raíz del repositorio ejecuta:
+La publicación tiene dos pasos separados: Azure para la API y Cloudflare Pages para el frontend. Antes de actualizar, ejecuta pruebas, revisa el diff, confirma un respaldo recuperable y crea el commit que identificará la imagen.
 
-```powershell
-.\scripts\deploy-azure.ps1
-```
-
-La ubicación predeterminada es `eastus2` y se puede cambiar con `-Location`. El
-script crea una réplica mínima para evitar arranques en frío. Para un entorno de
-prueba de menor costo, usa `-ScaleToZero`; la primera solicitud después de un
-periodo inactivo tardará más. Las credenciales se generan durante el primer
-despliegue y quedan guardadas como secretos de Container Apps, nunca en archivos
-del repositorio.
-
-El contenedor usa `pypdf` para mantener el tamaño y el tiempo de arranque
-controlados. Extrae correctamente PDF con texto seleccionable; el OCR de documentos
-escaneados requiere una imagen separada con las dependencias completas.
-
-No se incluyen cuentas precargadas, vacantes de ejemplo ni datos de prueba. Crea los usuarios desde la interfaz y la cuenta administradora mediante `scripts/create_admin.py`.
-
-## Actualizar la instalación existente en Azure
-
-La aplicación usa Container Apps y un registro privado de imágenes. Para actualizarla, usa `scripts/update-production.ps1`; el script de `deploy-azure.ps1` se reserva para el aprovisionamiento inicial. No ejecutes semillas ni reinicies la base de datos en producción.
-
-Antes de publicar:
-
-1. Ejecuta las pruebas, lint, compilación y auditorías. El workflow `.github/workflows/ci.yml` también comprueba una construcción Docker con Python 3.13 y Node 22; no despliega automáticamente.
-2. Verifica un punto de recuperación reciente de PostgreSQL y los archivos existentes. Las migraciones hasta `0017_languages` conservan los datos, simplifican las etapas conocidas y añaden presentación e idiomas. Los flujos personalizados no se sustituyen.
-3. Las fotos, logos y portadas nuevos se guardan en Blob Storage privado con `AZURE_STORAGE_ACCOUNT_URL` y `AZURE_STORAGE_CONTAINER`. La identidad administrada necesita **Storage Blob Data Contributor**, igual que para los CV. En desarrollo, sin esa URL, se conservan en `UPLOAD_DIR`. Los archivos antiguos que estén solo en el disco de una revisión deben copiarse al contenedor Blob con los mismos nombres y prefijos `profile_photos/` o `company_images/` antes de retirarla, o volverse a subir. Este cambio no recupera archivos que Azure ya haya eliminado.
-4. Revisa el diff y crea un commit con todos los cambios de esta versión, incluidas las migraciones, los nuevos componentes y los archivos de configuración. No incluyas `.env`, `.azure`, uploads ni cachés. Espera a que CI termine correctamente al subirlo a GitHub.
-
-Desde PowerShell 7, en la raíz del proyecto:
+Desde PowerShell 7, en la raíz del repositorio:
 
 ```powershell
 ./scripts/update-production.ps1 -WhatIf
-./scripts/update-production.ps1 -BackupVerified
-```
-
-La primera orden solo consulta el destino y muestra la operación prevista. La segunda exige un árbol Git limpio, pide confirmación y publica una imagen etiquetada con el commit. Mantiene los secretos, la base de datos, la identidad, el escalado y los dominios existentes. Comprueba que la **nueva** revisión esté lista y responda `/health`, no solo la anterior. Después revisa login, idiomas, fotos, recomendaciones y movimientos del tablero en la URL pública, sin enviar notificaciones de prueba a usuarios reales.
-
-El script muestra la imagen y revisión anteriores para diagnóstico y recuperación. No ejecuta un rollback automático ni baja migraciones: recuperar una versión antigua requiere comprobar antes la compatibilidad con el esquema y, si fuera necesario, restaurar una copia de la base.
-
-### Dirección pública
-
-La dirección generada actual es `https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io`. Para usar una dirección propia corta en Container Apps necesitas controlar un dominio o subdominio, configurar su DNS y vincular el certificado administrado. Consulta [la documentación de Azure sobre dominios y certificados](https://learn.microsoft.com/en-us/azure/container-apps/custom-domains-managed-certificates).
-
-El frontend se publica por separado en Cloudflare Pages y la API permanece en Azure. El nombre previsto es `talentsync-ai.pages.dev`; verifica el subdominio que Cloudflare asigna al crear el proyecto. No requiere comprar un dominio. El estado real del despliegue se consulta en Cloudflare; esta configuración por sí sola no confirma una publicación.
-
-### Publicar el frontend en Cloudflare Pages
-
-Crea un proyecto Pages llamado `talentsync-ai` con subida directa y rama de producción `main`. Compila desde `frontend/` con `VITE_API_URL=https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io/api/v1` y publica únicamente el contenido de `frontend/dist`. Pages resuelve las rutas de React hacia `index.html` sin añadir un `404.html` raíz. Consulta [subida directa](https://developers.cloudflare.com/pages/get-started/direct-upload/) y [rutas SPA](https://developers.cloudflare.com/pages/configuration/serving-pages/).
-
-Para las siguientes versiones, inicia sesión manualmente con `npx wrangler@4.132.0 login` y usa los scripts desde un commit limpio:
-
-```powershell
 ./scripts/update-production.ps1 -BackupVerified -FrontendOrigin https://talentsync-ai.pages.dev
 ./scripts/deploy-cloudflare.ps1
 ```
 
-El primer script actualiza Azure y añade el origen HTTPS de Pages a CORS conservando los orígenes existentes. El segundo compila con la dirección absoluta de la API, comprueba CORS y publica `dist` con el identificador del commit. Si Cloudflare asigna otro subdominio, pásalo con `-FrontendOrigin` a ambos scripts y el nombre real del proyecto con `-ProjectName` al segundo. No se permiten orígenes comodín de previews contra producción. Los tokens de Cloudflare se guardan fuera de Git; nunca deben incluirse en variables `VITE_*`.
+`-WhatIf` muestra el destino y la operación prevista. La actualización real exige un árbol Git limpio, conserva los secretos y comprueba que la nueva revisión responda `/health`. El script de Cloudflare compila con la URL HTTPS de la API y publica únicamente `frontend/dist`.
+
+No ejecutes semillas, `alembic downgrade` ni reinicios de base de datos en producción. Si una revisión falla, comprueba primero que la imagen anterior sea compatible con el esquema actual. Las fotos, logos, portadas y CV deben permanecer en Blob Storage antes de retirar una revisión.
+
+## Seguridad y datos
+
+- JWT identifica al usuario y su rol; el backend vuelve a verificar permisos y propiedad de cada recurso.
+- Las contraseñas se almacenan como hash bcrypt.
+- CV e imágenes se guardan en almacenamiento privado en producción.
+- `SECRET_KEY`, credenciales, tokens y archivos `.env` deben permanecer fuera de Git.
+- El matching y los niveles de idioma son orientativos y no deben usarse como única decisión de contratación.
+- El procesamiento de CV depende de la calidad del archivo; la imagen ligera no aplica OCR a documentos escaneados.
 
 ## Problemas frecuentes
 
-- **La API rechaza `SECRET_KEY`:** completa la variable con una clave de al menos 32 caracteres.
-- **No hay conexión con PostgreSQL:** revisa que el servicio esté iniciado, la base exista y la URL contenga las credenciales correctas.
-- **Faltan tablas:** ejecuta las migraciones desde `backend/` sobre la base configurada para esa instalación.
-- **El frontend no conecta con la API:** comprueba el puerto, `VITE_API_URL` y `CORS_ORIGINS`; reinicia Vite después de modificar su configuración.
-- **El CV no produce texto:** comprueba que tenga texto seleccionable o utiliza la instalación completa con OCR.
-- **No aparecen recomendaciones:** completa el perfil, añade habilidades y verifica que existan vacantes activas compatibles.
+- **La API rechaza `SECRET_KEY`:** usa una clave aleatoria de al menos 32 caracteres.
+- **No hay conexión con PostgreSQL:** revisa el servicio, la base, las credenciales y la codificación de la URL.
+- **Faltan tablas:** ejecuta `alembic upgrade head` con la misma `DATABASE_URL` que usa la API.
+- **El frontend no conecta:** comprueba `VITE_API_URL`, `CORS_ORIGINS` y el puerto; reinicia Vite después de cambiar `.env`.
+- **El CV no produce texto:** usa un PDF con texto seleccionable o instala la variante con Docling y OCR.
+- **No aparecen recomendaciones:** completa profesión, experiencia, habilidades e idiomas y verifica que existan vacantes activas.
+- **Git busca `credential-manager`:** configura el helper instalado, por ejemplo `git config --global credential.helper manager-core`.

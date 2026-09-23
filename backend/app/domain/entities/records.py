@@ -96,6 +96,7 @@ class Job(Protocol):
     benefits: list[str]
     pipeline_stages: list[dict] | None
     languages: list[dict]
+    application_questions: list[dict]
     skills: list[str]
     embedding: list[float] | None
     created_at: datetime
@@ -107,6 +108,8 @@ class Job(Protocol):
     def company_name(self) -> str | None: ...
     @property
     def applications_count(self) -> int: ...
+    @property
+    def application_questions_count(self) -> int: ...
 
 
 class Application(Protocol):
@@ -119,6 +122,8 @@ class Application(Protocol):
     interview_at: datetime | None
     pipeline_stage: str | None
     resolution_reason: str | None
+    screening_answers: list[dict]
+    screening_adjustment: float
     user: User
     job: Job
 
@@ -130,6 +135,10 @@ class Application(Protocol):
     def candidate_name(self) -> str | None: ...
     @property
     def pipeline_stage_title(self) -> str | None: ...
+    @property
+    def base_match_percentage(self) -> float | None: ...
+    @property
+    def adjusted_match_percentage(self) -> float | None: ...
 
 
 class Recommendation(Protocol):
@@ -160,3 +169,4 @@ class Notification(Protocol):
     is_read: bool
     created_at: datetime
     user: User
+    category: str

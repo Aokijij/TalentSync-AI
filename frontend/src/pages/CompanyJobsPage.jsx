@@ -42,6 +42,7 @@ const NEW_JOB_DEFAULTS = {
   sector: JOB_SECTORS[0],
   benefits: "",
   languages: [],
+  application_questions: [],
 };
 
 export function CompanyJobsPage() {
@@ -134,6 +135,15 @@ export function CompanyJobsPage() {
       setError("Idiomas: escribe el nombre de cada idioma o elimina la fila vacía.");
       return;
     }
+    const invalidQuestion = (values.application_questions || []).find(
+      (question) =>
+        question.prompt.trim().length < 5 ||
+        (question.type === "choice" && question.options.length < 2),
+    );
+    if (invalidQuestion) {
+      setError("Preguntas de postulación: escribe una pregunta clara y al menos dos opciones cuando corresponda.");
+      return;
+    }
     setError("");
     const payload = formPayload(values);
     setPendingSave(payload);
@@ -173,15 +183,23 @@ export function CompanyJobsPage() {
     setShowModal(true);
   }
 
-  function editJob(job) {
+  async function editJob(job) {
     setError("");
     setEditingJob(job);
     setPendingSave(null);
     setShowPreview(false);
+    let questions = [];
+    try {
+      const response = await api.get(`/jobs/${job.id}/application-questions`);
+      questions = response.data;
+    } catch {
+      questions = [];
+    }
     reset({
       ...job,
       department: job.department || departmentForCity(job.location),
       benefits: (job.benefits || []).join(", "),
+      application_questions: questions,
     });
     setShowModal(true);
   }
@@ -459,6 +477,10 @@ export function CompanyJobsPage() {
                 </Field>
               </div>
               <section className="rounded-xl border border-[var(--line)] p-4"><h3 className="mb-2 font-semibold">Idiomas requeridos</h3><LanguagesEditor value={preview.languages || []} onChange={(value) => setValue("languages", value)} required /></section>
+              <ScreeningQuestionsEditor
+                value={preview.application_questions || []}
+                onChange={(value) => setValue("application_questions", value, { shouldDirty: true })}
+              />
               <Field label="Beneficios">
                 <input
                   className="field-control"
@@ -549,6 +571,66 @@ function Field({ label, children }) {
       {label}
       <div className="mt-1.5">{children}</div>
     </label>
+  );
+}
+
+function ScreeningQuestionsEditor({ value, onChange }) {
+  const update = (index, changes) =>
+    onChange(value.map((question, position) => position === index ? { ...question, ...changes } : question));
+  const remove = (index) => onChange(value.filter((_, position) => position !== index));
+  const add = () =>
+    onChange([
+      ...value,
+      {
+        id: `question_${Date.now()}`,
+        prompt: "",
+        type: "open",
+        required: true,
+        options: [],
+        keywords: [],
+        preferred_options: [],
+        positive_adjustment: 3,
+        negative_adjustment: -1,
+      },
+    ]);
+  return (
+    <section className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="font-semibold">Preguntas antes de postularse</h3>
+          <p className="mt-1 text-sm text-[var(--muted)]">Son opcionales. Las respuestas pueden ajustar el porcentaje solo para tu equipo.</p>
+        </div>
+        <button type="button" className="button-outline button-sm" disabled={value.length >= 10} onClick={add}><Plus size={15} />Agregar pregunta</button>
+      </div>
+      <div className="mt-4 space-y-4">
+        {value.map((question, index) => (
+          <article key={question.id} className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
+            <div className="flex items-start gap-3">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--accent)]/10 text-sm font-bold text-[var(--accent)]">{index + 1}</span>
+              <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-[1fr_170px]">
+                <label className="text-sm font-semibold text-[var(--muted)]">Pregunta<input className="field-control mt-1" value={question.prompt} maxLength={300} placeholder="Ej. ¿Cuántos años has trabajado con Python?" onChange={(event) => update(index, { prompt: event.target.value })} /></label>
+                <label className="text-sm font-semibold text-[var(--muted)]">Tipo<select className="field-control mt-1" value={question.type} onChange={(event) => update(index, { type: event.target.value, options: [], preferred_options: [], keywords: [] })}><option value="open">Respuesta abierta</option><option value="choice">Opciones</option></select></label>
+              </div>
+              <button type="button" className="button-ghost button-sm !px-2 text-[var(--error)]" onClick={() => remove(index)} aria-label="Eliminar pregunta"><Trash2 size={16} /></button>
+            </div>
+            <div className="ml-11 mt-3 grid gap-3 md:grid-cols-2">
+              {question.type === "choice" ? (
+                <>
+                  <label className="text-sm font-semibold text-[var(--muted)]">Opciones, separadas por coma<input className="field-control mt-1" value={(question.options || []).join(", ")} onChange={(event) => { const options = event.target.value.split(",").map((item) => item.trim()).filter(Boolean); update(index, { options, preferred_options: (question.preferred_options || []).filter((item) => options.includes(item)) }); }} /></label>
+                  <label className="text-sm font-semibold text-[var(--muted)]">Respuesta que suma<select className="field-control mt-1" value={question.preferred_options?.[0] || ""} onChange={(event) => update(index, { preferred_options: event.target.value ? [event.target.value] : [] })}><option value="">No ajustar por respuesta</option>{(question.options || []).map((option) => <option key={option}>{option}</option>)}</select></label>
+                </>
+              ) : (
+                <label className="text-sm font-semibold text-[var(--muted)] md:col-span-2">Palabras clave que suman, separadas por coma<input className="field-control mt-1" value={(question.keywords || []).join(", ")} placeholder="Ej. python, fastapi, django" onChange={(event) => update(index, { keywords: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+              )}
+              <label className="text-sm font-semibold text-[var(--muted)]">Si coincide<input className="field-control mt-1" type="number" min="0" max="10" value={question.positive_adjustment ?? 3} onChange={(event) => update(index, { positive_adjustment: Number(event.target.value) })} /></label>
+              <label className="text-sm font-semibold text-[var(--muted)]">Si no coincide<input className="field-control mt-1" type="number" min="-10" max="0" value={question.negative_adjustment ?? -1} onChange={(event) => update(index, { negative_adjustment: Number(event.target.value) })} /></label>
+              <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--ink-strong)]"><input type="checkbox" checked={question.required ?? true} onChange={(event) => update(index, { required: event.target.checked })} />Respuesta obligatoria</label>
+            </div>
+          </article>
+        ))}
+        {!value.length ? <p className="rounded-lg border border-dashed border-[var(--line)] px-4 py-6 text-center text-sm text-[var(--muted)]">No se pedirán respuestas adicionales.</p> : null}
+      </div>
+    </section>
   );
 }
 
@@ -710,6 +792,15 @@ function JobPreview({ values, companyName }) {
           </p>
         </div>
         {values.languages?.length ? <div><h4 className="font-semibold">Idiomas y nivel mínimo</h4><div className="mt-2 space-y-2">{values.languages.map((item, index) => <p className="text-sm capitalize" key={index}>{item.name || "Idioma por definir"} · {languageLevelLabel(item.level)}</p>)}</div></div> : null}
+        {values.application_questions?.length ? (
+          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
+            <p className="text-xs font-bold uppercase text-[var(--muted)]">Antes de enviar la postulación</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">El candidato responderá {values.application_questions.length} pregunta{values.application_questions.length === 1 ? "" : "s"}.</p>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm">
+              {values.application_questions.map((question) => <li key={question.id}>{question.prompt || "Pregunta por completar"}{question.required ? " *" : ""}</li>)}
+            </ol>
+          </div>
+        ) : null}
         {benefits.length ? (
           <div>
             <p className="text-xs font-bold uppercase text-[var(--muted)]">

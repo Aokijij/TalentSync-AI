@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm import joinedload
 
 from app.infrastructure.database.models import Job
@@ -37,6 +39,10 @@ class JobRepository(SqlAlchemyRepository[Job]):
         sector: str | None,
         employment_type: str | None,
         status_filter: str | None,
+        min_salary: float | None = None,
+        max_salary: float | None = None,
+        created_after: datetime | None = None,
+        sort: str = "newest",
     ) -> list[Job]:
         query = self.session.query(Job).options(joinedload(Job.company))
         if status_filter:
@@ -51,10 +57,22 @@ class JobRepository(SqlAlchemyRepository[Job]):
             query = query.filter(Job.sector == sector)
         if employment_type:
             query = query.filter(Job.employment_type == employment_type)
+        if min_salary is not None:
+            query = query.filter(Job.salary >= min_salary)
+        if max_salary is not None:
+            query = query.filter(Job.salary <= max_salary)
+        if created_after is not None:
+            query = query.filter(Job.created_at >= created_after)
         if search:
             query = query.filter(
                 Job.title.ilike(f"%{search}%")
                 | Job.description.ilike(f"%{search}%")
                 | Job.requirements.ilike(f"%{search}%")
             )
+        if sort == "salary_desc":
+            return query.order_by(Job.salary.desc().nullslast(), Job.created_at.desc()).all()
+        if sort == "salary_asc":
+            return query.order_by(Job.salary.asc().nullslast(), Job.created_at.desc()).all()
+        if sort == "oldest":
+            return query.order_by(Job.created_at.asc()).all()
         return query.order_by(Job.created_at.desc()).all()

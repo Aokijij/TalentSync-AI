@@ -143,12 +143,19 @@ export function CompanyApplicationsPage() {
           )
           .catch(() => {});
       setScores(
-        Object.fromEntries(
-          candidatesResponse.data.map((candidate) => [
-            candidate.user_id,
-            candidate.match_percentage,
-          ]),
-        ),
+        {
+          ...Object.fromEntries(
+            candidatesResponse.data.map((candidate) => [
+              candidate.user_id,
+              candidate.match_percentage,
+            ]),
+          ),
+          ...Object.fromEntries(
+            applicationsResponse.data
+              .filter((application) => application.adjusted_match_percentage != null)
+              .map((application) => [application.user_id, application.adjusted_match_percentage]),
+          ),
+        },
       );
     } catch (requestError) {
       setError(
@@ -526,10 +533,11 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
           <div className="flex items-center justify-between text-xs font-semibold">
             <span className="flex items-center gap-1 text-[var(--muted)]">
               <Sparkles size={13} />
-              Compatibilidad
+              {item.screening_adjustment ? "Compatibilidad ajustada" : "Compatibilidad"}
             </span>
             <span className="text-[var(--accent)]">{Math.round(score)}%</span>
           </div>
+          {item.screening_adjustment ? <p className="mt-1 text-[10px] text-[var(--muted)]">Base {Math.round(item.base_match_percentage ?? score)}% · preguntas {item.screening_adjustment > 0 ? "+" : ""}{item.screening_adjustment} pts</p> : null}
           <div className="mt-1.5 h-1.5 rounded-full bg-[var(--line)]">
             <div
               className="h-full rounded-full bg-[var(--accent)]"
@@ -890,6 +898,13 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
             </button>
           </div>
           <div className="mt-5 grid gap-4">
+            {application.screening_answers?.length ? (
+              <section className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
+                <div className="flex items-center justify-between gap-3"><h3 className="font-bold">Respuestas de postulación</h3><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${application.screening_adjustment >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}>{application.screening_adjustment > 0 ? "+" : ""}{application.screening_adjustment} puntos</span></div>
+                <dl className="mt-3 space-y-3">{application.screening_answers.map((item, index) => <div key={`${item.question_id}-${index}`}><dt className="text-xs font-bold text-[var(--muted)]">{item.question || `Pregunta ${index + 1}`}</dt><dd className="mt-1 text-sm text-[var(--ink-strong)]">{item.answer}</dd></div>)}</dl>
+                {application.adjusted_match_percentage != null ? <p className="mt-4 border-t border-[var(--line)] pt-3 text-sm"><strong>Compatibilidad para tu empresa:</strong> {Math.round(application.adjusted_match_percentage)}% <span className="text-[var(--muted)]">(base {Math.round(application.base_match_percentage || 0)}%)</span></p> : null}
+              </section>
+            ) : null}
             <label className="text-sm font-semibold text-[var(--muted)]">
               Notas internas
               <textarea

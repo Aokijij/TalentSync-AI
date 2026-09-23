@@ -28,14 +28,14 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         }
         profile_columns = {column["name"] for column in schema.get_columns("profiles")}
         assert {"department", "photo_filename", "resume_style", "resume_color", "languages"} <= profile_columns
-        assert "languages" in {column["name"] for column in schema.get_columns("jobs")}
+        assert {"languages", "application_questions"} <= {column["name"] for column in schema.get_columns("jobs")}
         company_columns = {column["name"] for column in schema.get_columns("companies")}
         assert {"website", "sector", "size", "location", "mission", "values", "benefits", "logo_filename", "cover_filename"} <= company_columns
         application_columns = {column["name"] for column in schema.get_columns("applications")}
-        assert {"pipeline_stage", "resolution_reason"} <= application_columns
+        assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0017_languages"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0018_screening_questions"
     finally:
         engine.dispose()
 

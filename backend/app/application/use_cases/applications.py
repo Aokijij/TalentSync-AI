@@ -5,6 +5,51 @@ from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Application, User
 
+
+def _normalize(value: str) -> str:
+    return " ".join(value.lower().strip().split())
+
+
+def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
+    questions = job.application_questions or []
+    submitted_by_id = {
+        item["question_id"]: str(item["answer"]).strip() for item in submitted
+    }
+    known_ids = {question["id"] for question in questions}
+    if set(submitted_by_id) - known_ids:
+        raise UseCaseError(status_code=422, detail="Hay respuestas para preguntas que no pertenecen a la vacante")
+    saved: list[dict] = []
+    adjustment = 0.0
+    for question in questions:
+        answer = submitted_by_id.get(question["id"], "")
+        if question.get("required", True) and not answer:
+            raise UseCaseError(status_code=422, detail=f"Responde la pregunta: {question['prompt']}")
+        if not answer:
+            continue
+        if question.get("type") == "choice" and answer not in question.get("options", []):
+            raise UseCaseError(status_code=422, detail=f"Selecciona una opción válida para: {question['prompt']}")
+        normalized_answer = _normalize(answer)
+        if question.get("type") == "choice":
+            preferred = question.get("preferred_options", [])
+            if preferred:
+                adjustment += (
+                    question.get("positive_adjustment", 0)
+                    if answer in preferred
+                    else question.get("negative_adjustment", 0)
+                )
+        else:
+            keywords = [_normalize(item) for item in question.get("keywords", []) if item.strip()]
+            if keywords:
+                adjustment += (
+                    question.get("positive_adjustment", 0)
+                    if any(keyword in normalized_answer for keyword in keywords)
+                    else question.get("negative_adjustment", 0)
+                )
+        saved.append(
+            {"question_id": question["id"], "question": question["prompt"], "answer": answer}
+        )
+    return saved, max(-20.0, min(20.0, adjustment))
+
 STATUS_LABELS = {
     "submitted": "Postulación recibida",
     "seen": "Postulación recibida",
@@ -37,9 +82,16 @@ def apply_to_job(
     existing = db.applications.find_for_user_job(current_user.id, payload["job_id"])
     if existing:
         return existing
+    answers, screening_adjustment = _screening_result(
+        job, payload.get("screening_answers", [])
+    )
     first_stage = (job.pipeline_stages or [{"id": "submitted"}])[0]["id"]
     application = db.applications.new(
-        user_id=current_user.id, job_id=payload["job_id"], pipeline_stage=first_stage
+        user_id=current_user.id,
+        job_id=payload["job_id"],
+        pipeline_stage=first_stage,
+        screening_answers=answers,
+        screening_adjustment=screening_adjustment,
     )
     db.add(application)
     invitation = db.notifications.find_unread(

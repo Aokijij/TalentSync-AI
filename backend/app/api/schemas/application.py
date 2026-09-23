@@ -1,12 +1,19 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.domain.entities.enums import ApplicationStatus
 
 
+class ScreeningAnswer(BaseModel):
+    question_id: str = Field(min_length=2, max_length=80)
+    question: str | None = None
+    answer: str = Field(min_length=1, max_length=2000)
+
+
 class ApplicationCreate(BaseModel):
     job_id: int
+    screening_answers: list[ScreeningAnswer] = Field(default_factory=list, max_length=10)
 
 
 class ApplicationStatusUpdate(BaseModel):
@@ -32,3 +39,10 @@ class ApplicationResponse(BaseModel):
     resolution_reason: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+class CompanyApplicationResponse(ApplicationResponse):
+    screening_answers: list[ScreeningAnswer] = Field(default_factory=list)
+    screening_adjustment: float = 0
+    base_match_percentage: float | None = None
+    adjusted_match_percentage: float | None = None

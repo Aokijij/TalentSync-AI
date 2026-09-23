@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 from app.application.errors import UseCaseError
@@ -28,11 +29,34 @@ def list_jobs(
     sector: str | None,
     employment_type: str | None,
     status_filter: str | None,
+    min_salary: float | None,
+    max_salary: float | None,
+    created_after: datetime | None,
+    sort: str,
     db: UnitOfWork,
 ) -> list[Job]:
     return db.jobs.search(
-        search, modality, location, department, sector, employment_type, status_filter
+        search,
+        modality,
+        location,
+        department,
+        sector,
+        employment_type,
+        status_filter,
+        min_salary,
+        max_salary,
+        created_after,
+        sort,
     )
+
+
+def public_stats(db: UnitOfWork) -> dict[str, int]:
+    return {
+        "active_jobs": db.jobs.count_active(),
+        "companies": db.companies.count(),
+        "candidates": db.users.count_candidates(),
+        "applications": db.applications.count(),
+    }
 
 
 def create_job(
@@ -189,9 +213,17 @@ def reopen_job(job_id: int, mode: str, current_user: User, db: UnitOfWork, *, nl
         db.refresh(job)
         return job
     # A new vacancy keeps the previous selection process and notifications intact.
-    payload = {key: getattr(job, key) for key in ["company_id", "title", "description", "requirements", "salary", "location", "department", "modality", "employment_type", "sector", "benefits", "languages"]}
+    payload = {key: getattr(job, key) for key in ["company_id", "title", "description", "requirements", "salary", "location", "department", "modality", "employment_type", "sector", "benefits", "languages", "application_questions"]}
     payload["pipeline_stages"] = job.pipeline_stages
     return create_job(payload, current_user, db, nlp=nlp)
+
+
+def get_application_questions(
+    job_id: int, current_user: User, db: UnitOfWork
+) -> list[dict]:
+    job = get_job(job_id, db)
+    ensure_job_access(db, job, current_user)
+    return job.application_questions or []
 
 
 def match_current_candidate(

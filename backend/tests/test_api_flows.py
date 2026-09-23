@@ -161,6 +161,86 @@ def test_company_job_crud_and_ownership(client):
     assert client.get(f"/api/v1/jobs/{job['id']}").status_code == 404
 
 
+def test_public_activity_stats_are_available_before_login(client):
+    _, owner = company_account(client)
+    _, candidate_headers = register(client, "public-stats-candidate")
+    job = create_job(client, owner)
+    client.post("/api/v1/applications", headers=candidate_headers, json={"job_id": job["id"]})
+
+    response = client.get("/api/v1/jobs/public-stats")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "active_jobs": 1,
+        "companies": 1,
+        "candidates": 1,
+        "applications": 1,
+    }
+
+
+def test_screening_questions_adjust_only_the_company_score(client):
+    _, owner = company_account(client, "screening-company")
+    candidate, candidate_headers = register(client, "screening-candidate")
+    response = client.post(
+        "/api/v1/jobs",
+        headers=owner,
+        json={
+            "title": "Backend Python",
+            "description": "Construcción y mantenimiento de servicios internos.",
+            "requirements": "Experiencia con Python, APIs y bases de datos.",
+            "sector": "Tecnologia y software",
+            "application_questions": [
+                {
+                    "id": "python_experience",
+                    "prompt": "¿Has trabajado profesionalmente con Python?",
+                    "type": "choice",
+                    "required": True,
+                    "options": ["Sí", "No"],
+                    "preferred_options": ["Sí"],
+                    "positive_adjustment": 5,
+                    "negative_adjustment": -3,
+                }
+            ],
+        },
+    )
+    assert response.status_code == 201, response.text
+    job = response.json()
+    public_question = client.get(f"/api/v1/jobs/{job['id']}").json()["application_questions"][0]
+    assert "preferred_options" not in public_question
+    assert "positive_adjustment" not in public_question
+    assert client.post("/api/v1/applications", headers=candidate_headers, json={"job_id": job["id"]}).status_code == 422
+
+    base = client.post(f"/api/v1/jobs/{job['id']}/match", headers=candidate_headers).json()["match_percentage"]
+    application = client.post(
+        "/api/v1/applications",
+        headers=candidate_headers,
+        json={
+            "job_id": job["id"],
+            "screening_answers": [{"question_id": "python_experience", "answer": "Sí"}],
+        },
+    )
+    assert application.status_code == 201, application.text
+    assert "screening_adjustment" not in application.json()
+    company_view = client.get(f"/api/v1/applications/jobs/{job['id']}", headers=owner).json()[0]
+    assert company_view["screening_adjustment"] == 5
+    assert company_view["base_match_percentage"] == pytest.approx(base)
+    assert company_view["adjusted_match_percentage"] == pytest.approx(min(100, base + 5))
+    assert company_view["screening_answers"][0]["question"].startswith("¿Has trabajado")
+
+
+def test_notifications_can_be_filtered_and_removed(client):
+    _, owner = company_account(client, "notification-company")
+    _, candidate_headers = register(client, "notification-candidate")
+    job = create_job(client, owner)
+    client.post("/api/v1/applications", headers=candidate_headers, json={"job_id": job["id"]})
+    items = client.get("/api/v1/notifications?category=applications&unread_only=false", headers=owner).json()
+    assert len(items) == 1
+    assert items[0]["category"] == "applications"
+    assert client.delete(f"/api/v1/notifications/{items[0]['id']}", headers=candidate_headers).status_code == 404
+    assert client.delete(f"/api/v1/notifications/{items[0]['id']}", headers=owner).status_code == 204
+    assert client.get("/api/v1/notifications?unread_only=false", headers=owner).json() == []
+
+
 def test_application_pipeline_notifications_and_candidate_access(client):
     _, owner = company_account(client)
     _, outsider = company_account(client, "otraempresa")

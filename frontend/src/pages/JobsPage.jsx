@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BriefcaseBusiness,
+  CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -8,6 +9,7 @@ import {
   Search,
   SlidersHorizontal,
   Sparkles,
+  RotateCcw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -18,6 +20,7 @@ import {
   COLOMBIAN_DEPARTMENTS,
 } from "../constants/colombianCities.js";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
+import { formatRelativeTime, isWithinDays } from "../utils/dates.js";
 
 const modalityLabel = {
   remote: "Remoto",
@@ -45,6 +48,10 @@ export function JobsPage() {
     location: "",
     sector: "",
     employment_type: "",
+    min_salary: "",
+    max_salary: "",
+    published_days: "",
+    sort: "match",
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(9);
@@ -119,14 +126,20 @@ export function JobsPage() {
           (!filters.sector || job.sector === filters.sector) &&
           (!filters.department || job.department === filters.department) &&
           (!filters.location || job.location === filters.location) &&
+          (!filters.min_salary || Number(job.salary || 0) >= Number(filters.min_salary)) &&
+          (!filters.max_salary || (job.salary != null && Number(job.salary) <= Number(filters.max_salary))) &&
+          isWithinDays(job.created_at, Number(filters.published_days || 0)) &&
           (!onlyMySkills || hasCandidateSkill) &&
           (matches[job.id] ?? 0) >= minCompatibility
         );
       })
-      .sort(
-        (first, second) =>
-          (matches[second.id] ?? -1) - (matches[first.id] ?? -1),
-      );
+      .sort((first, second) => {
+        if (filters.sort === "newest") return new Date(second.created_at) - new Date(first.created_at);
+        if (filters.sort === "oldest") return new Date(first.created_at) - new Date(second.created_at);
+        if (filters.sort === "salary_desc") return Number(second.salary || -1) - Number(first.salary || -1);
+        if (filters.sort === "salary_asc") return Number(first.salary ?? Number.MAX_SAFE_INTEGER) - Number(second.salary ?? Number.MAX_SAFE_INTEGER);
+        return (matches[second.id] ?? -1) - (matches[first.id] ?? -1);
+      });
   }, [
     jobs,
     query,
@@ -260,6 +273,28 @@ export function JobsPage() {
               <option value="contract">Contrato</option>
             </select>
           </Filter>
+        </div>
+        <div className="mt-3 grid gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4 sm:grid-cols-2 lg:grid-cols-5">
+          <Filter label="Sueldo mínimo">
+            <input className="field-control input-md" type="number" min="0" step="100000" placeholder="Ej. 2500000" value={filters.min_salary} onChange={(event) => setFilter("min_salary", event.target.value)} />
+          </Filter>
+          <Filter label="Sueldo máximo">
+            <input className="field-control input-md" type="number" min="0" step="100000" placeholder="Sin límite" value={filters.max_salary} onChange={(event) => setFilter("max_salary", event.target.value)} />
+          </Filter>
+          <Filter label="Fecha de publicación">
+            <select className="field-control input-md" value={filters.published_days} onChange={(event) => setFilter("published_days", event.target.value)}>
+              <option value="">Cualquier fecha</option><option value="1">Últimas 24 horas</option><option value="7">Última semana</option><option value="30">Último mes</option>
+            </select>
+          </Filter>
+          <Filter label="Ordenar por">
+            <select className="field-control input-md" value={filters.sort} onChange={(event) => setFilter("sort", event.target.value)}>
+              {user?.role === "candidate" ? <option value="match">Mayor compatibilidad</option> : null}
+              <option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="salary_desc">Mayor sueldo</option><option value="salary_asc">Menor sueldo</option>
+            </select>
+          </Filter>
+          <div className="flex items-end">
+            <button type="button" className="button-secondary w-full" onClick={() => { setFilters({ modality: "", department: "", location: "", sector: "", employment_type: "", min_salary: "", max_salary: "", published_days: "", sort: user?.role === "candidate" ? "match" : "newest" }); setQuery(""); setOnlyMySkills(false); setMinCompatibility(0); setPage(1); }}><RotateCcw size={15} />Limpiar filtros</button>
+          </div>
         </div>
         {user?.role === "candidate" ? (
           <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-lg)] bg-[var(--surface-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -413,6 +448,7 @@ function JobCard({ job, match, applied, showMatch }) {
         {job.description}
       </p>
       <div className="mt-4 flex flex-wrap gap-3 text-xs text-[var(--muted)]">
+        <span className="flex items-center gap-1 font-semibold text-[var(--accent)]"><CalendarDays size={14} />{formatRelativeTime(job.created_at)}</span>
         <span className="flex items-center gap-1">
           <MapPin size={14} />
           {[job.location, job.department].filter(Boolean).join(", ") ||

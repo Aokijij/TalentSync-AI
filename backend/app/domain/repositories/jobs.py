@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Protocol
 
 from app.domain.entities.records import Job
@@ -26,4 +27,8 @@ class JobRepository(EntityRepository[Job], Protocol):
         sector: str | None,
         employment_type: str | None,
         status_filter: str | None,
+        min_salary: float | None = None,
+        max_salary: float | None = None,
+        created_after: datetime | None = None,
+        sort: str = "newest",
     ) -> list[Job]: ...

@@ -150,7 +150,15 @@ export function ProfilePage() {
   function exportPdf() {
     setPreviewMode(true);
     setEditing(false);
-    window.setTimeout(() => window.print(), 120);
+    const previousTitle = document.title;
+    const safeName = String(name || "Candidato").replace(/[\\/:*?"<>|]/g, " ").trim();
+    document.title = `${safeName} - HV - TalentSync`;
+    const restoreTitle = () => {
+      document.title = previousTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+    };
+    window.addEventListener("afterprint", restoreTitle);
+    window.setTimeout(() => window.print(), 180);
   }
   if (!profile)
     return (
@@ -162,8 +170,10 @@ export function ProfilePage() {
         kicker="Perfil profesional"
         title="Mi hoja de vida"
         description="Personaliza tu presentación y mantén tu experiencia clara para recibir mejores recomendaciones."
-        actions={
-          <div className="flex gap-2">
+      />
+      <section className="surface-card print-hidden sticky top-3 z-30 flex flex-col gap-4 p-4 shadow-lg lg:flex-row lg:items-center lg:justify-between">
+        <ProfileCompletionRing profile={profile} compact />
+          <div className="flex flex-wrap gap-2 lg:justify-end">
             <label className="button-secondary cursor-pointer hover-lift pressed focus-ring">
               <Upload size={16} />
               Subir CV
@@ -201,8 +211,7 @@ export function ProfilePage() {
               {editing ? "Guardar" : "Editar"}
             </button>
           </div>
-        }
-      />
+      </section>
       {(message || error) && (
         <p
           className={`rounded-[var(--radius-lg)] border px-4 py-3 text-sm ${error ? "border-[var(--error)] bg-[var(--error)]/10 text-[var(--error)]" : "border-[var(--success)] bg-[var(--success)]/10 text-[var(--success)]"}`}
@@ -210,9 +219,6 @@ export function ProfilePage() {
           {error || message}
         </p>
       )}
-      <section className="surface-card print-hidden p-5">
-        <ProfileCompletionRing profile={profile} compact />
-      </section>
       {previewMode ? (
         <section className="surface-card print-hidden p-5">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -280,7 +286,7 @@ export function ProfilePage() {
       {previewMode ? (
         <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
       ) : (
-        <article className="mx-auto max-w-5xl overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
+        <article className="mx-auto max-w-7xl overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
           <header className="bg-[var(--success)]/10 p-6 sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -363,7 +369,8 @@ export function ProfilePage() {
               </span>
             </div>
           </header>
-          <div className="space-y-8 p-6 sm:p-8">
+          <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
+            <div className="space-y-8">
             <Section icon={Award} title="Experiencia laboral">
               <Items
                 type="experiences"
@@ -382,6 +389,8 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
+            </div>
+            <aside className="space-y-8 rounded-[var(--radius-xl)] bg-[var(--surface-subtle)] p-5 lg:sticky lg:top-28 lg:self-start">
             <Section icon={CheckCircle2} title="Certificaciones">
               <Items
                 type="certifications"
@@ -443,7 +452,7 @@ export function ProfilePage() {
             </Section>
             <Section icon={BriefcaseBusiness} title="Preferencias laborales">
               {editing ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm font-semibold text-[var(--muted)]">
                     Sector profesional
                     <select
@@ -514,7 +523,7 @@ export function ProfilePage() {
                   </label>
                 </div>
               ) : (
-                <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 text-sm sm:grid-cols-2">
                   <p>
                     <span className="block text-xs font-bold uppercase text-[var(--muted)]">
                       Sector profesional
@@ -546,6 +555,7 @@ export function ProfilePage() {
                 </div>
               )}
             </Section>
+            </aside>
           </div>
         </article>
       )}
@@ -715,7 +725,7 @@ function ResumePreview({ profile, name, email, photoVersion }) {
     .toUpperCase();
   return (
     <article
-      className={`resume-print-area resume-${profile.resume_style} mx-auto max-w-4xl overflow-hidden bg-white text-slate-900 shadow-2xl`}
+      className={`resume-print-area resume-${profile.resume_style} mx-auto w-full max-w-6xl overflow-hidden bg-white text-slate-900 shadow-2xl`}
       style={palette.variables}
     >
       <header className={`resume-header ${style.header}`}>

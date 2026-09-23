@@ -173,6 +173,9 @@ class Job(Base):
     benefits: Mapped[list[str]] = mapped_column(JSON, default=list)
     pipeline_stages: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
     languages: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
+    application_questions: Mapped[list[dict]] = mapped_column(
+        JSON, default=list, server_default="[]", nullable=False
+    )
     skills: Mapped[list[str]] = mapped_column(JSON, default=list)
     embedding: Mapped[list[float] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
@@ -195,6 +198,30 @@ class Job(Base):
     def applications_count(self) -> int:
         return len(self.applications or [])
 
+    @property
+    def application_questions_count(self) -> int:
+        return len(self.application_questions or [])
+
+    @property
+    def company_logo_url(self) -> str | None:
+        return self.company.logo_url if self.company else None
+
+    @property
+    def company_description(self) -> str | None:
+        return self.company.description if self.company else None
+
+    @property
+    def company_website(self) -> str | None:
+        return self.company.website if self.company else None
+
+    @property
+    def company_size(self) -> str | None:
+        return self.company.size if self.company else None
+
+    @property
+    def company_location(self) -> str | None:
+        return self.company.location if self.company else None
+
 
 class Application(Base):
     __tablename__ = "applications"
@@ -215,6 +242,12 @@ class Application(Base):
     interview_at: Mapped[datetime | None] = mapped_column(DateTime)
     pipeline_stage: Mapped[str | None] = mapped_column(String(80), nullable=True)
     resolution_reason: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    screening_answers: Mapped[list[dict]] = mapped_column(
+        JSON, default=list, server_default="[]", nullable=False
+    )
+    screening_adjustment: Mapped[float] = mapped_column(
+        Float, default=0.0, server_default="0", nullable=False
+    )
 
     user: Mapped[User] = relationship(back_populates="applications")
     job: Mapped[Job] = relationship(back_populates="applications")
@@ -252,6 +285,27 @@ class Application(Base):
             if stage.get("id") == stage_id:
                 return stage.get("title")
         return stage_id.replace("_", " ").capitalize()
+
+    @property
+    def base_match_percentage(self) -> float | None:
+        if not self.job:
+            return None
+        recommendation = next(
+            (
+                item
+                for item in self.job.recommendations or []
+                if item.user_id == self.user_id
+            ),
+            None,
+        )
+        return recommendation.match_percentage if recommendation else None
+
+    @property
+    def adjusted_match_percentage(self) -> float | None:
+        base = self.base_match_percentage
+        if base is None:
+            return None
+        return max(0.0, min(100.0, base + (self.screening_adjustment or 0.0)))
 
 
 class Recommendation(Base):
@@ -318,3 +372,18 @@ class Notification(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="notifications")
+
+    @property
+    def category(self) -> str:
+        if self.type in {"company_job_match", "candidate_invitation"}:
+            return "opportunities"
+        if self.type in {
+            "application_received",
+            "application_updated",
+            "application_status",
+            "application_interview",
+            "application_selected",
+            "application_not_selected",
+        }:
+            return "applications"
+        return "system"

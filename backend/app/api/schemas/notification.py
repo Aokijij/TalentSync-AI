@@ -11,5 +11,6 @@ class NotificationResponse(BaseModel):
     action_url: str | None = None
     is_read: bool
     created_at: datetime
+    category: str = "system"
 
     model_config = {"from_attributes": True}
