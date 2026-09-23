@@ -111,6 +111,8 @@ class Company(Base):
     benefits: Mapped[list[str]] = mapped_column(JSON, default=list)
     logo_filename: Mapped[str | None] = mapped_column(String(255))
     cover_filename: Mapped[str | None] = mapped_column(String(255))
+    is_external: Mapped[bool] = mapped_column(default=False, nullable=False)
+    source_name: Mapped[str | None] = mapped_column(String(80), index=True)
 
     owner: Mapped[User] = relationship()
     jobs: Mapped[list["Job"]] = relationship(
@@ -155,6 +157,9 @@ class CompanyFollower(Base):
 
 class Job(Base):
     __tablename__ = "jobs"
+    __table_args__ = (
+        UniqueConstraint("source_name", "external_id", name="uq_job_external_source"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), nullable=False)
@@ -181,6 +186,14 @@ class Job(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
+    source_kind: Mapped[str] = mapped_column(
+        String(20), default="internal", nullable=False
+    )
+    source_name: Mapped[str | None] = mapped_column(String(80), index=True)
+    external_id: Mapped[str | None] = mapped_column(String(180))
+    external_url: Mapped[str | None] = mapped_column(String(1000))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     company: Mapped[Company] = relationship(back_populates="jobs")
     applications: Mapped[list["Application"]] = relationship(

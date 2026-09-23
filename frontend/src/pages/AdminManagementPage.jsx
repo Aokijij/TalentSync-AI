@@ -2,11 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
   BriefcaseBusiness,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Download,
+  FileSpreadsheet,
   Search,
   ShieldCheck,
   Trash2,
+  UploadCloud,
   UserRound,
   UsersRound,
 } from "lucide-react";
@@ -50,6 +54,9 @@ export function AdminManagementPage() {
   const [deleting, setDeleting] = useState(false);
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   async function load() {
     setError("");
@@ -91,6 +98,66 @@ export function AdminManagementPage() {
       );
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function downloadImportTemplate() {
+    setError("");
+    try {
+      const response = await api.get("/admin/jobs/import-template", {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(response.data);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "plantilla-vacantes-talentsync.csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (requestError) {
+      setError(
+        getApiErrorMessage(requestError, "No fue posible descargar la plantilla"),
+      );
+    }
+  }
+
+  async function importJobs(event) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    if (!importFile) {
+      setError("Selecciona un archivo CSV o XLSX para continuar");
+      return;
+    }
+    setError("");
+    setImportResult(null);
+    setImporting(true);
+    try {
+      const form = new FormData();
+      form.append("file", importFile);
+      const { data } = await api.post("/admin/jobs/import", form);
+      setImportResult(data);
+      setImportFile(null);
+      formElement.reset();
+      await load();
+    } catch (requestError) {
+      const detail = requestError?.response?.data?.detail;
+      if (detail?.message) {
+        setError(detail.message);
+        setImportResult({
+          created: 0,
+          updated: 0,
+          companies_created: 0,
+          rejected: detail.errors?.length || 0,
+          errors: detail.errors || [],
+        });
+      } else {
+        setError(
+          getApiErrorMessage(requestError, "No fue posible importar las vacantes"),
+        );
+      }
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -221,6 +288,16 @@ export function AdminManagementPage() {
               />
             </label>
           </header>
+          {activeTab === "jobs" ? (
+            <JobImportPanel
+              file={importFile}
+              importing={importing}
+              result={importResult}
+              onFile={setImportFile}
+              onImport={importJobs}
+              onDownload={downloadImportTemplate}
+            />
+          ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface-subtle)] px-5 py-3 text-xs font-semibold text-[var(--muted)]">
             <span>
               {loading
@@ -292,6 +369,91 @@ export function AdminManagementPage() {
           pendingDelete && remove(pendingDelete.kind, pendingDelete.id)
         }
       />
+    </div>
+  );
+}
+
+function JobImportPanel({ file, importing, result, onFile, onImport, onDownload }) {
+  return (
+    <section className="border-b border-[var(--line)] bg-[var(--accent)]/[0.04] p-5">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex max-w-2xl items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-md)] bg-[var(--accent)]/10 text-[var(--accent)]">
+            <FileSpreadsheet size={20} />
+          </span>
+          <div>
+            <h3 className="font-bold text-[var(--ink-strong)]">
+              Importar catálogo autorizado
+            </h3>
+            <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
+              Carga hasta 2.000 vacantes desde CSV o Excel. TalentSync identifica cada
+              oferta por su fuente e ID externo para actualizarla sin duplicados.
+            </p>
+            <p className="mt-2 text-xs text-[var(--muted)]">
+              Separa habilidades y beneficios con |. Para idiomas usa, por ejemplo,
+              inglés:B2|español:C1.
+            </p>
+          </div>
+        </div>
+        <button type="button" className="button-secondary button-sm shrink-0" onClick={onDownload}>
+          <Download size={15} />
+          Descargar plantilla
+        </button>
+      </div>
+      <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={onImport}>
+        <label className="min-w-0 flex-1 text-xs font-bold text-[var(--muted)]">
+          Archivo de vacantes
+          <input
+            type="file"
+            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            className="field-control mt-1.5 file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent)]/10 file:px-3 file:py-1.5 file:font-semibold file:text-[var(--accent)]"
+            onChange={(event) => onFile(event.target.files?.[0] || null)}
+          />
+        </label>
+        <button type="submit" className="button-primary shrink-0" disabled={importing || !file}>
+          <UploadCloud size={17} />
+          {importing ? "Importando…" : "Importar vacantes"}
+        </button>
+      </form>
+      {result ? (
+        <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface)] p-4">
+          <div className="flex items-center gap-2 text-sm font-bold text-[var(--ink-strong)]">
+            <CheckCircle2 size={17} className="text-[var(--success)]" />
+            Resultado de la importación
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+            <ImportMetric label="Creadas" value={result.created} />
+            <ImportMetric label="Actualizadas" value={result.updated} />
+            <ImportMetric label="Empresas nuevas" value={result.companies_created} />
+            <ImportMetric label="Rechazadas" value={result.rejected} warning={result.rejected > 0} />
+          </div>
+          {result.errors?.length ? (
+            <details className="mt-3 text-sm text-[var(--muted)]">
+              <summary className="cursor-pointer font-semibold text-[var(--ink-strong)]">
+                Ver errores de las filas
+              </summary>
+              <ul className="mt-2 max-h-36 space-y-1 overflow-y-auto pl-5">
+                {result.errors.map((item, index) => (
+                  <li key={`${item.row}-${index}`} className="list-disc">
+                    Fila {item.row}: {item.detail}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ImportMetric({ label, value, warning = false }) {
+  return (
+    <div className="rounded-xl bg-[var(--surface-subtle)] px-3 py-2">
+      <strong className={warning ? "text-[var(--error)]" : "text-[var(--accent)]"}>
+        {value || 0}
+      </strong>
+      <span className="ml-1.5 text-xs text-[var(--muted)]">{label}</span>
     </div>
   );
 }
@@ -389,6 +551,11 @@ function RecordRow({ kind, item, protectedRecord, onDelete }) {
           </div>
           <div>
             <p className="font-bold text-[var(--ink-strong)]">{title}</p>
+            {item.source_name ? (
+              <p className="mt-0.5 text-xs font-semibold text-[var(--accent)]">
+                Fuente: {item.source_name}
+              </p>
+            ) : null}
             {kind === "companies" ? (
               <p className="max-w-xs truncate text-xs text-[var(--muted)]">
                 {item.description || "Sin descripción"}

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 from app.application.errors import UseCaseError
@@ -83,6 +84,13 @@ def apply_to_job(
     job = db.jobs.get(payload["job_id"])
     if job is None or job.status != "active":
         raise UseCaseError(status_code=404, detail="La vacante no esta disponible")
+    if job.expires_at and job.expires_at < datetime.utcnow():
+        raise UseCaseError(status_code=404, detail="La vacante ya venció")
+    if job.external_url:
+        raise UseCaseError(
+            status_code=422,
+            detail="Esta vacante recibe postulaciones en el sitio de la fuente original",
+        )
     existing = db.applications.find_for_user_job(current_user.id, payload["job_id"])
     if existing:
         return existing

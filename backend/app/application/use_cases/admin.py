@@ -128,6 +128,7 @@ def list_admin_companies(current_user: User, db: UnitOfWork) -> list[dict]:
             "nit": company.nit,
             "description": company.description,
             "jobs": len(company.jobs),
+            "source_name": company.source_name,
         }
         for company in db.companies.first_fifty()
     ]
@@ -142,6 +143,7 @@ def list_admin_jobs(current_user: User, db: UnitOfWork) -> list[dict]:
             "salary": job.salary,
             "skills": job.skills,
             "applications": len(job.applications),
+            "source_name": job.source_name,
         }
         for job in db.jobs.recent()
     ]

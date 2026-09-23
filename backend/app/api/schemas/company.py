@@ -32,6 +32,8 @@ class CompanyResponse(CompanyCreate):
     owner_user_id: int
     logo_url: str | None = None
     cover_url: str | None = None
+    is_external: bool = False
+    source_name: str | None = None
 
     model_config = {"from_attributes": True}
 

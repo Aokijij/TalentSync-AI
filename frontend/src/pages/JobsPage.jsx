@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
+  ExternalLink,
   MapPin,
   Search,
   SlidersHorizontal,
@@ -335,6 +336,12 @@ function JobCard({ job, match, applied, showMatch }) {
           </span>
         )}
       </div>
+      {job.source_kind === "external" ? (
+        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
+          <ExternalLink size={13} />
+          Publicada originalmente en {job.source_name || "una fuente externa"}
+        </p>
+      ) : null}
       {showMatch ? (
         <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-3">
           <div className="flex items-center justify-between text-sm">
@@ -384,7 +391,11 @@ function JobCard({ job, match, applied, showMatch }) {
           {job.salary ? `$${job.salary.toLocaleString("es-CO")}` : "A convenir"}
         </strong>
         <Link to={`/vacantes/${job.id}`} className="button-primary button-sm">
-          {applied ? "Ver postulación" : "Ver detalle"}
+          {job.source_kind === "external"
+            ? "Ver oferta"
+            : applied
+              ? "Ver postulación"
+              : "Ver detalle"}
         </Link>
       </div>
     </article>

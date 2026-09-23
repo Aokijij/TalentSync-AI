@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
 from app.infrastructure.database.models import Job
@@ -7,20 +8,35 @@ from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class JobRepository(SqlAlchemyRepository[Job]):
+    @staticmethod
+    def _available(query):
+        now = datetime.utcnow()
+        return query.filter(
+            Job.status == "active",
+            or_(Job.expires_at.is_(None), Job.expires_at >= now),
+        )
+
     def active(self) -> list[Job]:
-        return self.session.query(Job).filter(Job.status == "active").all()
+        return self._available(self.session.query(Job)).all()
 
     def count_active(self) -> int:
-        return self.session.query(Job).filter(Job.status == "active").count()
+        return self._available(self.session.query(Job)).count()
 
     def active_skill_rows(self) -> list[tuple[list[str]]]:
-        return self.session.query(Job.skills).filter(Job.status == "active").all()
+        return self._available(self.session.query(Job.skills)).all()
 
     def get_with_company(self, job_id: int) -> Job | None:
         return (
             self.session.query(Job)
             .options(joinedload(Job.company))
             .filter(Job.id == job_id)
+            .first()
+        )
+
+    def find_external(self, source_name: str, external_id: str) -> Job | None:
+        return (
+            self.session.query(Job)
+            .filter(Job.source_name == source_name, Job.external_id == external_id)
             .first()
         )
 
@@ -47,6 +63,10 @@ class JobRepository(SqlAlchemyRepository[Job]):
         query = self.session.query(Job).options(joinedload(Job.company))
         if status_filter:
             query = query.filter(Job.status == status_filter)
+            if status_filter == "active":
+                query = query.filter(
+                    or_(Job.expires_at.is_(None), Job.expires_at >= datetime.utcnow())
+                )
         if modality:
             query = query.filter(Job.modality == modality)
         if location:

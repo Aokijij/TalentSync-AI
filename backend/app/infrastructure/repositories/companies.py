@@ -15,6 +15,17 @@ class CompanyRepository(SqlAlchemyRepository[Company]):
     def find_by_nit(self, nit: str) -> Company | None:
         return self.session.query(Company).filter(Company.nit == nit).first()
 
+    def find_external(self, source_name: str, name: str) -> Company | None:
+        return (
+            self.session.query(Company)
+            .filter(
+                Company.is_external.is_(True),
+                Company.source_name == source_name,
+                Company.name == name,
+            )
+            .first()
+        )
+
     def count(self) -> int:
         return self.session.query(Company).count()
 

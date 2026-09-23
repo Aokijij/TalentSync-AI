@@ -102,6 +102,12 @@ export function JobDetailPage() {
               <p className="text-sm font-semibold text-[var(--accent)]">{job.company_name}</p>
             )}
             <h1 className="mt-1 text-3xl font-bold">{job.title}</h1>
+            {job.source_kind === "external" ? (
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-semibold text-[var(--accent)]">
+                <ExternalLink size={13} />
+                Oferta externa de {job.source_name || "fuente autorizada"}
+              </p>
+            ) : null}
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[var(--muted)]">
               <span className="flex items-center gap-1">
                 <MapPin size={16} />
@@ -185,7 +191,23 @@ export function JobDetailPage() {
           <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="mb-3 font-semibold">Idiomas y nivel mínimo</h2><LanguagesEditor value={job.languages || []} editing={false} required /></div>
           {user?.role === "candidate" ? (
             <>
-              {alreadyApplied ? (
+              {job.source_kind === "external" && job.external_url ? (
+                <div className="mt-8 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
+                  <p className="text-sm leading-5 text-[var(--muted)]">
+                    Esta vacante fue publicada fuera de TalentSync. Revisa sus condiciones y
+                    continúa el proceso en el sitio de origen.
+                  </p>
+                  <a
+                    className="button-primary mt-4 w-full"
+                    href={job.external_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <ExternalLink size={16} />
+                    Ir a la oferta original
+                  </a>
+                </div>
+              ) : alreadyApplied ? (
                 <div className="mt-8 rounded-[var(--radius-lg)] bg-[var(--accent)]/10 px-4 py-3 text-center text-sm font-semibold text-[var(--accent)]">
                   Ya estás postulado a esta vacante
                 </div>

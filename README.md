@@ -43,6 +43,13 @@ El frontend se publica en Cloudflare Pages. La API, PostgreSQL y el almacenamien
 - Acceder desde una dirección independiente.
 - Consultar métricas de la plataforma.
 - Gestionar usuarios, empresas y vacantes según los permisos del rol.
+- Importar catálogos autorizados de vacantes desde CSV o Excel. La plataforma conserva la fuente y el enlace original, actualiza ofertas repetidas mediante su ID externo y oculta automáticamente las que hayan vencido.
+
+### Catálogos externos de vacantes
+
+La consola administrativa incluye una plantilla descargable para cargar hasta 2.000 ofertas por archivo. Cada fila debe identificar la fuente, un ID externo estable, la empresa, el cargo, la descripción, los requisitos, el sector y el enlace de la publicación original. También admite salario, ubicación, modalidad, contrato, habilidades, beneficios, idiomas y fechas de publicación y vencimiento.
+
+Las habilidades y los beneficios se separan con `|`; los idiomas se escriben como `idioma:nivel`, por ejemplo `inglés:B2|español:NATIVE`. Las ofertas importadas aparecen señaladas como externas y el candidato continúa la postulación en el sitio de origen. Solo deben cargarse fuentes que permitan reutilizar y mostrar sus publicaciones; este mecanismo no autoriza copiar datos de terceros sin permiso.
 
 ## Cómo funciona la compatibilidad
 
@@ -284,7 +291,7 @@ Todas las rutas funcionales comienzan en `/api/v1`. Las operaciones protegidas r
 | `/applications` | Postulaciones, respuestas de preselección, etapas, notas e entrevistas |
 | `/recommendations` | Vacantes sugeridas y ranking de candidatos |
 | `/notifications` | Avisos por categoría, paginación, estado de lectura y eliminación |
-| `/admin` | Métricas y gestión administrativa |
+| `/admin` | Métricas, gestión administrativa e importación CSV/XLSX de catálogos autorizados |
 
 Consulta `/docs` para ver parámetros, esquemas y respuestas del contrato vigente.
 

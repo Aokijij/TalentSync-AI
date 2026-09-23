@@ -27,6 +27,8 @@ export function getApiErrorMessage(
   }
   if (detail && typeof detail === "object" && typeof detail.msg === "string")
     return detail.msg;
+  if (detail && typeof detail === "object" && typeof detail.message === "string")
+    return detail.message;
   return fallback;
 }
 

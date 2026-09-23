@@ -1,7 +1,11 @@
+import csv
+import io
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
+from openpyxl import Workbook
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -10,7 +14,7 @@ from app.api.deps import get_text_analysis
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.domain.entities.enums import UserRole
-from app.infrastructure.database.models import User
+from app.infrastructure.database.models import Job, User
 from app.infrastructure.database.session import Base, get_db
 from app.infrastructure.nlp import resumes
 from app.infrastructure.security.jwt import create_access_token
@@ -814,3 +818,167 @@ def test_admin_overview_and_deletion(client):
         ).status_code
         == 204
     )
+
+
+def test_admin_imports_external_jobs_without_duplicates(client):
+    admin, _ = register(client, "catalog-admin")
+    with client.session_factory() as session:
+        session.get(User, admin["id"]).role = UserRole.ADMIN
+        session.commit()
+    headers = {
+        "Authorization": f"Bearer {create_access_token(str(admin['id']), 'admin')}"
+    }
+    _, candidate_headers = register(client, "catalog-candidate")
+
+    template = client.get("/api/v1/admin/jobs/import-template", headers=headers)
+    assert template.status_code == 200
+    assert "id_externo" in template.content.decode("utf-8-sig")
+    assert client.get("/api/v1/admin/jobs/import-template").status_code == 401
+
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=[
+            "fuente",
+            "id_externo",
+            "empresa",
+            "cargo",
+            "descripcion",
+            "requisitos",
+            "sector",
+            "enlace_externo",
+            "fecha_publicacion",
+            "fecha_vencimiento",
+            "salario",
+            "departamento",
+            "ciudad",
+            "modalidad",
+            "tipo_contrato",
+            "habilidades",
+            "beneficios",
+            "idiomas",
+            "sitio_empresa",
+            "descripcion_empresa",
+        ],
+    )
+    writer.writeheader()
+    row = {
+        "fuente": "Bolsa aliada",
+        "id_externo": "VAC-001",
+        "empresa": "Organización Ejemplo",
+        "cargo": "Coordinador de servicio",
+        "descripcion": "Coordina la atención y mejora la experiencia de clientes.",
+        "requisitos": "Experiencia liderando equipos y resolviendo solicitudes.",
+        "sector": "Ventas y comercio",
+        "enlace_externo": "https://jobs.example.org/vac-001",
+        "fecha_publicacion": "2026-09-22",
+        "fecha_vencimiento": "2027-01-31",
+        "salario": "3500000",
+        "departamento": "Antioquia",
+        "ciudad": "Medellín",
+        "modalidad": "Híbrido",
+        "tipo_contrato": "Tiempo completo",
+        "habilidades": "comunicación|servicio al cliente",
+        "beneficios": "Horario flexible|Formación",
+        "idiomas": "inglés:B2|español:NATIVE",
+        "sitio_empresa": "https://example.org",
+        "descripcion_empresa": "Organización dedicada a mejorar servicios esenciales.",
+    }
+    writer.writerow(row)
+    writer.writerow(row)
+    response = client.post(
+        "/api/v1/admin/jobs/import",
+        headers=headers,
+        files={"file": ("catalogo.csv", output.getvalue().encode(), "text/csv")},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["created"] == 1
+    assert response.json()["companies_created"] == 1
+    assert response.json()["rejected"] == 1
+
+    job = client.get("/api/v1/jobs").json()[0]
+    assert job["source_kind"] == "external"
+    assert job["source_name"] == "Bolsa aliada"
+    assert job["external_url"] == "https://jobs.example.org/vac-001"
+    assert client.post(
+        "/api/v1/applications",
+        headers=candidate_headers,
+        json={"job_id": job["id"]},
+    ).status_code == 422
+    with client.session_factory() as session:
+        stored_job = session.get(Job, job["id"])
+        stored_job.expires_at = datetime.utcnow() - timedelta(days=1)
+        session.commit()
+    assert client.get("/api/v1/jobs").json() == []
+    assert client.get("/api/v1/jobs/public-stats").json()["active_jobs"] == 0
+
+    row["cargo"] = "Coordinador de experiencia"
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=list(row))
+    writer.writeheader()
+    writer.writerow(row)
+    updated = client.post(
+        "/api/v1/admin/jobs/import",
+        headers=headers,
+        files={"file": ("catalogo.csv", output.getvalue().encode(), "text/csv")},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["created"] == 0
+    assert updated.json()["updated"] == 1
+    assert len(client.get("/api/v1/jobs").json()) == 1
+    assert client.get("/api/v1/jobs").json()[0]["title"] == "Coordinador de experiencia"
+
+
+def test_admin_imports_xlsx_catalog(client):
+    admin, _ = register(client, "xlsx-admin")
+    with client.session_factory() as session:
+        session.get(User, admin["id"]).role = UserRole.ADMIN
+        session.commit()
+    headers = {
+        "Authorization": f"Bearer {create_access_token(str(admin['id']), 'admin')}"
+    }
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(
+        [
+            "fuente",
+            "id_externo",
+            "empresa",
+            "cargo",
+            "descripcion",
+            "requisitos",
+            "sector",
+            "enlace_externo",
+            "modalidad",
+            "tipo_contrato",
+        ]
+    )
+    sheet.append(
+        [
+            "Fuente Excel",
+            "XLSX-1",
+            "Servicios Abiertos",
+            "Asesor de operaciones",
+            "Apoya procesos operativos y la atención de usuarios internos.",
+            "Organización, comunicación y experiencia en servicio.",
+            "Recursos humanos",
+            "https://jobs.example.org/xlsx-1",
+            "Remoto",
+            "Contrato",
+        ]
+    )
+    content = io.BytesIO()
+    workbook.save(content)
+    response = client.post(
+        "/api/v1/admin/jobs/import",
+        headers=headers,
+        files={
+            "file": (
+                "catalogo.xlsx",
+                content.getvalue(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["created"] == 1

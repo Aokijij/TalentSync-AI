@@ -176,6 +176,10 @@ class JobResponse(BaseModel):
     company_website: str | None = None
     company_size: str | None = None
     company_location: str | None = None
+    source_kind: str = "internal"
+    source_name: str | None = None
+    external_url: str | None = None
+    expires_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

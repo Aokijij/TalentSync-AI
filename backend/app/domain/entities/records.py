@@ -64,6 +64,8 @@ class Company(Protocol):
     benefits: list[str]
     logo_filename: str | None
     cover_filename: str | None
+    is_external: bool
+    source_name: str | None
     logo_url: str | None
     cover_url: str | None
     owner: User
@@ -100,6 +102,12 @@ class Job(Protocol):
     skills: list[str]
     embedding: list[float] | None
     created_at: datetime
+    source_kind: str
+    source_name: str | None
+    external_id: str | None
+    external_url: str | None
+    expires_at: datetime | None
+    last_seen_at: datetime | None
     company: Company
     applications: list["Application"]
     recommendations: list["Recommendation"]
