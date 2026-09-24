@@ -6,7 +6,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  ExternalLink,
   FileSpreadsheet,
+  RefreshCw,
   Search,
   ShieldCheck,
   Trash2,
@@ -57,20 +59,29 @@ export function AdminManagementPage() {
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
+  const [joobleSource, setJoobleSource] = useState(null);
+  const [joobleKeywords, setJoobleKeywords] = useState(
+    "administración, ventas, servicio al cliente, logística, contabilidad, salud, tecnología",
+  );
+  const [joobleLocation, setJoobleLocation] = useState("Colombia");
+  const [jooblePages, setJooblePages] = useState(2);
+  const [syncingJooble, setSyncingJooble] = useState(false);
 
   async function load() {
     setError("");
     setLoading(true);
     try {
-      const [usersResponse, companiesResponse, jobsResponse] =
+      const [usersResponse, companiesResponse, jobsResponse, joobleResponse] =
         await Promise.all([
           api.get("/admin/users"),
           api.get("/admin/companies"),
           api.get("/admin/jobs"),
+          api.get("/admin/jobs/sources/jooble"),
         ]);
       setUsers(usersResponse.data);
       setCompanies(companiesResponse.data);
       setJobs(jobsResponse.data);
+      setJoobleSource(joobleResponse.data);
     } catch (requestError) {
       setError(
         getApiErrorMessage(
@@ -158,6 +169,32 @@ export function AdminManagementPage() {
       }
     } finally {
       setImporting(false);
+    }
+  }
+
+  async function syncJooble(event) {
+    event.preventDefault();
+    setError("");
+    setImportResult(null);
+    setSyncingJooble(true);
+    try {
+      const { data } = await api.post("/admin/jobs/sources/jooble/sync", {
+        keywords: joobleKeywords,
+        location: joobleLocation,
+        pages: jooblePages,
+        result_count: 20,
+      });
+      setImportResult(data);
+      await load();
+    } catch (requestError) {
+      setError(
+        getApiErrorMessage(
+          requestError,
+          "No fue posible sincronizar las vacantes de Jooble",
+        ),
+      );
+    } finally {
+      setSyncingJooble(false);
     }
   }
 
@@ -293,9 +330,18 @@ export function AdminManagementPage() {
               file={importFile}
               importing={importing}
               result={importResult}
+              joobleSource={joobleSource}
+              joobleKeywords={joobleKeywords}
+              joobleLocation={joobleLocation}
+              jooblePages={jooblePages}
+              syncingJooble={syncingJooble}
               onFile={setImportFile}
               onImport={importJobs}
               onDownload={downloadImportTemplate}
+              onJoobleKeywords={setJoobleKeywords}
+              onJoobleLocation={setJoobleLocation}
+              onJooblePages={setJooblePages}
+              onSyncJooble={syncJooble}
             />
           ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface-subtle)] px-5 py-3 text-xs font-semibold text-[var(--muted)]">
@@ -373,9 +419,97 @@ export function AdminManagementPage() {
   );
 }
 
-function JobImportPanel({ file, importing, result, onFile, onImport, onDownload }) {
+function JobImportPanel({
+  file,
+  importing,
+  result,
+  joobleSource,
+  joobleKeywords,
+  joobleLocation,
+  jooblePages,
+  syncingJooble,
+  onFile,
+  onImport,
+  onDownload,
+  onJoobleKeywords,
+  onJoobleLocation,
+  onJooblePages,
+  onSyncJooble,
+}) {
   return (
     <section className="border-b border-[var(--line)] bg-[var(--accent)]/[0.04] p-5">
+      <div className="flex max-w-2xl items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-md)] bg-[var(--accent)]/10 text-[var(--accent)]">
+          <RefreshCw size={20} />
+        </span>
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-bold text-[var(--ink-strong)]">
+              Sincronizar con Jooble Colombia
+            </h3>
+            <span
+              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${joobleSource?.configured ? "bg-[var(--success)]/15 text-[var(--success)]" : "bg-amber-500/15 text-amber-600"}`}
+            >
+              {joobleSource?.configured ? "Conectado" : "Falta la clave API"}
+            </span>
+          </div>
+          <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
+            Busca ofertas autorizadas, conserva la fuente y actualiza registros existentes sin duplicarlos.
+          </p>
+        </div>
+      </div>
+      {joobleSource?.configured ? (
+        <form className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(180px,1fr)_120px_auto] lg:items-end" onSubmit={onSyncJooble}>
+          <label className="text-xs font-bold text-[var(--muted)]">
+            Perfiles que quieres traer
+            <input
+              className="field-control mt-1.5"
+              value={joobleKeywords}
+              onChange={(event) => onJoobleKeywords(event.target.value)}
+              placeholder="Ej. administración, ventas, servicio al cliente"
+              required
+            />
+          </label>
+          <label className="text-xs font-bold text-[var(--muted)]">
+            Ubicación
+            <input
+              className="field-control mt-1.5"
+              value={joobleLocation}
+              onChange={(event) => onJoobleLocation(event.target.value)}
+              placeholder="Colombia o una ciudad"
+              required
+            />
+          </label>
+          <label className="text-xs font-bold text-[var(--muted)]">
+            Páginas
+            <select
+              className="field-control mt-1.5"
+              value={jooblePages}
+              onChange={(event) => onJooblePages(Number(event.target.value))}
+            >
+              {[1, 2, 3, 4, 5].map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" className="button-primary" disabled={syncingJooble}>
+            <RefreshCw size={17} className={syncingJooble ? "animate-spin" : ""} />
+            {syncingJooble ? "Sincronizando…" : "Sincronizar"}
+          </button>
+        </form>
+      ) : (
+        <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-amber-500/30 bg-amber-500/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-5 text-[var(--muted)]">
+            Solicita una clave regional y guárdala como <strong className="text-[var(--ink-strong)]">JOOBLE_API_KEY</strong> en Azure para habilitar la sincronización.
+          </p>
+          <a className="button-secondary button-sm shrink-0" href={joobleSource?.registration_url || "https://co.jooble.org/api/about"} target="_blank" rel="noreferrer">
+            Solicitar clave
+            <ExternalLink size={14} />
+          </a>
+        </div>
+      )}
+
+      <div className="my-5 border-t border-[var(--line)]" />
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex max-w-2xl items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-md)] bg-[var(--accent)]/10 text-[var(--accent)]">
@@ -383,7 +517,7 @@ function JobImportPanel({ file, importing, result, onFile, onImport, onDownload 
           </span>
           <div>
             <h3 className="font-bold text-[var(--ink-strong)]">
-              Importar catálogo autorizado
+              Importar archivo autorizado
             </h3>
             <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
               Carga hasta 2.000 vacantes desde CSV o Excel. TalentSync identifica cada
@@ -427,6 +561,11 @@ function JobImportPanel({ file, importing, result, onFile, onImport, onDownload 
             <ImportMetric label="Empresas nuevas" value={result.companies_created} />
             <ImportMetric label="Rechazadas" value={result.rejected} warning={result.rejected > 0} />
           </div>
+          {result.source ? (
+            <p className="mt-3 text-xs text-[var(--muted)]">
+              {result.fetched} resultados recibidos de {result.source}; {result.provider_total} disponibles para esta búsqueda.
+            </p>
+          ) : null}
           {result.errors?.length ? (
             <details className="mt-3 text-sm text-[var(--muted)]">
               <summary className="cursor-pointer font-semibold text-[var(--ink-strong)]">

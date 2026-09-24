@@ -10,9 +10,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.api.deps import get_text_analysis
+from app.api.deps import get_job_catalog, get_text_analysis
 from app.core.config import settings
 from app.core.limiter import limiter
+from app.domain.entities.catalog import CatalogJob, CatalogPage
 from app.domain.entities.enums import UserRole
 from app.infrastructure.database.models import Job, User
 from app.infrastructure.database.session import Base, get_db
@@ -982,3 +983,66 @@ def test_admin_imports_xlsx_catalog(client):
     )
     assert response.status_code == 200, response.text
     assert response.json()["created"] == 1
+
+
+def test_admin_syncs_authorized_jooble_catalog(client):
+    admin, _ = register(client, "jooble-admin")
+    with client.session_factory() as session:
+        session.get(User, admin["id"]).role = UserRole.ADMIN
+        session.commit()
+    headers = {
+        "Authorization": f"Bearer {create_access_token(str(admin['id']), 'admin')}"
+    }
+
+    class FakeCatalog:
+        configured = True
+
+        def search(self, **parameters):
+            assert parameters["keywords"] == "servicio al cliente"
+            assert parameters["location"] == "Colombia"
+            return CatalogPage(
+                total=1,
+                jobs=[
+                    CatalogJob(
+                        external_id="JOOBLE-101",
+                        title="Asesor de servicio al cliente",
+                        company="Servicios Colombianos",
+                        location="Medellín, Antioquia",
+                        description=(
+                            "Atiende solicitudes, orienta a los usuarios y registra "
+                            "cada caso de manera clara."
+                        ),
+                        employment_type="Full-time",
+                        url="https://co.jooble.org/jdp/JOOBLE-101",
+                        published_at=datetime(2026, 9, 23),
+                    )
+                ],
+            )
+
+    client.app.dependency_overrides[get_job_catalog] = FakeCatalog
+    status_response = client.get(
+        "/api/v1/admin/jobs/sources/jooble", headers=headers
+    )
+    assert status_response.json()["configured"] is True
+    response = client.post(
+        "/api/v1/admin/jobs/sources/jooble/sync",
+        headers=headers,
+        json={
+            "keywords": "servicio al cliente",
+            "location": "Colombia",
+            "pages": 1,
+            "result_count": 20,
+        },
+    )
+    client.app.dependency_overrides.pop(get_job_catalog)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["created"] == 1
+    assert response.json()["fetched"] == 1
+    assert response.json()["source"] == "Jooble"
+    job = client.get("/api/v1/jobs").json()[0]
+    assert job["source_name"] == "Jooble"
+    assert job["location"] == "Medellín"
+    assert job["department"] == "Antioquia"
+    assert job["sector"] == "Ventas y comercio"
+    assert job["external_url"] == "https://co.jooble.org/jdp/JOOBLE-101"

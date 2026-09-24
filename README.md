@@ -51,6 +51,20 @@ La consola administrativa incluye una plantilla descargable para cargar hasta 2.
 
 Las habilidades y los beneficios se separan con `|`; los idiomas se escriben como `idioma:nivel`, por ejemplo `inglés:B2|español:NATIVE`. Las ofertas importadas aparecen señaladas como externas y el candidato continúa la postulación en el sitio de origen. Solo deben cargarse fuentes que permitan reutilizar y mostrar sus publicaciones; este mecanismo no autoriza copiar datos de terceros sin permiso.
 
+#### Sincronización con Jooble Colombia
+
+La sección **Administración → Vacantes** también puede consultar la API regional de Jooble. El administrador elige los perfiles, la ubicación y entre una y cinco páginas; TalentSync conserva la atribución, el enlace original y el ID de Jooble para actualizar cada oferta sin duplicarla. Las ofertas dejan de mostrarse después de 30 días si no se sincronizan nuevamente.
+
+Solicita la clave en [Jooble Colombia](https://co.jooble.org/api/about) y guárdala exclusivamente en el backend:
+
+```dotenv
+JOOBLE_API_KEY=clave_regional_de_colombia
+JOOBLE_API_BASE_URL=https://co.jooble.org/api
+JOOBLE_TIMEOUT_SECONDS=20
+```
+
+La clave no utiliza el prefijo `VITE_` y nunca debe guardarse en Git. Cada página consultada consume una solicitud de la cuota asignada por Jooble, por eso la sincronización se ejecuta de forma manual desde la consola administrativa.
+
 ## Cómo funciona la compatibilidad
 
 El backend usa la misma función para la vista del candidato y para el ranking de la empresa. Así evita que un mismo perfil muestre porcentajes distintos para la misma vacante.

@@ -1,5 +1,6 @@
 from typing import BinaryIO, Protocol
 
+from app.domain.entities.catalog import CatalogPage
 from app.domain.entities.nlp import NLPResult
 
 
@@ -32,3 +33,17 @@ class ResumeReader(Protocol):
 class ImageStorage(Protocol):
     def save(self, folder: str, filename: str, content: bytes, media_type: str) -> None: ...
     def read(self, folder: str, filename: str) -> bytes: ...
+
+
+class JobCatalog(Protocol):
+    @property
+    def configured(self) -> bool: ...
+
+    def search(
+        self,
+        *,
+        keywords: str,
+        location: str,
+        page: int,
+        result_count: int,
+    ) -> CatalogPage: ...

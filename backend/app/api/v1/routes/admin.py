@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Depends, File, Response, UploadFile, status
 
 from app.api.deps import (
+    get_job_catalog,
     get_resume_reader,
     get_text_analysis,
     get_unit_of_work,
     require_roles,
 )
-from app.application.ports.services import ResumeReader, TextAnalysis
-from app.application.ports.unit_of_work import UnitOfWork
+from app.api.schemas.admin import JobCatalogSyncRequest
 from app.application.errors import UseCaseError
+from app.application.ports.services import JobCatalog, ResumeReader, TextAnalysis
+from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import admin as use_cases
 from app.application.use_cases import job_imports
 from app.domain.entities.enums import UserRole
@@ -98,6 +100,41 @@ async def import_external_jobs(
         current_user,
         db,
         nlp=nlp,
+    )
+
+
+@router.get("/jobs/sources/jooble")
+def jooble_source_status(
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    catalog: JobCatalog = Depends(get_job_catalog),
+) -> dict:
+    return {
+        "source": "Jooble Colombia",
+        "configured": catalog.configured,
+        "registration_url": "https://co.jooble.org/api/about",
+        "request_limit_note": (
+            "Cada página sincronizada consume una solicitud de la cuota de Jooble."
+        ),
+    }
+
+
+@router.post("/jobs/sources/jooble/sync")
+def sync_jooble_jobs(
+    payload: JobCatalogSyncRequest,
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    db: UnitOfWork = Depends(get_unit_of_work),
+    nlp: TextAnalysis = Depends(get_text_analysis),
+    catalog: JobCatalog = Depends(get_job_catalog),
+) -> dict:
+    return job_imports.sync_job_catalog(
+        keywords=payload.keywords,
+        location=payload.location,
+        pages=payload.pages,
+        result_count=payload.result_count,
+        current_user=current_user,
+        db=db,
+        nlp=nlp,
+        catalog=catalog,
     )
 
 

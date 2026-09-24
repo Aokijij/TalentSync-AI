@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     static_dir: str | None = None
     azure_storage_account_url: str | None = None
     azure_storage_container: str = "cvs"
+    jooble_api_key: str | None = None
+    jooble_api_base_url: str = "https://co.jooble.org/api"
+    jooble_timeout_seconds: float = 20
     allowed_hosts: list[str] = Field(default_factory=lambda: ["*"])
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]

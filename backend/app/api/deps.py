@@ -10,7 +10,8 @@ from app.domain.entities.enums import UserRole
 from app.infrastructure.database.models import User
 from app.infrastructure.database.session import get_db
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
-from app.infrastructure.images import get_image_storage
+from app.infrastructure.images import get_image_storage as get_image_storage
+from app.infrastructure.job_catalogs import JoobleJobCatalog
 from app.infrastructure.nlp.resumes import ResumeReader
 from app.infrastructure.nlp.text_processor import text_processor
 from app.infrastructure.security.accounts import AccountSecurity
@@ -60,3 +61,13 @@ def get_account_security() -> AccountSecurityPort:
 
 def get_resume_reader() -> ResumeReaderPort:
     return ResumeReader()
+
+
+def get_job_catalog():
+    from app.core.config import settings
+
+    return JoobleJobCatalog(
+        api_key=settings.jooble_api_key,
+        base_url=settings.jooble_api_base_url,
+        timeout_seconds=settings.jooble_timeout_seconds,
+    )

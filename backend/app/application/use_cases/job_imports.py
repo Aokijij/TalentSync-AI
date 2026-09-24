@@ -3,14 +3,15 @@ import hashlib
 import io
 import re
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 from openpyxl import load_workbook
 
-from app.application.errors import UseCaseError
-from app.application.ports.services import TextAnalysis
+from app.application.errors import CatalogProviderError, UseCaseError
+from app.application.ports.services import JobCatalog, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
+from app.domain.entities.catalog import CatalogJob
 from app.domain.entities.job_sectors import JOB_SECTORS
 from app.domain.entities.records import User
 
@@ -199,6 +200,63 @@ def import_jobs(
     nlp: TextAnalysis,
 ) -> dict:
     rows = _rows(filename, content)
+    return _import_rows(rows, current_user, db, nlp=nlp)
+
+
+def sync_job_catalog(
+    *,
+    keywords: str,
+    location: str,
+    pages: int,
+    result_count: int,
+    current_user: User,
+    db: UnitOfWork,
+    nlp: TextAnalysis,
+    catalog: JobCatalog,
+) -> dict:
+    if not catalog.configured:
+        raise UseCaseError(
+            status_code=503,
+            detail="Jooble aún no está conectado. Agrega JOOBLE_API_KEY en Azure.",
+        )
+    rows: list[dict[str, object]] = []
+    provider_total = 0
+    try:
+        for page_number in range(1, pages + 1):
+            result = catalog.search(
+                keywords=keywords,
+                location=location,
+                page=page_number,
+                result_count=result_count,
+            )
+            provider_total = result.total
+            rows.extend(_catalog_row(job) for job in result.jobs)
+            if not result.jobs or len(rows) >= result.total:
+                break
+    except CatalogProviderError as error:
+        raise UseCaseError(status_code=502, detail=str(error)) from error
+
+    if not rows:
+        raise UseCaseError(
+            status_code=404,
+            detail="Jooble no encontró vacantes para esa búsqueda y ubicación.",
+        )
+    result = _import_rows(rows, current_user, db, nlp=nlp)
+    return {
+        **result,
+        "fetched": len(rows),
+        "provider_total": provider_total,
+        "source": "Jooble",
+    }
+
+
+def _import_rows(
+    rows: list[dict[str, object]],
+    current_user: User,
+    db: UnitOfWork,
+    *,
+    nlp: TextAnalysis,
+) -> dict:
     if not rows:
         raise UseCaseError(status_code=400, detail="El archivo no contiene vacantes")
     if len(rows) > MAX_IMPORT_ROWS:
@@ -349,3 +407,83 @@ def import_jobs(
         "rejected": len(errors),
         "errors": errors[:50],
     }
+
+
+def _catalog_row(job: CatalogJob) -> dict[str, object]:
+    city, department = _location_parts(job.location)
+    text = f"{job.title} {job.description}".casefold()
+    return {
+        "fuente": "Jooble",
+        "id_externo": job.external_id,
+        "empresa": job.company,
+        "cargo": job.title,
+        "descripcion": job.description
+        or "Consulta la descripción completa de esta oportunidad en Jooble.",
+        "requisitos": (
+            "Consulta los requisitos completos y las condiciones en la publicación "
+            "original de Jooble."
+        ),
+        "sector": _infer_sector(text),
+        "enlace_externo": job.url,
+        "fecha_publicacion": job.published_at,
+        "fecha_vencimiento": datetime.utcnow() + timedelta(days=30),
+        "departamento": department,
+        "ciudad": city,
+        "modalidad": _infer_modality(text),
+        "tipo_contrato": _infer_contract(job.employment_type),
+        "descripcion_empresa": (
+            "Empresa con una oportunidad publicada en el catálogo autorizado de Jooble."
+        ),
+    }
+
+
+def _location_parts(location: str) -> tuple[str, str]:
+    parts = [part.strip() for part in location.split(",") if part.strip()]
+    if len(parts) >= 2:
+        return parts[0], parts[-1]
+    return (parts[0], "") if parts else ("", "")
+
+
+def _infer_modality(text: str) -> str:
+    if any(term in text for term in ("remoto", "remote", "teletrabajo")):
+        return "remoto"
+    if any(term in text for term in ("híbrido", "hibrido", "hybrid")):
+        return "híbrido"
+    return "presencial"
+
+
+def _infer_contract(value: str) -> str:
+    normalized = _key(value)
+    if any(term in normalized for term in ("part_time", "medio_tiempo")):
+        return "medio tiempo"
+    if any(term in normalized for term in ("intern", "practica", "pasantia")):
+        return "prácticas"
+    if any(term in normalized for term in ("temporary", "temporal")):
+        return "temporal"
+    if any(term in normalized for term in ("contract", "contrato")):
+        return "contrato"
+    return "tiempo completo"
+
+
+def _infer_sector(text: str) -> str:
+    rules = (
+        ("Salud y bienestar", ("salud", "médic", "medic", "enfermer", "clínic")),
+        ("Educacion", ("docente", "profesor", "educación", "colegio", "universidad")),
+        ("Finanzas y banca", ("contable", "contador", "financ", "banco", "tesorer")),
+        (
+            "Ventas y comercio",
+            ("venta", "comercial", "vendedor", "asesor comercial", "servicio al cliente"),
+        ),
+        ("Logistica y transporte", ("logística", "logistica", "conductor", "transporte", "bodega")),
+        ("Recursos humanos", ("recursos humanos", "talento humano", "reclut")),
+        ("Marketing y publicidad", ("marketing", "mercadeo", "publicidad", "contenido")),
+        ("Turismo y hoteleria", ("hotel", "turismo", "restaurante", "cocina")),
+        ("Construccion e ingenieria", ("construcción", "construccion", "obra", "ingeniero civil")),
+        ("Manufactura", ("producción", "produccion", "operario", "planta")),
+        ("Tecnologia y software", ("software", "desarrollador", "programador", "sistemas", "datos", "soporte técnico")),
+        ("Sector publico y social", ("trabajo social", "fundación", "fundacion", "comunitario")),
+    )
+    for sector, terms in rules:
+        if any(term in text for term in terms):
+            return sector
+    return "Retail y consumo masivo"

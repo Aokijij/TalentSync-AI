@@ -6,3 +6,7 @@ class UseCaseError(Exception):
         super().__init__(detail)
         self.status_code = status_code
         self.detail = detail
+
+
+class CatalogProviderError(Exception):
+    """A safe, user-facing failure returned by an authorized job catalog."""
