@@ -14,6 +14,7 @@ import { PageHeader } from "../components/PageHeader.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
+import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 
 export function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState([]);
@@ -23,6 +24,7 @@ export function RecommendationsPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [externalJob, setExternalJob] = useState(null);
   const [minCompatibility, setMinCompatibility] = useState(() => {
     const saved = Number(localStorage.getItem("talentsync_recommendation_min"));
     return [40, 50, 60, 70, 80, 90].includes(saved) ? saved : 40;
@@ -79,12 +81,24 @@ export function RecommendationsPage() {
     [applications],
   );
 
-  async function apply(jobId) {
+  async function apply(job) {
     setMessage("");
-    await api.post("/applications", { job_id: jobId });
-    setMessage("Postulación registrada correctamente");
-    const { data } = await api.get("/applications/me");
-    setApplications(data);
+    setError("");
+    if (job?.source_kind === "external" && job.external_url) {
+      setExternalJob(job);
+      return;
+    }
+    try {
+      await api.post("/applications", { job_id: job.id });
+      setMessage("Postulación registrada correctamente");
+      const { data } = await api.get("/applications/me");
+      setApplications(data);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.detail ||
+          "No fue posible registrar la postulación",
+      );
+    }
   }
 
   return (
@@ -189,6 +203,15 @@ export function RecommendationsPage() {
                       >
                         {categoryLabel}
                       </span>
+                      {job?.source_kind === "external" ? (
+                        <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">
+                          Postulación en {job.source_name || "sitio externo"}
+                        </span>
+                      ) : job?.source_kind === "demo" ? (
+                        <span className="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-500">
+                          Demostrativa
+                        </span>
+                      ) : null}
                       {applied ? (
                         <span className="rounded-[var(--radius-md)] bg-[var(--success)]/10 px-2 py-1 text-xs font-semibold text-[var(--ink)]">
                           Postulado
@@ -246,7 +269,7 @@ export function RecommendationsPage() {
                     <button
                       type="button"
                       disabled={applied}
-                      onClick={() => apply(item.job_id)}
+                      onClick={() => apply(job)}
                       className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--success)] px-3 py-2 text-sm font-semibold text-white hover:bg-[var(--success)]/90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Send size={16} className="text-white" />
@@ -308,6 +331,10 @@ export function RecommendationsPage() {
           </Link>
         </div>
       </section>
+      <ExternalApplicationDialog
+        job={externalJob}
+        onClose={() => setExternalJob(null)}
+      />
     </div>
   );
 }

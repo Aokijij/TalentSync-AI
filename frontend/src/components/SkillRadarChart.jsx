@@ -1,3 +1,4 @@
+import { CheckCircle2, CircleDashed, Info } from "lucide-react";
 import { useMemo } from "react";
 
 function normalize(value) {
@@ -36,11 +37,48 @@ export function SkillRadarChart({
   }, [candidateSkills, requiredSkills]);
 
   if (axes.length < 3) {
+    const matched = axes.filter((item) => item.candidate >= 72);
+    const missing = axes.filter((item) => item.candidate < 72);
     return (
-      <div className="rounded-[var(--radius-lg)] bg-[var(--surface-subtle)] p-5 text-sm text-[var(--muted)]">
-        Agrega al menos tres habilidades a la vacante para generar el radar
-        comparativo.
-      </div>
+      <section className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-5">
+        <div className="flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+            <Info size={19} />
+          </span>
+          <div>
+            <h3 className="font-bold text-[var(--ink-strong)]">
+              Comparación simplificada
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+              Esta vacante solo especifica {axes.length === 1 ? "una habilidad" : `${axes.length} habilidades`}.
+              No hay suficientes datos para dibujar un radar confiable, así que te
+              mostramos directamente qué cumples y qué puedes fortalecer.
+            </p>
+          </div>
+        </div>
+
+        {axes.length ? (
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {matched.map((item) => (
+              <p key={item.label} className="flex items-center gap-2 rounded-xl border border-[var(--success)]/30 bg-[var(--success)]/10 px-3 py-2 text-sm font-semibold text-[var(--ink-strong)]">
+                <CheckCircle2 size={16} className="text-[var(--success)]" />
+                {item.label}: ya aparece en tu perfil
+              </p>
+            ))}
+            {missing.map((item) => (
+              <p key={item.label} className="flex items-center gap-2 rounded-xl border border-[var(--warning)]/30 bg-[var(--warning)]/10 px-3 py-2 text-sm font-semibold text-[var(--ink-strong)]">
+                <CircleDashed size={16} className="text-[var(--warning)]" />
+                {item.label}: habilidad por fortalecer
+              </p>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm leading-6 text-[var(--muted)]">
+            La fuente no publicó habilidades concretas. Usa el porcentaje como una
+            orientación inicial y revisa las funciones completas antes de decidir.
+          </p>
+        )}
+      </section>
     );
   }
 

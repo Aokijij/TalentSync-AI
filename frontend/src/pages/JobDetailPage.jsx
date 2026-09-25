@@ -18,6 +18,7 @@ import { api, apiFileUrl } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
+import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { formatRelativeTime } from "../utils/dates.js";
 
 export function JobDetailPage() {
@@ -29,6 +30,7 @@ export function JobDetailPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
+  const [showExternalWarning, setShowExternalWarning] = useState(false);
   const [answers, setAnswers] = useState({});
 
   useEffect(() => {
@@ -105,7 +107,12 @@ export function JobDetailPage() {
             {job.source_kind === "external" ? (
               <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-semibold text-[var(--accent)]">
                 <ExternalLink size={13} />
-                Oferta externa de {job.source_name || "fuente autorizada"}
+                Vista previa externa de {job.source_name || "fuente autorizada"}
+              </p>
+            ) : job.source_kind === "demo" ? (
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-500">
+                <BriefcaseBusiness size={13} />
+                Vacante demostrativa de TalentSync
               </p>
             ) : null}
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[var(--muted)]">
@@ -152,19 +159,28 @@ export function JobDetailPage() {
             text={job.description}
           />
           {job.source_kind === "external" ? (
-            <div className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
-              <h2 className="font-semibold">Alcance de la información</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                Jooble entrega a TalentSync un resumen, no el anuncio completo. Las
-                habilidades se identifican a partir del cargo y de ese resumen para
-                calcular una compatibilidad inicial. Revisa la publicación original
-                antes de postularte para confirmar funciones, requisitos y condiciones.
-              </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[var(--radius-lg)] border border-[var(--accent)]/30 bg-[var(--accent)]/10 p-4">
+                <h2 className="font-semibold">Qué puede analizar TalentSync</h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                  El cargo, la ubicación, la empresa, el salario cuando está disponible
+                  y el resumen entregado por {job.source_name || "la fuente"}. De esas
+                  señales se extraen las habilidades visibles en esta página.
+                </p>
+              </div>
+              <div className="rounded-[var(--radius-lg)] border border-[var(--warning)]/30 bg-[var(--warning)]/10 p-4">
+                <h2 className="font-semibold">Qué debes confirmar</h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                  Funciones completas, experiencia mínima, beneficios, vigencia y
+                  condiciones contractuales. Esa información solo está en el anuncio
+                  original.
+                </p>
+              </div>
             </div>
           ) : (
             <Info title="Requisitos" text={job.requirements} />
           )}
-          <div>
+          {job.source_kind !== "external" ? <div>
             <h2 className="font-semibold">Beneficios</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {(job.benefits || []).map((benefit) => (
@@ -181,7 +197,7 @@ export function JobDetailPage() {
                 </p>
               ) : null}
             </div>
-          </div>
+          </div> : null}
           <div className="rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface-subtle)] p-5">
             <div className="flex items-start gap-4">
               {job.company_logo_url ? <img src={apiFileUrl(job.company_logo_url)} alt={`Logo de ${job.company_name}`} className="h-14 w-14 rounded-xl border border-[var(--line)] bg-white object-contain p-1" /> : <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Building2 size={26} /></span>}
@@ -196,7 +212,11 @@ export function JobDetailPage() {
           </div>
         </div>
         <aside className="surface-card p-5">
-          <h2 className="text-lg font-semibold">Habilidades relacionadas</h2>
+          <h2 className="text-lg font-semibold">
+            {job.source_kind === "external"
+              ? "Señales detectadas en el resumen"
+              : "Habilidades relacionadas"}
+          </h2>
           <div className="mt-4 space-y-3">
             {(job.skills || []).map((skill) => (
               <p className="flex items-center gap-2 text-sm" key={skill}>
@@ -220,15 +240,14 @@ export function JobDetailPage() {
                     Esta vacante fue publicada fuera de TalentSync. Revisa sus condiciones y
                     continúa el proceso en el sitio de origen.
                   </p>
-                  <a
+                  <button
+                    type="button"
                     className="button-primary mt-4 w-full"
-                    href={job.external_url}
-                    target="_blank"
-                    rel="noreferrer"
+                    onClick={() => setShowExternalWarning(true)}
                   >
                     <ExternalLink size={16} />
-                    Ir a la oferta original
-                  </a>
+                    Postularme en el sitio original
+                  </button>
                 </div>
               ) : alreadyApplied ? (
                 <div className="mt-8 rounded-[var(--radius-lg)] bg-[var(--accent)]/10 px-4 py-3 text-center text-sm font-semibold text-[var(--accent)]">
@@ -267,6 +286,12 @@ export function JobDetailPage() {
             <footer className="mt-6 flex justify-end gap-2 border-t border-[var(--line)] pt-5"><button type="button" className="button-secondary" onClick={() => setShowQuestions(false)}>Cancelar</button><button type="button" className="button-primary" onClick={apply}><Send size={16} />Enviar postulación</button></footer>
           </section>
         </div>
+      ) : null}
+      {showExternalWarning ? (
+        <ExternalApplicationDialog
+          job={job}
+          onClose={() => setShowExternalWarning(false)}
+        />
       ) : null}
     </div>
   );

@@ -271,6 +271,18 @@ El registro público solo crea candidatos y empresas. Para crear un administrado
 
 El comando solicita la contraseña sin mostrarla. El acceso administrativo se abre en `/acceso-administracion`; las cuentas de candidato y empresa no pueden ingresar allí.
 
+## Catálogo demostrativo
+
+Para presentar la plataforma con suficiente variedad sin publicar ofertas falsas como si fueran reales, existe un catálogo idempotente de **20 empresas ficticias y 217 vacantes demostrativas**. Cada empresa recibe entre 8 y 14 vacantes con habilidades, salario, ubicación, beneficios y preguntas de postulación. La interfaz identifica estos registros como demostrativos y permite recorrer el flujo interno completo.
+
+Desde `backend/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.scripts.seed_demo_catalog
+```
+
+El comando puede repetirse: actualiza los mismos identificadores en lugar de duplicarlos. En producción ejecútalo solamente cuando se quiera mantener visible este entorno de demostración.
+
 ## Pruebas y compilación
 
 Backend:
@@ -325,7 +337,7 @@ Desde PowerShell 7, en la raíz del repositorio:
 
 `-WhatIf` muestra el destino y la operación prevista. La actualización real exige un árbol Git limpio, conserva los secretos y comprueba que la nueva revisión responda `/health`. El script de Cloudflare compila con la URL HTTPS de la API y publica únicamente `frontend/dist`.
 
-No ejecutes semillas, `alembic downgrade` ni reinicios de base de datos en producción. Si una revisión falla, comprueba primero que la imagen anterior sea compatible con el esquema actual. Las fotos, logos, portadas y CV deben permanecer en Blob Storage antes de retirar una revisión.
+No ejecutes semillas no idempotentes, `alembic downgrade` ni reinicios de base de datos en producción. El catálogo demostrativo documentado es la única semilla preparada para repetirse sin duplicar datos. Si una revisión falla, comprueba primero que la imagen anterior sea compatible con el esquema actual. Las fotos, logos, portadas y CV deben permanecer en Blob Storage antes de retirar una revisión.
 
 ## Seguridad y datos
 

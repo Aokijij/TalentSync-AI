@@ -341,6 +341,11 @@ function JobCard({ job, match, applied, showMatch }) {
           <ExternalLink size={13} />
           Publicada originalmente en {job.source_name || "una fuente externa"}
         </p>
+      ) : job.source_kind === "demo" ? (
+        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-500">
+          <Sparkles size={13} />
+          Vacante demostrativa: puedes recorrer la postulación completa
+        </p>
       ) : null}
       {showMatch ? (
         <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-3">

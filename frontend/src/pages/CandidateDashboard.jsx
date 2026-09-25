@@ -18,6 +18,7 @@ import {
   ProfileCompletionRing,
 } from "../components/ProfileCompletionRing.jsx";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
+import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { Link } from "react-router-dom";
 
 const candidateStatusLabel = {
@@ -37,6 +38,8 @@ export function CandidateDashboard() {
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [message, setMessage] = useState("");
+  const [applicationError, setApplicationError] = useState("");
+  const [externalJob, setExternalJob] = useState(null);
   const [expandedReasons, setExpandedReasons] = useState({});
   const [minCompatibility] = useState(() => {
     const saved = Number(localStorage.getItem("talentsync_recommendation_min"));
@@ -148,17 +151,25 @@ export function CandidateDashboard() {
     [applications],
   );
 
-  function apply(jobId) {
+  function apply(job) {
     setMessage("");
+    setApplicationError("");
+    if (job?.source_kind === "external" && job.external_url) {
+      setExternalJob(job);
+      return;
+    }
     api
-      .post("/applications", { job_id: jobId })
+      .post("/applications", { job_id: job.id })
       .then(() => api.get("/applications/me"))
       .then(({ data }) => {
         setApplications(data);
-        setMessage("Postulacion registrada correctamente");
+        setMessage("Postulación registrada correctamente");
       })
-      .catch(() => {
-        setMessage("");
+      .catch((requestError) => {
+        setApplicationError(
+          requestError.response?.data?.detail ||
+            "No fue posible registrar la postulación",
+        );
       });
   }
 
@@ -241,6 +252,11 @@ export function CandidateDashboard() {
           {message}
         </p>
       ) : null}
+      {applicationError ? (
+        <p className="rounded-[var(--radius-md)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-[var(--error)]">
+          {applicationError}
+        </p>
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1fr_330px]">
         <div className="surface-card overflow-hidden">
@@ -303,6 +319,15 @@ export function CandidateDashboard() {
                       >
                         {categoryLabel}
                       </span>
+                      {job?.source_kind === "external" ? (
+                        <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">
+                          Postulación externa
+                        </span>
+                      ) : job?.source_kind === "demo" ? (
+                        <span className="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-500">
+                          Demostrativa
+                        </span>
+                      ) : null}
                       {applied ? (
                         <span className="rounded-md bg-[var(--success)]/10 px-2 py-1 text-xs font-semibold text-[var(--success)]">
                           Postulado
@@ -345,7 +370,7 @@ export function CandidateDashboard() {
                     variant="primary"
                     size="md"
                     disabled={applied}
-                    onClick={() => apply(item.job_id)}
+                    onClick={() => apply(job)}
                   >
                     <Send size={16} />
                     {applied ? "Enviada" : "Postularme"}
@@ -487,6 +512,10 @@ export function CandidateDashboard() {
           </div>
         </div>
       </section>
+      <ExternalApplicationDialog
+        job={externalJob}
+        onClose={() => setExternalJob(null)}
+      />
     </div>
   );
 }
