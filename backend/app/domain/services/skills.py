@@ -10,6 +10,9 @@ def skill_key(skill: object) -> str:
         "node.js": "nodejs",
         "rest api": "api rest",
         "restful api": "api rest",
+        "atencion al cliente": "servicio al cliente",
+        "customer service": "servicio al cliente",
+        "dotnet": ".net",
         "gestion sst": "seguridad y salud en el trabajo",
         "sst": "seguridad y salud en el trabajo",
     }

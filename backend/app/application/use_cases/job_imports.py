@@ -71,10 +71,28 @@ def _salary(value: object) -> float | None:
         return None
     if isinstance(value, (int, float)):
         return float(value)
-    digits = re.sub(r"[^0-9]", "", str(value))
-    if not digits:
+    raw = str(value).strip().lower()
+    if any(term in raw for term in ("a convenir", "por definir", "no especific")):
+        return None
+    amounts: list[float] = []
+    for token in re.findall(r"\d+(?:[.,]\d+)*", raw):
+        groups = re.split(r"[.,]", token)
+        if len(groups) > 1 and all(len(group) == 3 for group in groups[1:]):
+            amounts.append(float("".join(groups)))
+            continue
+        normalized = token.replace(",", ".")
+        try:
+            amount = float(normalized)
+        except ValueError:
+            continue
+        if "millon" in raw and amount < 1_000:
+            amount *= 1_000_000
+        amounts.append(amount)
+    if not amounts:
         raise ValueError("El salario debe contener un valor numérico")
-    return float(digits)
+    # The current model stores one value. For a range, keep its lower bound so
+    # salary filters do not promise more than the source actually offers.
+    return min(amounts)
 
 
 def _date(value: object, field: str) -> datetime | None:
@@ -115,7 +133,9 @@ def _languages(value: object) -> list[dict[str, str]]:
         name = " ".join(name.lower().strip().split())
         level = level.strip().upper()
         if not separator or level not in {"A1", "A2", "B1", "B2", "C1", "C2", "NATIVE"}:
-            raise ValueError("Los idiomas deben usar el formato idioma:nivel, por ejemplo inglés:B2")
+            raise ValueError(
+                "Los idiomas deben usar el formato idioma:nivel, por ejemplo inglés:B2"
+            )
         if name in seen:
             raise ValueError(f"El idioma “{name}” está repetido")
         seen.add(name)
@@ -138,7 +158,9 @@ def _rows(filename: str, content: bytes) -> list[dict[str, object]]:
             dialect = csv.excel
         reader = csv.DictReader(io.StringIO(decoded), dialect=dialect)
         if not reader.fieldnames:
-            raise UseCaseError(status_code=400, detail="El archivo no contiene encabezados")
+            raise UseCaseError(
+                status_code=400, detail="El archivo no contiene encabezados"
+            )
         return [
             {_key(name): value for name, value in row.items() if name}
             for row in reader
@@ -146,19 +168,27 @@ def _rows(filename: str, content: bytes) -> list[dict[str, object]]:
         ]
     if suffix == "xlsx":
         try:
-            workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+            workbook = load_workbook(
+                io.BytesIO(content), read_only=True, data_only=True
+            )
             sheet = workbook.active
             values = sheet.iter_rows(values_only=True)
             headers = [_key(value) for value in next(values, ())]
             if not any(headers):
                 raise ValueError("El archivo no contiene encabezados")
             return [
-                {headers[index]: value for index, value in enumerate(row) if index < len(headers)}
+                {
+                    headers[index]: value
+                    for index, value in enumerate(row)
+                    if index < len(headers)
+                }
                 for row in values
                 if any(str(value or "").strip() for value in row)
             ]
         except (OSError, ValueError, TypeError) as error:
-            raise UseCaseError(status_code=400, detail=f"El Excel no es válido: {error}") from error
+            raise UseCaseError(
+                status_code=400, detail=f"El Excel no es válido: {error}"
+            ) from error
     raise UseCaseError(status_code=400, detail="Selecciona un archivo CSV o XLSX")
 
 
@@ -304,11 +334,17 @@ def _import_rows(
             description = _text(row, "descripcion", required=True)
             requirements = _text(row, "requisitos", required=True)
             if len(company_name) > 180 or len(title) > 180:
-                raise ValueError("El nombre de la empresa o el cargo supera 180 caracteres")
+                raise ValueError(
+                    "El nombre de la empresa o el cargo supera 180 caracteres"
+                )
             if len(description) < 10 or len(requirements) < 10:
-                raise ValueError("La descripción y los requisitos necesitan al menos 10 caracteres")
+                raise ValueError(
+                    "La descripción y los requisitos necesitan al menos 10 caracteres"
+                )
             sector = _sector(_text(row, "sector", required=True))
-            external_url = _url(row.get("enlace_externo"), "enlace_externo", required=True)
+            external_url = _url(
+                row.get("enlace_externo"), "enlace_externo", required=True
+            )
             company_url = _url(row.get("sitio_empresa"), "sitio_empresa")
             published_at = _date(row.get("fecha_publicacion"), "fecha_publicacion")
             expires_at = _date(row.get("fecha_vencimiento"), "fecha_vencimiento")
@@ -397,7 +433,10 @@ def _import_rows(
     if not created and not updated:
         raise UseCaseError(
             status_code=422,
-            detail={"message": "Ninguna vacante pudo importarse", "errors": errors[:50]},
+            detail={
+                "message": "Ninguna vacante pudo importarse",
+                "errors": errors[:50],
+            },
         )
     db.commit()
     return {
@@ -420,13 +459,14 @@ def _catalog_row(job: CatalogJob) -> dict[str, object]:
         "descripcion": job.description
         or "Consulta la descripción completa de esta oportunidad en Jooble.",
         "requisitos": (
-            "Consulta los requisitos completos y las condiciones en la publicación "
-            "original de Jooble."
+            "La API de Jooble entrega un resumen del anuncio. Confirma los requisitos "
+            "completos y las condiciones en la publicación original."
         ),
         "sector": _infer_sector(text),
         "enlace_externo": job.url,
         "fecha_publicacion": job.published_at,
         "fecha_vencimiento": datetime.utcnow() + timedelta(days=30),
+        "salario": job.salary,
         "departamento": department,
         "ciudad": city,
         "modalidad": _infer_modality(text),
@@ -472,16 +512,44 @@ def _infer_sector(text: str) -> str:
         ("Finanzas y banca", ("contable", "contador", "financ", "banco", "tesorer")),
         (
             "Ventas y comercio",
-            ("venta", "comercial", "vendedor", "asesor comercial", "servicio al cliente"),
+            (
+                "venta",
+                "comercial",
+                "vendedor",
+                "asesor comercial",
+                "servicio al cliente",
+            ),
         ),
-        ("Logistica y transporte", ("logística", "logistica", "conductor", "transporte", "bodega")),
+        (
+            "Logistica y transporte",
+            ("logística", "logistica", "conductor", "transporte", "bodega"),
+        ),
         ("Recursos humanos", ("recursos humanos", "talento humano", "reclut")),
-        ("Marketing y publicidad", ("marketing", "mercadeo", "publicidad", "contenido")),
+        (
+            "Marketing y publicidad",
+            ("marketing", "mercadeo", "publicidad", "contenido"),
+        ),
         ("Turismo y hoteleria", ("hotel", "turismo", "restaurante", "cocina")),
-        ("Construccion e ingenieria", ("construcción", "construccion", "obra", "ingeniero civil")),
+        (
+            "Construccion e ingenieria",
+            ("construcción", "construccion", "obra", "ingeniero civil"),
+        ),
         ("Manufactura", ("producción", "produccion", "operario", "planta")),
-        ("Tecnologia y software", ("software", "desarrollador", "programador", "sistemas", "datos", "soporte técnico")),
-        ("Sector publico y social", ("trabajo social", "fundación", "fundacion", "comunitario")),
+        (
+            "Tecnologia y software",
+            (
+                "software",
+                "desarrollador",
+                "programador",
+                "sistemas",
+                "datos",
+                "soporte técnico",
+            ),
+        ),
+        (
+            "Sector publico y social",
+            ("trabajo social", "fundación", "fundacion", "comunitario"),
+        ),
     )
     for sector, terms in rules:
         if any(term in text for term in terms):

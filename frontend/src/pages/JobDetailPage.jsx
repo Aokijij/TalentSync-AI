@@ -137,7 +137,9 @@ export function JobDetailPage() {
             <div className="w-full rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
               <CompatibilityBar value={match.match_percentage} />
               <p className="mt-2 px-1 text-xs text-[var(--muted)]">
-                Compatibilidad basada en tu trayectoria, habilidades{job.languages?.length ? " e idiomas" : ""}.
+                {job.source_kind === "external"
+                  ? `Estimación basada en el resumen y las habilidades identificadas${job.languages?.length ? ", además de los idiomas" : ""}. Confirma los requisitos en la oferta original.`
+                  : `Compatibilidad basada en tu trayectoria, habilidades${job.languages?.length ? " e idiomas" : ""}.`}
               </p>
             </div>
           ) : null}
@@ -145,8 +147,23 @@ export function JobDetailPage() {
       </section>
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="surface-card space-y-6 p-6">
-          <Info title="Descripción" text={job.description} />
-          <Info title="Requisitos" text={job.requirements} />
+          <Info
+            title={job.source_kind === "external" ? "Resumen de la oferta" : "Descripción"}
+            text={job.description}
+          />
+          {job.source_kind === "external" ? (
+            <div className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
+              <h2 className="font-semibold">Alcance de la información</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                Jooble entrega a TalentSync un resumen, no el anuncio completo. Las
+                habilidades se identifican a partir del cargo y de ese resumen para
+                calcular una compatibilidad inicial. Revisa la publicación original
+                antes de postularte para confirmar funciones, requisitos y condiciones.
+              </p>
+            </div>
+          ) : (
+            <Info title="Requisitos" text={job.requirements} />
+          )}
           <div>
             <h2 className="font-semibold">Beneficios</h2>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -187,6 +204,12 @@ export function JobDetailPage() {
                 {skill}
               </p>
             ))}
+            {!job.skills?.length ? (
+              <p className="text-sm leading-6 text-[var(--muted)]">
+                La información disponible no permite identificar habilidades concretas.
+                Verifica el anuncio original antes de valorar esta oportunidad.
+              </p>
+            ) : null}
           </div>
           <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="mb-3 font-semibold">Idiomas y nivel mínimo</h2><LanguagesEditor value={job.languages || []} editing={false} required /></div>
           {user?.role === "candidate" ? (

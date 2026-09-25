@@ -35,6 +35,7 @@ def test_jooble_catalog_maps_and_cleans_authorized_results(monkeypatch):
                         "location": "Bogotá, Bogotá D.C.",
                         "snippet": "<b>Atiende</b> solicitudes de clientes.",
                         "type": "Full-time",
+                        "salary": "$2.500.000 - $3.000.000 al mes",
                         "link": "https://co.jooble.org/jdp/123",
                         "updated": "2026-09-23T12:55:35.3870000",
                     }
@@ -56,4 +57,5 @@ def test_jooble_catalog_maps_and_cleans_authorized_results(monkeypatch):
     assert captured["timeout"] == 7
     assert result.total == 1
     assert result.jobs[0].description == "Atiende solicitudes de clientes."
+    assert result.jobs[0].salary == "$2.500.000 - $3.000.000 al mes"
     assert result.jobs[0].published_at.microsecond == 387000

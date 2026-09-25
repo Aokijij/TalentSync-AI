@@ -74,6 +74,35 @@ COMMON_SKILLS = {
     "costos y presupuestos",
     "supervisión técnica",
     "control de calidad",
+    ".net",
+    "c#",
+    "desarrollo de software",
+    "analítica de datos",
+    "inteligencia artificial",
+    "docencia",
+    "pedagogía",
+    "matemáticas",
+    "gestión administrativa",
+    "administración",
+    "ventas",
+    "negociación",
+    "prospección de clientes",
+    "servicio al cliente",
+    "atención al cliente",
+    "logística",
+    "gestión de inventarios",
+    "despachos",
+    "contabilidad",
+    "facturación",
+    "conciliaciones bancarias",
+    "enfermería",
+    "atención al paciente",
+    "manejo de caja",
+    "recursos humanos",
+    "reclutamiento",
+    "selección de personal",
+    "crm",
+    "sap",
     "gestión documental",
     "presupuestos",
     "interventoría",
@@ -129,6 +158,59 @@ COMMON_SKILLS = {
     "elaboración de informes",
     "gestión de permisos",
     "cumplimiento normativo",
+}
+
+SKILL_ALIAS_PATTERNS = {
+    ".net": (r"(?<!\w)\.net(?!\w)", r"\bdotnet\b"),
+    "desarrollo de software": (
+        r"\bdesarroll(?:o|ador(?:a)?)\s+de\s+software\b",
+        r"\bfull[\s-]?stack\b",
+        r"\bfront[\s-]?end\b",
+        r"\bback[\s-]?end\b",
+    ),
+    "analítica de datos": (
+        r"\banalitica\s+de\s+datos\b",
+        r"\banalisis\s+de\s+datos\b",
+        r"\bdata\s+analytics\b",
+    ),
+    "inteligencia artificial": (r"\binteligencia\s+artificial\b", r"\bia\b"),
+    "docencia": (
+        r"\bdocent(?:e|es)\b",
+        r"\bprofesor(?:a|es|as)?\b",
+        r"\bensenanza\b",
+    ),
+    "pedagogía": (r"\bpedagog(?:ia|ico|ica|icos|icas)\b",),
+    "matemáticas": (r"\bmatematic(?:a|as|o|os)\b",),
+    "gestión administrativa": (
+        r"\b(?:auxiliar|asistente)\s+administrativ(?:o|a)\b",
+        r"\bgestion\s+administrativa\b",
+    ),
+    "ventas": (
+        r"\bventas?\b",
+        r"\bvendedor(?:a|es|as)?\b",
+        r"\b(?:asesor|ejecutivo)\s+comercial\b",
+    ),
+    "servicio al cliente": (
+        r"\bservicio\s+al\s+cliente\b",
+        r"\batencion\s+al\s+cliente\b",
+        r"\bcustomer\s+service\b",
+    ),
+    "logística": (
+        r"\blogistic(?:a|o)\b",
+        r"\b(?:auxiliar|operario)\s+de\s+bodega\b",
+    ),
+    "gestión de inventarios": (r"\binventarios?\b",),
+    "contabilidad": (
+        r"\bcontabilidad\b",
+        r"\bcontable\b",
+        r"\bcontador(?:a|es)?\b",
+    ),
+    "facturación": (r"\bfactur(?:acion|ar|as?)\b",),
+    "enfermería": (r"\benfermer(?:ia|o|a|os|as)\b",),
+    "atención al paciente": (r"\batencion\s+(?:a|al)\s+pacientes?\b",),
+    "manejo de caja": (r"\bmanejo\s+de\s+caja\b", r"\bcajer(?:o|a|os|as)\b"),
+    "recursos humanos": (r"\brecursos\s+humanos\b", r"\btalento\s+humano\b"),
+    "reclutamiento": (r"\breclutamiento\b", r"\breclutador(?:a|es|as)?\b"),
 }
 
 
@@ -250,6 +332,9 @@ class TextProcessor:
                 SequenceMatcher(None, folded_skill, window).ratio() >= 0.92
                 for window in windows
             ):
+                found.append(skill)
+        for skill, patterns in SKILL_ALIAS_PATTERNS.items():
+            if any(re.search(pattern, clean, re.I) for pattern in patterns):
                 found.append(skill)
         return sorted(set(found))
 

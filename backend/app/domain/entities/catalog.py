@@ -10,6 +10,7 @@ class CatalogJob:
     location: str
     description: str
     employment_type: str
+    salary: str
     url: str
     published_at: datetime | None = None
 
@@ -18,4 +19,3 @@ class CatalogJob:
 class CatalogPage:
     jobs: list[CatalogJob]
     total: int
-

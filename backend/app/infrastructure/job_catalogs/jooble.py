@@ -77,7 +77,11 @@ class JoobleJobCatalog:
             raise CatalogProviderError(
                 "Jooble devolvió una respuesta que TalentSync no pudo interpretar."
             )
-        jobs = [self._map_job(item) for item in body.get("jobs", []) if isinstance(item, dict)]
+        jobs = [
+            self._map_job(item)
+            for item in body.get("jobs", [])
+            if isinstance(item, dict)
+        ]
         return CatalogPage(jobs=jobs, total=int(body.get("totalCount") or len(jobs)))
 
     @staticmethod
@@ -86,9 +90,7 @@ class JoobleJobCatalog:
         raw_updated = str(item.get("updated") or "").strip()
         if raw_updated:
             try:
-                normalized = re.sub(
-                    r"(\.\d{6})\d+", r"\1", raw_updated.rstrip("Z")
-                )
+                normalized = re.sub(r"(\.\d{6})\d+", r"\1", raw_updated.rstrip("Z"))
                 updated = datetime.fromisoformat(normalized)
             except ValueError:
                 updated = None
@@ -99,6 +101,7 @@ class JoobleJobCatalog:
             location=_clean(item.get("location")),
             description=_clean(item.get("snippet")),
             employment_type=_clean(item.get("type")),
+            salary=_clean(item.get("salary")),
             url=str(item.get("link") or "").strip(),
             published_at=updated,
         )

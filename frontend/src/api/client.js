@@ -1,8 +1,9 @@
 import axios from "axios";
 import { validationMessage } from "./errors.js";
+import { resolveApiBase } from "./config.js";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000/api/v1",
+  baseURL: resolveApiBase(import.meta.env.VITE_API_URL, window.location),
 });
 
 api.interceptors.request.use((config) => {

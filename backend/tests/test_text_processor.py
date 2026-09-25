@@ -12,6 +12,30 @@ def test_text_processor_extracts_skills_and_similarity():
     assert text_processor.similarity_percentage(profile.embedding, job.embedding) > 0
 
 
+def test_extracts_cross_sector_skills_from_short_job_catalog_summaries():
+    software = text_processor.analyze_job(
+        "Desarrollador de Software Full Stack. Dominio de Java, .NET, inteligencia artificial y analítica de datos."
+    )
+    education = text_processor.analyze_job(
+        "Docente de Matemáticas con conocimientos pedagógicos y experiencia en enseñanza."
+    )
+    operations = text_processor.analyze_job(
+        "Auxiliar de bodega para logística, despachos y control de inventarios."
+    )
+
+    assert {
+        "desarrollo de software",
+        "java",
+        ".net",
+        "inteligencia artificial",
+        "analítica de datos",
+    } <= set(software.skills)
+    assert {"docencia", "matemáticas", "pedagogía"} <= set(education.skills)
+    assert {"logística", "despachos", "gestión de inventarios"} <= set(
+        operations.skills
+    )
+
+
 def test_extracts_environmental_cv_with_professional_experience_format():
     cv = """
     Ingeniera ambiental

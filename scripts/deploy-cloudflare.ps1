@@ -37,6 +37,11 @@ try {
         $env:VITE_API_URL = $ApiUrl.TrimEnd('/')
         & npm run build
         if ($LASTEXITCODE -ne 0) { throw 'Falló la compilación. Cloudflare no se ha actualizado.' }
+        $unsafeBundle = Get-ChildItem -LiteralPath dist -Recurse -File -Include '*.js' |
+            Select-String -Pattern 'https?://(?:127\.0\.0\.1|localhost):8000' -Quiet
+        if ($unsafeBundle) {
+            throw 'La compilación contiene una API local. Cloudflare no se ha actualizado.'
+        }
         & npx --yes wrangler@4.132.0 pages deploy dist --project-name $ProjectName --branch main --commit-hash $revision --commit-dirty=false
         if ($LASTEXITCODE -ne 0) { throw 'No se confirmó la publicación en Cloudflare.' }
         foreach ($path in @('/', '/login')) {
@@ -44,6 +49,10 @@ try {
             if ($page.StatusCode -ne 200 -or $page.Content -notmatch 'id="root"') {
                 throw "No se verificó la ruta pública $path en Cloudflare."
             }
+        }
+        $stats = Invoke-RestMethod "$ApiUrl/jobs/public-stats" -Headers @{ Origin = $FrontendOrigin } -TimeoutSec 30
+        if ($null -eq $stats.active_jobs -or $null -eq $stats.companies) {
+            throw 'El frontend se publicó, pero la API productiva no respondió con sus indicadores.'
         }
         Write-Host "Frontend publicado y rutas verificadas: $FrontendOrigin"
     }

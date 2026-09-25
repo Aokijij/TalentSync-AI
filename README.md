@@ -55,6 +55,8 @@ Las habilidades y los beneficios se separan con `|`; los idiomas se escriben com
 
 La sección **Administración → Vacantes** también puede consultar la API regional de Jooble. El administrador elige los perfiles, la ubicación y entre una y cinco páginas; TalentSync conserva la atribución, el enlace original y el ID de Jooble para actualizar cada oferta sin duplicarla. Las ofertas dejan de mostrarse después de 30 días si no se sincronizan nuevamente.
 
+Jooble entrega mediante su API un **resumen** de cada anuncio, no su descripción completa. TalentSync identifica habilidades explícitas y equivalencias profesionales a partir del cargo y de ese resumen, marca la compatibilidad como estimada y conserva el enlace original para confirmar funciones y requisitos. Cuando Jooble informa un rango salarial, TalentSync usa el límite inferior para no mostrar una promesa superior a la publicada. Consulta la [documentación oficial de la API de Jooble](https://help.jooble.org/en/support/solutions/articles/60001448238).
+
 Solicita la clave en [Jooble Colombia](https://co.jooble.org/api/about) y guárdala exclusivamente en el backend:
 
 ```dotenv
