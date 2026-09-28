@@ -367,6 +367,21 @@ class Recommendation(Base):
             return self._score_reason("languages")
         return None
 
+    @property
+    def data_confidence_percentage(self) -> float:
+        prefix = "confidence:data:"
+        for reason in self.reasons or []:
+            if str(reason).startswith(prefix):
+                try:
+                    return float(str(reason).removeprefix(prefix))
+                except ValueError:
+                    break
+        return 100.0
+
+    @property
+    def is_estimated(self) -> bool:
+        return "source:external" in (self.reasons or [])
+
 
 class Notification(Base):
     __tablename__ = "notifications"

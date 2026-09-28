@@ -12,6 +12,8 @@ class RecommendationResponse(BaseModel):
     semantic_match_percentage: float = 0
     professional_context_percentage: float = 0
     language_match_percentage: float | None = None
+    data_confidence_percentage: float = 100
+    is_estimated: bool = False
     reasons: list[str]
     created_at: datetime
 

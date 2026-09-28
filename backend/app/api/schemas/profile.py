@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
+
 from app.api.schemas.language import LanguageLevel, unique_languages
 
 

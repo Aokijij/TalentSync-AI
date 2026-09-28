@@ -1,7 +1,7 @@
-from app.domain.entities.records import Job, Profile, Recommendation
 import re
 import unicodedata
 
+from app.domain.entities.records import Job, Profile, Recommendation
 from app.domain.services.skills import skill_set
 
 SKILL_WEIGHT = 0.6

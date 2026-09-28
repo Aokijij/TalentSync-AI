@@ -207,10 +207,6 @@ export function RecommendationsPage() {
                         <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">
                           Postulación en {job.source_name || "sitio externo"}
                         </span>
-                      ) : job?.source_kind === "demo" ? (
-                        <span className="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-500">
-                          Demostrativa
-                        </span>
                       ) : null}
                       {applied ? (
                         <span className="rounded-[var(--radius-md)] bg-[var(--success)]/10 px-2 py-1 text-xs font-semibold text-[var(--ink)]">
@@ -263,7 +259,11 @@ export function RecommendationsPage() {
                     </div>
                   </div>
 
-                  <CompatibilityBar value={item.match_percentage} />
+                  <CompatibilityBar
+                    value={item.match_percentage}
+                    estimated={job?.source_kind === "external"}
+                    confidence={item.data_confidence_percentage}
+                  />
 
                   <div className="flex items-center justify-end">
                     <button

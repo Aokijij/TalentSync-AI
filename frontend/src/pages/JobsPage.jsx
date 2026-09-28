@@ -41,6 +41,7 @@ export function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [matches, setMatches] = useState({});
+  const [matchConfidence, setMatchConfidence] = useState({});
   const [profileSkills, setProfileSkills] = useState([]);
   const [onlyMySkills, setOnlyMySkills] = useState(false);
   const [minCompatibility, setMinCompatibility] = useState(0);
@@ -54,6 +55,7 @@ export function JobsPage() {
     min_salary: "",
     max_salary: "",
     published_days: "",
+    source_kind: "",
     sort: "match",
   });
   const [page, setPage] = useState(1);
@@ -89,6 +91,14 @@ export function JobsPage() {
             ]),
           ),
         );
+        setMatchConfidence(
+          Object.fromEntries(
+            (recommendationsResponse?.data ?? []).map((item) => [
+              item.job_id,
+              item.data_confidence_percentage ?? 100,
+            ]),
+          ),
+        );
         setProfileSkills(profileResponse?.data?.skills ?? []);
       })
       .catch(() => setJobs([]));
@@ -119,6 +129,7 @@ export function JobsPage() {
     filters.min_salary,
     filters.max_salary,
     filters.published_days,
+    filters.source_kind,
     onlyMySkills,
     minCompatibility > 0,
   ].filter(Boolean).length;
@@ -146,6 +157,7 @@ export function JobsPage() {
           (!filters.sector || job.sector === filters.sector) &&
           (!filters.department || job.department === filters.department) &&
           (!filters.location || job.location === filters.location) &&
+          (!filters.source_kind || job.source_kind === filters.source_kind) &&
           (!filters.min_salary || Number(job.salary || 0) >= Number(filters.min_salary)) &&
           (!filters.max_salary || (job.salary != null && Number(job.salary) <= Number(filters.max_salary))) &&
           isWithinDays(job.created_at, Number(filters.published_days || 0)) &&
@@ -230,11 +242,12 @@ export function JobsPage() {
                 <Filter label="Contrato"><select className="field-control input-md" value={filters.employment_type} onChange={(event) => setFilter("employment_type", event.target.value)}><option value="">Todos</option><option value="full_time">Tiempo completo</option><option value="part_time">Medio tiempo</option><option value="contract">Contrato</option></select></Filter>
                 <Filter label="Sector"><select className="field-control input-md" value={filters.sector} onChange={(event) => setFilter("sector", event.target.value)}><option value="">Todos</option>{availableSectors.map((sector) => <option key={sector}>{sector}</option>)}</select></Filter>
                 <Filter label="Publicación"><select className="field-control input-md" value={filters.published_days} onChange={(event) => setFilter("published_days", event.target.value)}><option value="">Cualquier fecha</option><option value="1">Últimas 24 horas</option><option value="7">Última semana</option><option value="30">Último mes</option></select></Filter>
+                <Filter label="Origen"><select className="field-control input-md" value={filters.source_kind} onChange={(event) => setFilter("source_kind", event.target.value)}><option value="">Todas las vacantes</option><option value="internal">Publicadas en TalentSync</option><option value="external">Ofertas externas</option></select></Filter>
               </div>
             </div>
             <div className="flex flex-col gap-4 border-t border-[var(--line)] pt-4 lg:flex-row lg:items-end lg:justify-between">
               {user?.role === "candidate" ? <div className="flex flex-col gap-3 sm:flex-row sm:items-center"><label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={onlyMySkills} onChange={(event) => { setOnlyMySkills(event.target.checked); setPage(1); }} />Coincide con mis habilidades</label><Filter label="Compatibilidad mínima"><select className="field-control input-sm w-28" value={minCompatibility} onChange={(event) => { setMinCompatibility(Number(event.target.value)); setPage(1); }}>{[0, 40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}</select></Filter></div> : null}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end"><Filter label="Ordenar por"><select className="field-control input-sm min-w-44" value={filters.sort} onChange={(event) => setFilter("sort", event.target.value)}>{user?.role === "candidate" ? <option value="match">Mayor compatibilidad</option> : null}<option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="salary_desc">Mayor sueldo</option><option value="salary_asc">Menor sueldo</option></select></Filter><button type="button" className="button-secondary button-sm" onClick={() => { setFilters({ modality: "", department: "", location: "", sector: "", employment_type: "", min_salary: "", max_salary: "", published_days: "", sort: user?.role === "candidate" ? "match" : "newest" }); setQuery(""); setOnlyMySkills(false); setMinCompatibility(0); setPage(1); }}><RotateCcw size={15} />Restablecer</button></div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end"><Filter label="Ordenar por"><select className="field-control input-sm min-w-44" value={filters.sort} onChange={(event) => setFilter("sort", event.target.value)}>{user?.role === "candidate" ? <option value="match">Mayor compatibilidad</option> : null}<option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="salary_desc">Mayor sueldo</option><option value="salary_asc">Menor sueldo</option></select></Filter><button type="button" className="button-secondary button-sm" onClick={() => { setFilters({ modality: "", department: "", location: "", sector: "", employment_type: "", min_salary: "", max_salary: "", published_days: "", source_kind: "", sort: user?.role === "candidate" ? "match" : "newest" }); setQuery(""); setOnlyMySkills(false); setMinCompatibility(0); setPage(1); }}><RotateCcw size={15} />Restablecer</button></div>
             </div>
           </div>
         ) : activeFilterCount ? <button type="button" className="mt-4 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setShowFilters(true)}>{activeFilterCount} filtro{activeFilterCount === 1 ? " activo" : "s activos"} · Ver o cambiar</button> : null}
@@ -246,6 +259,7 @@ export function JobsPage() {
             key={job.id}
             job={job}
             match={matches[job.id]}
+            confidence={matchConfidence[job.id]}
             applied={applied.has(job.id)}
             showMatch={user?.role === "candidate"}
           />
@@ -311,7 +325,7 @@ export function JobsPage() {
   );
 }
 
-function JobCard({ job, match, applied, showMatch }) {
+function JobCard({ job, match, confidence, applied, showMatch }) {
   const score = Number(match ?? 0);
   return (
     <article className="surface-card flex flex-col p-5 transition-colors hover:border-[var(--accent)]">
@@ -341,23 +355,23 @@ function JobCard({ job, match, applied, showMatch }) {
           <ExternalLink size={13} />
           Publicada originalmente en {job.source_name || "una fuente externa"}
         </p>
-      ) : job.source_kind === "demo" ? (
-        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-500">
-          <Sparkles size={13} />
-          Vacante demostrativa: puedes recorrer la postulación completa
-        </p>
       ) : null}
       {showMatch ? (
         <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-3">
           <div className="flex items-center justify-between text-sm">
             <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--muted)]">
               <Sparkles size={15} />
-              Compatibilidad
+              {job.source_kind === "external" ? "Compatibilidad estimada" : "Compatibilidad"}
             </span>
             <strong className="text-[var(--accent)]">
               {score.toFixed(0)}%
             </strong>
           </div>
+          {job.source_kind === "external" ? (
+            <p className="mt-2 text-xs text-[var(--muted)]">
+              Confianza de los datos: {Number(confidence ?? 0).toFixed(0)}%
+            </p>
+          ) : null}
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--line)]">
             <div
               className="h-full rounded-full bg-[var(--accent)]"

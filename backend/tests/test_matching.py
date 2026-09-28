@@ -5,11 +5,11 @@ import pytest
 from app.domain.services.matching import (
     combined_match,
     is_relevant_candidate_recommendation,
+    language_coverage,
     professional_context_alignment,
     recommend_category,
     recommendation_reasons,
     required_skill_coverage,
-    language_coverage,
 )
 
 

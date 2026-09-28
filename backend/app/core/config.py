@@ -23,6 +23,22 @@ class Settings(BaseSettings):
     jooble_api_key: str | None = None
     jooble_api_base_url: str = "https://co.jooble.org/api"
     jooble_timeout_seconds: float = 20
+    adzuna_app_id: str | None = None
+    adzuna_app_key: str | None = None
+    adzuna_country: str = "us"
+    adzuna_api_base_url: str = "https://api.adzuna.com/v1/api/jobs"
+    adzuna_timeout_seconds: float = 20
+    jsearch_api_key: str | None = None
+    jsearch_api_base_url: str = "https://api.openwebninja.com/jsearch/search-v2"
+    jsearch_timeout_seconds: float = 25
+    catalog_max_age_days: int = 60
+    catalog_min_skills: int = 3
+    periodic_maintenance_enabled: bool = False
+    periodic_maintenance_interval_hours: int = 24
+    periodic_maintenance_initial_delay_seconds: int = 90
+    catalog_sync_keywords: str = (
+        "servicio al cliente,administración y ventas,tecnología e ingeniería"
+    )
     allowed_hosts: list[str] = Field(default_factory=lambda: ["*"])
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
@@ -33,6 +49,13 @@ class Settings(BaseSettings):
     def secret_key_must_be_long_enough(cls, v):
         if len(v) < 32:
             raise ValueError("SECRET_KEY must be at least 32 characters long")
+        return v
+
+    @field_validator("catalog_max_age_days", "catalog_min_skills")
+    @classmethod
+    def positive_catalog_limits(cls, v):
+        if v < 1:
+            raise ValueError("Los límites del catálogo deben ser mayores que cero")
         return v
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

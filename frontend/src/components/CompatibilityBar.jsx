@@ -1,4 +1,4 @@
-export function CompatibilityBar({ value }) {
+export function CompatibilityBar({ value, estimated = false, confidence }) {
   const percentage = Number(value ?? 0);
   const safe = Number.isFinite(percentage)
     ? Math.max(0, Math.min(100, percentage))
@@ -27,7 +27,7 @@ export function CompatibilityBar({ value }) {
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-semibold text-[var(--muted)]">
-          Compatibilidad
+          {estimated ? "Compatibilidad estimada" : "Compatibilidad"}
         </span>
         <strong className="text-lg font-bold tabular-nums text-[var(--ink-strong)]">
           {safe.toFixed(0)}%
@@ -50,6 +50,11 @@ export function CompatibilityBar({ value }) {
         <span>{label}</span>
         <span>100%</span>
       </div>
+      {estimated ? (
+        <p className="mt-2 text-xs text-[var(--muted)]">
+          Confianza de los datos: {Number(confidence ?? 0).toFixed(0)}%
+        </p>
+      ) : null}
     </section>
   );
 }

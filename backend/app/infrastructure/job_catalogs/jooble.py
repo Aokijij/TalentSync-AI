@@ -17,6 +17,14 @@ class JoobleJobCatalog:
         self._timeout_seconds = timeout_seconds
 
     @property
+    def source_name(self) -> str:
+        return "Jooble"
+
+    @property
+    def registration_url(self) -> str:
+        return "https://co.jooble.org/api/about"
+
+    @property
     def configured(self) -> bool:
         return bool(self._api_key)
 

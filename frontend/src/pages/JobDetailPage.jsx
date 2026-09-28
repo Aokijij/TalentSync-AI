@@ -109,11 +109,6 @@ export function JobDetailPage() {
                 <ExternalLink size={13} />
                 Vista previa externa de {job.source_name || "fuente autorizada"}
               </p>
-            ) : job.source_kind === "demo" ? (
-              <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-500">
-                <BriefcaseBusiness size={13} />
-                Vacante demostrativa de TalentSync
-              </p>
             ) : null}
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[var(--muted)]">
               <span className="flex items-center gap-1">
@@ -142,7 +137,11 @@ export function JobDetailPage() {
           </div>
           {match ? (
             <div className="w-full rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
-              <CompatibilityBar value={match.match_percentage} />
+              <CompatibilityBar
+                value={match.match_percentage}
+                estimated={job.source_kind === "external"}
+                confidence={match.data_confidence_percentage}
+              />
               <p className="mt-2 px-1 text-xs text-[var(--muted)]">
                 {job.source_kind === "external"
                   ? `Estimación basada en el resumen y las habilidades identificadas${job.languages?.length ? ", además de los idiomas" : ""}. Confirma los requisitos en la oferta original.`

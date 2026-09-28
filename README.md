@@ -51,21 +51,26 @@ La consola administrativa incluye una plantilla descargable para cargar hasta 2.
 
 Las habilidades y los beneficios se separan con `|`; los idiomas se escriben como `idioma:nivel`, por ejemplo `inglés:B2|español:NATIVE`. Las ofertas importadas aparecen señaladas como externas y el candidato continúa la postulación en el sitio de origen. Solo deben cargarse fuentes que permitan reutilizar y mostrar sus publicaciones; este mecanismo no autoriza copiar datos de terceros sin permiso.
 
-#### Sincronización con Jooble Colombia
+#### Sincronización con JSearch, Adzuna y Jooble
 
-La sección **Administración → Vacantes** también puede consultar la API regional de Jooble. El administrador elige los perfiles, la ubicación y entre una y cinco páginas; TalentSync conserva la atribución, el enlace original y el ID de Jooble para actualizar cada oferta sin duplicarla. Las ofertas dejan de mostrarse después de 30 días si no se sincronizan nuevamente.
+JSearch es la fuente preferida porque entrega descripciones amplias, tecnologías y datos de la empresa. Permite buscar en Colombia y añadir ofertas internacionales cuando son remotas. Adzuna y Jooble quedan como fuentes complementarias; ambas suelen entregar un resumen más corto. TalentSync conserva la atribución, el enlace y el ID externo para actualizar cada oferta sin duplicarla.
 
-Jooble entrega mediante su API un **resumen** de cada anuncio, no su descripción completa. TalentSync identifica habilidades explícitas y equivalencias profesionales a partir del cargo y de ese resumen, marca la compatibilidad como estimada y conserva el enlace original para confirmar funciones y requisitos. Cuando Jooble informa un rango salarial, TalentSync usa el límite inferior para no mostrar una promesa superior a la publicada. Consulta la [documentación oficial de la API de Jooble](https://help.jooble.org/en/support/solutions/articles/60001448238).
+La sincronización automática se ejecuta una vez al día. Solo publica ofertas de hasta 60 días de antigüedad en las que se identifiquen al menos tres habilidades; las demás se descartan. Las fuentes externas muestran una compatibilidad estimada y una confianza de datos. Cuanto más breve sea la descripción, más conservador es el porcentaje.
 
-Solicita la clave en [Jooble Colombia](https://co.jooble.org/api/about) y guárdala exclusivamente en el backend:
+Registra JSearch directamente en [OpenWeb Ninja](https://www.openwebninja.com/api/jsearch). Adzuna requiere los dos valores entregados por su portal: `app_id` y `app_key`. Guarda todas las credenciales exclusivamente en el backend:
 
 ```dotenv
+JSEARCH_API_KEY=clave_privada
+ADZUNA_APP_ID=identificador_privado
+ADZUNA_APP_KEY=clave_privada
 JOOBLE_API_KEY=clave_regional_de_colombia
-JOOBLE_API_BASE_URL=https://co.jooble.org/api
-JOOBLE_TIMEOUT_SECONDS=20
+PERIODIC_MAINTENANCE_ENABLED=true
+PERIODIC_MAINTENANCE_INTERVAL_HOURS=24
+CATALOG_MAX_AGE_DAYS=60
+CATALOG_MIN_SKILLS=3
 ```
 
-La clave no utiliza el prefijo `VITE_` y nunca debe guardarse en Git. Cada página consultada consume una solicitud de la cuota asignada por Jooble, por eso la sincronización se ejecuta de forma manual desde la consola administrativa.
+Ninguna clave utiliza el prefijo `VITE_` y nunca debe guardarse en Git. JSearch reemplaza las fuentes complementarias en el ciclo automático cuando está configurado, para priorizar información completa y controlar la cuota mensual.
 
 ## Cómo funciona la compatibilidad
 
@@ -84,6 +89,8 @@ compatibilidad = 60% habilidades + 30% contexto profesional + 10% nivel de idiom
 ```
 
 El contexto profesional combina similitud de texto con profesión, cargos, responsabilidades y formación. Los niveles de idioma se comparan de forma ordinal desde A1 hasta C2 y nativo. El porcentaje es orientativo: depende de la información registrada y no certifica competencias.
+
+En ofertas externas sin información completa, las habilidades pesan 70% y el contexto 30%. El resultado se reduce según la confianza calculada a partir de la cantidad de habilidades y la extensión de la descripción. Así una coincidencia basada en un fragmento corto no se presenta con la misma certeza que una vacante creada dentro de TalentSync.
 
 Las preguntas de preselección no alteran el porcentaje público que ve el candidato. Las preguntas con opciones pueden aportar o restar puntos según la valoración configurada para cada respuesta; el ajuste privado se limita a 20 puntos y solo puede consultarlo la empresa. Las respuestas abiertas no se califican automáticamente porque requieren la revisión del equipo de selección.
 
@@ -240,6 +247,12 @@ Luego configura `DATABASE_URL` con el formato `postgresql+psycopg://usuario:cont
 | `CORS_ORIGINS` | Orígenes exactos que pueden llamar a la API desde el navegador |
 | `CV_PARSER` | `pypdf`, `docling` o `auto` |
 | `CV_OCR_ENABLED` | Activa OCR cuando el procesador lo admite |
+| `JSEARCH_API_KEY` | Clave privada de la fuente externa preferida |
+| `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` | Credenciales complementarias de Adzuna |
+| `JOOBLE_API_KEY` | Clave complementaria de Jooble Colombia |
+| `PERIODIC_MAINTENANCE_ENABLED` | Activa sincronización, depuración y alertas de vacantes |
+| `CATALOG_MAX_AGE_DAYS` | Antigüedad máxima admitida para ofertas externas |
+| `CATALOG_MIN_SKILLS` | Cantidad mínima de habilidades exigida al importar |
 
 ### Frontend
 
@@ -271,17 +284,17 @@ El registro público solo crea candidatos y empresas. Para crear un administrado
 
 El comando solicita la contraseña sin mostrarla. El acceso administrativo se abre en `/acceso-administracion`; las cuentas de candidato y empresa no pueden ingresar allí.
 
-## Catálogo demostrativo
+## Espacio privado para presentar el rol empresa
 
-Para presentar la plataforma con suficiente variedad sin publicar ofertas falsas como si fueran reales, existe un catálogo idempotente de **20 empresas ficticias y 217 vacantes demostrativas**. Cada empresa recibe entre 8 y 14 vacantes con habilidades, salario, ubicación, beneficios y preguntas de postulación. La interfaz identifica estos registros como demostrativos y permite recorrer el flujo interno completo.
+Las ofertas públicas deben provenir de empresas registradas o de proveedores autorizados. Para presentar el flujo empresarial sin mezclar datos ficticios con ese catálogo, existe una semilla privada que crea una empresa, seis vacantes pausadas, doce candidatos sintéticos y postulaciones en distintas etapas. Las vacantes pausadas solo se ven desde la cuenta empresa.
 
 Desde `backend/`:
 
 ```powershell
-.\.venv\Scripts\python.exe -m app.scripts.seed_demo_catalog
+.\.venv\Scripts\python.exe -m scripts.create_showcase_company --email "empresa@tu-dominio.com" --name "Equipo de selección"
 ```
 
-El comando puede repetirse: actualiza los mismos identificadores en lugar de duplicarlos. En producción ejecútalo solamente cuando se quiera mantener visible este entorno de demostración.
+La contraseña se solicita sin mostrarla. El comando es idempotente: puede repetirse para actualizar el contenido sin duplicarlo. El catálogo demostrativo público anterior se elimina con `python -m scripts.cleanup_demo_catalog`.
 
 ## Pruebas y compilación
 
@@ -337,7 +350,7 @@ Desde PowerShell 7, en la raíz del repositorio:
 
 `-WhatIf` muestra el destino y la operación prevista. La actualización real exige un árbol Git limpio, conserva los secretos y comprueba que la nueva revisión responda `/health`. El script de Cloudflare compila con la URL HTTPS de la API y publica únicamente `frontend/dist`.
 
-No ejecutes semillas no idempotentes, `alembic downgrade` ni reinicios de base de datos en producción. El catálogo demostrativo documentado es la única semilla preparada para repetirse sin duplicar datos. Si una revisión falla, comprueba primero que la imagen anterior sea compatible con el esquema actual. Las fotos, logos, portadas y CV deben permanecer en Blob Storage antes de retirar una revisión.
+No ejecutes semillas no idempotentes, `alembic downgrade` ni reinicios de base de datos en producción. La semilla privada de empresa está preparada para repetirse sin duplicar datos. Si una revisión falla, comprueba primero que la imagen anterior sea compatible con el esquema actual. Las fotos, logos, portadas y CV deben permanecer en Blob Storage antes de retirar una revisión.
 
 ## Seguridad y datos
 

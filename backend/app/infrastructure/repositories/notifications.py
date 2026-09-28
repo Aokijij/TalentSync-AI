@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.infrastructure.database.models import Notification
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
@@ -69,6 +71,24 @@ class NotificationRepository(SqlAlchemyRepository[Notification]):
                 Notification.type == notification_type,
                 Notification.action_url == action_url,
                 Notification.is_read.is_(False),
+            )
+            .first()
+        )
+
+    def find_recent(
+        self,
+        user_id: int,
+        notification_type: str,
+        action_url: str,
+        since: datetime,
+    ) -> Notification | None:
+        return (
+            self.session.query(Notification)
+            .filter(
+                Notification.user_id == user_id,
+                Notification.type == notification_type,
+                Notification.action_url == action_url,
+                Notification.created_at >= since,
             )
             .first()
         )

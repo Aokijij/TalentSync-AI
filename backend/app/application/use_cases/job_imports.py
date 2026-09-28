@@ -243,11 +243,18 @@ def sync_job_catalog(
     db: UnitOfWork,
     nlp: TextAnalysis,
     catalog: JobCatalog,
+    max_age_days: int = 60,
+    min_skills: int = 3,
 ) -> dict:
+    source_name = getattr(catalog, "source_name", "Jooble")
+    effective_min_skills = min_skills if hasattr(catalog, "source_name") else 0
     if not catalog.configured:
         raise UseCaseError(
             status_code=503,
-            detail="Jooble aún no está conectado. Agrega JOOBLE_API_KEY en Azure.",
+            detail=(
+                f"{source_name} aún no está conectado. "
+                "Completa sus credenciales en Azure."
+            ),
         )
     rows: list[dict[str, object]] = []
     provider_total = 0
@@ -260,7 +267,14 @@ def sync_job_catalog(
                 result_count=result_count,
             )
             provider_total = result.total
-            rows.extend(_catalog_row(job) for job in result.jobs)
+            rows.extend(
+                _catalog_row(
+                    job,
+                    source_name=source_name,
+                    max_age_days=max_age_days,
+                )
+                for job in result.jobs
+            )
             if not result.jobs or len(rows) >= result.total:
                 break
     except CatalogProviderError as error:
@@ -269,14 +283,24 @@ def sync_job_catalog(
     if not rows:
         raise UseCaseError(
             status_code=404,
-            detail="Jooble no encontró vacantes para esa búsqueda y ubicación.",
+            detail=(
+                f"{source_name} no encontró vacantes para esa búsqueda "
+                "y ubicación."
+            ),
         )
-    result = _import_rows(rows, current_user, db, nlp=nlp)
+    result = _import_rows(
+        rows,
+        current_user,
+        db,
+        nlp=nlp,
+        max_age_days=max_age_days,
+        min_skills=effective_min_skills,
+    )
     return {
         **result,
         "fetched": len(rows),
         "provider_total": provider_total,
-        "source": "Jooble",
+        "source": source_name,
     }
 
 
@@ -286,6 +310,8 @@ def _import_rows(
     db: UnitOfWork,
     *,
     nlp: TextAnalysis,
+    max_age_days: int | None = None,
+    min_skills: int = 0,
 ) -> dict:
     if not rows:
         raise UseCaseError(status_code=400, detail="El archivo no contiene vacantes")
@@ -347,6 +373,14 @@ def _import_rows(
             )
             company_url = _url(row.get("sitio_empresa"), "sitio_empresa")
             published_at = _date(row.get("fecha_publicacion"), "fecha_publicacion")
+            if (
+                max_age_days is not None
+                and published_at is not None
+                and published_at < now - timedelta(days=max_age_days)
+            ):
+                raise ValueError(
+                    f"La vacante supera {max_age_days} días de antigüedad"
+                )
             expires_at = _date(row.get("fecha_vencimiento"), "fecha_vencimiento")
             if expires_at and expires_at < now:
                 raise ValueError("La fecha de vencimiento ya pasó")
@@ -364,6 +398,11 @@ def _import_rows(
             languages = _languages(row.get("idiomas"))
             analysis = nlp.analyze_job(f"{title} {description} {requirements}")
             skills = list(dict.fromkeys([*explicit_skills, *analysis.skills]))[:40]
+            if len(skills) < min_skills:
+                raise ValueError(
+                    f"Solo se identificaron {len(skills)} habilidades; "
+                    f"se requieren al menos {min_skills}"
+                )
 
             company = db.companies.find_external(source, company_name)
             if company is None:
@@ -448,31 +487,55 @@ def _import_rows(
     }
 
 
-def _catalog_row(job: CatalogJob) -> dict[str, object]:
+def _catalog_row(
+    job: CatalogJob, *, source_name: str, max_age_days: int
+) -> dict[str, object]:
     city, department = _location_parts(job.location)
     text = f"{job.title} {job.description}".casefold()
+    published_at = job.published_at or datetime.utcnow()
+    expires_at = min(
+        published_at + timedelta(days=max_age_days),
+        datetime.utcnow() + timedelta(days=30),
+    )
+    provider_description = {
+        "JSearch": (
+            "La descripción fue publicada por la empresa y recopilada por JSearch. "
+            "Confirma las condiciones finales en la oferta original."
+        ),
+        "Adzuna": (
+            "Adzuna entrega un resumen del anuncio. Confirma los requisitos "
+            "completos en la publicación original."
+        ),
+        "Jooble": (
+            "Jooble entrega un resumen del anuncio. Confirma los requisitos "
+            "completos en la publicación original."
+        ),
+    }.get(
+        source_name,
+        "Confirma los requisitos y condiciones en la publicación original.",
+    )
     return {
-        "fuente": "Jooble",
+        "fuente": source_name,
         "id_externo": job.external_id,
         "empresa": job.company,
         "cargo": job.title,
         "descripcion": job.description
-        or "Consulta la descripción completa de esta oportunidad en Jooble.",
-        "requisitos": (
-            "La API de Jooble entrega un resumen del anuncio. Confirma los requisitos "
-            "completos y las condiciones en la publicación original."
-        ),
+        or f"Consulta la descripción completa de esta oportunidad en {source_name}.",
+        "requisitos": provider_description,
         "sector": _infer_sector(text),
         "enlace_externo": job.url,
-        "fecha_publicacion": job.published_at,
-        "fecha_vencimiento": datetime.utcnow() + timedelta(days=30),
+        "fecha_publicacion": published_at,
+        "fecha_vencimiento": expires_at,
         "salario": job.salary,
         "departamento": department,
         "ciudad": city,
-        "modalidad": _infer_modality(text),
+        "modalidad": "remoto" if job.remote else _infer_modality(text),
         "tipo_contrato": _infer_contract(job.employment_type),
+        "habilidades": "|".join(job.skills),
+        "beneficios": "|".join(job.benefits),
+        "sitio_empresa": job.company_url,
         "descripcion_empresa": (
-            "Empresa con una oportunidad publicada en el catálogo autorizado de Jooble."
+            f"Empresa con una oportunidad publicada a través de {source_name}."
         ),
     }
 

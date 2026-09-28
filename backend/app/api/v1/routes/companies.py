@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from fastapi.responses import Response
 
-from app.api.deps import get_current_user, get_image_storage, get_unit_of_work, require_roles
+from app.api.deps import (
+    get_current_user,
+    get_image_storage,
+    get_unit_of_work,
+    require_roles,
+)
 from app.api.schemas.company import (
     CompanyCreate,
     CompanyFollowResponse,
@@ -9,8 +14,8 @@ from app.api.schemas.company import (
     CompanyResponse,
     CompanyUpdate,
 )
-from app.application.ports.unit_of_work import UnitOfWork
 from app.application.ports.services import ImageStorage
+from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import companies as use_cases
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Company, User

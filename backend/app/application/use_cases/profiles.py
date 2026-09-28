@@ -4,7 +4,12 @@ from typing import Any
 from uuid import uuid4
 
 from app.application.errors import UseCaseError
-from app.application.ports.services import ImageStorage, ResumeReader, TextAnalysis, UploadedResume
+from app.application.ports.services import (
+    ImageStorage,
+    ResumeReader,
+    TextAnalysis,
+    UploadedResume,
+)
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User

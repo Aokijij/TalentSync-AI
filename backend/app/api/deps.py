@@ -11,7 +11,11 @@ from app.infrastructure.database.models import User
 from app.infrastructure.database.session import get_db
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 from app.infrastructure.images import get_image_storage as get_image_storage
-from app.infrastructure.job_catalogs import JoobleJobCatalog
+from app.infrastructure.job_catalogs import (
+    AdzunaJobCatalog,
+    JoobleJobCatalog,
+    JSearchJobCatalog,
+)
 from app.infrastructure.nlp.resumes import ResumeReader
 from app.infrastructure.nlp.text_processor import text_processor
 from app.infrastructure.security.accounts import AccountSecurity
@@ -63,7 +67,7 @@ def get_resume_reader() -> ResumeReaderPort:
     return ResumeReader()
 
 
-def get_job_catalog():
+def get_jooble_job_catalog():
     from app.core.config import settings
 
     return JoobleJobCatalog(
@@ -71,3 +75,29 @@ def get_job_catalog():
         base_url=settings.jooble_api_base_url,
         timeout_seconds=settings.jooble_timeout_seconds,
     )
+
+
+def get_adzuna_job_catalog():
+    from app.core.config import settings
+
+    return AdzunaJobCatalog(
+        app_id=settings.adzuna_app_id,
+        app_key=settings.adzuna_app_key,
+        country=settings.adzuna_country,
+        base_url=settings.adzuna_api_base_url,
+        timeout_seconds=settings.adzuna_timeout_seconds,
+    )
+
+
+def get_jsearch_job_catalog():
+    from app.core.config import settings
+
+    return JSearchJobCatalog(
+        api_key=settings.jsearch_api_key,
+        base_url=settings.jsearch_api_base_url,
+        timeout_seconds=settings.jsearch_timeout_seconds,
+    )
+
+
+# Backwards-compatible dependency name used by the existing Jooble routes/tests.
+get_job_catalog = get_jooble_job_catalog

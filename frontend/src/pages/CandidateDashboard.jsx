@@ -323,10 +323,6 @@ export function CandidateDashboard() {
                         <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">
                           Postulación externa
                         </span>
-                      ) : job?.source_kind === "demo" ? (
-                        <span className="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-500">
-                          Demostrativa
-                        </span>
                       ) : null}
                       {applied ? (
                         <span className="rounded-md bg-[var(--success)]/10 px-2 py-1 text-xs font-semibold text-[var(--success)]">
@@ -364,7 +360,11 @@ export function CandidateDashboard() {
                     </div>
                   </div>
 
-                  <CompatibilityBar value={item.match_percentage} />
+                  <CompatibilityBar
+                    value={item.match_percentage}
+                    estimated={job?.source_kind === "external"}
+                    confidence={item.data_confidence_percentage}
+                  />
 
                   <Button
                     variant="primary"

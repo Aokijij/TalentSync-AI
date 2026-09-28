@@ -3,8 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.domain.entities.job_sectors import JOB_SECTORS
 from app.api.schemas.language import LanguageLevel, unique_languages
+from app.domain.entities.job_sectors import JOB_SECTORS
 
 
 class PipelineStage(BaseModel):

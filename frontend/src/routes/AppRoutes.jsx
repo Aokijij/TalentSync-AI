@@ -1,27 +1,32 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth.js";
 import { AppLayout } from "../layouts/AppLayout.jsx";
-import { AdminDashboard } from "../pages/AdminDashboard.jsx";
-import { AdminLoginPage } from "../pages/AdminLoginPage.jsx";
-import { AdminManagementPage } from "../pages/AdminManagementPage.jsx";
-import { CandidateDashboard } from "../pages/CandidateDashboard.jsx";
-import { CandidateDetailPage } from "../pages/CandidateDetailPage.jsx";
-import { CompanyDashboard } from "../pages/CompanyDashboard.jsx";
-import { CompanyApplicationsPage } from "../pages/CompanyApplicationsPage.jsx";
-import { CompanyJobsPage } from "../pages/CompanyJobsPage.jsx";
-import { CompanySettingsPage } from "../pages/CompanySettingsPage.jsx";
-import { CompanyTalentPage } from "../pages/CompanyTalentPage.jsx";
-import { CompanyCandidatesPage } from "../pages/CompanyCandidatesPage.jsx";
-import { CompanyProfilePage } from "../pages/CompanyProfilePage.jsx";
-import { JobsPage } from "../pages/JobsPage.jsx";
-import { JobDetailPage } from "../pages/JobDetailPage.jsx";
-import { LoginPage } from "../pages/LoginPage.jsx";
-import { ApplicationsPage } from "../pages/ApplicationsPage.jsx";
-import { ProfilePage } from "../pages/ProfilePage.jsx";
-import { RecommendationsPage } from "../pages/RecommendationsPage.jsx";
-import { NotificationsPage } from "../pages/NotificationsPage.jsx";
-import { RegisterPage } from "../pages/RegisterPage.jsx";
+
+const lazyNamed = (loader, name) =>
+  lazy(() => loader().then((module) => ({ default: module[name] })));
+
+const AdminDashboard = lazyNamed(() => import("../pages/AdminDashboard.jsx"), "AdminDashboard");
+const AdminLoginPage = lazyNamed(() => import("../pages/AdminLoginPage.jsx"), "AdminLoginPage");
+const AdminManagementPage = lazyNamed(() => import("../pages/AdminManagementPage.jsx"), "AdminManagementPage");
+const ApplicationsPage = lazyNamed(() => import("../pages/ApplicationsPage.jsx"), "ApplicationsPage");
+const CandidateDashboard = lazyNamed(() => import("../pages/CandidateDashboard.jsx"), "CandidateDashboard");
+const CandidateDetailPage = lazyNamed(() => import("../pages/CandidateDetailPage.jsx"), "CandidateDetailPage");
+const CompanyApplicationsPage = lazyNamed(() => import("../pages/CompanyApplicationsPage.jsx"), "CompanyApplicationsPage");
+const CompanyCandidatesPage = lazyNamed(() => import("../pages/CompanyCandidatesPage.jsx"), "CompanyCandidatesPage");
+const CompanyDashboard = lazyNamed(() => import("../pages/CompanyDashboard.jsx"), "CompanyDashboard");
+const CompanyJobsPage = lazyNamed(() => import("../pages/CompanyJobsPage.jsx"), "CompanyJobsPage");
+const CompanyProfilePage = lazyNamed(() => import("../pages/CompanyProfilePage.jsx"), "CompanyProfilePage");
+const CompanySettingsPage = lazyNamed(() => import("../pages/CompanySettingsPage.jsx"), "CompanySettingsPage");
+const CompanyTalentPage = lazyNamed(() => import("../pages/CompanyTalentPage.jsx"), "CompanyTalentPage");
+const JobDetailPage = lazyNamed(() => import("../pages/JobDetailPage.jsx"), "JobDetailPage");
+const JobsPage = lazyNamed(() => import("../pages/JobsPage.jsx"), "JobsPage");
+const LoginPage = lazyNamed(() => import("../pages/LoginPage.jsx"), "LoginPage");
+const NotificationsPage = lazyNamed(() => import("../pages/NotificationsPage.jsx"), "NotificationsPage");
+const ProfilePage = lazyNamed(() => import("../pages/ProfilePage.jsx"), "ProfilePage");
+const RecommendationsPage = lazyNamed(() => import("../pages/RecommendationsPage.jsx"), "RecommendationsPage");
+const RegisterPage = lazyNamed(() => import("../pages/RegisterPage.jsx"), "RegisterPage");
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -57,7 +62,8 @@ function RequireRole({ roles, children }) {
 
 export function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<div className="grid min-h-screen place-items-center text-[var(--muted)]">Cargando sección...</div>}>
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/acceso-administracion" element={<AdminLoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
@@ -200,6 +206,7 @@ export function AppRoutes() {
           }
         />
       </Route>
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }

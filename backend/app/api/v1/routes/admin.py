@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, File, Response, UploadFile, status
 
 from app.api.deps import (
+    get_adzuna_job_catalog,
     get_job_catalog,
+    get_jsearch_job_catalog,
     get_resume_reader,
     get_text_analysis,
     get_unit_of_work,
@@ -125,6 +127,77 @@ def sync_jooble_jobs(
     db: UnitOfWork = Depends(get_unit_of_work),
     nlp: TextAnalysis = Depends(get_text_analysis),
     catalog: JobCatalog = Depends(get_job_catalog),
+) -> dict:
+    return job_imports.sync_job_catalog(
+        keywords=payload.keywords,
+        location=payload.location,
+        pages=payload.pages,
+        result_count=payload.result_count,
+        current_user=current_user,
+        db=db,
+        nlp=nlp,
+        catalog=catalog,
+    )
+
+
+def _source_status(catalog: JobCatalog, source: str) -> dict:
+    missing = []
+    if source == "Adzuna" and not catalog.configured:
+        missing = ["ADZUNA_APP_ID", "ADZUNA_APP_KEY"]
+    elif source == "JSearch" and not catalog.configured:
+        missing = ["JSEARCH_API_KEY"]
+    return {
+        "source": source,
+        "configured": catalog.configured,
+        "registration_url": catalog.registration_url,
+        "missing_settings": missing,
+        "request_limit_note": "Cada búsqueda consume una solicitud de la cuota del proveedor.",
+    }
+
+
+@router.get("/jobs/sources/adzuna")
+def adzuna_source_status(
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    catalog: JobCatalog = Depends(get_adzuna_job_catalog),
+) -> dict:
+    return _source_status(catalog, "Adzuna")
+
+
+@router.post("/jobs/sources/adzuna/sync")
+def sync_adzuna_jobs(
+    payload: JobCatalogSyncRequest,
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    db: UnitOfWork = Depends(get_unit_of_work),
+    nlp: TextAnalysis = Depends(get_text_analysis),
+    catalog: JobCatalog = Depends(get_adzuna_job_catalog),
+) -> dict:
+    return job_imports.sync_job_catalog(
+        keywords=payload.keywords,
+        location=payload.location,
+        pages=payload.pages,
+        result_count=payload.result_count,
+        current_user=current_user,
+        db=db,
+        nlp=nlp,
+        catalog=catalog,
+    )
+
+
+@router.get("/jobs/sources/jsearch")
+def jsearch_source_status(
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    catalog: JobCatalog = Depends(get_jsearch_job_catalog),
+) -> dict:
+    return _source_status(catalog, "JSearch")
+
+
+@router.post("/jobs/sources/jsearch/sync")
+def sync_jsearch_jobs(
+    payload: JobCatalogSyncRequest,
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    db: UnitOfWork = Depends(get_unit_of_work),
+    nlp: TextAnalysis = Depends(get_text_analysis),
+    catalog: JobCatalog = Depends(get_jsearch_job_catalog),
 ) -> dict:
     return job_imports.sync_job_catalog(
         keywords=payload.keywords,

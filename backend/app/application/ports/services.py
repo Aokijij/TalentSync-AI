@@ -37,6 +37,12 @@ class ImageStorage(Protocol):
 
 class JobCatalog(Protocol):
     @property
+    def source_name(self) -> str: ...
+
+    @property
+    def registration_url(self) -> str: ...
+
+    @property
     def configured(self) -> bool: ...
 
     def search(

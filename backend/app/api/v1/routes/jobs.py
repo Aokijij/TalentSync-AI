@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, Query, status
 from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
 from app.api.schemas.job import (
     JobCreate,
+    JobReopen,
     JobResponse,
     JobUpdate,
-    JobReopen,
     PublicStatsResponse,
     ScreeningQuestionConfig,
 )

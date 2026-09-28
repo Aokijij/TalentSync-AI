@@ -23,6 +23,9 @@ class UserRepository(SqlAlchemyRepository[User]):
     def count_candidates(self) -> int:
         return self.session.query(User).filter(User.role == UserRole.CANDIDATE).count()
 
+    def first_admin(self) -> User | None:
+        return self.session.query(User).filter(User.role == UserRole.ADMIN).first()
+
     def creation_dates(self) -> list[datetime]:
         return [
             created_at for (created_at,) in self.session.query(User.created_at).all()

@@ -1,14 +1,16 @@
+from datetime import datetime, timedelta
+
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.records import Job, Recommendation, User
 from app.domain.services.matching import (
     combined_match,
     is_relevant_candidate_recommendation,
+    language_coverage,
+    professional_context_alignment,
     recommend_category,
     recommendation_reasons,
     required_skill_coverage,
-    professional_context_alignment,
-    language_coverage,
 )
 from app.domain.services.skills import skill_set
 
@@ -18,15 +20,42 @@ def candidate_match(profile, job, *, nlp):
     context_score = professional_context_alignment(profile, job, raw_semantic)
     skill_score = required_skill_coverage(profile.skills, job.skills)
     language_score = language_coverage(profile, job)
-    return combined_match(context_score, skill_score, language_score), context_score, skill_score, language_score
+    percentage = combined_match(context_score, skill_score, language_score)
+    confidence = 100.0
+    if getattr(job, "source_kind", "internal") == "external":
+        confidence = external_data_confidence(job)
+        if language_score is not None:
+            percentage = skill_score * 0.6 + context_score * 0.3 + language_score * 0.1
+        else:
+            percentage = skill_score * 0.7 + context_score * 0.3
+        # A short provider summary must never look as certain as a complete
+        # TalentSync vacancy. Low data quality only lowers the score.
+        percentage *= 0.75 + confidence / 400
+        percentage = round(min(100.0, percentage), 2)
+    return percentage, context_score, skill_score, language_score, confidence
+
+
+def external_data_confidence(job) -> float:
+    skills = list(dict.fromkeys(getattr(job, "skills", None) or []))
+    description = str(getattr(job, "description", "") or "")
+    skill_signal = min(1.0, len(skills) / 8)
+    text_signal = min(1.0, len(description) / 1_200)
+    return round(40 + skill_signal * 35 + text_signal * 25, 2)
 
 
 def upsert_recommendation(
-    db: UnitOfWork, user: User, job: Job, *, nlp: TextAnalysis
+    db: UnitOfWork,
+    user: User,
+    job: Job,
+    *,
+    nlp: TextAnalysis,
+    commit_result: bool = True,
 ) -> Recommendation:
     if user.profile is None:
         raise ValueError("El candidato no tiene perfil profesional")
-    percentage, context_score, skill_score, language_score = candidate_match(user.profile, job, nlp=nlp)
+    percentage, context_score, skill_score, language_score, confidence = candidate_match(
+        user.profile, job, nlp=nlp
+    )
     recommendation = db.recommendations.find_for_user_job(user.id, job.id)
     if recommendation is None:
         recommendation = db.recommendations.new(
@@ -34,6 +63,7 @@ def upsert_recommendation(
         )
         db.add(recommendation)
     recommendation.match_percentage = percentage
+    recommendation.created_at = datetime.utcnow()
     recommendation.reasons = recommendation_reasons(
         user.profile, job, semantic=context_score, skill_score=skill_score
     )
@@ -53,8 +83,19 @@ def upsert_recommendation(
     recommendation.reasons = [
         f"categoria:{recommend_category(percentage, skill_score)}"
     ] + recommendation.reasons
-    db.commit()
-    db.refresh(recommendation)
+    if getattr(job, "source_kind", "internal") == "external":
+        recommendation.reasons = [
+            "source:external",
+            f"confidence:data:{confidence}",
+            (
+                "Compatibilidad estimada con la información disponible en la "
+                "publicación externa"
+            ),
+            *recommendation.reasons,
+        ]
+    if commit_result:
+        db.commit()
+        db.refresh(recommendation)
     return recommendation
 
 
@@ -62,11 +103,30 @@ def refresh_user_recommendations(
     db: UnitOfWork, user: User, include_all: bool, *, nlp: TextAnalysis
 ) -> list[Recommendation]:
     jobs = db.jobs.active()
-    recommendations = sorted(
-        [upsert_recommendation(db, user, job, nlp=nlp) for job in jobs],
-        key=lambda item: item.match_percentage,
-        reverse=True,
+    existing = db.recommendations.for_user_active(user.id)
+    cache_cutoff = datetime.utcnow() - timedelta(minutes=10)
+    profile_updated = getattr(user.profile, "updated_at", None)
+    if profile_updated and profile_updated > cache_cutoff:
+        cache_cutoff = profile_updated
+    cache_is_fresh = len(existing) == len(jobs) and all(
+        item.created_at >= cache_cutoff for item in existing
     )
+    if cache_is_fresh:
+        recommendations = existing
+    else:
+        recommendations = sorted(
+            [
+                upsert_recommendation(
+                    db, user, job, nlp=nlp, commit_result=False
+                )
+                for job in jobs
+            ],
+            key=lambda item: item.match_percentage,
+            reverse=True,
+        )
+        # One transaction replaces hundreds of per-vacancy commits. This is the
+        # main latency reduction for candidate dashboards with a large catalog.
+        db.commit()
     if include_all:
         return recommendations
     recommendations = sorted(
@@ -101,6 +161,6 @@ def rank_candidates_for_job(
     ranked: list[tuple[User, float]] = []
     for user in users:
         if user.profile:
-            percentage, _, _, _ = candidate_match(user.profile, job, nlp=nlp)
+            percentage, _, _, _, _ = candidate_match(user.profile, job, nlp=nlp)
             ranked.append((user, percentage))
     return sorted(ranked, key=lambda item: item[1], reverse=True)

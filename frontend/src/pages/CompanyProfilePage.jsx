@@ -115,11 +115,6 @@ export function CompanyProfilePage() {
             <div className="pb-1 text-white">
               <p className="text-xs font-bold uppercase tracking-[0.18em] !text-sky-200">Perfil de empresa</p>
               <h1 className="mt-2 text-4xl font-bold tracking-tight !text-white">{company.name}</h1>
-              {company.source_name === "TalentSync Demo" ? (
-                <p className="mt-3 inline-flex rounded-full border border-violet-300/40 bg-violet-400/15 px-3 py-1 text-xs font-bold text-violet-100">
-                  Empresa demostrativa · sus vacantes sirven para probar la plataforma
-                </p>
-              ) : null}
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-200">
                 {company.sector ? <span>{company.sector}</span> : null}
                 {company.size ? <span className="inline-flex items-center gap-1.5"><UsersRound size={15} />{company.size}</span> : null}

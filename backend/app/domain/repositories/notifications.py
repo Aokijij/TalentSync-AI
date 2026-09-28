@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Protocol
 
 from app.domain.entities.records import Notification
@@ -22,4 +23,12 @@ class NotificationRepository(EntityRepository[Notification], Protocol):
 
     def find_unread(
         self, user_id: int, notification_type: str, action_url: str
+    ) -> Notification | None: ...
+
+    def find_recent(
+        self,
+        user_id: int,
+        notification_type: str,
+        action_url: str,
+        since: datetime,
     ) -> Notification | None: ...

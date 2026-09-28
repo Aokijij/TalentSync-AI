@@ -4,6 +4,7 @@ import { resolveApiBase } from "./config.js";
 
 export const api = axios.create({
   baseURL: resolveApiBase(import.meta.env.VITE_API_URL, window.location),
+  timeout: 25000,
 });
 
 api.interceptors.request.use((config) => {

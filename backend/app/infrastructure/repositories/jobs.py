@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import or_
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.infrastructure.database.models import Job
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
@@ -24,6 +24,24 @@ class JobRepository(SqlAlchemyRepository[Job]):
 
     def active_skill_rows(self) -> list[tuple[list[str]]]:
         return self._available(self.session.query(Job.skills)).all()
+
+    def active_external(self) -> list[Job]:
+        return self._available(
+            self.session.query(Job).filter(Job.source_kind == "external")
+        ).all()
+
+    def company_attention_jobs(self, created_before: datetime) -> list[Job]:
+        return (
+            self._available(
+                self.session.query(Job)
+                .options(joinedload(Job.company), selectinload(Job.applications))
+                .filter(
+                    Job.source_kind == "internal",
+                    Job.created_at <= created_before,
+                )
+            )
+            .all()
+        )
 
     def get_with_company(self, job_id: int) -> Job | None:
         return (

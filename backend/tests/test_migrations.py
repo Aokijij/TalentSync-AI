@@ -1,10 +1,10 @@
 from io import StringIO
 from pathlib import Path
 
-from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
 
+from alembic import command
 from app.core.config import settings
 
 

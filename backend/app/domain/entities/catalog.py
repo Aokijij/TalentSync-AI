@@ -13,6 +13,10 @@ class CatalogJob:
     salary: str
     url: str
     published_at: datetime | None = None
+    skills: tuple[str, ...] = ()
+    benefits: tuple[str, ...] = ()
+    company_url: str | None = None
+    remote: bool | None = None
 
 
 @dataclass(frozen=True)

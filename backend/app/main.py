@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -14,11 +16,28 @@ from app.core.config import settings
 from app.core.limiter import limiter
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = None
+    stop_event = asyncio.Event()
+    if settings.periodic_maintenance_enabled:
+        from app.infrastructure.scheduling import periodic_maintenance
+
+        task = asyncio.create_task(periodic_maintenance(stop_event))
+    try:
+        yield
+    finally:
+        stop_event.set()
+        if task:
+            await task
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         description="API REST para TalentSync AI, plataforma de matching laboral con NLP.",
         version="0.1.0",
+        lifespan=lifespan,
     )
 
     app.state.limiter = limiter
