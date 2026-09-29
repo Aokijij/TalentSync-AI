@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.api.deps import get_job_catalog, get_text_analysis
+from app.api.deps import get_job_catalog, get_jsearch_job_catalog, get_text_analysis
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.domain.entities.catalog import CatalogJob, CatalogPage
@@ -1290,3 +1290,64 @@ def test_admin_syncs_authorized_jooble_catalog(client):
     assert job["salary"] == 2_500_000
     assert "servicio al cliente" in job["skills"]
     assert job["external_url"] == "https://co.jooble.org/jdp/JOOBLE-101"
+
+
+def test_jsearch_sync_deduplicates_the_same_listing_from_multiple_ids(client):
+    admin, _ = register(client, "jsearch-dedup-admin")
+    with client.session_factory() as session:
+        session.get(User, admin["id"]).role = UserRole.ADMIN
+        session.commit()
+    headers = {
+        "Authorization": f"Bearer {create_access_token(str(admin['id']), 'admin')}"
+    }
+
+    class RotatingCatalog:
+        configured = True
+        source_name = "JSearch"
+        registration_url = "https://example.org"
+        calls = 0
+
+        def search(self, **parameters):
+            self.calls += 1
+            return CatalogPage(
+                total=1,
+                jobs=[
+                    CatalogJob(
+                        external_id=f"JSEARCH-{self.calls}",
+                        title="Analista de datos",
+                        company="Compañía de datos",
+                        location="Bogotá, Bogotá D.C.",
+                        description="Analiza información con SQL, Excel y Power BI para apoyar decisiones.",
+                        requirements="Experiencia con SQL, Excel y Power BI.",
+                        employment_type="Full-time",
+                        salary="4200000",
+                        url=f"https://jobs.example.org/{self.calls}",
+                        published_at=datetime(2026, 9, 28),
+                        skills=("sql", "excel", "power bi"),
+                    )
+                ],
+            )
+
+    catalog = RotatingCatalog()
+    client.app.dependency_overrides[get_jsearch_job_catalog] = lambda: catalog
+    payload = {
+        "keywords": "analista de datos",
+        "location": "Colombia",
+        "pages": 1,
+        "result_count": 20,
+    }
+    first = client.post(
+        "/api/v1/admin/jobs/sources/jsearch/sync", headers=headers, json=payload
+    )
+    second = client.post(
+        "/api/v1/admin/jobs/sources/jsearch/sync", headers=headers, json=payload
+    )
+    client.app.dependency_overrides.pop(get_jsearch_job_catalog)
+
+    assert first.json()["created"] == 1
+    assert second.json()["created"] == 0
+    assert second.json()["updated"] == 1
+    jobs = client.get("/api/v1/jobs").json()
+    assert len(jobs) == 1
+    with client.session_factory() as session:
+        assert session.get(Job, jobs[0]["id"]).external_id == "JSEARCH-1"

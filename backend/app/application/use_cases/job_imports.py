@@ -456,11 +456,23 @@ def _import_rows(
                 "last_seen_at": now,
             }
             job = db.jobs.find_external(source, external_id)
+            if job is None and source == "JSearch":
+                job = db.jobs.find_external_listing(
+                    source,
+                    company.id,
+                    title,
+                    values["location"],
+                )
             if job is None:
                 job = db.jobs.new(**values, created_at=published_at or now)
                 db.add(job)
                 created += 1
             else:
+                # JSearch can publish one listing through several aggregators.
+                # Preserve the first stable external ID when the semantic listing
+                # already exists and only refresh its content.
+                if job.external_id != external_id:
+                    values["external_id"] = job.external_id
                 for key, value in values.items():
                     setattr(job, key, value)
                 if published_at:

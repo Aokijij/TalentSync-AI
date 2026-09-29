@@ -20,6 +20,14 @@ class JobRepository(EntityRepository[Job], Protocol):
 
     def find_external(self, source_name: str, external_id: str) -> Job | None: ...
 
+    def find_external_listing(
+        self,
+        source_name: str,
+        company_id: int,
+        title: str,
+        location: str | None,
+    ) -> Job | None: ...
+
     def count(self) -> int: ...
 
     def admin_page(

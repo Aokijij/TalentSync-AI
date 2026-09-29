@@ -235,6 +235,12 @@ def _title_without_salary(title: str) -> str:
         cleaned,
         flags=re.IGNORECASE,
     )
+    cleaned = re.sub(
+        r"(?:\s*[-–|:]?\s*)(?:COP\s*|\$\s*)?\d{7,8}(?:\s*(?:COP|mensuales?|al mes))?",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     return re.sub(r"\s{2,}", " ", cleaned).strip(" -–|:") or title
 
 

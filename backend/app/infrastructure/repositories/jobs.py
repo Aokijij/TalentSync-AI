@@ -58,6 +58,24 @@ class JobRepository(SqlAlchemyRepository[Job]):
             .first()
         )
 
+    def find_external_listing(
+        self,
+        source_name: str,
+        company_id: int,
+        title: str,
+        location: str | None,
+    ) -> Job | None:
+        query = self.session.query(Job).filter(
+            Job.source_name == source_name,
+            Job.company_id == company_id,
+            Job.title == title,
+        )
+        if location:
+            query = query.filter(Job.location == location)
+        else:
+            query = query.filter(Job.location.is_(None))
+        return query.order_by(Job.created_at.desc()).first()
+
     def count(self) -> int:
         return self.session.query(Job).count()
 
