@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime
 from html import unescape
 from urllib.error import HTTPError, URLError
@@ -83,7 +84,10 @@ class JSearchJobCatalog:
                 "JSearch devolvió una respuesta que TalentSync no pudo interpretar."
             ) from error
 
-        results = body.get("data", []) if isinstance(body, dict) else []
+        data = body.get("data", []) if isinstance(body, dict) else []
+        # OpenWebNinja search-v2 currently wraps the result collection in
+        # data.jobs. Keep support for the earlier flat data array as well.
+        results = data.get("jobs", []) if isinstance(data, dict) else data
         if not isinstance(results, list):
             raise CatalogProviderError(
                 "JSearch devolvió una respuesta que TalentSync no pudo interpretar."
@@ -108,19 +112,22 @@ class JSearchJobCatalog:
             )
         )
         salary = _salary(item)
+        highlights = item.get("job_highlights") or {}
         skills = _strings(
             [
                 *(item.get("required_technologies") or []),
                 *(item.get("preferred_technologies") or []),
                 *(item.get("soft_skills") or []),
+                *(item.get("job_required_skills") or []),
             ]
         )
+        description = _clean(item.get("job_description"))
         return CatalogJob(
             external_id=str(item.get("job_id") or "").strip(),
             title=_clean(item.get("job_title")),
             company=_clean(item.get("employer_name")) or "Empresa confidencial",
             location=_clean(location),
-            description=_clean(item.get("job_description")),
+            description=description,
             employment_type=_clean(employment_type),
             salary=salary,
             url=str(
@@ -130,7 +137,13 @@ class JSearchJobCatalog:
             ).strip(),
             published_at=_date(item.get("job_posted_at_datetime_utc")),
             skills=tuple(skills),
-            benefits=tuple(_strings(item.get("job_benefits") or [])),
+            benefits=tuple(
+                _strings(
+                    item.get("job_benefits_strings")
+                    or item.get("job_benefits")
+                    or []
+                )
+            ),
             company_url=str(item.get("employer_website") or "").strip() or None,
             remote=(
                 True
@@ -138,6 +151,7 @@ class JSearchJobCatalog:
                 or str(item.get("work_arrangement") or "").lower() == "remote"
                 else None
             ),
+            requirements=_requirements(highlights, description),
         )
 
 
@@ -150,6 +164,9 @@ def _strings(values: list[object]) -> list[str]:
 
 
 def _salary(item: dict) -> str:
+    salary_string = _clean(item.get("job_salary_string"))
+    if salary_string:
+        return salary_string
     minimum = item.get("job_min_salary")
     maximum = item.get("job_max_salary")
     if minimum is not None and maximum is not None:
@@ -158,6 +175,11 @@ def _salary(item: dict) -> str:
 
 
 def _date(value: object) -> datetime | None:
+    if isinstance(value, (int, float)):
+        try:
+            return datetime.utcfromtimestamp(value)
+        except (OverflowError, OSError, ValueError):
+            return None
     raw = str(value or "").strip()
     if not raw:
         return None
@@ -165,6 +187,58 @@ def _date(value: object) -> datetime | None:
         return datetime.fromisoformat(raw.replace("Z", "+00:00")).replace(tzinfo=None)
     except ValueError:
         return None
+
+
+def _requirements(highlights: object, description: str) -> str:
+    if isinstance(highlights, dict):
+        values = highlights.get("Qualifications") or highlights.get("qualifications")
+        if isinstance(values, list):
+            result = " ".join(_clean(value) for value in values if _clean(value))
+            if result:
+                return result
+
+    lowered = description.casefold()
+    headings = (
+        "requisitos",
+        "requirements",
+        "qualifications",
+        "qué necesitas",
+        "que necesitas",
+        "perfil requerido",
+        "what you bring",
+    )
+    positions = [lowered.find(heading) for heading in headings]
+    positions = [position for position in positions if position >= 0]
+    if positions:
+        return description[min(positions) :][:6_000]
+
+    signals = (
+        "experiencia",
+        "conocimiento",
+        "formación",
+        "profesional",
+        "requerimos",
+        "buscamos",
+        "nivel de",
+        "years of experience",
+        "knowledge of",
+        "required",
+        "bachelor",
+        "skills",
+    )
+    sentences = [
+        part.strip()
+        for part in re.split(r"(?<=[.!?])\s+|\n+", description)
+        if part.strip()
+    ]
+    selected = [
+        sentence
+        for sentence in sentences
+        if any(signal in sentence.casefold() for signal in signals)
+    ]
+    if selected:
+        return " ".join(selected)[:6_000]
+    return description[-1_500:] if description else ""
 
 
 def _clean(value: object) -> str:

@@ -521,7 +521,7 @@ def _catalog_row(
         "cargo": job.title,
         "descripcion": job.description
         or f"Consulta la descripción completa de esta oportunidad en {source_name}.",
-        "requisitos": provider_description,
+        "requisitos": job.requirements or provider_description,
         "sector": _infer_sector(text),
         "enlace_externo": job.url,
         "fecha_publicacion": published_at,

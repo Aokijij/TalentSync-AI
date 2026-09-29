@@ -27,11 +27,11 @@ PIPELINE = [
 
 JOBS = (
     (
-        "Analista de experiencia del cliente",
+        "Analista de experiencia del cliente financiero",
         ["servicio al cliente", "comunicación", "crm", "análisis de datos", "excel"],
-        "Acompañar solicitudes de clientes, analizar motivos de contacto y proponer mejoras medibles para la experiencia.",
-        "Experiencia atendiendo personas, redacción clara y manejo básico de indicadores.",
-        "Ventas y comercio",
+        "Acompañar solicitudes de clientes, analizar motivos de contacto y proponer mejoras medibles para su experiencia con servicios financieros.",
+        "Experiencia atendiendo personas, redacción clara y manejo de indicadores de servicio.",
+        "Finanzas y banca",
     ),
     (
         "Profesional de selección",
@@ -41,11 +41,11 @@ JOBS = (
         "Recursos humanos",
     ),
     (
-        "Analista de operaciones",
-        ["operaciones", "indicadores", "excel", "mejora continua", "trabajo en equipo"],
-        "Dar seguimiento a la operación diaria, consolidar indicadores y coordinar planes de mejora con diferentes equipos.",
-        "Experiencia en procesos operativos, hojas de cálculo y seguimiento de planes de acción.",
-        "Logistica y transporte",
+        "Analista de operaciones financieras",
+        ["operaciones", "indicadores", "excel", "riesgo operativo", "trabajo en equipo"],
+        "Dar seguimiento a la operación financiera diaria, consolidar indicadores y coordinar controles con diferentes equipos.",
+        "Experiencia en procesos operativos, hojas de cálculo, controles y seguimiento de planes de acción.",
+        "Finanzas y banca",
     ),
     (
         "Ejecutivo de cuenta",
@@ -55,11 +55,11 @@ JOBS = (
         "Ventas y comercio",
     ),
     (
-        "Analista de información",
+        "Analista de información financiera",
         ["análisis de datos", "excel", "sql", "power bi", "comunicación"],
-        "Convertir información operativa en tableros y análisis comprensibles para apoyar decisiones del negocio.",
-        "Experiencia preparando reportes, validando datos y presentando conclusiones.",
-        "Analitica y ciencia de datos",
+        "Convertir información financiera y operativa en tableros comprensibles para apoyar decisiones del negocio.",
+        "Experiencia preparando reportes, validando datos y presentando conclusiones a diferentes públicos.",
+        "Finanzas y banca",
     ),
     (
         "Coordinador de proyectos",
@@ -67,6 +67,34 @@ JOBS = (
         "Planear iniciativas, coordinar responsables y comunicar avances, riesgos y decisiones de forma oportuna.",
         "Experiencia coordinando proyectos y equipos multidisciplinarios.",
         "Recursos humanos",
+    ),
+    (
+        "Analista de riesgo crediticio",
+        ["riesgo crediticio", "análisis financiero", "excel", "sql", "comunicación"],
+        "Analizar solicitudes y comportamiento de portafolios para apoyar decisiones de crédito responsables.",
+        "Experiencia en análisis financiero, manejo de datos y elaboración de conceptos de riesgo.",
+        "Finanzas y banca",
+    ),
+    (
+        "Especialista de ciberseguridad",
+        ["ciberseguridad", "gestión de riesgos", "seguridad de la información", "linux", "comunicación"],
+        "Fortalecer controles de seguridad, analizar alertas y acompañar la gestión de riesgos tecnológicos.",
+        "Experiencia en seguridad de la información, análisis de incidentes y documentación de controles.",
+        "Tecnologia y software",
+    ),
+    (
+        "Desarrollador de servicios digitales",
+        ["desarrollo de software", "api rest", "javascript", "sql", "git"],
+        "Diseñar y mantener servicios digitales seguros que simplifiquen la experiencia de clientes y equipos internos.",
+        "Experiencia desarrollando aplicaciones, integrando APIs, usando control de versiones y bases de datos.",
+        "Tecnologia y software",
+    ),
+    (
+        "Profesional de cumplimiento",
+        ["cumplimiento", "sarlaft", "análisis de riesgos", "auditoría", "comunicación"],
+        "Acompañar controles de cumplimiento, analizar alertas y documentar decisiones según la regulación aplicable.",
+        "Experiencia en cumplimiento, gestión de riesgos, análisis de información y elaboración de informes.",
+        "Finanzas y banca",
     ),
 )
 
@@ -104,19 +132,20 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             session.flush()
         elif owner.role != UserRole.COMPANY:
             raise ValueError("El correo ya pertenece a una cuenta que no es empresa")
+        owner.name = name
 
         company = session.query(Company).filter(Company.nit == SHOWCASE_NIT).first()
         company_values = {
             "owner_user_id": owner.id,
-            "name": "TalentSync Empresas",
-            "description": "Equipo de servicios de talento que usa TalentSync para organizar procesos de selección claros, medibles y centrados en las personas.",
-            "website": "https://talentsync-ai.pages.dev",
-            "sector": "Recursos humanos",
-            "size": "51-200 personas",
+            "name": "Bancolombia",
+            "description": "Organización financiera colombiana que trabaja para promover el desarrollo sostenible, la inclusión financiera y experiencias digitales seguras.",
+            "website": "https://www.bancolombia.com",
+            "sector": "Finanzas y banca",
+            "size": "Más de 1000 personas",
             "location": "Medellín, Antioquia",
-            "mission": "Conectar personas y oportunidades mediante procesos de selección transparentes y decisiones sustentadas en información.",
-            "values": ["Claridad", "Respeto", "Diversidad", "Aprendizaje continuo"],
-            "benefits": ["Trabajo híbrido", "Formación continua", "Horario flexible", "Bienestar"],
+            "mission": "Promover desarrollo económico sostenible y transformar positivamente la experiencia financiera de las personas.",
+            "values": ["Integridad", "Cercanía", "Innovación", "Sostenibilidad"],
+            "benefits": ["Trabajo híbrido", "Formación continua", "Bienestar", "Beneficios financieros"],
             "is_external": False,
             "source_name": "TalentSync Showcase",
         }
@@ -153,7 +182,30 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                 "benefits": company.benefits,
                 "pipeline_stages": PIPELINE,
                 "languages": [],
-                "application_questions": [],
+                "application_questions": [
+                    {
+                        "id": "relevant_experience",
+                        "prompt": "¿Cuánta experiencia tienes en funciones relacionadas con este cargo?",
+                        "type": "choice",
+                        "required": True,
+                        "options": ["Menos de un año", "Entre 1 y 3 años", "Más de 3 años"],
+                        "option_scores": {
+                            "Menos de un año": -1,
+                            "Entre 1 y 3 años": 2,
+                            "Más de 3 años": 4,
+                        },
+                    },
+                    {
+                        "id": "motivation",
+                        "prompt": "Cuéntanos por qué te interesa trabajar en el sector financiero.",
+                        "type": "open",
+                        "required": False,
+                        "options": [],
+                        "keywords": ["servicio", "innovación", "aprendizaje"],
+                        "positive_adjustment": 2,
+                        "negative_adjustment": 0,
+                    },
+                ],
                 "skills": skills,
                 "embedding": analysis.embedding,
                 "source_kind": "internal",
@@ -241,6 +293,19 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             application.status = status
             application.pipeline_stage = stage
             application.created_at = now - timedelta(days=index + 1)
+            application.screening_answers = [
+                {
+                    "question_id": "relevant_experience",
+                    "question": "¿Cuánta experiencia tienes en funciones relacionadas con este cargo?",
+                    "answer": "Entre 1 y 3 años" if index % 2 else "Más de 3 años",
+                },
+                {
+                    "question_id": "motivation",
+                    "question": "Cuéntanos por qué te interesa trabajar en el sector financiero.",
+                    "answer": "Me interesa aportar desde el servicio, aprender y participar en iniciativas de innovación.",
+                },
+            ]
+            application.screening_adjustment = 4 if index % 2 == 0 else 2
             upsert_recommendation(
                 uow,
                 candidate,

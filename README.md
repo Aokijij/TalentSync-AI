@@ -286,7 +286,7 @@ El comando solicita la contraseña sin mostrarla. El acceso administrativo se ab
 
 ## Espacio privado para presentar el rol empresa
 
-Las ofertas públicas deben provenir de empresas registradas o de proveedores autorizados. Para presentar el flujo empresarial sin mezclar datos ficticios con ese catálogo, existe una semilla privada que crea una empresa, seis vacantes pausadas, doce candidatos sintéticos y postulaciones en distintas etapas. Las vacantes pausadas solo se ven desde la cuenta empresa.
+Las ofertas externas deben provenir de proveedores autorizados. Para presentar el flujo empresarial completo existe una semilla privada que crea una empresa, diez vacantes pausadas, doce candidatos sintéticos y postulaciones en distintas etapas. Las vacantes pausadas solo se ven desde la cuenta empresa.
 
 Desde `backend/`:
 
@@ -295,6 +295,13 @@ Desde `backend/`:
 ```
 
 La contraseña se solicita sin mostrarla. El comando es idempotente: puede repetirse para actualizar el contenido sin duplicarlo. El catálogo demostrativo público anterior se elimina con `python -m scripts.cleanup_demo_catalog`.
+
+Para llenar el mercado interno sin atribuir ofertas inventadas a marcas reales, la semilla siguiente crea veinte compañías ficticias de presentación con perfiles completos y ocho vacantes internas por compañía. Usa los mismos modelos, relaciones y transacciones que el registro normal y puede repetirse sin duplicar registros:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m scripts.seed_internal_marketplace
+```
 
 ## Pruebas y compilación
 

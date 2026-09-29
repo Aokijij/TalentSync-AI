@@ -17,6 +17,7 @@ class CatalogJob:
     benefits: tuple[str, ...] = ()
     company_url: str | None = None
     remote: bool | None = None
+    requirements: str = ""
 
 
 @dataclass(frozen=True)

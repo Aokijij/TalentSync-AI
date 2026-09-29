@@ -26,8 +26,8 @@ def test_jsearch_maps_full_description_and_structured_skills(monkeypatch):
         captured["timeout"] = timeout
         return FakeResponse(
             {
-                "data": [
-                    {
+                "data": {
+                    "jobs": [{
                         "job_id": "real-101",
                         "job_title": "Analista de información",
                         "employer_name": "Empresa real",
@@ -38,10 +38,13 @@ def test_jsearch_maps_full_description_and_structured_skills(monkeypatch):
                         "job_posted_at_datetime_utc": "2026-09-20T10:00:00Z",
                         "required_technologies": ["Excel", "Power BI", "SQL"],
                         "preferred_technologies": ["Python"],
-                        "job_benefits": ["health_insurance"],
+                        "job_benefits_strings": ["health_insurance"],
+                        "job_highlights": {
+                            "Qualifications": ["Experiencia analizando información."]
+                        },
                         "work_arrangement": "remote",
-                    }
-                ]
+                    }]
+                },
             }
         )
 
@@ -57,6 +60,7 @@ def test_jsearch_maps_full_description_and_structured_skills(monkeypatch):
     assert result.jobs[0].skills == ("excel", "power bi", "sql", "python")
     assert result.jobs[0].remote is True
     assert result.jobs[0].published_at.year == 2026
+    assert result.jobs[0].requirements == "Experiencia analizando información."
 
 
 def test_adzuna_requires_both_credentials_and_maps_results(monkeypatch):
