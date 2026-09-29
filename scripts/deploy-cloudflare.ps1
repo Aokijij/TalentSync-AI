@@ -37,8 +37,12 @@ try {
         $env:VITE_API_URL = $ApiUrl.TrimEnd('/')
         & npm run build
         if ($LASTEXITCODE -ne 0) { throw 'Falló la compilación. Cloudflare no se ha actualizado.' }
+        # Select-String -Quiet emits one Boolean for every piped file. An array
+        # containing only $false values is still truthy in PowerShell, so use a
+        # real match object to avoid blocking safe multi-chunk builds.
         $unsafeBundle = Get-ChildItem -LiteralPath dist -Recurse -File -Include '*.js' |
-            Select-String -Pattern 'https?://(?:127\.0\.0\.1|localhost):8000' -Quiet
+            Select-String -Pattern 'https?://(?:127\.0\.0\.1|localhost):8000' -List |
+            Select-Object -First 1
         if ($unsafeBundle) {
             throw 'La compilación contiene una API local. Cloudflare no se ha actualizado.'
         }
