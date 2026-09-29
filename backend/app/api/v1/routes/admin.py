@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
 
 from app.api.deps import (
     get_adzuna_job_catalog,
@@ -47,26 +47,59 @@ def platform_analytics(
 
 @router.get("/users")
 def list_users(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=5, le=100),
+    search: str | None = Query(default=None, max_length=120),
+    role: str | None = Query(default=None, pattern="^(candidate|company|admin)$"),
     current_user: User = Depends(require_roles(UserRole.ADMIN)),
     db: UnitOfWork = Depends(get_unit_of_work),
-) -> list[dict]:
-    return use_cases.list_users(current_user=current_user, db=db)
+) -> dict:
+    return use_cases.list_users(
+        current_user=current_user,
+        db=db,
+        page=page,
+        page_size=page_size,
+        search=search,
+        role=role,
+    )
 
 
 @router.get("/companies")
 def list_admin_companies(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=5, le=100),
+    search: str | None = Query(default=None, max_length=120),
+    scope: str = Query(default="platform", pattern="^(platform|external|all)$"),
     current_user: User = Depends(require_roles(UserRole.ADMIN)),
     db: UnitOfWork = Depends(get_unit_of_work),
-) -> list[dict]:
-    return use_cases.list_admin_companies(current_user=current_user, db=db)
+) -> dict:
+    return use_cases.list_admin_companies(
+        current_user=current_user,
+        db=db,
+        page=page,
+        page_size=page_size,
+        search=search,
+        scope=scope,
+    )
 
 
 @router.get("/jobs")
 def list_admin_jobs(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=5, le=100),
+    search: str | None = Query(default=None, max_length=120),
+    scope: str = Query(default="platform", pattern="^(platform|external|all)$"),
     current_user: User = Depends(require_roles(UserRole.ADMIN)),
     db: UnitOfWork = Depends(get_unit_of_work),
-) -> list[dict]:
-    return use_cases.list_admin_jobs(current_user=current_user, db=db)
+) -> dict:
+    return use_cases.list_admin_jobs(
+        current_user=current_user,
+        db=db,
+        page=page,
+        page_size=page_size,
+        search=search,
+        scope=scope,
+    )
 
 
 @router.get("/jobs/import-template")

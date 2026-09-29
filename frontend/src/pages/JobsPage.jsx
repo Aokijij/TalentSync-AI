@@ -407,7 +407,11 @@ function JobCard({ job, match, confidence, applied, showMatch }) {
       </div>
       <div className="mt-auto flex items-center justify-between border-t border-[var(--line)] pt-4">
         <strong>
-          {job.salary ? `$${job.salary.toLocaleString("es-CO")}` : "A convenir"}
+          {job.salary
+            ? `$${job.salary.toLocaleString("es-CO")} COP`
+            : job.source_kind === "external"
+              ? "Salario no informado"
+              : "A convenir"}
         </strong>
         <Link to={`/vacantes/${job.id}`} className="button-primary button-sm">
           {job.source_kind === "external"

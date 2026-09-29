@@ -51,9 +51,9 @@ La consola administrativa incluye una plantilla descargable para cargar hasta 2.
 
 Las habilidades y los beneficios se separan con `|`; los idiomas se escriben como `idioma:nivel`, por ejemplo `inglés:B2|español:NATIVE`. Las ofertas importadas aparecen señaladas como externas y el candidato continúa la postulación en el sitio de origen. Solo deben cargarse fuentes que permitan reutilizar y mostrar sus publicaciones; este mecanismo no autoriza copiar datos de terceros sin permiso.
 
-#### Sincronización con JSearch, Adzuna y Jooble
+#### Sincronización con JSearch
 
-JSearch es la fuente preferida porque entrega descripciones amplias, tecnologías y datos de la empresa. Permite buscar en Colombia y añadir ofertas internacionales cuando son remotas. Adzuna y Jooble quedan como fuentes complementarias; ambas suelen entregar un resumen más corto. TalentSync conserva la atribución, el enlace y el ID externo para actualizar cada oferta sin duplicarla.
+JSearch es la fuente activa porque entrega descripciones amplias, requisitos y datos de la empresa. Permite buscar en Colombia y añadir ofertas internacionales cuando son remotas. Los adaptadores de Adzuna y Jooble se conservan para compatibilidad, pero no participan en la actualización automática ni aparecen en la consola operativa. TalentSync conserva la atribución, el enlace y el ID externo para actualizar cada oferta sin duplicarla.
 
 La sincronización automática se ejecuta una vez al día. Solo publica ofertas de hasta 60 días de antigüedad en las que se identifiquen al menos tres habilidades; las demás se descartan. Las fuentes externas muestran una compatibilidad estimada y una confianza de datos. Cuanto más breve sea la descripción, más conservador es el porcentaje.
 
@@ -286,7 +286,7 @@ El comando solicita la contraseña sin mostrarla. El acceso administrativo se ab
 
 ## Espacio privado para presentar el rol empresa
 
-Las ofertas externas deben provenir de proveedores autorizados. Para presentar el flujo empresarial completo existe una semilla privada que crea una empresa, diez vacantes pausadas, doce candidatos sintéticos y postulaciones en distintas etapas. Las vacantes pausadas solo se ven desde la cuenta empresa.
+Las ofertas externas deben provenir de proveedores autorizados. Para presentar el flujo empresarial completo existe una semilla idempotente que prepara la cuenta de Bancolombia, publica diez vacantes internas, crea doce candidatos sintéticos y organiza postulaciones en distintas etapas. Las vacantes se muestran en el mercado laboral como ofertas propias de TalentSync y la empresa puede administrarlas desde su cuenta.
 
 Desde `backend/`:
 

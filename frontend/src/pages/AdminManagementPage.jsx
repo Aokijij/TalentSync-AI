@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Building2,
   BriefcaseBusiness,
@@ -49,6 +49,9 @@ export function AdminManagementPage() {
   const [users, setUsers] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [stats, setStats] = useState({});
+  const [resourceTotal, setResourceTotal] = useState(0);
+  const [scope, setScope] = useState("platform");
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -59,29 +62,24 @@ export function AdminManagementPage() {
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
-  const [joobleSource, setJoobleSource] = useState(null);
-  const [joobleKeywords, setJoobleKeywords] = useState(
-    "administración, ventas, servicio al cliente, logística, contabilidad, salud, tecnología",
+  const [jsearchSource, setJsearchSource] = useState(null);
+  const [jsearchKeywords, setJsearchKeywords] = useState(
+    "servicio al cliente, administración, ventas, tecnología",
   );
-  const [joobleLocation, setJoobleLocation] = useState("Colombia");
-  const [jooblePages, setJooblePages] = useState(2);
-  const [syncingJooble, setSyncingJooble] = useState(false);
+  const [jsearchLocation, setJsearchLocation] = useState("Colombia");
+  const [syncingJsearch, setSyncingJsearch] = useState(false);
 
-  async function load() {
+  async function loadOverview() {
     setError("");
     setLoading(true);
     try {
-      const [usersResponse, companiesResponse, jobsResponse, joobleResponse] =
+      const [statsResponse, jsearchResponse] =
         await Promise.all([
-          api.get("/admin/users"),
-          api.get("/admin/companies"),
-          api.get("/admin/jobs"),
-          api.get("/admin/jobs/sources/jooble"),
+          api.get("/admin/stats"),
+          api.get("/admin/jobs/sources/jsearch"),
         ]);
-      setUsers(usersResponse.data);
-      setCompanies(companiesResponse.data);
-      setJobs(jobsResponse.data);
-      setJoobleSource(joobleResponse.data);
+      setStats(statsResponse.data);
+      setJsearchSource(jsearchResponse.data);
     } catch (requestError) {
       setError(
         getApiErrorMessage(
@@ -93,16 +91,48 @@ export function AdminManagementPage() {
       setLoading(false);
     }
   }
+
+  async function loadManagedRecords() {
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await api.get(`/admin/${activeTab}`, {
+        params: {
+          page,
+          page_size: pageSize,
+          search: query.trim() || undefined,
+          scope: activeTab === "users" ? undefined : scope,
+          role: activeTab === "users" ? "candidate" : undefined,
+        },
+      });
+      if (activeTab === "users") setUsers(data.items || []);
+      else if (activeTab === "companies") setCompanies(data.items || []);
+      else setJobs(data.items || []);
+      setResourceTotal(data.total || 0);
+    } catch (requestError) {
+      setError(
+        getApiErrorMessage(requestError, "No fue posible cargar los registros"),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    load();
+    loadOverview();
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(loadManagedRecords, 250);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, page, pageSize, query, scope]);
 
   async function remove(kind, id) {
     setDeleting(true);
     try {
       await api.delete(`/admin/${kind}/${id}`);
       setPendingDelete(null);
-      await load();
+      await Promise.all([loadOverview(), loadManagedRecords()]);
     } catch (requestError) {
       setError(
         getApiErrorMessage(requestError, "No fue posible eliminar el registro"),
@@ -150,7 +180,7 @@ export function AdminManagementPage() {
       setImportResult(data);
       setImportFile(null);
       formElement.reset();
-      await load();
+      await Promise.all([loadOverview(), loadManagedRecords()]);
     } catch (requestError) {
       const detail = requestError?.response?.data?.detail;
       if (detail?.message) {
@@ -172,58 +202,50 @@ export function AdminManagementPage() {
     }
   }
 
-  async function syncJooble(event) {
+  async function syncJsearch(event) {
     event.preventDefault();
     setError("");
     setImportResult(null);
-    setSyncingJooble(true);
+    setSyncingJsearch(true);
     try {
-      const { data } = await api.post("/admin/jobs/sources/jooble/sync", {
-        keywords: joobleKeywords,
-        location: joobleLocation,
-        pages: jooblePages,
+      const { data } = await api.post("/admin/jobs/sources/jsearch/sync", {
+        keywords: jsearchKeywords,
+        location: jsearchLocation,
+        pages: 1,
         result_count: 20,
       });
       setImportResult(data);
-      await load();
+      await Promise.all([loadOverview(), loadManagedRecords()]);
     } catch (requestError) {
       setError(
         getApiErrorMessage(
           requestError,
-          "No fue posible sincronizar las vacantes de Jooble",
+          "No fue posible sincronizar las vacantes de JSearch",
         ),
       );
     } finally {
-      setSyncingJooble(false);
+      setSyncingJsearch(false);
     }
   }
 
   const records =
     activeTab === "users"
-      ? users.filter((item) => item.role === "candidate")
+      ? users
       : activeTab === "companies"
         ? companies
         : jobs;
-  const filtered = useMemo(() => {
-    const term = query.toLowerCase().trim();
-    if (!term) return records;
-    return records.filter((item) =>
-      JSON.stringify(item).toLowerCase().includes(term),
-    );
-  }, [query, records]);
+  const filtered = records;
   const activeMeta = tabs.find((tab) => tab.id === activeTab);
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalRecords = resourceTotal;
+  const pageCount = Math.max(1, Math.ceil(totalRecords / pageSize));
   const safePage = Math.min(page, pageCount);
-  const visibleRecords = filtered.slice(
-    (safePage - 1) * pageSize,
-    safePage * pageSize,
-  );
-  const firstVisible = filtered.length ? (safePage - 1) * pageSize + 1 : 0;
-  const lastVisible = Math.min(safePage * pageSize, filtered.length);
+  const visibleRecords = filtered;
+  const firstVisible = totalRecords ? (safePage - 1) * pageSize + 1 : 0;
+  const lastVisible = Math.min(safePage * pageSize, totalRecords);
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, query, pageSize]);
+  }, [activeTab, query, pageSize, scope]);
 
   return (
     <div className="space-y-6">
@@ -244,21 +266,21 @@ export function AdminManagementPage() {
       <section className="grid gap-4 sm:grid-cols-3">
         <Summary
           icon={UsersRound}
-          value={users.filter((item) => item.role === "candidate").length}
+          value={stats.candidates ?? users.filter((item) => item.role === "candidate").length}
           label="Candidatos"
-          detail="Perfiles registrados"
+          detail={`${stats.users ?? users.length} usuarios registrados`}
         />
         <Summary
           icon={Building2}
-          value={companies.length}
-          label="Organizaciones"
-          detail="Empresas registradas"
+          value={stats.platform_companies ?? 0}
+          label="Empresas TalentSync"
+          detail={`${stats.external_companies ?? 0} externas identificadas`}
         />
         <Summary
           icon={BriefcaseBusiness}
-          value={jobs.length}
-          label="Vacantes"
-          detail={`${jobs.reduce((total, item) => total + (item.applications || 0), 0)} postulaciones`}
+          value={stats.platform_jobs ?? 0}
+          label="Vacantes TalentSync"
+          detail={`${stats.external_jobs ?? 0} externas · ${stats.applications ?? 0} postulaciones`}
         />
       </section>
 
@@ -275,6 +297,7 @@ export function AdminManagementPage() {
                 onClick={() => {
                   setActiveTab(id);
                   setQuery("");
+                  setScope("platform");
                 }}
                 aria-pressed={activeTab === id}
                 className={`flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-3 text-left transition-colors ${activeTab === id ? "bg-[var(--accent)] text-white" : "text-[var(--ink-strong)] hover:bg-[var(--surface-hover)]"}`}
@@ -304,51 +327,65 @@ export function AdminManagementPage() {
           </div>
         </aside>
         <div className="surface-card min-w-0 overflow-hidden !p-0">
-          <header className="flex flex-col gap-4 border-b border-[var(--line)] p-5 sm:flex-row sm:items-center sm:justify-between">
+          <header className="flex flex-col gap-4 border-b border-[var(--line)] p-5 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <p className="section-kicker">{activeMeta?.label}</p>
               <h2 className="mt-1 text-xl font-bold text-[var(--ink-strong)]">
                 {activeMeta?.description}
               </h2>
             </div>
-            <label className="relative block sm:w-80">
-              <span className="sr-only">Buscar</span>
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
-                size={17}
-              />
-              <input
-                className="field-control !pl-10"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={`Buscar en ${activeMeta?.label.toLowerCase()}...`}
-              />
-            </label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              {activeTab !== "users" ? (
+                <label className="text-xs font-bold text-[var(--muted)]">
+                  Origen
+                  <select
+                    className="field-control input-sm mt-1.5 min-w-48"
+                    value={scope}
+                    onChange={(event) => setScope(event.target.value)}
+                  >
+                    <option value="platform">TalentSync</option>
+                    <option value="external">Fuentes externas</option>
+                    <option value="all">Todos los orígenes</option>
+                  </select>
+                </label>
+              ) : null}
+              <label className="relative block sm:w-80">
+                <span className="sr-only">Buscar</span>
+                <Search
+                  className="pointer-events-none absolute left-3 bottom-3 text-[var(--muted)]"
+                  size={17}
+                />
+                <input
+                  className="field-control !pl-10"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={`Buscar en ${activeMeta?.label.toLowerCase()}...`}
+                />
+              </label>
+            </div>
           </header>
           {activeTab === "jobs" ? (
             <JobImportPanel
               file={importFile}
               importing={importing}
               result={importResult}
-              joobleSource={joobleSource}
-              joobleKeywords={joobleKeywords}
-              joobleLocation={joobleLocation}
-              jooblePages={jooblePages}
-              syncingJooble={syncingJooble}
+              jsearchSource={jsearchSource}
+              jsearchKeywords={jsearchKeywords}
+              jsearchLocation={jsearchLocation}
+              syncingJsearch={syncingJsearch}
               onFile={setImportFile}
               onImport={importJobs}
               onDownload={downloadImportTemplate}
-              onJoobleKeywords={setJoobleKeywords}
-              onJoobleLocation={setJoobleLocation}
-              onJooblePages={setJooblePages}
-              onSyncJooble={syncJooble}
+              onJsearchKeywords={setJsearchKeywords}
+              onJsearchLocation={setJsearchLocation}
+              onSyncJsearch={syncJsearch}
             />
           ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface-subtle)] px-5 py-3 text-xs font-semibold text-[var(--muted)]">
             <span>
               {loading
                 ? "Actualizando…"
-                : `${firstVisible}-${lastVisible} de ${filtered.length} registros`}
+                : `${firstVisible}-${lastVisible} de ${totalRecords} registros`}
             </span>
             <label className="flex items-center gap-2">
               Mostrar
@@ -423,18 +460,16 @@ function JobImportPanel({
   file,
   importing,
   result,
-  joobleSource,
-  joobleKeywords,
-  joobleLocation,
-  jooblePages,
-  syncingJooble,
+  jsearchSource,
+  jsearchKeywords,
+  jsearchLocation,
+  syncingJsearch,
   onFile,
   onImport,
   onDownload,
-  onJoobleKeywords,
-  onJoobleLocation,
-  onJooblePages,
-  onSyncJooble,
+  onJsearchKeywords,
+  onJsearchLocation,
+  onSyncJsearch,
 }) {
   return (
     <section className="border-b border-[var(--line)] bg-[var(--accent)]/[0.04] p-5">
@@ -445,28 +480,28 @@ function JobImportPanel({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-bold text-[var(--ink-strong)]">
-              Sincronizar con Jooble Colombia
+              Catálogo externo de JSearch
             </h3>
             <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${joobleSource?.configured ? "bg-[var(--success)]/15 text-[var(--success)]" : "bg-amber-500/15 text-amber-600"}`}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${jsearchSource?.configured ? "bg-[var(--success)]/15 text-[var(--success)]" : "bg-amber-500/15 text-amber-600"}`}
             >
-              {joobleSource?.configured ? "Conectado" : "Falta la clave API"}
+              {jsearchSource?.configured ? "Conectado" : "Falta la clave API"}
             </span>
           </div>
           <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
-            Busca ofertas autorizadas, conserva la fuente y actualiza registros existentes sin duplicarlos.
+            Importa ofertas con descripción y requisitos, valida antigüedad y conserva solo las que permiten calcular compatibilidad.
           </p>
         </div>
       </div>
-      {joobleSource?.configured ? (
-        <form className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(180px,1fr)_120px_auto] lg:items-end" onSubmit={onSyncJooble}>
+      {jsearchSource?.configured ? (
+        <form className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(180px,1fr)_auto] lg:items-end" onSubmit={onSyncJsearch}>
           <label className="text-xs font-bold text-[var(--muted)]">
             Perfiles que quieres traer
             <input
               className="field-control mt-1.5"
-              value={joobleKeywords}
-              onChange={(event) => onJoobleKeywords(event.target.value)}
-              placeholder="Ej. administración, ventas, servicio al cliente"
+              value={jsearchKeywords}
+              onChange={(event) => onJsearchKeywords(event.target.value)}
+              placeholder="Ej. servicio al cliente, salud, tecnología"
               required
             />
           </label>
@@ -474,36 +509,24 @@ function JobImportPanel({
             Ubicación
             <input
               className="field-control mt-1.5"
-              value={joobleLocation}
-              onChange={(event) => onJoobleLocation(event.target.value)}
+              value={jsearchLocation}
+              onChange={(event) => onJsearchLocation(event.target.value)}
               placeholder="Colombia o una ciudad"
               required
             />
           </label>
-          <label className="text-xs font-bold text-[var(--muted)]">
-            Páginas
-            <select
-              className="field-control mt-1.5"
-              value={jooblePages}
-              onChange={(event) => onJooblePages(Number(event.target.value))}
-            >
-              {[1, 2, 3, 4, 5].map((value) => (
-                <option key={value} value={value}>{value}</option>
-              ))}
-            </select>
-          </label>
-          <button type="submit" className="button-primary" disabled={syncingJooble}>
-            <RefreshCw size={17} className={syncingJooble ? "animate-spin" : ""} />
-            {syncingJooble ? "Sincronizando…" : "Sincronizar"}
+          <button type="submit" className="button-primary" disabled={syncingJsearch}>
+            <RefreshCw size={17} className={syncingJsearch ? "animate-spin" : ""} />
+            {syncingJsearch ? "Sincronizando…" : "Sincronizar ahora"}
           </button>
         </form>
       ) : (
         <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-amber-500/30 bg-amber-500/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-5 text-[var(--muted)]">
-            Solicita una clave regional y guárdala como <strong className="text-[var(--ink-strong)]">JOOBLE_API_KEY</strong> en Azure para habilitar la sincronización.
+            Guarda <strong className="text-[var(--ink-strong)]">JSEARCH_API_KEY</strong> como secreto de Azure para habilitar la sincronización.
           </p>
-          <a className="button-secondary button-sm shrink-0" href={joobleSource?.registration_url || "https://co.jooble.org/api/about"} target="_blank" rel="noreferrer">
-            Solicitar clave
+          <a className="button-secondary button-sm shrink-0" href={jsearchSource?.registration_url || "https://www.openwebninja.com/api/jsearch"} target="_blank" rel="noreferrer">
+            Abrir JSearch
             <ExternalLink size={14} />
           </a>
         </div>
@@ -692,7 +715,14 @@ function RecordRow({ kind, item, protectedRecord, onDelete }) {
             <p className="font-bold text-[var(--ink-strong)]">{title}</p>
             {item.source_name ? (
               <p className="mt-0.5 text-xs font-semibold text-[var(--accent)]">
-                Fuente: {item.source_name}
+                {item.source_kind === "external"
+                  ? `Fuente externa: ${item.source_name}`
+                  : "Publicada en TalentSync"}
+              </p>
+            ) : null}
+            {kind === "jobs" && item.company_name ? (
+              <p className="mt-0.5 text-xs text-[var(--muted)]">
+                {item.company_name}
               </p>
             ) : null}
             {kind === "companies" ? (
@@ -707,7 +737,13 @@ function RecordRow({ kind, item, protectedRecord, onDelete }) {
         {kind === "users" ? (
           <RoleBadge role={item.role} />
         ) : kind === "companies" ? (
-          <span className="text-[var(--muted)]">NIT {item.nit}</span>
+          <span className="text-[var(--muted)]">
+            {item.source_kind === "external" ? "Empresa externa" : `NIT ${item.nit}`}
+          </span>
+        ) : item.source_kind === "external" ? (
+          <span className="font-semibold text-[var(--muted)]">
+            Proceso en el sitio de origen
+          </span>
         ) : (
           <span className="font-semibold text-[var(--ink-strong)]">
             {item.applications} postulaciones
@@ -718,8 +754,8 @@ function RecordRow({ kind, item, protectedRecord, onDelete }) {
         {kind === "users"
           ? item.email
           : kind === "companies"
-            ? `${item.jobs} publicadas`
-            : item.skills?.slice(0, 3).join(", ") || "Sin habilidades"}
+            ? `${item.active_jobs} activas de ${item.jobs}`
+            : `${item.status === "active" ? "Activa" : item.status} · ${item.skills?.slice(0, 3).join(", ") || "Sin habilidades"}`}
       </td>
       <td className="px-5 py-4 text-right">
         {protectedRecord ? (

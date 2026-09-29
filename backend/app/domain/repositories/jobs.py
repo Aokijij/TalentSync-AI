@@ -22,7 +22,16 @@ class JobRepository(EntityRepository[Job], Protocol):
 
     def count(self) -> int: ...
 
-    def recent(self) -> list[Job]: ...
+    def admin_page(
+        self,
+        *,
+        offset: int,
+        limit: int,
+        search: str | None = None,
+        scope: str = "platform",
+    ) -> tuple[list[Job], int]: ...
+
+    def count_by_scope(self, scope: str) -> int: ...
 
     def search(
         self,

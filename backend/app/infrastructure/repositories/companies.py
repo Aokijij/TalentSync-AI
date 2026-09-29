@@ -1,4 +1,5 @@
-from sqlalchemy.orm import joinedload
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.infrastructure.database.models import Company, CompanyFollower
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
@@ -29,8 +30,40 @@ class CompanyRepository(SqlAlchemyRepository[Company]):
     def count(self) -> int:
         return self.session.query(Company).count()
 
-    def first_fifty(self) -> list[Company]:
-        return self.session.query(Company).limit(50).all()
+    @staticmethod
+    def _scope(query, scope: str):
+        if scope == "platform":
+            return query.filter(Company.is_external.is_(False))
+        if scope == "external":
+            return query.filter(Company.is_external.is_(True))
+        return query
+
+    def admin_page(
+        self,
+        *,
+        offset: int,
+        limit: int,
+        search: str | None = None,
+        scope: str = "platform",
+    ) -> tuple[list[Company], int]:
+        query = self._scope(self.session.query(Company), scope)
+        if search:
+            pattern = f"%{search.strip()}%"
+            query = query.filter(
+                or_(Company.name.ilike(pattern), Company.nit.ilike(pattern))
+            )
+        total = query.count()
+        items = (
+            query.options(selectinload(Company.jobs))
+            .order_by(Company.name.asc(), Company.id.asc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        return items, total
+
+    def count_by_scope(self, scope: str) -> int:
+        return self._scope(self.session.query(Company), scope).count()
 
     def list_owned(self, owner_id: int | None) -> list[Company]:
         query = self.session.query(Company)

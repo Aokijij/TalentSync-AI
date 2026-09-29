@@ -12,8 +12,13 @@ from app.domain.entities.records import User
 def platform_stats(current_user: User, db: UnitOfWork) -> dict[str, int]:
     return {
         "users": db.users.count(),
+        "candidates": db.users.count_candidates(),
         "companies": db.companies.count(),
+        "platform_companies": db.companies.count_by_scope("platform"),
+        "external_companies": db.companies.count_by_scope("external"),
         "jobs": db.jobs.count(),
+        "platform_jobs": db.jobs.count_by_scope("platform"),
+        "external_jobs": db.jobs.count_by_scope("external"),
         "applications": db.applications.count(),
         "recommendations": db.recommendations.count(),
     }
@@ -113,40 +118,111 @@ def platform_analytics(
     }
 
 
-def list_users(current_user: User, db: UnitOfWork) -> list[dict]:
-    return [
-        {"id": user.id, "name": user.name, "email": user.email, "role": user.role.value}
-        for user in db.users.recent()
-    ]
+def list_users(
+    current_user: User,
+    db: UnitOfWork,
+    *,
+    page: int = 1,
+    page_size: int = 20,
+    search: str | None = None,
+    role: str | None = None,
+) -> dict:
+    users, total = db.users.admin_page(
+        offset=(page - 1) * page_size,
+        limit=page_size,
+        search=search,
+        role=role,
+    )
+    return {
+        "items": [
+            {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "role": user.role.value,
+            }
+            for user in users
+        ],
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+    }
 
 
-def list_admin_companies(current_user: User, db: UnitOfWork) -> list[dict]:
-    return [
-        {
-            "id": company.id,
-            "name": company.name,
-            "nit": company.nit,
-            "description": company.description,
-            "jobs": len(company.jobs),
-            "source_name": company.source_name,
-        }
-        for company in db.companies.first_fifty()
-    ]
+def list_admin_companies(
+    current_user: User,
+    db: UnitOfWork,
+    *,
+    page: int = 1,
+    page_size: int = 20,
+    search: str | None = None,
+    scope: str = "platform",
+) -> dict:
+    companies, total = db.companies.admin_page(
+        offset=(page - 1) * page_size,
+        limit=page_size,
+        search=search,
+        scope=scope,
+    )
+    return {
+        "items": [
+            {
+                "id": company.id,
+                "name": company.name,
+                "nit": company.nit,
+                "description": company.description,
+                "jobs": len(company.jobs),
+                "active_jobs": sum(
+                    job.status == "active" for job in company.jobs
+                ),
+                "source_kind": "external" if company.is_external else "internal",
+                "source_name": company.source_name,
+            }
+            for company in companies
+        ],
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+    }
 
 
-def list_admin_jobs(current_user: User, db: UnitOfWork) -> list[dict]:
-    return [
-        {
-            "id": job.id,
-            "title": job.title,
-            "company_id": job.company_id,
-            "salary": job.salary,
-            "skills": job.skills,
-            "applications": len(job.applications),
-            "source_name": job.source_name,
-        }
-        for job in db.jobs.recent()
-    ]
+def list_admin_jobs(
+    current_user: User,
+    db: UnitOfWork,
+    *,
+    page: int = 1,
+    page_size: int = 20,
+    search: str | None = None,
+    scope: str = "platform",
+) -> dict:
+    jobs, total = db.jobs.admin_page(
+        offset=(page - 1) * page_size,
+        limit=page_size,
+        search=search,
+        scope=scope,
+    )
+    return {
+        "items": [
+            {
+                "id": job.id,
+                "title": job.title,
+                "company_id": job.company_id,
+                "company_name": job.company.name if job.company else None,
+                "salary": job.salary,
+                "skills": job.skills,
+                "applications": len(job.applications)
+                if job.source_kind == "internal"
+                else None,
+                "status": job.status,
+                "source_kind": job.source_kind,
+                "source_name": job.source_name,
+            }
+            for job in jobs
+        ],
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+    }
 
 
 def delete_admin_job(job_id: int, current_user: User, db: UnitOfWork) -> None:

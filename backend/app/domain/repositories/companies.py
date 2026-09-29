@@ -13,7 +13,16 @@ class CompanyRepository(EntityRepository[Company], Protocol):
 
     def count(self) -> int: ...
 
-    def first_fifty(self) -> list[Company]: ...
+    def admin_page(
+        self,
+        *,
+        offset: int,
+        limit: int,
+        search: str | None = None,
+        scope: str = "platform",
+    ) -> tuple[list[Company], int]: ...
+
+    def count_by_scope(self, scope: str) -> int: ...
 
     def list_owned(self, owner_id: int | None) -> list[Company]: ...
 

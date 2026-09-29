@@ -1,4 +1,4 @@
-"""Create an idempotent private company workspace for product presentations."""
+"""Create an idempotent, public Bancolombia workspace for product presentations."""
 
 import argparse
 import json
@@ -132,9 +132,25 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             session.flush()
         elif owner.role != UserRole.COMPANY:
             raise ValueError("El correo ya pertenece a una cuenta que no es empresa")
-        owner.name = name
+        owner.name = "Bancolombia"
 
-        company = session.query(Company).filter(Company.nit == SHOWCASE_NIT).first()
+        owned_company = (
+            session.query(Company)
+            .filter(Company.owner_user_id == owner.id)
+            .order_by(Company.id.asc())
+            .first()
+        )
+        showcase_company = (
+            session.query(Company).filter(Company.nit == SHOWCASE_NIT).first()
+        )
+        company = owned_company or showcase_company
+        duplicate_company = (
+            showcase_company
+            if owned_company is not None
+            and showcase_company is not None
+            and showcase_company.id != owned_company.id
+            else None
+        )
         company_values = {
             "owner_user_id": owner.id,
             "name": "Bancolombia",
@@ -147,7 +163,7 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             "values": ["Integridad", "Cercanía", "Innovación", "Sostenibilidad"],
             "benefits": ["Trabajo híbrido", "Formación continua", "Bienestar", "Beneficios financieros"],
             "is_external": False,
-            "source_name": "TalentSync Showcase",
+            "source_name": "TalentSync",
         }
         if company is None:
             company = Company(nit=SHOWCASE_NIT, **company_values)
@@ -163,7 +179,10 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             external_id = f"showcase-job-{index + 1}"
             job = (
                 session.query(Job)
-                .filter(Job.source_name == "TalentSync Showcase", Job.external_id == external_id)
+                .filter(
+                    Job.source_kind == "internal",
+                    Job.external_id == external_id,
+                )
                 .first()
             )
             analysis = text_processor.analyze_job(f"{title} {description} {requirements}")
@@ -178,7 +197,7 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                 "modality": "hybrid" if index % 2 == 0 else "remote",
                 "employment_type": "full_time",
                 "sector": sector,
-                "status": "paused",
+                "status": "active",
                 "benefits": company.benefits,
                 "pipeline_stages": PIPELINE,
                 "languages": [],
@@ -209,7 +228,7 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                 "skills": skills,
                 "embedding": analysis.embedding,
                 "source_kind": "internal",
-                "source_name": "TalentSync Showcase",
+                "source_name": "TalentSync",
                 "external_id": external_id,
                 "external_url": None,
                 "created_at": now - timedelta(days=10 + index * 5),
@@ -224,6 +243,16 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                 for key, value in values.items():
                     setattr(job, key, value)
             jobs.append(job)
+
+        if duplicate_company is not None:
+            session.flush()
+            remaining_jobs = (
+                session.query(Job)
+                .filter(Job.company_id == duplicate_company.id)
+                .count()
+            )
+            if remaining_jobs == 0:
+                session.delete(duplicate_company)
 
         candidates: list[User] = []
         for index, (candidate_name, profession, skills, years) in enumerate(CANDIDATES):

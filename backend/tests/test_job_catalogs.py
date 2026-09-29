@@ -29,7 +29,7 @@ def test_jsearch_maps_full_description_and_structured_skills(monkeypatch):
                 "data": {
                     "jobs": [{
                         "job_id": "real-101",
-                        "job_title": "Analista de información",
+                        "job_title": "Analista de información - $3.200.000",
                         "employer_name": "Empresa real",
                         "job_location": "Bogotá, Colombia",
                         "job_description": "Descripción completa de la oportunidad.",
@@ -58,6 +58,8 @@ def test_jsearch_maps_full_description_and_structured_skills(monkeypatch):
     assert captured["key"] == "private-key"
     assert captured["timeout"] == 25
     assert result.jobs[0].skills == ("excel", "power bi", "sql", "python")
+    assert result.jobs[0].title == "Analista de información"
+    assert result.jobs[0].salary == "3200000"
     assert result.jobs[0].remote is True
     assert result.jobs[0].published_at.year == 2026
     assert result.jobs[0].requirements == "Experiencia analizando información."

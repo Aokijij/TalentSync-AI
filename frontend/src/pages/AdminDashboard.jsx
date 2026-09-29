@@ -20,7 +20,7 @@ import { PageHeader } from "../components/PageHeader.jsx";
 
 const metricConfig = [
   { key: "users", label: "Usuarios registrados", icon: UsersRound },
-  { key: "companies", label: "Empresas activas", icon: Building2 },
+  { key: "platform_companies", label: "Empresas en TalentSync", icon: Building2 },
   { key: "active_jobs", label: "Vacantes activas", icon: BriefcaseBusiness },
   {
     key: "conversion_rate",

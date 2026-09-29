@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.domain.entities.catalog import CatalogJob, CatalogPage
 from app.domain.entities.enums import UserRole
-from app.infrastructure.database.models import Job, User
+from app.infrastructure.database.models import Company, Job, User
 from app.infrastructure.database.session import Base, get_db
 from app.infrastructure.nlp import resumes
 from app.infrastructure.security.jwt import create_access_token
@@ -992,9 +992,9 @@ def test_admin_overview_and_deletion(client):
         len(client.get("/api/v1/admin/analytics", headers=headers).json()["timeline"])
         == 14
     )
-    assert len(client.get("/api/v1/admin/users", headers=headers).json()) == 2
-    assert client.get("/api/v1/admin/companies", headers=headers).json() == []
-    assert client.get("/api/v1/admin/jobs", headers=headers).json() == []
+    assert len(client.get("/api/v1/admin/users", headers=headers).json()["items"]) == 2
+    assert client.get("/api/v1/admin/companies", headers=headers).json()["items"] == []
+    assert client.get("/api/v1/admin/jobs", headers=headers).json()["items"] == []
     assert (
         client.delete(f"/api/v1/admin/users/{user['id']}", headers=headers).status_code
         == 400
@@ -1005,6 +1005,60 @@ def test_admin_overview_and_deletion(client):
         ).status_code
         == 204
     )
+
+
+def test_admin_separates_platform_and_external_catalogs(client):
+    admin, _ = register(client, "scope-admin")
+    company_user, company_headers = company_account(client, "scope-company")
+    with client.session_factory() as session:
+        session.get(User, admin["id"]).role = UserRole.ADMIN
+        external_company = Company(
+            owner_user_id=admin["id"],
+            name="Fuente externa",
+            nit="EXT-SCOPE-1",
+            is_external=True,
+            source_name="JSearch",
+        )
+        session.add(external_company)
+        session.flush()
+        session.add(
+            Job(
+                company_id=external_company.id,
+                title="Oferta externa",
+                description="Descripción externa completa.",
+                requirements="Tres habilidades verificables.",
+                source_kind="external",
+                source_name="JSearch",
+                external_id="scope-external-1",
+            )
+        )
+        session.commit()
+    create_job(client, company_headers)
+    headers = {
+        "Authorization": f"Bearer {create_access_token(str(admin['id']), 'admin')}"
+    }
+
+    platform_companies = client.get(
+        "/api/v1/admin/companies?scope=platform", headers=headers
+    ).json()
+    external_companies = client.get(
+        "/api/v1/admin/companies?scope=external", headers=headers
+    ).json()
+    platform_jobs = client.get(
+        "/api/v1/admin/jobs?scope=platform", headers=headers
+    ).json()
+    external_jobs = client.get(
+        "/api/v1/admin/jobs?scope=external", headers=headers
+    ).json()
+
+    assert platform_companies["total"] == 1
+    assert platform_companies["items"][0]["name"] == "scope-company"
+    assert external_companies["total"] == 1
+    assert external_companies["items"][0]["source_kind"] == "external"
+    assert platform_jobs["total"] == 1
+    assert platform_jobs["items"][0]["applications"] == 0
+    assert external_jobs["total"] == 1
+    assert external_jobs["items"][0]["applications"] is None
 
 
 def test_admin_imports_external_jobs_without_duplicates(client):

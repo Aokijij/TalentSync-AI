@@ -125,8 +125,10 @@ export function JobDetailPage() {
               <span className="flex items-center gap-1">
                 <CircleDollarSign size={16} />
                 {job.salary
-                  ? `$${job.salary.toLocaleString("es-CO")}`
-                  : "A convenir"}
+                  ? `$${job.salary.toLocaleString("es-CO")} COP`
+                  : job.source_kind === "external"
+                    ? "Salario no informado"
+                    : "A convenir"}
               </span>
               {job.sector ? (
                 <span className="rounded-full border border-[var(--line)] bg-[var(--surface-subtle)] px-2.5 py-1 text-xs font-semibold text-[var(--ink-strong)]">

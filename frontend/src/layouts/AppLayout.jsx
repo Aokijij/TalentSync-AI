@@ -148,6 +148,7 @@ function Navigation({ linksForRole, unreadNotifications, onNavigate }) {
 export function AppLayout() {
   const { user, logout } = useAuth();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [organizationName, setOrganizationName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const copy = roleCopy[user.role] ?? roleCopy.candidate;
   const visibleLinks = links.filter((link) => link.roles.includes(user.role));
@@ -172,6 +173,17 @@ export function AppLayout() {
       );
   }, [user.role]);
 
+  useEffect(() => {
+    if (user.role !== "company") {
+      setOrganizationName("");
+      return;
+    }
+    api
+      .get("/companies/me")
+      .then(({ data }) => setOrganizationName(data.name || ""))
+      .catch(() => setOrganizationName(""));
+  }, [user.role]);
+
   const closeMenu = () => setMenuOpen(false);
 
   return (
@@ -179,7 +191,7 @@ export function AppLayout() {
       className={`role-${user.role} min-h-screen bg-[var(--canvas)] text-[var(--ink-strong)]`}
     >
       <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-[var(--sidebar-border)] px-4 py-5 lg:flex">
-        <Brand copy={copy} user={user} />
+        <Brand copy={copy} user={user} displayName={organizationName} />
         <div className="mt-8">
           <Navigation
             linksForRole={visibleLinks}
@@ -214,7 +226,7 @@ export function AppLayout() {
             onClick={closeMenu}
           />
           <aside className="app-sidebar relative flex h-full w-[min(19rem,86vw)] flex-col p-4">
-            <Brand copy={copy} user={user} />
+            <Brand copy={copy} user={user} displayName={organizationName} />
             <div className="mt-8">
               <Navigation
                 linksForRole={visibleLinks}
@@ -236,12 +248,14 @@ export function AppLayout() {
   );
 }
 
-function Brand({ copy, user }) {
+function Brand({ copy, user, displayName }) {
   return (
     <div>
       <BrandLogo className="px-2" tone="inverse" />
       <div className="mt-7 rounded-xl border border-white/15 bg-black/10 px-3 py-3">
-        <p className="truncate text-sm font-bold text-white">{user.name}</p>
+        <p className="truncate text-sm font-bold text-white">
+          {displayName || user.name}
+        </p>
         <p className="mt-1 text-xs text-[var(--sidebar-muted)]">{copy.label}</p>
       </div>
     </div>

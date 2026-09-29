@@ -18,4 +18,11 @@ class UserRepository(EntityRepository[User], Protocol):
 
     def creation_dates(self) -> list[datetime]: ...
 
-    def recent(self) -> list[User]: ...
+    def admin_page(
+        self,
+        *,
+        offset: int,
+        limit: int,
+        search: str | None = None,
+        role: str | None = None,
+    ) -> tuple[list[User], int]: ...

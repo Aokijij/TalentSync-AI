@@ -47,21 +47,16 @@ COMPANIES = (
     ("Costa Azul Turismo", "Turismo y hoteleria", "Santa Marta", "Magdalena"),
 )
 
-ROLES = (
+COMMON_ROLES = (
     (
         "Analista de operaciones",
         ["operaciones", "excel", "indicadores", "mejora continua", "trabajo en equipo"],
         "coordinar la operación diaria, consolidar indicadores y proponer mejoras medibles",
     ),
     (
-        "Ejecutivo de cuenta",
-        ["ventas", "negociación", "crm", "servicio al cliente", "comunicación"],
-        "acompañar clientes, identificar oportunidades y hacer seguimiento a compromisos comerciales",
-    ),
-    (
-        "Analista de información",
+        "Analista de datos de negocio",
         ["análisis de datos", "excel", "sql", "power bi", "comunicación"],
-        "transformar datos del negocio en reportes claros para apoyar decisiones oportunas",
+        "convertir datos operativos en tableros y recomendaciones comprensibles para los equipos",
     ),
     (
         "Coordinador de proyectos",
@@ -73,22 +68,86 @@ ROLES = (
         ["servicio al cliente", "comunicación", "resolución de problemas", "crm", "calidad"],
         "analizar necesidades de usuarios y diseñar soluciones sencillas para mejorar su experiencia",
     ),
-    (
-        "Profesional de talento humano",
-        ["recursos humanos", "selección", "entrevistas", "bienestar", "comunicación"],
-        "acompañar procesos de selección, desarrollo y bienestar de los equipos",
-    ),
-    (
-        "Líder de calidad",
-        ["aseguramiento de calidad", "auditoría", "indicadores", "mejora continua", "liderazgo"],
-        "asegurar el cumplimiento de estándares y liderar planes de mejora sostenibles",
-    ),
-    (
-        "Auxiliar administrativo",
-        ["organización", "excel", "gestión documental", "servicio al cliente", "trabajo en equipo"],
-        "apoyar la gestión documental, el seguimiento de solicitudes y la organización del área",
-    ),
 )
+
+SECTOR_ROLES = {
+    "Tecnologia y software": (
+        ("Desarrollador frontend", ["javascript", "react", "html", "css", "git"], "crear interfaces accesibles, rápidas y fáciles de mantener"),
+        ("Desarrollador backend", ["python", "api rest", "sql", "docker", "git"], "construir servicios seguros e integrar datos entre productos digitales"),
+        ("Analista de calidad de software", ["testing", "qa", "automatización", "api rest", "comunicación"], "diseñar pruebas y prevenir defectos antes de cada lanzamiento"),
+        ("Especialista de soporte tecnológico", ["soporte técnico", "linux", "redes", "servicio al cliente", "documentación"], "resolver incidentes y documentar soluciones para usuarios internos"),
+    ),
+    "Salud y bienestar": (
+        ("Profesional de enfermería", ["enfermería", "atención al paciente", "seguridad del paciente", "historias clínicas", "comunicación"], "brindar atención segura y acompañar el plan de cuidado de cada paciente"),
+        ("Auxiliar de admisiones en salud", ["admisiones", "servicio al paciente", "facturación", "excel", "comunicación"], "orientar pacientes y gestionar autorizaciones y registros de ingreso"),
+        ("Auditor de calidad clínica", ["auditoría clínica", "calidad", "normatividad en salud", "indicadores", "análisis de datos"], "evaluar procesos asistenciales y liderar acciones de mejora"),
+        ("Analista de facturación médica", ["facturación en salud", "rips", "excel", "auditoría", "organización"], "validar cuentas médicas y reducir devoluciones y glosas"),
+    ),
+    "Logistica y transporte": (
+        ("Coordinador de logística", ["logística", "distribución", "indicadores", "excel", "liderazgo"], "coordinar despachos y asegurar entregas completas y oportunas"),
+        ("Analista de inventarios", ["inventarios", "excel", "erp", "auditoría", "organización"], "controlar existencias y explicar diferencias de inventario"),
+        ("Planeador de rutas", ["planeación de rutas", "transporte", "geolocalización", "excel", "comunicación"], "diseñar rutas eficientes y monitorear novedades de transporte"),
+        ("Supervisor de bodega", ["bodega", "inventarios", "seguridad industrial", "liderazgo", "mejora continua"], "organizar recibo, almacenamiento y despacho con estándares de seguridad"),
+    ),
+    "Finanzas y banca": (
+        ("Analista de riesgo crediticio", ["riesgo crediticio", "análisis financiero", "excel", "sql", "comunicación"], "analizar solicitudes y sustentar decisiones de crédito responsables"),
+        ("Analista financiero", ["análisis financiero", "presupuestos", "excel", "power bi", "presentaciones"], "preparar proyecciones y explicar variaciones financieras del negocio"),
+        ("Profesional de cumplimiento", ["cumplimiento", "sarlaft", "gestión de riesgos", "auditoría", "comunicación"], "analizar alertas y documentar controles regulatorios"),
+        ("Asesor de servicios financieros", ["servicio al cliente", "productos financieros", "ventas", "crm", "comunicación"], "orientar clientes y ofrecer soluciones financieras según sus necesidades"),
+    ),
+    "Construccion e ingenieria": (
+        ("Ingeniero residente de obra", ["supervisión de obra", "presupuestos", "autocad", "liderazgo", "seguridad industrial"], "coordinar la ejecución de obra y controlar alcance, calidad y tiempos"),
+        ("Modelador BIM", ["bim", "revit", "autocad", "planos", "trabajo en equipo"], "desarrollar modelos coordinados y detectar interferencias de diseño"),
+        ("Coordinador de seguridad y salud", ["sst", "seguridad industrial", "inspecciones", "normatividad", "capacitación"], "prevenir riesgos y acompañar prácticas seguras en campo"),
+        ("Analista de costos y presupuestos", ["presupuestos", "apu", "excel", "costos", "planeación"], "elaborar presupuestos y controlar desviaciones de costos de proyectos"),
+    ),
+    "Educacion": (
+        ("Docente de educación media", ["pedagogía", "planeación de clases", "evaluación", "comunicación", "trabajo en equipo"], "diseñar experiencias de aprendizaje y acompañar el progreso de estudiantes"),
+        ("Coordinador académico", ["gestión académica", "liderazgo", "currículo", "indicadores", "comunicación"], "coordinar planes académicos y fortalecer las prácticas docentes"),
+        ("Orientador escolar", ["orientación escolar", "psicología educativa", "convivencia", "comunicación", "trabajo en equipo"], "acompañar el bienestar y la convivencia de la comunidad educativa"),
+        ("Diseñador de aprendizaje virtual", ["diseño instruccional", "moodle", "creación de contenido", "evaluación", "tecnología educativa"], "crear cursos virtuales claros, participativos y medibles"),
+    ),
+    "Ventas y comercio": (
+        ("Ejecutivo de cuenta", ["ventas consultivas", "negociación", "crm", "servicio al cliente", "comunicación"], "desarrollar relaciones comerciales y cumplir metas de crecimiento"),
+        ("Asesor comercial", ["ventas", "servicio al cliente", "negociación", "comunicación", "orientación a resultados"], "entender necesidades y recomendar soluciones adecuadas a cada cliente"),
+        ("Analista CRM", ["crm", "análisis de datos", "excel", "segmentación", "marketing"], "analizar el comportamiento de clientes y mejorar campañas comerciales"),
+        ("Especialista de éxito del cliente", ["customer success", "servicio al cliente", "retención", "crm", "comunicación"], "acompañar la adopción del servicio y prevenir cancelaciones"),
+    ),
+    "Manufactura": (
+        ("Supervisor de producción", ["producción", "liderazgo", "indicadores", "seguridad industrial", "mejora continua"], "coordinar turnos y cumplir el plan de producción con seguridad y calidad"),
+        ("Técnico de mantenimiento", ["mantenimiento industrial", "electricidad", "mecánica", "diagnóstico", "seguridad industrial"], "realizar mantenimiento preventivo y resolver fallas de equipos"),
+        ("Analista de calidad", ["control de calidad", "auditoría", "metrología", "indicadores", "mejora continua"], "verificar especificaciones y gestionar acciones correctivas"),
+        ("Ingeniero de procesos", ["ingeniería de procesos", "lean manufacturing", "indicadores", "excel", "optimización"], "reducir desperdicios y mejorar capacidad y estabilidad de los procesos"),
+    ),
+    "Turismo y hoteleria": (
+        ("Recepcionista de hotel", ["recepción", "servicio al cliente", "reservas", "inglés", "comunicación"], "recibir huéspedes y resolver solicitudes durante su estadía"),
+        ("Agente de reservas", ["reservas", "servicio al cliente", "ventas", "inglés", "sistemas hoteleros"], "gestionar reservas y orientar viajeros sobre servicios disponibles"),
+        ("Coordinador de alimentos y bebidas", ["alimentos y bebidas", "liderazgo", "costos", "servicio al cliente", "manipulación de alimentos"], "coordinar el servicio y controlar calidad, inventarios y costos"),
+        ("Operador de experiencias turísticas", ["turismo", "logística", "servicio al cliente", "inglés", "comunicación"], "organizar experiencias seguras y memorables para visitantes"),
+    ),
+    "Recursos humanos": (
+        ("Profesional de selección", ["selección", "entrevistas", "reclutamiento", "comunicación", "excel"], "gestionar procesos de selección y acompañar candidatos y líderes"),
+        ("Generalista de talento humano", ["recursos humanos", "bienestar", "relaciones laborales", "comunicación", "organización"], "acompañar el ciclo de vida de colaboradores y resolver solicitudes laborales"),
+        ("Analista de nómina", ["nómina", "seguridad social", "excel", "legislación laboral", "organización"], "liquidar novedades y asegurar pagos correctos y oportunos"),
+        ("Analista de cultura y desarrollo", ["cultura organizacional", "capacitación", "indicadores", "comunicación", "gestión del cambio"], "diseñar iniciativas de aprendizaje, cultura y compromiso"),
+    ),
+    "Marketing y publicidad": (
+        ("Especialista de contenidos", ["creación de contenido", "redacción", "seo", "redes sociales", "analítica digital"], "crear contenidos útiles y medir su aporte a los objetivos de marca"),
+        ("Analista de medios digitales", ["publicidad digital", "google ads", "meta ads", "analítica digital", "excel"], "optimizar campañas pagadas según resultados y audiencias"),
+        ("Diseñador gráfico", ["diseño gráfico", "illustrator", "photoshop", "identidad visual", "creatividad"], "desarrollar piezas visuales coherentes para campañas y productos"),
+        ("Analista de investigación de mercados", ["investigación de mercados", "encuestas", "análisis de datos", "excel", "presentaciones"], "convertir hallazgos de clientes y mercado en recomendaciones accionables"),
+    ),
+    "Retail y consumo masivo": (
+        ("Administrador de tienda", ["retail", "liderazgo", "ventas", "inventarios", "servicio al cliente"], "liderar la operación de tienda y cumplir metas de venta y experiencia"),
+        ("Planeador de inventarios", ["planeación de demanda", "inventarios", "excel", "erp", "análisis de datos"], "proyectar necesidades de producto y evitar agotados y excesos"),
+        ("Analista de comercio electrónico", ["ecommerce", "analítica digital", "catálogo de productos", "excel", "marketing"], "mejorar conversión, contenido y operación del canal digital"),
+        ("Especialista de visual merchandising", ["visual merchandising", "diseño", "retail", "planeación", "comunicación"], "diseñar exhibiciones que faciliten la compra y representen la marca"),
+    ),
+}
+
+
+def roles_for(sector: str):
+    return (*SECTOR_ROLES.get(sector, ()), *COMMON_ROLES)
 
 
 def seed_marketplace() -> dict[str, int]:
@@ -145,7 +204,8 @@ def seed_marketplace() -> dict[str, int]:
                 for key, value in company_values.items():
                     setattr(company, key, value)
 
-            for role_index, (title, skills, responsibility) in enumerate(ROLES, 1):
+            roles = roles_for(sector)
+            for role_index, (title, skills, responsibility) in enumerate(roles, 1):
                 external_id = f"market-{company_index:02d}-{role_index:02d}"
                 job = (
                     session.query(Job)
@@ -237,7 +297,7 @@ def seed_marketplace() -> dict[str, int]:
     return {
         "companies": len(COMPANIES),
         "companies_created": companies_created,
-        "jobs": len(COMPANIES) * len(ROLES),
+        "jobs": sum(len(roles_for(sector)) for _, sector, _, _ in COMPANIES),
         "jobs_created": jobs_created,
         "jobs_updated": jobs_updated,
     }

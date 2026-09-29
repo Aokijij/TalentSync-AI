@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.infrastructure.database.models import Job
+from app.infrastructure.database.models import Company, Job
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
@@ -61,8 +61,48 @@ class JobRepository(SqlAlchemyRepository[Job]):
     def count(self) -> int:
         return self.session.query(Job).count()
 
-    def recent(self) -> list[Job]:
-        return self.session.query(Job).order_by(Job.created_at.desc()).limit(50).all()
+    @staticmethod
+    def _scope(query, scope: str):
+        if scope == "platform":
+            return query.filter(Job.source_kind == "internal")
+        if scope == "external":
+            return query.filter(Job.source_kind == "external")
+        return query
+
+    def admin_page(
+        self,
+        *,
+        offset: int,
+        limit: int,
+        search: str | None = None,
+        scope: str = "platform",
+    ) -> tuple[list[Job], int]:
+        query = self._scope(
+            self.session.query(Job).options(
+                joinedload(Job.company), selectinload(Job.applications)
+            ),
+            scope,
+        )
+        if search:
+            pattern = f"%{search.strip()}%"
+            query = query.join(Job.company).filter(
+                or_(
+                    Job.title.ilike(pattern),
+                    Job.description.ilike(pattern),
+                    Company.name.ilike(pattern),
+                )
+            )
+        total = query.count()
+        return (
+            query.order_by(Job.created_at.desc(), Job.id.desc())
+            .offset(offset)
+            .limit(limit)
+            .all(),
+            total,
+        )
+
+    def count_by_scope(self, scope: str) -> int:
+        return self._scope(self.session.query(Job), scope).count()
 
     def search(
         self,

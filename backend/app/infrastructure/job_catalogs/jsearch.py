@@ -99,8 +99,7 @@ class JSearchJobCatalog:
             jobs = []
         return CatalogPage(jobs=jobs[:result_count], total=len(jobs))
 
-    @staticmethod
-    def _map_job(item: dict) -> CatalogJob:
+    def _map_job(self, item: dict) -> CatalogJob:
         employment_types = item.get("job_employment_types") or []
         employment_type = item.get("job_employment_type") or (
             employment_types[0] if employment_types else ""
@@ -111,7 +110,6 @@ class JSearchJobCatalog:
                 [item.get("job_city"), item.get("job_state"), item.get("job_country")],
             )
         )
-        salary = _salary(item)
         highlights = item.get("job_highlights") or {}
         skills = _strings(
             [
@@ -122,9 +120,16 @@ class JSearchJobCatalog:
             ]
         )
         description = _clean(item.get("job_description"))
+        raw_title = _clean(item.get("job_title"))
+        salary = _salary(
+            item,
+            title=raw_title,
+            description=description,
+            country=self._country,
+        )
         return CatalogJob(
             external_id=str(item.get("job_id") or "").strip(),
-            title=_clean(item.get("job_title")),
+            title=_title_without_salary(raw_title),
             company=_clean(item.get("employer_name")) or "Empresa confidencial",
             location=_clean(location),
             description=description,
@@ -163,15 +168,74 @@ def _strings(values: list[object]) -> list[str]:
     )
 
 
-def _salary(item: dict) -> str:
-    salary_string = _clean(item.get("job_salary_string"))
-    if salary_string:
-        return salary_string
+def _salary(
+    item: dict, *, title: str, description: str, country: str
+) -> str:
+    # The database currently stores salary as monthly COP without a currency
+    # column. Do not present USD/EUR values as Colombian pesos.
+    if country.casefold() != "co":
+        return ""
     minimum = item.get("job_min_salary")
     maximum = item.get("job_max_salary")
-    if minimum is not None and maximum is not None:
-        return f"{minimum}-{maximum}"
-    return str(minimum if minimum is not None else maximum or "")
+    period = _clean(item.get("job_salary_period")).casefold()
+    structured = [value for value in (minimum, maximum) if value is not None]
+    if structured:
+        values = [_monthly_cop(float(value), period) for value in structured]
+        return "-".join(str(round(value)) for value in values)
+
+    salary_string = _clean(item.get("job_salary_string"))
+    inferred = _extract_colombian_salary(
+        " ".join(value for value in (salary_string, title, description[:1_200]) if value)
+    )
+    return str(round(inferred)) if inferred is not None else ""
+
+
+def _monthly_cop(value: float, period: str) -> float:
+    if any(term in period for term in ("year", "annual", "año")):
+        return value / 12
+    if any(term in period for term in ("hour", "hora")):
+        return value * 192
+    return value
+
+
+def _extract_colombian_salary(text: str) -> float | None:
+    candidates: list[float] = []
+    for match in re.finditer(
+        r"(?:COP|\$)\s*(\d{7,8})|(?<!\d)(\d{7,8})\s*COP",
+        text,
+        flags=re.IGNORECASE,
+    ):
+        value = float(match.group(1) or match.group(2))
+        if 1_000_000 <= value <= 50_000_000:
+            candidates.append(value)
+    for match in re.finditer(r"(?<!\d)(\d{1,2}(?:[.,]\d{3}){2})(?!\d)", text):
+        value = float(re.sub(r"[.,]", "", match.group(1)))
+        if 1_000_000 <= value <= 50_000_000:
+            candidates.append(value)
+    for match in re.finditer(
+        r"(?<!\d)(\d{1,2}(?:[.,]\d{1,2})?)\s*mill(?:ó|o)?n(?:es)?",
+        text.casefold(),
+    ):
+        value = float(match.group(1).replace(",", ".")) * 1_000_000
+        if 1_000_000 <= value <= 50_000_000:
+            candidates.append(value)
+    return min(candidates) if candidates else None
+
+
+def _title_without_salary(title: str) -> str:
+    cleaned = re.sub(
+        r"(?:\s*[-–|:]?\s*)(?:COP\s*|\$\s*)?\d{1,2}(?:[.,]\d{3}){2}(?:\s*(?:COP|mensuales?|al mes))?",
+        "",
+        title,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"(?:\s*[-–|:]?\s*)\d{1,2}(?:[.,]\d{1,2})?\s*mill(?:ó|o)?n(?:es)?(?:\s*(?:COP|mensuales?|al mes))?",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    return re.sub(r"\s{2,}", " ", cleaned).strip(" -–|:") or title
 
 
 def _date(value: object) -> datetime | None:
