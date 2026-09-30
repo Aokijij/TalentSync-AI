@@ -274,6 +274,7 @@ def seed_marketplace() -> dict[str, int]:
             roles = roles_for(sector)
             for role_index, (title, skills, responsibility) in enumerate(roles, 1):
                 focus = COMPANY_FOCUS[name]
+                skills = [*skills, f"conocimiento en {focus}"]
                 title = specialized_title(title, focus)
                 external_id = f"market-{company_index:02d}-{role_index:02d}"
                 job = (
