@@ -174,23 +174,9 @@ def create_candidate(email: str, password: str) -> dict[str, int | str]:
             application.status = status
             application.pipeline_stage = stage
             application.created_at = now - timedelta(days=index + 2)
-            application.screening_adjustment = 3 if index < 3 else 1
-            application.screening_answers = [
-                {
-                    "question_id": "experience",
-                    "question": "¿Qué experiencia se relaciona con el cargo?",
-                    "type": "open",
-                    "answer": "Seis años liderando analítica, automatización y productos digitales con resultados medibles.",
-                    "reviewer_adjustment": 2,
-                },
-                {
-                    "question_id": "motivation",
-                    "question": "¿Por qué te interesa esta oportunidad?",
-                    "type": "open",
-                    "answer": "Quiero aplicar mi experiencia técnica y de negocio para mejorar decisiones y experiencias de clientes.",
-                    "reviewer_adjustment": 1,
-                },
-            ]
+            questions = job.application_questions or []
+            application.screening_answers = [{"question_id": question["id"], "question": question["prompt"], "type": question.get("type", "open"), "answer": (question.get("options") or ["Seis años liderando analítica, automatización y productos digitales con resultados medibles."])[-1], "reviewer_adjustment": 1 if index < 3 else 0} for question in questions]
+            application.screening_adjustment = sum(item["reviewer_adjustment"] for item in application.screening_answers)
             if index == 0:
                 application.interview_at = now + timedelta(days=3, hours=2)
                 application.recruiter_notes = (

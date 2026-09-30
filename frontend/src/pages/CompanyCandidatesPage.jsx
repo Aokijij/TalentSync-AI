@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Flame, MessageSquareText, Minus, RefreshCw, Search, Send, UserRound, UsersRound, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flame, MessageSquareText, Minus, RefreshCw, Search, Send, UserRound, UsersRound } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { api } from "../api/client.js";
 import { languageLevelLabel } from "../constants/languages.js";
+import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
 
 const PAGE_SIZE = 10;
 
@@ -127,7 +128,7 @@ export function CompanyCandidatesPage() {
       </section>
 
       <button type="button" className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => navigate("/empresa/vacantes")}>← Volver a mis vacantes</button>
-      {selectedCandidate ? <ApplicationSummaryModal candidate={selectedCandidate} onClose={() => setSelectedCandidate(null)} /> : null}
+      <ApplicationAnswersModal application={selectedCandidate} candidateName={selectedCandidate?.name} onClose={() => setSelectedCandidate(null)} onSaved={() => setRefreshKey((value) => value + 1)} />
     </div>
   );
 }
@@ -145,32 +146,6 @@ function CandidateRow({ candidate, job, jobId, inviting, onInvite, onOpenSummary
       <td className="px-5 py-4 text-right">{candidate.has_applied ? <Link className="button-secondary button-sm inline-flex" to={`/empresa/candidatos/${candidate.user_id}?job=${jobId}`}><UserRound size={14} />Ver perfil</Link> : <button type="button" className="button-primary button-sm" disabled={candidate.has_pending_invitation || inviting} onClick={onInvite}><Send size={14} />{candidate.has_pending_invitation ? "Invitación enviada" : inviting ? "Enviando…" : "Invitar"}</button>}</td>
     </tr>
   );
-}
-
-function ApplicationSummaryModal({ candidate, onClose }) {
-  const base = candidate.base_match_percentage ?? candidate.match_percentage;
-  const adjusted = candidate.adjusted_match_percentage ?? base;
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/65 p-4 backdrop-blur-sm">
-      <section role="dialog" aria-modal="true" aria-labelledby="candidate-summary-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">
-        <header className="flex items-start justify-between gap-4"><div><p className="section-kicker">Resumen de postulación</p><h2 id="candidate-summary-title" className="mt-1 text-2xl font-bold">{candidate.name}</h2><p className="mt-1 text-sm text-[var(--muted)]">{candidate.profession || "Perfil profesional"}</p></div><button type="button" className="button-secondary !h-10 !w-10 !p-0" onClick={onClose} aria-label="Cerrar"><X size={18} /></button></header>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <Score label="Antes de preguntas" value={`${Math.round(base)}%`} />
-          <Score label="Ajuste por respuestas" value={`${candidate.screening_adjustment > 0 ? "+" : ""}${candidate.screening_adjustment || 0}`} />
-          <Score label="Compatibilidad final" value={`${Math.round(adjusted)}%`} accent />
-        </div>
-        <div className="mt-5 space-y-3">
-          <h3 className="font-bold">Respuestas enviadas</h3>
-          {candidate.screening_answers?.length ? candidate.screening_answers.map((item, index) => <article key={`${item.question_id}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4"><p className="text-xs font-bold text-[var(--muted)]">{item.question || `Pregunta ${index + 1}`}</p><p className="mt-2 text-sm leading-6 text-[var(--ink-strong)]">{item.answer}</p>{item.reviewer_adjustment ? <p className="mt-2 text-xs font-bold text-[var(--accent)]">Valoración manual: {item.reviewer_adjustment > 0 ? "+" : ""}{item.reviewer_adjustment}</p> : null}</article>) : <p className="rounded-xl bg-[var(--surface-subtle)] p-4 text-sm text-[var(--muted)]">Esta vacante no solicitó preguntas adicionales.</p>}
-        </div>
-        <footer className="mt-6 flex justify-end border-t border-[var(--line)] pt-5"><button type="button" className="button-secondary" onClick={onClose}>Cerrar</button></footer>
-      </section>
-    </div>
-  );
-}
-
-function Score({ label, value, accent = false }) {
-  return <div className={`rounded-xl border p-3 ${accent ? "border-[var(--accent)]/40 bg-[var(--accent)]/10" : "border-[var(--line)] bg-[var(--surface-subtle)]"}`}><p className="text-xs text-[var(--muted)]">{label}</p><strong className={`mt-1 block text-xl ${accent ? "text-[var(--accent)]" : "text-[var(--ink-strong)]"}`}>{value}</strong></div>;
 }
 
 function CandidateHeatmap({ candidates, requiredSkills }) {

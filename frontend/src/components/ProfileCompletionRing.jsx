@@ -3,42 +3,61 @@ import { CheckCircle2, Circle } from "lucide-react";
 const checks = [
   {
     label: "Título profesional",
-    test: (profile) => Boolean(profile?.profession?.trim()),
+    weight: 8,
+    test: (profile) => (profile?.profession?.trim().length ?? 0) >= 5,
   },
   {
-    label: "Datos de contacto",
+    label: "Teléfono, ciudad y departamento",
+    weight: 9,
     test: (profile) =>
-      Boolean(profile?.phone?.trim() && profile?.location?.trim()),
+      Boolean(profile?.phone?.trim() && profile?.location?.trim() && profile?.department?.trim()),
   },
   {
-    label: "3 o más habilidades",
-    test: (profile) => (profile?.skills?.length ?? 0) >= 3,
+    label: "6 habilidades específicas",
+    weight: 12,
+    test: (profile) => (profile?.skills?.length ?? 0) >= 6,
   },
   {
-    label: "Experiencia",
-    test: (profile) =>
-      Boolean(profile?.experience?.trim() || profile?.experiences?.length),
+    label: "Resumen profesional de 120 caracteres",
+    weight: 9,
+    test: (profile) => (profile?.experience?.trim().length ?? 0) >= 120,
   },
   {
-    label: "Formación académica",
-    test: (profile) =>
-      Boolean(profile?.education?.trim() || profile?.educations?.length),
+    label: "2 experiencias completas",
+    weight: 18,
+    test: (profile) => (profile?.experiences || []).filter((item) => item.role?.trim() && item.company?.trim() && item.start_year && (item.description?.trim().length ?? 0) >= 50).length >= 2,
   },
   {
-    label: "Preferencias laborales",
-    test: (profile) =>
-      Boolean(profile?.availability || profile?.preferred_modality),
+    label: "Formación académica completa",
+    weight: 12,
+    test: (profile) => (profile?.educations || []).some((item) => item.degree?.trim() && item.institution?.trim() && item.start_year),
+  },
+  {
+    label: "Curso o certificación",
+    weight: 7,
+    test: (profile) => (profile?.certifications || []).some((item) => item.name?.trim() && item.issuer?.trim()),
+  },
+  {
+    label: "Idioma con nivel",
+    weight: 6,
+    test: (profile) => (profile?.languages?.length ?? 0) >= 1,
+  },
+  {
+    label: "Preferencias laborales completas",
+    weight: 9,
+    test: (profile) => Boolean(profile?.availability && profile?.preferred_modality && profile?.preferred_sector && Number(profile?.desired_salary) > 0),
   },
   {
     label: "Hoja de vida",
-    test: (profile) => Boolean(profile?.cv_filename || profile?.cv_text),
+    weight: 10,
+    test: (profile) => Boolean(profile?.cv_filename && profile?.cv_text),
   },
 ];
 
 export function getProfileCompletion(profile) {
   const completed = checks.filter((item) => item.test(profile));
   return {
-    percentage: Math.round((completed.length / checks.length) * 100),
+    percentage: completed.reduce((sum, item) => sum + item.weight, 0),
     completed: completed.length,
     total: checks.length,
     missing: checks
@@ -100,12 +119,12 @@ export function ProfileCompletionRing({ profile, compact = false }) {
       </div>
       <div className={compact ? "min-w-0" : "mt-3"}>
         <p className="font-bold text-[var(--ink-strong)]">
-          {result.percentage === 100 ? "Perfil estelar" : "Impulsa tu perfil"}
+          {result.percentage === 100 ? "Perfil listo para comparar" : "Fortalece tu perfil"}
         </p>
         <p className="mt-1 text-sm text-[var(--muted)]">
           {result.percentage === 100
-            ? "Tu información está lista para comparar con vacantes."
-            : `Completa ${result.missing[0]?.toLowerCase()} para mejorar tus recomendaciones.`}
+            ? "Incluyes evidencia suficiente para una comparación rigurosa."
+            : `Te falta: ${result.missing.slice(0, 3).join(", ").toLowerCase()}${result.missing.length > 3 ? ` y ${result.missing.length - 3} elemento${result.missing.length - 3 === 1 ? "" : "s"} más` : ""}.`}
         </p>
         {!compact ? (
           <div className="mt-4 space-y-2 text-left">
@@ -121,7 +140,7 @@ export function ProfileCompletionRing({ profile, compact = false }) {
                   ) : (
                     <Circle size={15} />
                   )}
-                  <span>{item.label}</span>
+                  <span>{item.label} · {item.weight}%</span>
                 </div>
               );
             })}

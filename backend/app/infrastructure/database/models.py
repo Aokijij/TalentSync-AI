@@ -182,6 +182,10 @@ class Job(Base):
     application_questions: Mapped[list[dict]] = mapped_column(
         JSON, default=list, server_default="[]", nullable=False
     )
+    required_education_level: Mapped[str | None] = mapped_column(String(40))
+    required_study_fields: Mapped[list[str]] = mapped_column(
+        JSON, default=list, server_default="[]", nullable=False
+    )
     skills: Mapped[list[str]] = mapped_column(JSON, default=list)
     embedding: Mapped[list[float] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(

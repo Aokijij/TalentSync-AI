@@ -11,11 +11,12 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
+import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
 
 const availabilityLabels = {
   immediate: "Inmediata",
@@ -36,8 +37,11 @@ export function CandidateDetailPage() {
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get("job");
   const navigate = useNavigate();
+  const location = useLocation();
   const [candidate, setCandidate] = useState(null);
   const [match, setMatch] = useState(null);
+  const [application, setApplication] = useState(null);
+  const [showAnswers, setShowAnswers] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -56,7 +60,10 @@ export function CandidateDetailPage() {
     Promise.all([profileRequest, matchRequest, applicationRequest])
       .then(([{ data }, candidateMatch, application]) => {
         setCandidate(data);
-        setMatch(application?.adjusted_match_percentage != null ? { ...candidateMatch, match_percentage: application.adjusted_match_percentage, base_match_percentage: application.base_match_percentage, screening_adjustment: application.screening_adjustment } : candidateMatch || null);
+        const base = Number(candidateMatch?.base_match_percentage ?? candidateMatch?.match_percentage ?? application?.base_match_percentage ?? 0);
+        const adjustment = Number(application?.screening_adjustment || 0);
+        setApplication(application ? { ...application, base_match_percentage: base } : null);
+        setMatch(candidateMatch ? { ...candidateMatch, base_match_percentage: base, screening_adjustment: adjustment, match_percentage: Math.max(0, Math.min(100, base + adjustment)) } : null);
       })
       .catch((requestError) =>
         setError(
@@ -70,7 +77,7 @@ export function CandidateDetailPage() {
       <div className="space-y-4">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(location.state?.returnTo || (jobId ? `/empresa/talento?job=${jobId}&audience=applied&min=0` : "/empresa/talento"))}
           className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
         >
           <ArrowLeft size={16} />
@@ -88,17 +95,19 @@ export function CandidateDetailPage() {
     <div className="space-y-6">
       <button
         type="button"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate(location.state?.returnTo || (jobId ? `/empresa/talento?job=${jobId}&audience=applied&min=0` : "/empresa/talento"))}
         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
       >
         <ArrowLeft size={16} />
         Volver a candidatos recomendados
       </button>
-      <section className="page-hero">
+      <section className="surface-card overflow-hidden !p-0">
+        <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] via-cyan-300 to-[var(--success)]" />
+        <div className="p-6 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-start gap-5">
             <CandidatePhoto key={`${userId}:${candidate.photo_url}`} candidate={candidate} />
-            <div>
+            <div className="min-w-0">
               <p className="section-kicker">Perfil de candidato</p>
               <h1 className="mt-2 font-display text-3xl font-semibold text-[var(--ink-strong)]">
                 {candidate.name}
@@ -106,6 +115,7 @@ export function CandidateDetailPage() {
               <p className="mt-2 text-[var(--muted)]">
                 {candidate.profession || "Perfil profesional"}
               </p>
+              {candidate.experience ? <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">{candidate.experience}</p> : null}
               <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                 <span className="inline-flex items-center gap-1.5">
                   <Mail size={15} />
@@ -140,10 +150,12 @@ export function CandidateDetailPage() {
               </p>
               <CompatibilityBar value={match.match_percentage} />
               {match.screening_adjustment ? <p className="mt-2 text-xs text-[var(--muted)]">Base {Math.round(match.base_match_percentage)}% · respuestas {match.screening_adjustment > 0 ? "+" : ""}{match.screening_adjustment} puntos. Este ajuste es privado para la empresa.</p> : null}
+              {application?.screening_answers?.length ? <button type="button" className="button-outline mt-3 w-full" onClick={() => setShowAnswers(true)}>Ver respuestas y valorar</button> : null}
             </div>
           ) : null}
-        </div>
+        </div></div>
       </section>
+      <ApplicationAnswersModal application={showAnswers ? application : null} candidateName={candidate.name} onClose={() => setShowAnswers(false)} onSaved={(updated) => { setApplication(updated); setMatch((current) => current ? { ...current, screening_adjustment: updated.screening_adjustment, match_percentage: updated.adjusted_match_percentage } : current); }} />
       <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-6">
           <Timeline

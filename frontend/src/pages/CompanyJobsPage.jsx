@@ -46,6 +46,8 @@ const NEW_JOB_DEFAULTS = {
   benefits: "",
   languages: [],
   application_questions: [],
+  required_education_level: "",
+  required_study_fields: "",
 };
 
 export function CompanyJobsPage() {
@@ -137,6 +139,8 @@ export function CompanyJobsPage() {
               .map((item) => item.trim())
               .filter(Boolean)
           : (values.benefits ?? []),
+      required_education_level: values.required_education_level || null,
+      required_study_fields: typeof values.required_study_fields === "string" ? values.required_study_fields.split(",").map((item) => item.trim()).filter(Boolean) : (values.required_study_fields || []),
     };
   }
 
@@ -217,6 +221,7 @@ export function CompanyJobsPage() {
       department: job.department || departmentForCity(job.location),
       benefits: (job.benefits || []).join(", "),
       application_questions: questions,
+      required_study_fields: (job.required_study_fields || []).join(", "),
     });
     setShowModal(true);
   }
@@ -493,6 +498,14 @@ export function CompanyJobsPage() {
                   </select>
                 </Field>
               </div>
+              <section className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
+                <h3 className="font-semibold">Formación requerida</h3>
+                <p className="mt-1 text-sm text-[var(--muted)]">Se compara por nivel y por carreras equivalentes; no exige que el título tenga exactamente el mismo nombre.</p>
+                <div className="mt-4 grid gap-4 md:grid-cols-[220px_1fr]">
+                  <Field label="Nivel mínimo"><select className="field-control" {...register("required_education_level")}><option value="">No obligatorio</option><option value="technical">Técnico</option><option value="technologist">Tecnólogo</option><option value="university">Profesional universitario</option><option value="postgraduate">Posgrado</option></select></Field>
+                  <Field label="Carreras o áreas aceptadas"><input className="field-control" placeholder="Ej. Ingeniería de sistemas, software, informática" {...register("required_study_fields")} /><span className="mt-1 block text-xs font-normal">Sepáralas con comas.</span></Field>
+                </div>
+              </section>
               <section className="rounded-xl border border-[var(--line)] p-4"><h3 className="mb-2 font-semibold">Idiomas requeridos</h3><LanguagesEditor value={preview.languages || []} onChange={(value) => setValue("languages", value)} required /></section>
               <ScreeningQuestionsEditor
                 value={preview.application_questions || []}
@@ -604,11 +617,6 @@ function ScreeningQuestionsEditor({ value, onChange }) {
         type: "open",
         required: true,
         options: [],
-        keywords: [],
-        preferred_options: [],
-        option_scores: {},
-        positive_adjustment: 3,
-        negative_adjustment: 0,
       },
     ]);
   return (
@@ -616,7 +624,7 @@ function ScreeningQuestionsEditor({ value, onChange }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold">Preguntas antes de postularse</h3>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">Añade solo las preguntas que ayuden a tomar una decisión. Las respuestas abiertas se revisan manualmente; en las preguntas con opciones puedes indicar cuánto aporta cada respuesta al orden interno.</p>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">Las respuestas se guardan sin alterar la compatibilidad. Después de cada postulación tu equipo decide manualmente si cada respuesta suma, resta o no cambia el puntaje.</p>
         </div>
         <button type="button" className="button-outline button-sm" disabled={value.length >= 10} onClick={add}><Plus size={15} />Agregar pregunta</button>
       </div>
@@ -627,7 +635,7 @@ function ScreeningQuestionsEditor({ value, onChange }) {
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--accent)]/10 text-sm font-bold text-[var(--accent)]">{index + 1}</span>
               <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-[1fr_170px]">
                 <label className="text-sm font-semibold text-[var(--muted)]">Pregunta<input className="field-control mt-1" value={question.prompt} maxLength={300} placeholder="Ej. ¿Tienes disponibilidad para trabajar los sábados?" onChange={(event) => update(index, { prompt: event.target.value })} /></label>
-                <label className="text-sm font-semibold text-[var(--muted)]">Tipo<select className="field-control mt-1" value={question.type} onChange={(event) => update(index, { type: event.target.value, options: [], preferred_options: [], keywords: [], option_scores: {}, positive_adjustment: 3, negative_adjustment: 0 })}><option value="open">Respuesta abierta</option><option value="choice">Elegir una opción</option></select></label>
+                <label className="text-sm font-semibold text-[var(--muted)]">Tipo<select className="field-control mt-1" value={question.type} onChange={(event) => update(index, { type: event.target.value, options: [] })}><option value="open">Respuesta abierta</option><option value="choice">Elegir una opción</option></select></label>
               </div>
               <button type="button" className="button-ghost button-sm !px-2 text-[var(--error)]" onClick={() => remove(index)} aria-label="Eliminar pregunta"><Trash2 size={16} /></button>
             </div>
@@ -649,38 +657,24 @@ function ScreeningQuestionsEditor({ value, onChange }) {
 
 function ChoiceOptions({ question, onChange }) {
   const options = question.options || [];
-  const scoreFor = (option) => {
-    if (question.option_scores && Object.hasOwn(question.option_scores, option)) return Number(question.option_scores[option]);
-    if ((question.preferred_options || []).includes(option)) return Number(question.positive_adjustment ?? 3);
-    return Number(question.negative_adjustment ?? 0);
-  };
   const rename = (position, label) => {
-    const previous = options[position];
     const nextOptions = options.map((option, index) => index === position ? label : option);
-    const nextScores = Object.fromEntries(nextOptions.map((option, index) => [option, index === position ? scoreFor(previous) : scoreFor(option)]).filter(([option]) => option.trim()));
-    onChange({ options: nextOptions, option_scores: nextScores, preferred_options: [], keywords: [] });
+    onChange({ options: nextOptions });
   };
-  const setScore = (option, score) => onChange({ option_scores: { ...(question.option_scores || Object.fromEntries(options.map((item) => [item, scoreFor(item)]))), [option]: Number(score) }, preferred_options: [], keywords: [] });
   const removeOption = (position) => {
-    const removed = options[position];
     const nextOptions = options.filter((_, index) => index !== position);
-    const nextScores = { ...(question.option_scores || {}) };
-    delete nextScores[removed];
-    onChange({ options: nextOptions, option_scores: nextScores, preferred_options: [] });
+    onChange({ options: nextOptions });
   };
   return (
     <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><p className="text-sm font-bold text-[var(--ink-strong)]">Opciones de respuesta</p><p className="mt-1 text-xs leading-5 text-[var(--muted)]">Asigna un efecto solo si la respuesta aporta información objetiva. Cero puntos no cambia el orden.</p></div>
-        <button type="button" className="button-secondary button-sm" disabled={options.length >= 12} onClick={() => onChange({ options: [...options, ""], option_scores: { ...(question.option_scores || {}) } })}><Plus size={14} />Añadir opción</button>
+        <div><p className="text-sm font-bold text-[var(--ink-strong)]">Opciones de respuesta</p><p className="mt-1 text-xs leading-5 text-[var(--muted)]">Aquí solo defines qué puede elegir el candidato. La valoración se hace después de recibir la respuesta.</p></div>
+        <button type="button" className="button-secondary button-sm" disabled={options.length >= 12} onClick={() => onChange({ options: [...options, ""] })}><Plus size={14} />Añadir opción</button>
       </div>
       <div className="mt-3 space-y-2">
         {options.map((option, position) => (
-          <div key={position} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_240px_auto] sm:items-center">
+          <div key={position} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
             <input className="field-control" value={option} maxLength={120} aria-label={`Opción ${position + 1}`} placeholder={`Opción ${position + 1}`} onChange={(event) => rename(position, event.target.value)} />
-            <select className="field-control" aria-label={`Efecto de la opción ${position + 1}`} value={scoreFor(option)} onChange={(event) => setScore(option, event.target.value)}>
-              <option value="5">+5 · Favorece mucho</option><option value="3">+3 · Favorece</option><option value="0">0 · No cambia</option><option value="-3">−3 · Reduce</option><option value="-5">−5 · Reduce mucho</option>
-            </select>
             <button type="button" className="button-ghost button-sm !px-2 text-[var(--error)]" onClick={() => removeOption(position)} aria-label={`Eliminar opción ${position + 1}`}><Trash2 size={15} /></button>
           </div>
         ))}

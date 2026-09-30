@@ -31,29 +31,7 @@ class ScreeningQuestionPublic(BaseModel):
 
 
 class ScreeningQuestionConfig(ScreeningQuestionPublic):
-    keywords: list[str] = Field(default_factory=list, max_length=20)
-    preferred_options: list[str] = Field(default_factory=list, max_length=12)
-    option_scores: dict[str, float] = Field(default_factory=dict, max_length=12)
-    positive_adjustment: float = Field(default=3, ge=0, le=10)
-    negative_adjustment: float = Field(default=-1, ge=-10, le=0)
-
-    @model_validator(mode="after")
-    def validate_scoring(self):
-        if self.type == "choice" and any(
-            option not in self.options for option in self.preferred_options
-        ):
-            raise ValueError("La respuesta preferida debe pertenecer a las opciones")
-        if self.type == "choice" and any(
-            option not in self.options for option in self.option_scores
-        ):
-            raise ValueError("La valoración debe pertenecer a una opción existente")
-        if any(score < -10 or score > 10 for score in self.option_scores.values()):
-            raise ValueError("La valoración de cada opción debe estar entre -10 y 10")
-        if self.type == "open" and self.preferred_options:
-            raise ValueError("Las preguntas abiertas usan palabras clave")
-        if self.type == "open" and self.option_scores:
-            raise ValueError("Las preguntas abiertas no usan valoración automática")
-        return self
+    """Question definition only; recruiters value submitted answers manually."""
 
 
 class PipelineStagesMixin(BaseModel):
@@ -95,6 +73,8 @@ class JobCreate(PipelineStagesMixin):
     application_questions: list[ScreeningQuestionConfig] = Field(
         default_factory=list, max_length=10
     )
+    required_education_level: Literal["technical", "technologist", "university", "postgraduate"] | None = None
+    required_study_fields: list[str] = Field(default_factory=list, max_length=20)
 
     @field_validator("application_questions")
     @classmethod
@@ -131,6 +111,8 @@ class JobUpdate(PipelineStagesMixin):
     application_questions: list[ScreeningQuestionConfig] | None = Field(
         default=None, max_length=10
     )
+    required_education_level: Literal["technical", "technologist", "university", "postgraduate"] | None = None
+    required_study_fields: list[str] | None = Field(default=None, max_length=20)
 
     @field_validator("application_questions")
     @classmethod
@@ -152,6 +134,8 @@ class JobUpdate(PipelineStagesMixin):
 class JobResponse(BaseModel):
     languages: list[LanguageLevel] = Field(default_factory=list)
     application_questions: list[ScreeningQuestionPublic] = Field(default_factory=list)
+    required_education_level: str | None = None
+    required_study_fields: list[str] = Field(default_factory=list)
     id: int
     company_id: int
     company_name: str | None = None

@@ -23,7 +23,7 @@ import {
 import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
 import { CurrencyInput } from "../components/CurrencyInput.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
-import { ProfileCompletionRing } from "../components/ProfileCompletionRing.jsx";
+import { ProfileCompletionRing, getProfileCompletion } from "../components/ProfileCompletionRing.jsx";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { getResumePalette, getResumePalettes } from "../constants/resumePalettes.js";
 import {
@@ -217,6 +217,7 @@ export function ProfilePage() {
             </button>
           </div>
       </section>
+      <p className="print-hidden -mt-3 px-2 text-xs leading-5 text-[var(--muted)]">Al subir un PDF, TalentSync extrae la información y guarda el archivo original de forma privada para que puedas reemplazarlo después. El archivo temporal del análisis se elimina; un nuevo CV reemplaza el anterior.</p>
       {(message || error) && (
         <p
           className={`rounded-[var(--radius-lg)] border px-4 py-3 text-sm ${error ? "border-[var(--error)] bg-[var(--error)]/10 text-[var(--error)]" : "border-[var(--success)] bg-[var(--success)]/10 text-[var(--success)]"}`}
@@ -292,9 +293,10 @@ export function ProfilePage() {
         <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
       ) : (
         <article className="mx-auto max-w-7xl overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
-          <header className="bg-[var(--success)]/10 p-6 sm:p-8">
+          <header className="relative overflow-hidden border-b border-[var(--line)] bg-gradient-to-br from-[var(--accent)]/10 via-[var(--surface)] to-[var(--success)]/10 p-6 sm:p-8">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[var(--accent)] to-[var(--success)]" />
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
+              <div className="min-w-0 flex-1">
                 {editing ? (
                   <label className="mb-3 block max-w-xl text-sm font-semibold text-[var(--muted)]">
                     Nombre completo
@@ -315,12 +317,12 @@ export function ProfilePage() {
                     profile.profession || "Perfil profesional"
                   )}
                 </div>
-                <div className="mt-3 flex flex-wrap gap-4 text-sm text-[var(--muted)]">
-                  <span className="flex items-center gap-1">
+                <div className="mt-5 flex flex-wrap gap-2 text-sm text-[var(--muted)]">
+                  <span className="flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)]/80 px-3 py-2">
                     <Mail size={15} className="text-[var(--muted)]" />
                     {email || "Correo no registrado"}
                   </span>
-                  <span className="flex flex-wrap items-center gap-1">
+                  <span className="flex flex-wrap items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)]/80 px-3 py-2">
                     <MapPin size={15} className="text-[var(--muted)]" />
                     {editing ? (
                       <>
@@ -362,7 +364,7 @@ export function ProfilePage() {
                         .join(", ") || "Ciudad no registrada"
                     )}
                   </span>
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)]/80 px-3 py-2">
                     <Phone size={15} className="text-[var(--muted)]" />
                     {editing ? (
                       <input
@@ -377,8 +379,8 @@ export function ProfilePage() {
                   </span>
                 </div>
               </div>
-              <span className="rounded-full bg-[var(--success)]/20 px-3 py-1.5 text-xs font-semibold text-[var(--success)]">
-                Perfil listo para comparar
+              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${getProfileCompletion(profile).percentage === 100 ? "bg-[var(--success)]/20 text-[var(--success)]" : "bg-[var(--warning)]/15 text-[var(--warning)]"}`}>
+                {getProfileCompletion(profile).percentage === 100 ? "Perfil listo para comparar" : `${getProfileCompletion(profile).percentage}% completo`}
               </span>
             </div>
           </header>

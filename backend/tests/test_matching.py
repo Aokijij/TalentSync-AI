@@ -11,6 +11,7 @@ from app.domain.services.matching import (
     recommendation_reasons,
     required_skill_coverage,
 )
+from app.domain.services.professions import certification_match, education_match, fields_are_related
 
 
 def test_required_skills_are_normalized_and_duplicates_do_not_inflate_score():
@@ -18,6 +19,21 @@ def test_required_skills_are_normalized_and_duplicates_do_not_inflate_score():
         ["Python", "python", "SQL"], ["python", "sql", "Docker", "docker"]
     ) == pytest.approx(200 / 3)
     assert required_skill_coverage(["Python"], []) == 0
+
+
+def test_profession_bank_rejects_cross_domain_degrees_and_accepts_equivalents():
+    software_job = SimpleNamespace(required_education_level="university", required_study_fields=["Ingeniería de Sistemas"])
+    civil_profile = SimpleNamespace(profession="Profesional en construcción", education="Ingeniería Civil", educations=[{"degree": "Ingeniería Civil"}])
+    software_profile = SimpleNamespace(profession="Desarrolladora", education="", educations=[{"degree": "Ingeniería Informática"}])
+    assert education_match(civil_profile, software_job) < 45
+    assert education_match(software_profile, software_job) == 100
+    assert fields_are_related("Tecnología en sistemas", "Ingeniería de software")
+
+
+def test_related_certificates_support_requested_knowledge():
+    profile = SimpleNamespace(certifications=[{"name": "Microsoft Power BI Data Analyst", "issuer": "Microsoft"}])
+    job = SimpleNamespace(skills=["análisis de datos", "power bi"])
+    assert certification_match(profile, job) == 100
     assert required_skill_coverage([], ["Python"]) == 0
 
 
@@ -51,7 +67,7 @@ def test_reason_metadata_order_and_matching_weights_are_stable():
     assert reasons[:2] == ["score:skills:50", "score:context:75"]
     assert "Tu experiencia y profesión se alinean con el cargo" in reasons
     assert "Habilidades que ya cumples: python" in reasons
-    assert "Habilidades por fortalecer: sql" in reasons
+    assert any("acredita experiencia real en sql" in reason for reason in reasons)
     assert combined_match(75, 50) == 60
 
 

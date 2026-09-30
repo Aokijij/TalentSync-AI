@@ -15,6 +15,7 @@ from app.domain.entities.catalog import CatalogJob
 from app.domain.entities.job_sectors import JOB_SECTORS
 from app.domain.entities.records import User
 from app.domain.services.external_sources import external_portal
+from app.domain.services.professions import infer_education_level, infer_study_fields
 
 MAX_IMPORT_ROWS = 2_000
 IMPORT_HEADERS = (
@@ -486,6 +487,8 @@ def _import_rows(
                 "status": "active",
                 "benefits": benefits,
                 "languages": languages,
+                "required_education_level": infer_education_level(f"{title} {requirements}"),
+                "required_study_fields": infer_study_fields(f"{title} {requirements}"),
                 "skills": skills,
                 "embedding": analysis.embedding,
                 "source_kind": "external",
@@ -540,6 +543,10 @@ def _catalog_row(
     job: CatalogJob, *, source_name: str, max_age_days: int
 ) -> dict[str, object]:
     city, department = _location_parts(job.location)
+    colombian_departments = {"amazonas", "antioquia", "arauca", "atlantico", "bogota d.c.", "bolivar", "boyaca", "caldas", "caqueta", "casanare", "cauca", "cesar", "choco", "cordoba", "cundinamarca", "guainia", "guaviare", "huila", "la guajira", "magdalena", "meta", "narino", "norte de santander", "putumayo", "quindio", "risaralda", "san andres y providencia", "santander", "sucre", "tolima", "valle del cauca", "vaupes", "vichada"}
+    if job.remote and _key(department).replace("_", " ") not in colombian_departments and "colombia" not in _key(job.location):
+        department = "Remoto internacional"
+        city = city or "Internacional"
     text = f"{job.title} {job.description}".casefold()
     published_at = job.published_at or datetime.utcnow()
     expires_at = min(

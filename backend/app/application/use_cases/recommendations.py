@@ -80,7 +80,7 @@ def ranked_candidates(
                 user_id=user.id,
                 name=user.name,
                 profession=user.profile.profession,
-                match_percentage=percentage,
+                match_percentage=(max(0.0, min(100.0, percentage + (application.screening_adjustment or 0))) if application else percentage),
                 skills=user.profile.skills or [],
                 languages=user.profile.languages or [],
                 experience_years=years,

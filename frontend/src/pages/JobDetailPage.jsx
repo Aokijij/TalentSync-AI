@@ -281,6 +281,7 @@ export function JobDetailPage() {
               </p>
             ) : null}
           </div>
+          {(job.required_education_level || job.required_study_fields?.length) ? <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="font-semibold">Formación requerida</h2><p className="mt-2 text-sm text-[var(--muted)]">Nivel: {{ technical: "Técnico", technologist: "Tecnólogo", university: "Profesional universitario", postgraduate: "Posgrado" }[job.required_education_level] || "No especificado"}</p>{job.required_study_fields?.length ? <div className="mt-3 flex flex-wrap gap-2">{job.required_study_fields.map((field) => <span key={field} className="rounded-lg border border-[var(--line)] px-2 py-1 text-xs">{field}</span>)}</div> : null}<p className="mt-2 text-xs leading-5 text-[var(--muted)]">También se reconocen títulos equivalentes del mismo campo profesional.</p></div> : null}
           <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="mb-3 font-semibold">Idiomas y nivel mínimo</h2><LanguagesEditor value={job.languages || []} editing={false} required /></div>
           {user?.role === "candidate" ? (
             <>

@@ -15,6 +15,7 @@ from app.infrastructure.database.session import SessionLocal
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 from app.infrastructure.nlp.text_processor import text_processor
 from app.infrastructure.security.passwords import hash_password
+from app.domain.services.professions import infer_study_fields
 
 SHOWCASE_NIT = "TS-SHOWCASE-001"
 PIPELINE = [
@@ -108,7 +109,36 @@ JOBS = (
         "Experiencia en cumplimiento, gestión de riesgos, análisis de información y elaboración de informes.",
         "Finanzas y banca",
     ),
+    (
+        "Líder de analítica digital y datos",
+        ["análisis de datos", "sql", "power bi", "python", "gestión de proyectos", "scrum"],
+        "Ingeniera de sistemas con experiencia transformando datos y necesidades del negocio en productos digitales medibles. Liderará tableros financieros, automatizaciones e integraciones con SQL, Python, Power BI y Scrum.",
+        "Profesional en Ingeniería de Sistemas. Experiencia como líder de analítica digital, gestión de proyectos y productos de datos con SQL, Power BI, Python y Scrum. Se valoran certificaciones técnicas relacionadas.",
+        "Analitica y ciencia de datos",
+    ),
 )
+
+QUESTION_CONTEXTS = {
+    "experiencia del cliente": "Cuéntanos una mejora de servicio que hayas medido y qué indicador cambió.",
+    "selección": "Describe cómo validas competencias y reduces sesgos durante una entrevista.",
+    "operaciones": "¿Cómo investigarías una desviación en un indicador operativo crítico?",
+    "ejecutivo": "Cuéntanos cómo diagnosticas una necesidad antes de presentar una propuesta comercial.",
+    "información financiera": "Describe un tablero o análisis que haya cambiado una decisión de negocio.",
+    "proyectos": "Cuéntanos cómo gestionaste un riesgo que amenazaba el alcance o la fecha de un proyecto.",
+    "riesgo crediticio": "¿Qué señales revisarías antes de emitir un concepto de riesgo crediticio?",
+    "ciberseguridad": "Describe cómo priorizarías y comunicarías la atención de un incidente de seguridad.",
+    "desarrollador": "Cuéntanos una integración API que hayas diseñado, probado o mantenido.",
+    "cumplimiento": "Describe cómo documentarías el análisis y cierre de una alerta de cumplimiento.",
+    "analítica digital": "Cuéntanos un producto de datos que hayas liderado y el resultado medible obtenido.",
+}
+
+
+def questions_for_job(title: str, index: int) -> list[dict]:
+    key = next((name for name in QUESTION_CONTEXTS if name in title.casefold()), "")
+    return [
+        {"id": f"experience_{index}", "prompt": f"¿Qué nivel de experiencia tienes en las funciones de {title}?", "type": "choice", "required": True, "options": ["Estoy iniciando", "Entre 1 y 3 años", "Más de 3 años"]},
+        {"id": f"evidence_{index}", "prompt": QUESTION_CONTEXTS.get(key, "Cuéntanos un logro verificable relacionado con este cargo."), "type": "open", "required": True, "options": []},
+    ]
 
 CANDIDATES = (
     (
@@ -402,34 +432,9 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                 "benefits": company.benefits,
                 "pipeline_stages": PIPELINE,
                 "languages": [],
-                "application_questions": [
-                    {
-                        "id": "relevant_experience",
-                        "prompt": "¿Cuánta experiencia tienes en funciones relacionadas con este cargo?",
-                        "type": "choice",
-                        "required": True,
-                        "options": [
-                            "Menos de un año",
-                            "Entre 1 y 3 años",
-                            "Más de 3 años",
-                        ],
-                        "option_scores": {
-                            "Menos de un año": -1,
-                            "Entre 1 y 3 años": 2,
-                            "Más de 3 años": 4,
-                        },
-                    },
-                    {
-                        "id": "motivation",
-                        "prompt": "Cuéntanos por qué te interesa trabajar en el sector financiero.",
-                        "type": "open",
-                        "required": False,
-                        "options": [],
-                        "keywords": ["servicio", "innovación", "aprendizaje"],
-                        "positive_adjustment": 2,
-                        "negative_adjustment": 0,
-                    },
-                ],
+                "application_questions": questions_for_job(title, index),
+                "required_education_level": "university" if index in {1, 4, 5, 6, 7, 8, 9, 10} else "technologist",
+                "required_study_fields": (["Ingeniería de Sistemas"] if title == "Líder de analítica digital y datos" else infer_study_fields(f"{title} {requirements}")),
                 "skills": skills,
                 "embedding": analysis.embedding,
                 "source_kind": "internal",
@@ -591,23 +596,24 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             application.status = status
             application.pipeline_stage = stage
             application.created_at = now - timedelta(days=index + 1)
+            configured_questions = job.application_questions or questions_for_job(job.title, CANDIDATE_JOB_INDEXES[index])
             application.screening_answers = [
                 {
-                    "question_id": "relevant_experience",
-                    "question": "¿Cuánta experiencia tienes en funciones relacionadas con este cargo?",
+                    "question_id": configured_questions[0]["id"],
+                    "question": configured_questions[0]["prompt"],
                     "type": "choice",
                     "answer": "Entre 1 y 3 años" if index % 2 else "Más de 3 años",
-                    "reviewer_adjustment": 0,
+                    "reviewer_adjustment": 1 if index % 2 == 0 else 0,
                 },
                 {
-                    "question_id": "motivation",
-                    "question": "Cuéntanos por qué te interesa trabajar en el sector financiero.",
+                    "question_id": configured_questions[1]["id"],
+                    "question": configured_questions[1]["prompt"],
                     "type": "open",
-                    "answer": "Me interesa aportar desde el servicio, aprender y participar en iniciativas de innovación.",
-                    "reviewer_adjustment": 0,
+                    "answer": f"En mi experiencia apliqué {', '.join(candidate.profile.skills[:3])} y documenté resultados verificables para el equipo.",
+                    "reviewer_adjustment": 1 if index % 2 == 0 else 0,
                 },
             ]
-            application.screening_adjustment = 4 if index % 2 == 0 else 2
+            application.screening_adjustment = 2 if index % 2 == 0 else 0
             upsert_recommendation(
                 uow,
                 candidate,

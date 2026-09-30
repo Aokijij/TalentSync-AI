@@ -13,6 +13,7 @@ from app.domain.services.matching import (
     required_skill_coverage,
 )
 from app.domain.services.skills import skill_set
+from app.domain.services.professions import certification_match, education_match
 
 
 def candidate_match(profile, job, *, nlp):
@@ -20,19 +21,18 @@ def candidate_match(profile, job, *, nlp):
     context_score = professional_context_alignment(profile, job, raw_semantic)
     skill_score = required_skill_coverage(profile.skills, job.skills)
     language_score = language_coverage(profile, job)
-    percentage = combined_match(context_score, skill_score, language_score)
+    education_score = education_match(profile, job)
+    certification_score = certification_match(profile, job)
+    percentage = combined_match(context_score, skill_score, language_score, education_score, certification_score)
     confidence = 100.0
     if getattr(job, "source_kind", "internal") == "external":
         confidence = external_data_confidence(job)
-        if language_score is not None:
-            percentage = skill_score * 0.6 + context_score * 0.3 + language_score * 0.1
-        else:
-            percentage = skill_score * 0.7 + context_score * 0.3
+        percentage = combined_match(context_score, skill_score, language_score, education_score, certification_score)
         # A short provider summary must never look as certain as a complete
         # TalentSync vacancy. Low data quality only lowers the score.
         percentage *= 0.75 + confidence / 400
         percentage = round(min(100.0, percentage), 2)
-    return percentage, context_score, skill_score, language_score, confidence
+    return percentage, context_score, skill_score, language_score, confidence, education_score, certification_score
 
 
 def external_data_confidence(job) -> float:
@@ -53,7 +53,7 @@ def upsert_recommendation(
 ) -> Recommendation:
     if user.profile is None:
         raise ValueError("El candidato no tiene perfil profesional")
-    percentage, context_score, skill_score, language_score, confidence = candidate_match(
+    percentage, context_score, skill_score, language_score, confidence, education_score, certification_score = candidate_match(
         user.profile, job, nlp=nlp
     )
     recommendation = db.recommendations.find_for_user_job(user.id, job.id)
@@ -65,7 +65,7 @@ def upsert_recommendation(
     recommendation.match_percentage = percentage
     recommendation.created_at = datetime.utcnow()
     recommendation.reasons = recommendation_reasons(
-        user.profile, job, semantic=context_score, skill_score=skill_score
+        user.profile, job, semantic=context_score, skill_score=skill_score, education_score=education_score, certification_score=certification_score
     )
     if language_score is not None:
         available = {item["name"]: item["level"] for item in user.profile.languages or []}
@@ -161,6 +161,10 @@ def rank_candidates_for_job(
     ranked: list[tuple[User, float]] = []
     for user in users:
         if user.profile:
-            percentage, _, _, _, _ = candidate_match(user.profile, job, nlp=nlp)
+            recommendation = upsert_recommendation(
+                db, user, job, nlp=nlp, commit_result=False
+            )
+            percentage = recommendation.match_percentage
             ranked.append((user, percentage))
+    db.commit()
     return sorted(ranked, key=lambda item: item[1], reverse=True)

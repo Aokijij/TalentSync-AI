@@ -1,20 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BriefcaseBusiness, Check, RefreshCw, Search, Send, UsersRound } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import { api, getApiErrorMessage } from "../api/client.js";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { matchingSkills, searchTalent } from "../utils/talentSearch.js";
 import { languageLevelLabel } from "../constants/languages.js";
+import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
 
 export function CompanyTalentPage() {
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
-  const [selectedJobId, setSelectedJobId] = useState("");
+  const [selectedJobId, setSelectedJobId] = useState(searchParams.get("job") || "");
   const [candidates, setCandidates] = useState([]);
-  const [query, setQuery] = useState("");
-  const [audience, setAudience] = useState("new");
-  const [minMatch, setMinMatch] = useState(50);
+  const [query, setQuery] = useState(searchParams.get("query") || "");
+  const [audience, setAudience] = useState(searchParams.get("audience") || "new");
+  const [minMatch, setMinMatch] = useState(Number(searchParams.get("min") ?? 50));
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [loading, setLoading] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -22,7 +25,15 @@ export function CompanyTalentPage() {
   const [message, setMessage] = useState("");
   const [invitation, setInvitation] = useState(null);
   const [sending, setSending] = useState(false);
+  const [reviewApplication, setReviewApplication] = useState(null);
   const selectedJob = jobs.find((job) => String(job.id) === selectedJobId);
+
+  useEffect(() => {
+    const next = { audience, min: String(minMatch) };
+    if (selectedJobId) next.job = selectedJobId;
+    if (query) next.query = query;
+    setSearchParams(next, { replace: true });
+  }, [audience, minMatch, query, selectedJobId, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -129,7 +140,7 @@ export function CompanyTalentPage() {
             <>
               <p className="px-1 text-sm text-[var(--muted)]">{results.length} {results.length === 1 ? "persona" : "personas"} {audience === "new" ? "para invitar" : results.length === 1 ? "que ya se postuló" : "que ya se postularon"}</p>
               <div className="grid gap-4 lg:grid-cols-2">
-                {results.map((candidate) => <TalentCard key={candidate.user_id} candidate={candidate} job={selectedJob} sending={sending} onInvite={() => setInvitation(candidate)} />)}
+                {results.map((candidate) => <TalentCard key={candidate.user_id} candidate={candidate} job={selectedJob} sending={sending} returnTo={`${location.pathname}${location.search}`} onInvite={() => setInvitation(candidate)} onReview={() => setReviewApplication(candidate)} />)}
               </div>
               {!results.length ? <div className="surface-card !py-10 text-center"><UsersRound className="mx-auto text-[var(--accent)]" size={30} /><h3 className="mt-3 font-bold">{audience === "new" ? "No hay personas para invitar con estos filtros" : "No hay postulaciones con estos filtros"}</h3><p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">{audience === "new" ? "Prueba otra búsqueda o revisa a las personas que ya se postularon. Los nuevos candidatos deben tener al menos 50% de coincidencia para recibir una invitación." : "Prueba otra búsqueda o selecciona cualquier porcentaje para ver todas las postulaciones."}</p><button type="button" className="button-secondary mt-4" onClick={() => { setQuery(""); setMinMatch(audience === "new" ? 50 : 0); }}>Limpiar filtros</button></div> : null}
               {audience === "new" && results.length ? <p className="px-1 text-xs leading-5 text-[var(--muted)]">El perfil completo estará disponible si la persona se postula. La invitación no inicia una contratación.</p> : null}
@@ -139,11 +150,12 @@ export function CompanyTalentPage() {
       ) : jobs.length ? <div className="rounded-2xl border border-dashed border-[var(--line)] px-6 py-10 text-center"><Search className="mx-auto text-[var(--accent)]" size={30} /><h2 className="mt-3 text-lg font-bold">Empieza eligiendo una vacante</h2><p className="mt-2 text-sm text-[var(--muted)]">Aquí aparecerán las personas que puedes invitar para ese cargo.</p></div> : null}
 
       <ConfirmModal open={Boolean(invitation)} title="¿Enviar invitación?" description={`${invitation?.name || "Esta persona"} recibirá una notificación para conocer la vacante ${selectedJob?.title || "seleccionada"} y decidir si quiere postularse.`} confirmLabel="Enviar invitación" loading={sending} onConfirm={sendInvitation} onClose={() => { if (!sending) setInvitation(null); }} />
+      <ApplicationAnswersModal application={reviewApplication} candidateName={reviewApplication?.name} onClose={() => setReviewApplication(null)} onSaved={() => setRefreshVersion((value) => value + 1)} />
     </div>
   );
 }
 
-function TalentCard({ candidate, job, sending, onInvite }) {
+function TalentCard({ candidate, job, sending, returnTo, onInvite, onReview }) {
   const skills = matchingSkills(candidate.skills, job.skills);
   const initials = candidate.name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("");
   return (
@@ -155,6 +167,7 @@ function TalentCard({ candidate, job, sending, onInvite }) {
       <div className="mt-5 rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
         <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Coincidencia con el cargo</span><strong className="text-xl text-[var(--accent)]">{Math.round(candidate.match_percentage)}%</strong></div>
         <p className="mt-1 text-xs text-[var(--muted)]">Según sus habilidades, experiencia, formación{job.languages?.length ? " e idiomas" : ""}.</p>
+        {candidate.has_applied ? <p className="mt-2 text-xs font-semibold text-[var(--muted)]">Base {Math.round(candidate.base_match_percentage ?? candidate.match_percentage)}% · valoración manual {candidate.screening_adjustment > 0 ? "+" : ""}{candidate.screening_adjustment || 0} · final {Math.round(candidate.match_percentage)}%</p> : null}
       </div>
       <div className="mb-5 mt-4 space-y-3">
         {job.languages?.length ? <div><p className="text-xs font-semibold text-[var(--muted)]">Idiomas para este cargo</p>{job.languages.map((item) => { const actual = candidate.languages?.find((language) => language.name === item.name); return <p key={item.name} className="mt-1 text-xs text-[var(--muted)]"><span className="capitalize font-semibold">{item.name}</span>: solicita {languageLevelLabel(item.level)} · Candidato: {actual ? languageLevelLabel(actual.level) : "sin registrar"}</p>; })}</div> : null}
@@ -162,7 +175,7 @@ function TalentCard({ candidate, job, sending, onInvite }) {
         <div><p className="text-xs font-semibold text-[var(--muted)]">Habilidades que coinciden</p><div className="mt-2 flex flex-wrap gap-2">{skills.length ? skills.slice(0, 4).map((skill) => <span key={skill} className="inline-flex items-center gap-1 rounded-lg border border-[var(--line)] px-2 py-1 text-xs text-[var(--ink-strong)]"><Check size={12} className="text-[var(--success)]" />{skill}</span>) : <p className="text-xs text-[var(--muted)]">La coincidencia se basa en otros aspectos del perfil.</p>}{skills.length > 4 ? <span className="py-1 text-xs text-[var(--muted)]">+{skills.length - 4} más</span> : null}</div></div>
       </div>
       <div className="mt-auto border-t border-[var(--line)] pt-4">
-        {candidate.has_applied ? <Link className="button-secondary w-full" to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil del candidato <ArrowRight size={16} /></Link> : <button type="button" className="button-primary w-full" disabled={candidate.has_pending_invitation || sending || candidate.match_percentage < 50} onClick={onInvite}><Send size={16} />{candidate.has_pending_invitation ? "Invitación enviada" : "Invitar a postularse"}</button>}
+        {candidate.has_applied ? <div className="grid gap-2"><Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil del candidato <ArrowRight size={16} /></Link>{candidate.screening_answers?.length ? <button type="button" className="button-outline w-full" onClick={onReview}>Ver respuestas y valorar</button> : null}</div> : <button type="button" className="button-primary w-full" disabled={candidate.has_pending_invitation || sending || candidate.match_percentage < 50} onClick={onInvite}><Send size={16} />{candidate.has_pending_invitation ? "Invitación enviada" : "Invitar a postularse"}</button>}
         <p className="mt-2 text-center text-xs text-[var(--muted)]">{candidate.has_applied ? "Ya puedes consultar su perfil completo." : candidate.has_pending_invitation ? "Estamos esperando que decida si desea postularse." : "Le enviaremos la vacante. Tú decides después a quién contratar."}</p>
       </div>
     </article>

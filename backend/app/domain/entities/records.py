@@ -99,6 +99,8 @@ class Job(Protocol):
     pipeline_stages: list[dict] | None
     languages: list[dict]
     application_questions: list[dict]
+    required_education_level: str | None
+    required_study_fields: list[str]
     skills: list[str]
     embedding: list[float] | None
     created_at: datetime
