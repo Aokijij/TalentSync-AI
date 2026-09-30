@@ -29,3 +29,10 @@ export function externalPortal(job) {
   );
   return locationMatch?.[1]?.trim() || "el sitio de la empresa";
 }
+
+export function cleanExternalLocation(value) {
+  return String(value || "")
+    .split(/\s*[•|]\s*(?:a través de|via)\s+/i)[0]
+    .trim()
+    .replace(/[\s,|•-]+$/, "");
+}

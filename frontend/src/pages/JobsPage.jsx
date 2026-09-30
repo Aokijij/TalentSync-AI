@@ -28,7 +28,7 @@ import {
 } from "../constants/colombianCities.js";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { formatRelativeTime, isWithinDays } from "../utils/dates.js";
-import { externalPortal } from "../utils/externalPortal.js";
+import { cleanExternalLocation, externalPortal } from "../utils/externalPortal.js";
 
 const modalityLabel = {
   remote: "Remoto",
@@ -86,7 +86,15 @@ export function JobsPage() {
         recommendationsResponse,
         profileResponse,
       ]) => {
-        setJobs(jobsResponse.data);
+        setJobs(
+          jobsResponse.data.map((job) => ({
+            ...job,
+            location:
+              job.source_kind === "external"
+                ? cleanExternalLocation(job.location)
+                : job.location,
+          })),
+        );
         setApplications(applicationsResponse.data);
         setMatches(
           Object.fromEntries(

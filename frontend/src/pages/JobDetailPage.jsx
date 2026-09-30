@@ -21,7 +21,7 @@ import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { StructuredJobText } from "../components/StructuredJobText.jsx";
 import { formatRelativeTime } from "../utils/dates.js";
-import { externalPortal } from "../utils/externalPortal.js";
+import { cleanExternalLocation, externalPortal } from "../utils/externalPortal.js";
 
 export function JobDetailPage() {
   const { jobId } = useParams();
@@ -37,8 +37,29 @@ export function JobDetailPage() {
   const [availableJobs, setAvailableJobs] = useState([]);
 
   useEffect(() => {
-    api.get(`/jobs/${jobId}`).then(({ data }) => setJob(data));
-    api.get("/jobs").then(({ data }) => setAvailableJobs(data)).catch(() => setAvailableJobs([]));
+    api.get(`/jobs/${jobId}`).then(({ data }) =>
+      setJob({
+        ...data,
+        location:
+          data.source_kind === "external"
+            ? cleanExternalLocation(data.location)
+            : data.location,
+      }),
+    );
+    api
+      .get("/jobs")
+      .then(({ data }) =>
+        setAvailableJobs(
+          data.map((item) => ({
+            ...item,
+            location:
+              item.source_kind === "external"
+                ? cleanExternalLocation(item.location)
+                : item.location,
+          })),
+        ),
+      )
+      .catch(() => setAvailableJobs([]));
     if (user?.role === "candidate") {
       api
         .post(`/jobs/${jobId}/match`)
@@ -228,7 +249,11 @@ export function JobDetailPage() {
               <div className="min-w-0 flex-1">
                 <p className="section-kicker">Conoce a la empresa</p>
                 <h2 className="mt-1 text-lg font-bold">{job.company_name}</h2>
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--muted)]">{job.company_description || "La empresa todavía no ha publicado una descripción completa."}</p>
+                <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
+                  {job.source_kind === "external"
+                    ? `Empresa con una oportunidad publicada en ${externalPortal(job)}.`
+                    : job.company_description || "La empresa todavía no ha publicado una descripción completa."}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--muted)]">{job.company_location ? <span>{job.company_location}</span> : null}{job.company_size ? <span>{job.company_size}</span> : null}</div>
                 <div className="mt-4 flex flex-wrap gap-2"><Link className="button-outline button-sm" to={user?.role === "company" ? "/empresa/perfil" : `/empresas/${job.company_id}`}>{user?.role === "company" ? "Ir a mi perfil" : "Ver perfil completo"}</Link>{job.company_website ? <a className="button-ghost button-sm" href={job.company_website} target="_blank" rel="noreferrer">Sitio web <ExternalLink size={14} /></a> : null}</div>
               </div>
