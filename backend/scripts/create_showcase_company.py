@@ -116,6 +116,27 @@ JOBS = (
         "Profesional en Ingeniería de Sistemas. Experiencia como líder de analítica digital, gestión de proyectos y productos de datos con SQL, Power BI, Python y Scrum. Se valoran certificaciones técnicas relacionadas.",
         "Analitica y ciencia de datos",
     ),
+    (
+        "Especialista en financiación sostenible",
+        ["sostenibilidad", "análisis financiero", "gestión ambiental", "indicadores", "comunicación"],
+        "Diseñar y hacer seguimiento a iniciativas de financiación verde que conecten resultados financieros con impacto ambiental verificable.",
+        "Profesional en economía, finanzas, ingeniería ambiental o áreas afines. Experiencia con indicadores ESG, evaluación financiera y elaboración de informes.",
+        "Agricultura y medio ambiente",
+    ),
+    (
+        "Diseñador de educación financiera digital",
+        ["diseño instruccional", "educación financiera", "comunicación", "contenido digital", "analítica"],
+        "Crear experiencias de aprendizaje claras para que personas y empresas tomen mejores decisiones financieras en canales digitales.",
+        "Profesional en educación, comunicación, diseño o áreas afines. Experiencia creando contenidos formativos y midiendo resultados de aprendizaje.",
+        "Educacion",
+    ),
+    (
+        "Abogado de protección de datos y tecnología",
+        ["protección de datos", "derecho tecnológico", "cumplimiento", "gestión de riesgos", "redacción jurídica"],
+        "Asesorar productos digitales en privacidad, tratamiento de datos y cumplimiento, traduciendo obligaciones legales en controles aplicables.",
+        "Profesional en Derecho con experiencia en protección de datos, contratos tecnológicos, conceptos jurídicos y gestión de riesgos.",
+        "Legal",
+    ),
 )
 
 QUESTION_CONTEXTS = {
@@ -130,6 +151,9 @@ QUESTION_CONTEXTS = {
     "desarrollador": "Cuéntanos una integración API que hayas diseñado, probado o mantenido.",
     "cumplimiento": "Describe cómo documentarías el análisis y cierre de una alerta de cumplimiento.",
     "analítica digital": "Cuéntanos un producto de datos que hayas liderado y el resultado medible obtenido.",
+    "financiación sostenible": "Describe cómo evaluarías el impacto financiero y ambiental de una iniciativa verde.",
+    "educación financiera": "Cuéntanos una experiencia de aprendizaje que hayas diseñado y cómo mediste su efectividad.",
+    "protección de datos": "Describe cómo convertirías una obligación de privacidad en un control operativo verificable.",
 }
 
 
@@ -433,7 +457,7 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                 "pipeline_stages": PIPELINE,
                 "languages": [],
                 "application_questions": questions_for_job(title, index),
-                "required_education_level": "university" if index in {1, 4, 5, 6, 7, 8, 9, 10} else "technologist",
+                "required_education_level": "university" if index in {1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13} else "technologist",
                 "required_study_fields": (["Ingeniería de Sistemas"] if title == "Líder de analítica digital y datos" else infer_study_fields(f"{title} {requirements}")),
                 "skills": skills,
                 "embedding": analysis.embedding,
