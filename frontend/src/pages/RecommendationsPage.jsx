@@ -29,6 +29,9 @@ export function RecommendationsPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [externalJob, setExternalJob] = useState(null);
+  const [sourceFilter, setSourceFilter] = useState(
+    () => localStorage.getItem("talentsync_recommendation_source") || "all",
+  );
   const [minCompatibility, setMinCompatibility] = useState(() => {
     const saved = Number(localStorage.getItem("talentsync_recommendation_min"));
     return [40, 50, 60, 70, 80, 90].includes(saved) ? saved : 40;
@@ -75,8 +78,16 @@ export function RecommendationsPage() {
   );
 
   const enriched = useRecommendations(recommendations, minCompatibility, false);
-  const pages = totalPages(enriched, pageSize);
-  const visibleRecommendations = pageItems(enriched, page, pageSize);
+  const filteredRecommendations = useMemo(
+    () =>
+      enriched.filter((item) => {
+        if (sourceFilter === "all") return true;
+        return jobsById.get(item.job_id)?.source_kind === sourceFilter;
+      }),
+    [enriched, jobsById, sourceFilter],
+  );
+  const pages = totalPages(filteredRecommendations, pageSize);
+  const visibleRecommendations = pageItems(filteredRecommendations, page, pageSize);
 
   useEffect(() => {
     setPage((current) => Math.min(current, pages));
@@ -87,6 +98,12 @@ export function RecommendationsPage() {
     setMinCompatibility(next);
     setPage(1);
     localStorage.setItem("talentsync_recommendation_min", String(next));
+  }
+
+  function changeSource(value) {
+    setSourceFilter(value);
+    setPage(1);
+    localStorage.setItem("talentsync_recommendation_source", value);
   }
 
   const appliedJobIds = useMemo(
@@ -163,20 +180,22 @@ export function RecommendationsPage() {
                 </p>
               </div>
             </div>
-            <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">
-              Recomendar desde
-              <select
-                className="field-control input-sm w-24"
-                value={minCompatibility}
-                onChange={(event) => changeMinimum(event.target.value)}
-              >
-                {[40, 50, 60, 70, 80, 90].map((value) => (
-                  <option key={value} value={value}>
-                    {value}%
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="flex flex-wrap gap-2">
+              <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">
+                Origen
+                <select className="field-control input-sm w-36" value={sourceFilter} onChange={(event) => changeSource(event.target.value)}>
+                  <option value="all">Todas</option>
+                  <option value="internal">TalentSync</option>
+                  <option value="external">Externas</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">
+                Recomendar desde
+                <select className="field-control input-sm w-24" value={minCompatibility} onChange={(event) => changeMinimum(event.target.value)}>
+                  {[40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}
+                </select>
+              </label>
+            </div>
           </div>
 
           <div className="divide-y divide-[var(--line)]">
@@ -307,22 +326,22 @@ export function RecommendationsPage() {
               );
             })}
 
-            {enriched.length === 0 ? (
+            {filteredRecommendations.length === 0 ? (
               <div className="px-5 py-10 text-center text-[var(--muted)]">
                 <Sparkles
                   size={20}
                   className="mx-auto mb-3 text-[var(--accent)]"
                 />
-                No hay vacantes que alcancen el {minCompatibility}% de
-                compatibilidad. Puedes reducir el porcentaje o completar mejor
-                tu experiencia y habilidades.
+                No hay vacantes de este origen que alcancen el {minCompatibility}%
+                de compatibilidad. Puedes cambiar el origen, reducir el porcentaje
+                o completar mejor tu experiencia y habilidades.
               </div>
             ) : null}
           </div>
-          {enriched.length > pageSize ? (
+          {filteredRecommendations.length > pageSize ? (
             <nav className="flex flex-col gap-3 border-t border-[var(--line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between" aria-label="Paginación de recomendaciones">
               <p className="text-sm text-[var(--muted)]">
-                Mostrando {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, enriched.length)} de {enriched.length}
+                Mostrando {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredRecommendations.length)} de {filteredRecommendations.length}
               </p>
               <div className="flex items-center gap-2">
                 <button type="button" className="button-secondary button-sm" disabled={page === 1} onClick={() => setPage((current) => current - 1)}><ChevronLeft size={15} />Anterior</button>

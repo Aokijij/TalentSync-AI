@@ -215,6 +215,26 @@ def _company_nit(source: str, name: str) -> str:
     return f"EXT-{digest}"
 
 
+def listing_fingerprint(
+    company: str,
+    title: str,
+    location: str | None,
+    department: str | None = None,
+) -> tuple[str, str, str, str]:
+    """Stable identity for an advertised role, independent of aggregator IDs."""
+    def identity_part(value: object) -> str:
+        return (
+            _key(value)
+            .replace("s_a_s", "sas")
+            .replace("s_a", "sa")
+            .replace("l_t_d_a", "ltda")
+        )
+
+    return tuple(
+        identity_part(value) for value in (company, title, location, department)
+    )
+
+
 def template_csv() -> bytes:
     output = io.StringIO()
     writer = csv.writer(output)
@@ -285,8 +305,7 @@ def sync_job_catalog(
         raise UseCaseError(
             status_code=404,
             detail=(
-                f"{source_name} no encontró vacantes para esa búsqueda "
-                "y ubicación."
+                f"{source_name} no encontró vacantes para esa búsqueda y ubicación."
             ),
         )
     result = _import_rows(
@@ -325,6 +344,20 @@ def _import_rows(
     created = updated = companies_created = 0
     errors: list[dict[str, object]] = []
     seen_keys: set[tuple[str, str]] = set()
+    seen_listings: set[tuple[str, str, str, str]] = set()
+    existing_listings: dict[tuple[str, str, str, str], object] = {}
+    for existing in db.jobs.external_listings():
+        fingerprint = listing_fingerprint(
+            existing.company.name if existing.company else "",
+            existing.title,
+            existing.location,
+            existing.department,
+        )
+        current = existing_listings.get(fingerprint)
+        if current is None or (
+            current.status != "active" and existing.status == "active"
+        ):
+            existing_listings[fingerprint] = existing
     now = datetime.utcnow()
     modality_map = {
         "remoto": "remote",
@@ -379,9 +412,7 @@ def _import_rows(
                 and published_at is not None
                 and published_at < now - timedelta(days=max_age_days)
             ):
-                raise ValueError(
-                    f"La vacante supera {max_age_days} días de antigüedad"
-                )
+                raise ValueError(f"La vacante supera {max_age_days} días de antigüedad")
             expires_at = _date(row.get("fecha_vencimiento"), "fecha_vencimiento")
             if expires_at and expires_at < now:
                 raise ValueError("La fecha de vencimiento ya pasó")
@@ -394,6 +425,14 @@ def _import_rows(
                 "full_time",
                 "tipo_contrato",
             )
+            location = _text(row, "ciudad") or None
+            department = _text(row, "departamento") or None
+            fingerprint = listing_fingerprint(company_name, title, location, department)
+            if fingerprint in seen_listings:
+                raise ValueError(
+                    "La misma oferta ya apareció en esta importación, aunque use otro ID"
+                )
+            seen_listings.add(fingerprint)
             explicit_skills = _split(row.get("habilidades"))
             benefits = _split(row.get("beneficios"))
             languages = _languages(row.get("idiomas"))
@@ -439,8 +478,8 @@ def _import_rows(
                 "description": description,
                 "requirements": requirements,
                 "salary": _salary(row.get("salario")),
-                "location": _text(row, "ciudad") or None,
-                "department": _text(row, "departamento") or None,
+                "location": location,
+                "department": department,
                 "modality": modality,
                 "employment_type": employment_type,
                 "sector": sector,
@@ -456,17 +495,13 @@ def _import_rows(
                 "expires_at": expires_at,
                 "last_seen_at": now,
             }
-            job = db.jobs.find_external(source, external_id)
-            if job is None and source == "JSearch":
-                job = db.jobs.find_external_listing(
-                    source,
-                    company.id,
-                    title,
-                    values["location"],
-                )
+            job_by_provider_id = db.jobs.find_external(source, external_id)
+            job = existing_listings.get(fingerprint) or job_by_provider_id
             if job is None:
                 job = db.jobs.new(**values, created_at=published_at or now)
                 db.add(job)
+                db.flush()
+                existing_listings[fingerprint] = job
                 created += 1
             else:
                 # JSearch can publish one listing through several aggregators.
@@ -478,6 +513,7 @@ def _import_rows(
                     setattr(job, key, value)
                 if published_at:
                     job.created_at = published_at
+                existing_listings[fingerprint] = job
                 updated += 1
         except ValueError as error:
             errors.append({"row": row_number, "detail": str(error)})
@@ -535,9 +571,7 @@ def _catalog_row(
         "habilidades": "|".join(job.skills),
         "beneficios": "|".join(job.benefits),
         "sitio_empresa": job.company_url,
-        "descripcion_empresa": (
-            f"Empresa con una oportunidad publicada en {portal}."
-        ),
+        "descripcion_empresa": (f"Empresa con una oportunidad publicada en {portal}."),
     }
 
 

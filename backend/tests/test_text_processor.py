@@ -36,6 +36,26 @@ def test_extracts_cross_sector_skills_from_short_job_catalog_summaries():
     )
 
 
+def test_extracts_richer_technical_and_business_competencies():
+    result = text_processor.analyze_job(
+        "Liderará arquitectura de software y microservicios RESTful con Azure DevOps, "
+        "pruebas automatizadas y visualización de datos. Requiere experiencia de cliente, "
+        "gestión de stakeholders y comunicación efectiva."
+    )
+
+    assert {
+        "arquitectura de software",
+        "microservicios",
+        "api rest",
+        "azure devops",
+        "pruebas automatizadas",
+        "visualización de datos",
+        "experiencia de cliente",
+        "gestión de stakeholders",
+        "comunicación efectiva",
+    } <= set(result.skills)
+
+
 def test_extracts_environmental_cv_with_professional_experience_format():
     cv = """
     Ingeniera ambiental

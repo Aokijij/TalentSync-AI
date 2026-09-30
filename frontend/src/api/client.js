@@ -15,6 +15,33 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config ?? {};
+    const status = error.response?.status;
+    const method = String(config.method ?? "get").toLowerCase();
+    const retryable =
+      method === "get" &&
+      !config.__talentsyncRetried &&
+      !config.__skipRetry &&
+      (!error.response || [502, 503, 504].includes(status));
+
+    if (retryable) {
+      config.__talentsyncRetried = true;
+      return api(config);
+    }
+
+    const token = localStorage.getItem("talentsync_token");
+    const isLogin = /\/auth\/(?:admin\/)?login$/.test(config.url ?? "");
+    if (status === 401 && token && !isLogin) {
+      localStorage.removeItem("talentsync_token");
+      window.dispatchEvent(new CustomEvent("talentsync:session-expired"));
+    }
+    return Promise.reject(error);
+  },
+);
+
 export function getApiErrorMessage(
   error,
   fallback = "Ocurrió un error inesperado",

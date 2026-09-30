@@ -1,6 +1,5 @@
 import re
 import unicodedata
-from difflib import SequenceMatcher
 
 import numpy as np
 from sklearn.feature_extraction.text import HashingVectorizer
@@ -291,6 +290,115 @@ SKILL_ALIAS_PATTERNS = {
     "reclutamiento": (r"\breclutamiento\b", r"\breclutador(?:a|es|as)?\b"),
 }
 
+# Vocabulario transversal detectado tanto en hojas de vida como en vacantes. Las
+# entradas son competencias concretas; se evitan sustantivos genéricos como
+# "apoyo" o "gestión" que producirían compatibilidades artificialmente altas.
+COMMON_SKILLS.update(
+    {
+        "accessibilidad web",
+        "administración de bases de datos",
+        "análisis de negocio",
+        "análisis estadístico",
+        "arquitectura de software",
+        "auditoría",
+        "azure devops",
+        "banca digital",
+        "biometría",
+        "business intelligence",
+        "cobranza",
+        "comercio exterior",
+        "comunicación efectiva",
+        "control interno",
+        "copilot",
+        "data engineering",
+        "data governance",
+        "databricks",
+        "devops",
+        "diseño de producto",
+        "diseño gráfico",
+        "excel avanzado",
+        "experiencia de cliente",
+        "firebase",
+        "gestión de cartera",
+        "gestión de incidentes",
+        "gestión de proveedores",
+        "gestión de stakeholders",
+        "gestión financiera",
+        "google cloud",
+        "graphql",
+        "investigación de usuarios",
+        "jira",
+        "kotlin",
+        "laravel",
+        "microservicios",
+        "oracle",
+        "power automate",
+        "power apps",
+        "presentaciones ejecutivas",
+        "product management",
+        "protección de datos",
+        "pruebas automatizadas",
+        "pruebas funcionales",
+        "react native",
+        "resolución de problemas",
+        "salesforce",
+        "service design",
+        "sharepoint",
+        "snowflake",
+        "soporte al usuario",
+        "tableau",
+        "terraform",
+        "ux research",
+        "ux/ui",
+        "visualización de datos",
+    }
+)
+
+SKILL_ALIAS_PATTERNS.update(
+    {
+        "api rest": (
+            r"\b(?:api|apis)\s+(?:rest|restful)\b",
+            r"\bservicios?\s+rest\b",
+            r"\brestful\b",
+        ),
+        "business intelligence": (
+            r"\bbusiness\s+intelligence\b",
+            r"\binteligencia\s+de\s+negocios?\b",
+        ),
+        "excel avanzado": (r"\bexcel\s+(?:intermedio[ -]avanzado|avanzado)\b",),
+        "experiencia de cliente": (
+            r"\bexperiencia\s+(?:del?|de la)\s+cliente\b",
+            r"\bcustomer\s+experience\b",
+            r"\bcx\b",
+        ),
+        "gestión de cartera": (
+            r"\b(?:gestion|administracion)\s+de\s+cartera\b",
+            r"\bcartera\s+de\s+clientes\b",
+        ),
+        "gestión de proyectos": (
+            r"\bgestion\s+de\s+proyectos\b",
+            r"\bproject\s+management\b",
+        ),
+        "pruebas automatizadas": (
+            r"\b(?:automatizacion\s+de\s+pruebas|pruebas\s+automatizadas)\b",
+        ),
+        "pruebas funcionales": (r"\b(?:testing|pruebas)\s+funcionales\b",),
+        "resolución de problemas": (
+            r"\b(?:resolucion|solucion)\s+de\s+problemas\b",
+            r"\bproblem[ -]solving\b",
+        ),
+        "selección de personal": (
+            r"\bseleccion\s+(?:de\s+personal|por\s+competencias)\b",
+            r"\batraccion\s+de\s+talento\b",
+        ),
+        "soporte técnico": (r"\bsoporte\s+(?:tecnico|de\s+ti)\b", r"\bhelp\s*desk\b"),
+        "visualización de datos": (
+            r"\bvisualizacion\s+de\s+datos\b",
+            r"\bdata\s+visualization\b",
+        ),
+    }
+)
+
 
 class TextProcessor:
     def __init__(self) -> None:
@@ -387,28 +495,11 @@ class TextProcessor:
 
     def extract_skills(self, text: str) -> list[str]:
         clean = self.fold_text(text)
-        tokens = clean.split()
         found = []
         for skill in sorted(COMMON_SKILLS):
             folded_skill = self.fold_text(skill)
             if re.search(
-                rf"(?<![\w+#.]){re.escape(folded_skill)}(?![\w+#.])", clean, re.I
-            ):
-                found.append(skill)
-                continue
-            # Font maps sometimes lose a single accented vowel (gesti�n -> gestin).
-            # A conservative fuzzy pass recovers long domain terms without turning
-            # arbitrary CV prose into skills.
-            skill_tokens = folded_skill.split()
-            if len(folded_skill) < 7:
-                continue
-            windows = (
-                " ".join(tokens[index : index + len(skill_tokens)])
-                for index in range(len(tokens) - len(skill_tokens) + 1)
-            )
-            if any(
-                SequenceMatcher(None, folded_skill, window).ratio() >= 0.92
-                for window in windows
+                rf"(?<![\w+#]){re.escape(folded_skill)}(?![\w+#])", clean, re.I
             ):
                 found.append(skill)
         for skill, patterns in SKILL_ALIAS_PATTERNS.items():

@@ -30,6 +30,15 @@ class JobRepository(SqlAlchemyRepository[Job]):
             self.session.query(Job).filter(Job.source_kind == "external")
         ).all()
 
+    def external_listings(self) -> list[Job]:
+        return (
+            self.session.query(Job)
+            .options(joinedload(Job.company))
+            .filter(Job.source_kind == "external")
+            .order_by(Job.created_at.desc(), Job.id.desc())
+            .all()
+        )
+
     def company_attention_jobs(self, created_before: datetime) -> list[Job]:
         return (
             self._available(

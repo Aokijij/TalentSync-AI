@@ -42,7 +42,13 @@ JOBS = (
     ),
     (
         "Analista de operaciones financieras",
-        ["operaciones", "indicadores", "excel", "riesgo operativo", "trabajo en equipo"],
+        [
+            "operaciones",
+            "indicadores",
+            "excel",
+            "riesgo operativo",
+            "trabajo en equipo",
+        ],
         "Dar seguimiento a la operación financiera diaria, consolidar indicadores y coordinar controles con diferentes equipos.",
         "Experiencia en procesos operativos, hojas de cálculo, controles y seguimiento de planes de acción.",
         "Finanzas y banca",
@@ -77,7 +83,13 @@ JOBS = (
     ),
     (
         "Especialista de ciberseguridad",
-        ["ciberseguridad", "gestión de riesgos", "seguridad de la información", "linux", "comunicación"],
+        [
+            "ciberseguridad",
+            "gestión de riesgos",
+            "seguridad de la información",
+            "linux",
+            "comunicación",
+        ],
         "Fortalecer controles de seguridad, analizar alertas y acompañar la gestión de riesgos tecnológicos.",
         "Experiencia en seguridad de la información, análisis de incidentes y documentación de controles.",
         "Tecnologia y software",
@@ -99,34 +111,197 @@ JOBS = (
 )
 
 CANDIDATES = (
-    ("Laura Campos", "Analista de experiencia", ["servicio al cliente", "comunicación", "crm", "excel", "análisis de datos"], 4),
-    ("Andrés Rojas", "Profesional de talento humano", ["selección", "entrevistas", "recursos humanos", "comunicación", "excel"], 5),
-    ("Mariana Vélez", "Analista de operaciones", ["operaciones", "indicadores", "excel", "mejora continua", "trabajo en equipo"], 3),
-    ("Carlos Méndez", "Ejecutivo comercial", ["ventas", "negociación", "crm", "servicio al cliente", "comunicación"], 6),
-    ("Diana Castillo", "Analista de datos", ["análisis de datos", "excel", "sql", "power bi", "comunicación"], 4),
-    ("Felipe Duarte", "Coordinador de proyectos", ["gestión de proyectos", "planeación", "liderazgo", "comunicación", "riesgos"], 7),
-    ("Sara Mejía", "Auxiliar administrativa", ["organización", "excel", "comunicación", "gestión documental"], 2),
-    ("Mateo Torres", "Asesor de servicio", ["servicio al cliente", "resolución de problemas", "comunicación", "trabajo en equipo"], 3),
-    ("Valentina Mora", "Analista comercial", ["ventas", "excel", "negociación", "crm", "análisis de datos"], 4),
-    ("Juan Esteban Ruiz", "Profesional de operaciones", ["operaciones", "logística", "indicadores", "excel", "liderazgo"], 5),
-    ("Natalia Herrera", "Especialista de selección", ["selección", "entrevistas", "bienestar", "recursos humanos", "comunicación"], 6),
-    ("Santiago Peña", "Analista BI", ["power bi", "sql", "excel", "análisis de datos", "presentaciones"], 3),
+    (
+        "Laura Campos",
+        "Analista de experiencia",
+        ["servicio al cliente", "comunicación", "crm", "excel", "análisis de datos"],
+        4,
+    ),
+    (
+        "Andrés Rojas",
+        "Profesional de talento humano",
+        ["selección", "entrevistas", "recursos humanos", "comunicación", "excel"],
+        5,
+    ),
+    (
+        "Mariana Vélez",
+        "Analista de operaciones",
+        ["operaciones", "indicadores", "excel", "mejora continua", "trabajo en equipo"],
+        3,
+    ),
+    (
+        "Carlos Méndez",
+        "Ejecutivo comercial",
+        ["ventas", "negociación", "crm", "servicio al cliente", "comunicación"],
+        6,
+    ),
+    (
+        "Diana Castillo",
+        "Analista de datos",
+        ["análisis de datos", "excel", "sql", "power bi", "comunicación"],
+        4,
+    ),
+    (
+        "Felipe Duarte",
+        "Coordinador de proyectos",
+        ["gestión de proyectos", "planeación", "liderazgo", "comunicación", "riesgos"],
+        7,
+    ),
+    (
+        "Sara Mejía",
+        "Auxiliar administrativa",
+        ["organización", "excel", "comunicación", "gestión documental"],
+        2,
+    ),
+    (
+        "Mateo Torres",
+        "Asesor de servicio",
+        [
+            "servicio al cliente",
+            "resolución de problemas",
+            "comunicación",
+            "trabajo en equipo",
+        ],
+        3,
+    ),
+    (
+        "Valentina Mora",
+        "Analista comercial",
+        ["ventas", "excel", "negociación", "crm", "análisis de datos"],
+        4,
+    ),
+    (
+        "Juan Esteban Ruiz",
+        "Profesional de operaciones",
+        ["operaciones", "logística", "indicadores", "excel", "liderazgo"],
+        5,
+    ),
+    (
+        "Natalia Herrera",
+        "Especialista de selección",
+        ["selección", "entrevistas", "bienestar", "recursos humanos", "comunicación"],
+        6,
+    ),
+    (
+        "Santiago Peña",
+        "Analista BI",
+        ["power bi", "sql", "excel", "análisis de datos", "presentaciones"],
+        3,
+    ),
 )
 
 CANDIDATE_DETAILS = (
-    ("Especialista de experiencia del cliente", "Servicios Cercanos S.A.S.", "Administración de Empresas", "Universidad de Antioquia", "Customer Experience Fundamentals", "CX Academy", "Lideró mejoras en atención que redujeron tiempos de respuesta y fortalecieron la medición de satisfacción."),
-    ("Analista de selección", "Talento Humano Integral", "Psicología", "Universidad CES", "Entrevista por competencias", "LinkedIn Learning", "Gestionó procesos de selección completos, desde la definición del perfil hasta el acompañamiento de ingreso."),
-    ("Analista de operaciones", "Operaciones Confiables", "Tecnología en Gestión Empresarial", "SENA", "Indicadores de gestión", "SENA", "Consolidó indicadores operativos, documentó controles y coordinó planes de mejora con equipos internos."),
-    ("Ejecutivo de cuenta corporativa", "Soluciones Comerciales Andinas", "Mercadeo", "Universidad EAFIT", "Ventas consultivas", "HubSpot Academy", "Desarrolló cuentas empresariales mediante diagnóstico de necesidades, negociación y seguimiento en CRM."),
-    ("Analista de inteligencia de negocio", "Datos y Decisiones S.A.S.", "Ingeniería Industrial", "Universidad Nacional de Colombia", "Microsoft Power BI Data Analyst", "Microsoft", "Construyó tableros financieros y automatizó reportes para facilitar decisiones de líderes comerciales y operativos."),
-    ("Líder de proyectos", "Gestión Estratégica Colombia", "Ingeniería Administrativa", "Universidad Nacional de Colombia", "Scrum Fundamentals", "SCRUMstudy", "Coordinó iniciativas multidisciplinarias, controló riesgos y presentó avances a patrocinadores y equipos de trabajo."),
-    ("Auxiliar de gestión documental", "Archivo Empresarial", "Técnica en Asistencia Administrativa", "SENA", "Gestión documental", "SENA", "Organizó expedientes, validó información y atendió solicitudes internas con precisión y oportunidad."),
-    ("Asesor integral de servicio", "Contacto Positivo", "Tecnología en Gestión de Servicios", "Institución Universitaria Pascual Bravo", "Servicio al cliente", "Coursera", "Resolvió solicitudes multicanal, documentó casos y mejoró la solución en primer contacto."),
-    ("Analista comercial", "Mercados Regionales", "Administración Comercial", "Universidad de Medellín", "CRM para equipos comerciales", "HubSpot Academy", "Analizó oportunidades, preparó propuestas y dio seguimiento a negociaciones usando datos comerciales."),
-    ("Profesional de operaciones", "Logística Urbana", "Ingeniería de Productividad y Calidad", "Politécnico Colombiano", "Lean Operations", "Coursera", "Supervisó procesos, explicó desviaciones y coordinó acciones para cumplir indicadores de calidad y servicio."),
-    ("Especialista de atracción de talento", "Personas y Cultura S.A.S.", "Psicología", "Universidad Pontificia Bolivariana", "Selección basada en datos", "LinkedIn Learning", "Diseñó estrategias de búsqueda, realizó entrevistas y acompañó decisiones de contratación con criterios claros."),
-    ("Analista de datos financieros", "Analítica Aplicada", "Estadística", "Universidad de Antioquia", "SQL for Data Analysis", "DataCamp", "Preparó modelos de datos, tableros en Power BI y análisis ejecutivos para seguimiento financiero."),
+    (
+        "Especialista de experiencia del cliente",
+        "Servicios Cercanos S.A.S.",
+        "Administración de Empresas",
+        "Universidad de Antioquia",
+        "Customer Experience Fundamentals",
+        "CX Academy",
+        "Lideró mejoras en atención que redujeron tiempos de respuesta y fortalecieron la medición de satisfacción.",
+    ),
+    (
+        "Analista de selección",
+        "Talento Humano Integral",
+        "Psicología",
+        "Universidad CES",
+        "Entrevista por competencias",
+        "LinkedIn Learning",
+        "Gestionó procesos de selección completos, desde la definición del perfil hasta el acompañamiento de ingreso.",
+    ),
+    (
+        "Analista de operaciones",
+        "Operaciones Confiables",
+        "Tecnología en Gestión Empresarial",
+        "SENA",
+        "Indicadores de gestión",
+        "SENA",
+        "Consolidó indicadores operativos, documentó controles y coordinó planes de mejora con equipos internos.",
+    ),
+    (
+        "Ejecutivo de cuenta corporativa",
+        "Soluciones Comerciales Andinas",
+        "Mercadeo",
+        "Universidad EAFIT",
+        "Ventas consultivas",
+        "HubSpot Academy",
+        "Desarrolló cuentas empresariales mediante diagnóstico de necesidades, negociación y seguimiento en CRM.",
+    ),
+    (
+        "Analista de inteligencia de negocio",
+        "Datos y Decisiones S.A.S.",
+        "Ingeniería Industrial",
+        "Universidad Nacional de Colombia",
+        "Microsoft Power BI Data Analyst",
+        "Microsoft",
+        "Construyó tableros financieros y automatizó reportes para facilitar decisiones de líderes comerciales y operativos.",
+    ),
+    (
+        "Líder de proyectos",
+        "Gestión Estratégica Colombia",
+        "Ingeniería Administrativa",
+        "Universidad Nacional de Colombia",
+        "Scrum Fundamentals",
+        "SCRUMstudy",
+        "Coordinó iniciativas multidisciplinarias, controló riesgos y presentó avances a patrocinadores y equipos de trabajo.",
+    ),
+    (
+        "Auxiliar de gestión documental",
+        "Archivo Empresarial",
+        "Técnica en Asistencia Administrativa",
+        "SENA",
+        "Gestión documental",
+        "SENA",
+        "Organizó expedientes, validó información y atendió solicitudes internas con precisión y oportunidad.",
+    ),
+    (
+        "Asesor integral de servicio",
+        "Contacto Positivo",
+        "Tecnología en Gestión de Servicios",
+        "Institución Universitaria Pascual Bravo",
+        "Servicio al cliente",
+        "Coursera",
+        "Resolvió solicitudes multicanal, documentó casos y mejoró la solución en primer contacto.",
+    ),
+    (
+        "Analista comercial",
+        "Mercados Regionales",
+        "Administración Comercial",
+        "Universidad de Medellín",
+        "CRM para equipos comerciales",
+        "HubSpot Academy",
+        "Analizó oportunidades, preparó propuestas y dio seguimiento a negociaciones usando datos comerciales.",
+    ),
+    (
+        "Profesional de operaciones",
+        "Logística Urbana",
+        "Ingeniería de Productividad y Calidad",
+        "Politécnico Colombiano",
+        "Lean Operations",
+        "Coursera",
+        "Supervisó procesos, explicó desviaciones y coordinó acciones para cumplir indicadores de calidad y servicio.",
+    ),
+    (
+        "Especialista de atracción de talento",
+        "Personas y Cultura S.A.S.",
+        "Psicología",
+        "Universidad Pontificia Bolivariana",
+        "Selección basada en datos",
+        "LinkedIn Learning",
+        "Diseñó estrategias de búsqueda, realizó entrevistas y acompañó decisiones de contratación con criterios claros.",
+    ),
+    (
+        "Analista de datos financieros",
+        "Analítica Aplicada",
+        "Estadística",
+        "Universidad de Antioquia",
+        "SQL for Data Analysis",
+        "DataCamp",
+        "Preparó modelos de datos, tableros en Power BI y análisis ejecutivos para seguimiento financiero.",
+    ),
 )
+
+CANDIDATE_JOB_INDEXES = (0, 1, 2, 3, 4, 5, 5, 0, 3, 2, 1, 4)
 
 
 def create_showcase(email: str, name: str, password: str | None) -> dict[str, int]:
@@ -135,7 +310,9 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
         owner = session.query(User).filter(User.email == email).first()
         if owner is None:
             if not password or len(password.encode("utf-8")) < 8:
-                raise ValueError("La cuenta nueva necesita una contraseña de al menos 8 caracteres")
+                raise ValueError(
+                    "La cuenta nueva necesita una contraseña de al menos 8 caracteres"
+                )
             owner = User(
                 name=name,
                 email=email,
@@ -176,7 +353,12 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             "location": "Medellín, Antioquia",
             "mission": "Promover desarrollo económico sostenible y transformar positivamente la experiencia financiera de las personas.",
             "values": ["Integridad", "Cercanía", "Innovación", "Sostenibilidad"],
-            "benefits": ["Trabajo híbrido", "Formación continua", "Bienestar", "Beneficios financieros"],
+            "benefits": [
+                "Trabajo híbrido",
+                "Formación continua",
+                "Bienestar",
+                "Beneficios financieros",
+            ],
             "is_external": False,
             "source_name": "TalentSync",
         }
@@ -190,7 +372,9 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
 
         jobs: list[Job] = []
         now = datetime.utcnow()
-        for index, (title, skills, description, requirements, sector) in enumerate(JOBS):
+        for index, (title, skills, description, requirements, sector) in enumerate(
+            JOBS
+        ):
             external_id = f"showcase-job-{index + 1}"
             job = (
                 session.query(Job)
@@ -200,7 +384,9 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                 )
                 .first()
             )
-            analysis = text_processor.analyze_job(f"{title} {description} {requirements}")
+            analysis = text_processor.analyze_job(
+                f"{title} {description} {requirements}"
+            )
             values = {
                 "company_id": company.id,
                 "title": title,
@@ -222,7 +408,11 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                         "prompt": "¿Cuánta experiencia tienes en funciones relacionadas con este cargo?",
                         "type": "choice",
                         "required": True,
-                        "options": ["Menos de un año", "Entre 1 y 3 años", "Más de 3 años"],
+                        "options": [
+                            "Menos de un año",
+                            "Entre 1 y 3 años",
+                            "Más de 3 años",
+                        ],
                         "option_scores": {
                             "Menos de un año": -1,
                             "Entre 1 y 3 años": 2,
@@ -271,14 +461,29 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
 
         candidates: list[User] = []
         for index, (candidate_name, profession, skills, years) in enumerate(CANDIDATES):
-            role, previous_company, degree, institution, certification, issuer, achievement = CANDIDATE_DETAILS[index]
+            (
+                role,
+                previous_company,
+                degree,
+                institution,
+                certification,
+                issuer,
+                achievement,
+            ) = CANDIDATE_DETAILS[index]
+            target_job = JOBS[CANDIDATE_JOB_INDEXES[index]]
+            profile_skills = list(
+                dict.fromkeys([*skills, *target_job[1], "trabajo en equipo"])
+            )
             candidate_email = f"showcase.candidate.{index + 1:02d}@example.invalid"
-            candidate = session.query(User).filter(User.email == candidate_email).first()
+            candidate = (
+                session.query(User).filter(User.email == candidate_email).first()
+            )
             experience = (
                 f"{years} años de experiencia en {profession.lower()}. {achievement} "
-                f"Manejo de {', '.join(skills)}."
+                f"Manejo de {', '.join(profile_skills)}. Ha participado en proyectos "
+                "multidisciplinarios, documenta resultados y comunica hallazgos a públicos técnicos y de negocio."
             )
-            profile_text = f"{profession} {' '.join(skills)} {experience} {degree}"
+            profile_text = f"{profession} {' '.join(profile_skills)} {experience} {degree} {certification}"
             analysis = text_processor.analyze_cv(profile_text)
             if candidate is None:
                 candidate = User(
@@ -293,14 +498,14 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             candidate.name = candidate_name
             profile = candidate.profile
             profile.profession = profession
-            profile.skills = skills
+            profile.skills = profile_skills
             profile.experience = experience
             profile.education = f"{degree} — {institution}"
             profile.location = "Medellín"
             profile.department = "Antioquia"
             profile.availability = "Inmediata"
             profile.preferred_modality = "hybrid"
-            profile.preferred_sector = JOBS[index % len(JOBS)][4]
+            profile.preferred_sector = target_job[4]
             profile.desired_salary = 3_200_000 + years * 180_000
             profile.phone = f"+57 300 55{index + 10:04d}"
             profile.experiences = [
@@ -310,7 +515,24 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                     "start_year": str(now.year - years),
                     "end_year": "Presente",
                     "description": achievement,
-                }
+                },
+                {
+                    "role": profession,
+                    "company": f"{previous_company} Regional",
+                    "start_year": str(now.year - years - 2),
+                    "end_year": str(now.year - years),
+                    "description": (
+                        "Ejecutó procesos del área, consolidó indicadores y presentó oportunidades de mejora. "
+                        f"Aplicó {', '.join(profile_skills[:4])} en entregables verificables."
+                    ),
+                },
+                {
+                    "role": f"Asistente de {profession}",
+                    "company": "Fundación Progreso Profesional",
+                    "start_year": str(now.year - years - 3),
+                    "end_year": str(now.year - years - 2),
+                    "description": "Apoyó proyectos, organizó información y atendió requerimientos de usuarios internos y externos.",
+                },
             ]
             profile.educations = [
                 {
@@ -318,10 +540,21 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                     "institution": institution,
                     "start_year": str(now.year - years - 4),
                     "end_year": str(now.year - years),
-                }
+                },
+                {
+                    "degree": "Diplomado en analítica y mejora de procesos",
+                    "institution": "Universidad Abierta de Colombia",
+                    "start_year": str(now.year - 2),
+                    "end_year": str(now.year - 1),
+                },
             ]
             profile.certifications = [
-                {"name": certification, "issuer": issuer, "year": str(now.year - 1)}
+                {"name": certification, "issuer": issuer, "year": str(now.year - 1)},
+                {
+                    "name": "Comunicación efectiva y trabajo colaborativo",
+                    "issuer": "Coursera",
+                    "year": str(now.year - 2),
+                },
             ]
             profile.languages = [
                 {"name": "inglés", "level": "B2" if index % 3 == 0 else "B1"},
@@ -342,11 +575,13 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
         applications = 0
         uow = SqlAlchemyUnitOfWork(session)
         for index, candidate in enumerate(candidates):
-            job = jobs[index % len(jobs)]
+            job = jobs[CANDIDATE_JOB_INDEXES[index]]
             status, stage = stages[index % len(stages)]
             application = (
                 session.query(Application)
-                .filter(Application.user_id == candidate.id, Application.job_id == job.id)
+                .filter(
+                    Application.user_id == candidate.id, Application.job_id == job.id
+                )
                 .first()
             )
             if application is None:
@@ -393,15 +628,23 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
 def main() -> None:
     parser = argparse.ArgumentParser(description="Crear el espacio privado de empresa")
     parser.add_argument("--email", required=True, help="Correo de acceso de la empresa")
-    parser.add_argument("--name", default="Equipo TalentSync", help="Nombre del usuario")
+    parser.add_argument(
+        "--name", default="Equipo TalentSync", help="Nombre del usuario"
+    )
+    parser.add_argument(
+        "--password", help="Contraseña inicial; omítela si la cuenta ya existe"
+    )
     arguments = parser.parse_args()
     with SessionLocal() as session:
-        exists = session.query(User).filter(User.email == arguments.email.lower()).first()
-    password = None
+        exists = (
+            session.query(User).filter(User.email == arguments.email.lower()).first()
+        )
+    password = arguments.password
     if exists is None:
-        password = getpass("Contraseña de la cuenta empresa: ")
-        if password != getpass("Repite la contraseña: "):
-            parser.error("Las contraseñas no coinciden")
+        if password is None:
+            password = getpass("Contraseña de la cuenta empresa: ")
+            if password != getpass("Repite la contraseña: "):
+                parser.error("Las contraseñas no coinciden")
     try:
         print(
             json.dumps(

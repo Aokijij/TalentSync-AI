@@ -29,13 +29,29 @@ const RecommendationsPage = lazyNamed(() => import("../pages/RecommendationsPage
 const RegisterPage = lazyNamed(() => import("../pages/RegisterPage.jsx"), "RegisterPage");
 
 function RequireAuth({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, authError, retryAuth, logout } = useAuth();
   const location = useLocation();
 
   if (loading)
     return (
       <div className="grid min-h-screen place-items-center text-steel">
-        Cargando...
+        <div className="text-center">
+          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-[var(--line)] border-t-[var(--accent)]" />
+          <p className="mt-3">Validando tu sesión...</p>
+        </div>
+      </div>
+    );
+  if (authError && localStorage.getItem("talentsync_token"))
+    return (
+      <div className="grid min-h-screen place-items-center bg-[var(--canvas)] px-5">
+        <section className="surface-card max-w-md p-7 text-center">
+          <h1 className="text-xl font-bold text-[var(--ink)]">No pudimos cargar tu espacio</h1>
+          <p className="mt-2 text-sm text-[var(--muted)]">{authError}</p>
+          <div className="mt-5 flex justify-center gap-3">
+            <button className="button-primary" type="button" onClick={() => retryAuth()}>Reintentar</button>
+            <button className="button-secondary" type="button" onClick={logout}>Cerrar sesión</button>
+          </div>
+        </section>
       </div>
     );
   if (!user) {
