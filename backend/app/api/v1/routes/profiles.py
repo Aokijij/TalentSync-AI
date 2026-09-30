@@ -81,10 +81,11 @@ def upload_photo(
 @router.get("/{user_id}/photo", response_class=Response)
 def get_profile_photo(
     user_id: int,
+    current_user: User = Depends(get_current_user),
     db: UnitOfWork = Depends(get_unit_of_work),
     storage: ImageStorage = Depends(get_image_storage),
 ) -> Response:
     content, media_type = use_cases.profile_photo_content(
-        user_id=user_id, db=db, storage=storage
+        user_id=user_id, current_user=current_user, db=db, storage=storage
     )
-    return Response(content, media_type=media_type, headers={"Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff"})
+    return Response(content, media_type=media_type, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})

@@ -37,7 +37,6 @@ class ApplicationResponse(BaseModel):
     job_title: str | None = None
     company_name: str | None = None
     candidate_name: str | None = None
-    recruiter_notes: str | None = None
     interview_at: datetime | None = None
     pipeline_stage: str | None = None
     pipeline_stage_title: str | None = None
@@ -47,6 +46,7 @@ class ApplicationResponse(BaseModel):
 
 
 class CompanyApplicationResponse(ApplicationResponse):
+    recruiter_notes: str | None = None
     screening_answers: list[ScreeningAnswer] = Field(default_factory=list)
     screening_adjustment: float = 0
     base_match_percentage: float | None = None

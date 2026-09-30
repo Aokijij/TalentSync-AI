@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
-import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
+import { api, getApiErrorMessage } from "../api/client.js";
+import { AuthenticatedImage } from "../components/AuthenticatedImage.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
@@ -265,9 +266,8 @@ export function CandidateDetailPage() {
 }
 
 function CandidatePhoto({ candidate }) {
-  const [failed, setFailed] = useState(false);
   return <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--accent)]/10 text-[var(--accent)]">
-    {candidate.photo_url && !failed ? <img src={apiFileUrl(candidate.photo_url)} alt={`Foto de ${candidate.name}`} className="h-full w-full object-cover" onError={() => setFailed(true)} /> : <UserRound size={36} />}
+    <AuthenticatedImage src={candidate.photo_url} alt={`Foto de ${candidate.name}`} className="h-full w-full object-cover" fallback={<UserRound size={36} />} />
   </div>;
 }
 

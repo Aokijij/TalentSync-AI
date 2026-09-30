@@ -201,8 +201,18 @@ def upload_photo(
 
 
 def profile_photo_content(
-    user_id: int, db: UnitOfWork, *, storage: ImageStorage
+    user_id: int, current_user: User, db: UnitOfWork, *, storage: ImageStorage
 ) -> tuple[bytes, str]:
+    can_view = (
+        current_user.id == user_id
+        or current_user.role == UserRole.ADMIN
+        or (
+            current_user.role == UserRole.COMPANY
+            and company_can_view_candidate(db, current_user, user_id)
+        )
+    )
+    if not can_view:
+        raise UseCaseError(status_code=403, detail="No puedes consultar esta foto")
     user = db.users.get(user_id)
     profile = user.profile if user else None
     if profile is None or not profile.photo_filename:

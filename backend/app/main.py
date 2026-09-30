@@ -33,11 +33,15 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    production = settings.environment.casefold() == "production"
     app = FastAPI(
         title=settings.app_name,
         description="API REST para TalentSync AI, plataforma de matching laboral con NLP.",
         version="0.1.0",
         lifespan=lifespan,
+        docs_url=None if production else "/docs",
+        redoc_url=None if production else "/redoc",
+        openapi_url=None if production else "/openapi.json",
     )
 
     app.state.limiter = limiter
@@ -56,6 +60,22 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         expose_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+        if production:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
+        if request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.exception_handler(UseCaseError)
     async def use_case_error_handler(request: Request, exc: UseCaseError):

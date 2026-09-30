@@ -74,6 +74,19 @@ def create_job(client, headers):
     return response.json()
 
 
+def test_production_hides_api_docs_and_adds_security_headers(monkeypatch):
+    monkeypatch.setattr(settings, "environment", "production")
+    app = create_app()
+    with TestClient(app) as production_client:
+        response = production_client.get("/health")
+        assert response.status_code == 200
+        assert response.headers["x-content-type-options"] == "nosniff"
+        assert response.headers["x-frame-options"] == "DENY"
+        assert response.headers["strict-transport-security"].startswith("max-age=")
+        assert production_client.get("/docs").status_code == 404
+        assert production_client.get("/openapi.json").status_code == 404
+
+
 def company_account(client, name="empresa"):
     return register(client, name, "company", company_name=name, nit=f"900-{name}")
 
@@ -422,6 +435,10 @@ def test_reopening_covered_vacancy_preserves_history_and_notifications(client, m
         == 200
     )
     before = client.get("/api/v1/applications/me", headers=candidate_headers).json()
+    assert "recruiter_notes" not in before[0]
+    assert client.get(
+        f"/api/v1/applications/jobs/{job['id']}", headers=owner
+    ).json()[0]["recruiter_notes"] == "Seguimiento que debe conservarse"
     notifications = client.get(
         "/api/v1/notifications?unread_only=false", headers=candidate_headers
     ).json()
@@ -911,13 +928,15 @@ def test_profile_photo_and_resume_style_are_saved(client, monkeypatch, tmp_path)
     assert uploaded.status_code == 200, uploaded.text
     assert uploaded.json()["resume_color"] == "teal"
     assert uploaded.json()["photo_url"] == f"/api/v1/profiles/{user['id']}/photo"
-    fetched = client.get(uploaded.json()["photo_url"])
+    assert client.get(uploaded.json()["photo_url"]).status_code == 401
+    fetched = client.get(uploaded.json()["photo_url"], headers=headers)
     assert fetched.status_code == 200
     assert fetched.headers["content-type"].startswith("image/png")
     assert fetched.content == image
 
     _, company_headers = company_account(client, "foto-empresa")
     job = create_job(client, company_headers)
+    assert client.get(uploaded.json()["photo_url"], headers=company_headers).status_code == 403
     assert (
         client.get(
             f"/api/v1/profiles/candidates/{user['id']}", headers=company_headers
@@ -933,7 +952,7 @@ def test_profile_photo_and_resume_style_are_saved(client, monkeypatch, tmp_path)
     )
     assert visible.status_code == 200, visible.text
     assert visible.json()["photo_url"] == uploaded.json()["photo_url"]
-    assert client.get(visible.json()["photo_url"]).content == image
+    assert client.get(visible.json()["photo_url"], headers=company_headers).content == image
 
     from app.api.deps import get_image_storage
 
@@ -956,7 +975,7 @@ def test_profile_photo_and_resume_style_are_saved(client, monkeypatch, tmp_path)
         client.get("/api/v1/profiles/me", headers=headers).json()["photo_url"]
         == uploaded.json()["photo_url"]
     )
-    assert client.get(uploaded.json()["photo_url"]).content == image
+    assert client.get(uploaded.json()["photo_url"], headers=headers).content == image
 
 
 def test_cv_rejects_invalid_uploads_without_overwriting_profile(

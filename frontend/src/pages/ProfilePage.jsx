@@ -20,7 +20,8 @@ import {
   Upload,
   UserRound,
 } from "lucide-react";
-import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
+import { api, getApiErrorMessage } from "../api/client.js";
+import { AuthenticatedImage } from "../components/AuthenticatedImage.jsx";
 import { CurrencyInput } from "../components/CurrencyInput.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ProfileCompletionRing, getProfileCompletion } from "../components/ProfileCompletionRing.jsx";
@@ -230,10 +231,11 @@ export function ProfilePage() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-center gap-4">
             {profile.photo_url ? (
-              <img
-                src={`${apiFileUrl(profile.photo_url)}?v=${photoVersion}`}
+              <AuthenticatedImage
+                src={`${profile.photo_url}?v=${photoVersion}`}
                 alt="Foto de perfil"
                 className="h-20 w-20 rounded-2xl object-cover ring-2 ring-[var(--line)]"
+                fallback={<span className="grid h-20 w-20 place-items-center rounded-2xl bg-[var(--surface-subtle)] text-[var(--muted)]"><ImagePlus size={28} /></span>}
               />
             ) : (
               <span className="grid h-20 w-20 place-items-center rounded-2xl bg-[var(--surface-subtle)] text-[var(--muted)]">
@@ -740,10 +742,11 @@ function ResumePreview({ profile, name, email, photoVersion }) {
       <header className={`resume-header ${style.header}`}>
         <div className="resume-identity">
           {profile.photo_url ? (
-            <img
-              src={`${apiFileUrl(profile.photo_url)}?v=${photoVersion}`}
+            <AuthenticatedImage
+              src={`${profile.photo_url}?v=${photoVersion}`}
               alt=""
               className={`resume-photo shrink-0 object-cover ${style.photo}`}
+              fallback={<span className={`resume-photo resume-monogram ${style.photo}`}>{initials}</span>}
             />
           ) : (
             <span className={`resume-photo resume-monogram ${style.photo}`}>
