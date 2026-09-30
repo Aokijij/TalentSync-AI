@@ -214,13 +214,18 @@ def seed_marketplace() -> dict[str, int]:
                 )
                 description = (
                     f"En {name} buscamos una persona para {responsibility}. "
-                    f"Trabajará con diferentes áreas del sector {sector.lower()}, dará seguimiento "
-                    "a resultados y participará en iniciativas que mejoran la experiencia de clientes y equipos."
+                    f"El rol trabajará con equipos del sector {sector.lower()}, organizará prioridades, "
+                    "documentará avances y hará seguimiento a indicadores acordados. "
+                    "Entre sus responsabilidades estará analizar situaciones del día a día, proponer "
+                    "acciones de mejora, coordinar a las personas involucradas y comunicar resultados "
+                    "de forma clara a líderes, clientes o usuarios internos."
                 )
                 requirements = (
                     "Formación técnica, tecnológica o profesional relacionada con el cargo. "
-                    f"Experiencia aplicando {', '.join(skills[:3])}; capacidad para comunicar avances, "
-                    "organizar prioridades y trabajar con personas de distintas áreas."
+                    f"Experiencia demostrable en {', '.join(skills)}. "
+                    "Se valoran la capacidad de analizar información, resolver problemas, priorizar tareas, "
+                    "documentar decisiones y trabajar de manera colaborativa. La persona debe explicar "
+                    "ejemplos concretos de resultados obtenidos en experiencias académicas o laborales."
                 )
                 analysis = text_processor.analyze_job(
                     f"{title} {description} {requirements} {' '.join(skills)}"

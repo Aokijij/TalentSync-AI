@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from html import unescape
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -8,6 +8,7 @@ from urllib.request import Request, urlopen
 
 from app.application.errors import CatalogProviderError
 from app.domain.entities.catalog import CatalogJob, CatalogPage
+from app.domain.services.external_sources import clean_external_location
 
 
 class JSearchJobCatalog:
@@ -131,7 +132,7 @@ class JSearchJobCatalog:
             external_id=str(item.get("job_id") or "").strip(),
             title=_title_without_salary(raw_title),
             company=_clean(item.get("employer_name")) or "Empresa confidencial",
-            location=_clean(location),
+            location=clean_external_location(_clean(location)),
             description=description,
             employment_type=_clean(employment_type),
             salary=salary,
@@ -140,7 +141,7 @@ class JSearchJobCatalog:
                 or item.get("job_google_link")
                 or ""
             ).strip(),
-            published_at=_date(item.get("job_posted_at_datetime_utc")),
+            published_at=_published_date(item),
             skills=tuple(skills),
             benefits=tuple(
                 _strings(
@@ -257,6 +258,31 @@ def _date(value: object) -> datetime | None:
         return datetime.fromisoformat(raw.replace("Z", "+00:00")).replace(tzinfo=None)
     except ValueError:
         return None
+
+
+def _published_date(item: dict) -> datetime | None:
+    exact = _date(item.get("job_posted_at_datetime_utc"))
+    if exact is not None:
+        return exact
+    timestamp = _date(item.get("job_posted_at_timestamp"))
+    if timestamp is not None:
+        return timestamp
+    relative = _clean(item.get("job_posted_at")).casefold()
+    if not relative:
+        return None
+    amount_match = re.search(r"(\d+)", relative)
+    amount = int(amount_match.group(1)) if amount_match else 1
+    if any(term in relative for term in ("minute", "minuto")):
+        delta = timedelta(minutes=amount)
+    elif any(term in relative for term in ("hour", "hora")):
+        delta = timedelta(hours=amount)
+    elif any(term in relative for term in ("week", "semana")):
+        delta = timedelta(weeks=amount)
+    elif any(term in relative for term in ("month", "mes")):
+        delta = timedelta(days=amount * 30)
+    else:
+        delta = timedelta(days=amount)
+    return datetime.utcnow() - delta
 
 
 def _requirements(highlights: object, description: str) -> str:

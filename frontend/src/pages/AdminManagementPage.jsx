@@ -220,7 +220,7 @@ export function AdminManagementPage() {
       setError(
         getApiErrorMessage(
           requestError,
-          "No fue posible sincronizar las vacantes de JSearch",
+          "No fue posible sincronizar las vacantes del proveedor externo",
         ),
       );
     } finally {
@@ -480,7 +480,7 @@ function JobImportPanel({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-bold text-[var(--ink-strong)]">
-              Catálogo externo de JSearch
+              Importar ofertas externas
             </h3>
             <span
               className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${jsearchSource?.configured ? "bg-[var(--success)]/15 text-[var(--success)]" : "bg-amber-500/15 text-amber-600"}`}
@@ -489,7 +489,7 @@ function JobImportPanel({
             </span>
           </div>
           <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
-            Importa ofertas con descripción y requisitos, valida antigüedad y conserva solo las que permiten calcular compatibilidad.
+            Consulta el proveedor conectado, conserva el portal de destino y publica solo ofertas con información suficiente para calcular compatibilidad.
           </p>
         </div>
       </div>
@@ -523,10 +523,10 @@ function JobImportPanel({
       ) : (
         <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-amber-500/30 bg-amber-500/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-5 text-[var(--muted)]">
-            Guarda <strong className="text-[var(--ink-strong)]">JSEARCH_API_KEY</strong> como secreto de Azure para habilitar la sincronización.
+            Configura la clave del conector de empleos como secreto de Azure para habilitar la sincronización.
           </p>
           <a className="button-secondary button-sm shrink-0" href={jsearchSource?.registration_url || "https://www.openwebninja.com/api/jsearch"} target="_blank" rel="noreferrer">
-            Abrir JSearch
+            Ver documentación del conector
             <ExternalLink size={14} />
           </a>
         </div>
@@ -586,7 +586,7 @@ function JobImportPanel({
           </div>
           {result.source ? (
             <p className="mt-3 text-xs text-[var(--muted)]">
-              {result.fetched} resultados recibidos de {result.source}; {result.provider_total} disponibles para esta búsqueda.
+              {result.fetched} resultados recibidos del proveedor; {result.provider_total} disponibles para esta búsqueda.
             </p>
           ) : null}
           {result.errors?.length ? (
@@ -716,7 +716,7 @@ function RecordRow({ kind, item, protectedRecord, onDelete }) {
             {item.source_name ? (
               <p className="mt-0.5 text-xs font-semibold text-[var(--accent)]">
                 {item.source_kind === "external"
-                  ? `Fuente externa: ${item.source_name}`
+                  ? `Portal: ${item.source_portal || "sitio de la empresa"}`
                   : "Publicada en TalentSync"}
               </p>
             ) : null}

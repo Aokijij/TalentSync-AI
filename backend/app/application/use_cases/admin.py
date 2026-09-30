@@ -177,6 +177,10 @@ def list_admin_companies(
                 ),
                 "source_kind": "external" if company.is_external else "internal",
                 "source_name": company.source_name,
+                "source_portal": next(
+                    (job.source_portal for job in company.jobs if job.source_portal),
+                    None,
+                ),
             }
             for company in companies
         ],
@@ -216,6 +220,7 @@ def list_admin_jobs(
                 "status": job.status,
                 "source_kind": job.source_kind,
                 "source_name": job.source_name,
+                "source_portal": job.source_portal,
             }
             for job in jobs
         ],

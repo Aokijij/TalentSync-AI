@@ -1,9 +1,10 @@
 import { ExternalLink, Info, X } from "lucide-react";
+import { externalPortal } from "../utils/externalPortal.js";
 
 export function ExternalApplicationDialog({ job, onClose }) {
   if (!job?.external_url) return null;
 
-  const source = job.source_name || "el portal de origen";
+  const source = externalPortal(job);
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4 backdrop-blur-sm">

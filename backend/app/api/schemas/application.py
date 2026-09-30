@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -9,6 +10,8 @@ class ScreeningAnswer(BaseModel):
     question_id: str = Field(min_length=2, max_length=80)
     question: str | None = None
     answer: str = Field(min_length=1, max_length=2000)
+    type: Literal["open", "choice"] | None = None
+    reviewer_adjustment: float = Field(default=0, ge=-3, le=3)
 
 
 class ApplicationCreate(BaseModel):
@@ -21,6 +24,7 @@ class ApplicationStatusUpdate(BaseModel):
     pipeline_stage: str | None = None
     recruiter_notes: str | None = None
     interview_at: datetime | None = None
+    screening_answer_adjustments: dict[str, float] | None = None
 
 
 class ApplicationResponse(BaseModel):

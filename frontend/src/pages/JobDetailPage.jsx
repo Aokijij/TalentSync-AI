@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Building2,
@@ -19,7 +19,9 @@ import { useAuth } from "../hooks/useAuth.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
+import { StructuredJobText } from "../components/StructuredJobText.jsx";
 import { formatRelativeTime } from "../utils/dates.js";
+import { externalPortal } from "../utils/externalPortal.js";
 
 export function JobDetailPage() {
   const { jobId } = useParams();
@@ -32,9 +34,11 @@ export function JobDetailPage() {
   const [showQuestions, setShowQuestions] = useState(false);
   const [showExternalWarning, setShowExternalWarning] = useState(false);
   const [answers, setAnswers] = useState({});
+  const [availableJobs, setAvailableJobs] = useState([]);
 
   useEffect(() => {
     api.get(`/jobs/${jobId}`).then(({ data }) => setJob(data));
+    api.get("/jobs").then(({ data }) => setAvailableJobs(data)).catch(() => setAvailableJobs([]));
     if (user?.role === "candidate") {
       api
         .post(`/jobs/${jobId}/match`)
@@ -52,6 +56,23 @@ export function JobDetailPage() {
         .catch(() => setAlreadyApplied(false));
     }
   }, [jobId, user?.role]);
+
+  const similarJobs = useMemo(() => {
+    if (!job) return [];
+    const skills = new Set((job.skills || []).map((item) => item.toLowerCase()));
+    return availableJobs
+      .filter((item) => item.id !== job.id && item.status === "active")
+      .map((item) => ({
+        ...item,
+        similarity:
+          (item.sector === job.sector ? 3 : 0) +
+          (item.modality === job.modality ? 1 : 0) +
+          (item.skills || []).filter((skill) => skills.has(skill.toLowerCase())).length * 2,
+      }))
+      .filter((item) => item.similarity > 0)
+      .sort((first, second) => second.similarity - first.similarity || new Date(second.created_at) - new Date(first.created_at))
+      .slice(0, 3);
+  }, [availableJobs, job]);
 
   async function apply() {
     const missing = (job.application_questions || []).find(
@@ -107,7 +128,7 @@ export function JobDetailPage() {
             {job.source_kind === "external" ? (
               <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-semibold text-[var(--accent)]">
                 <ExternalLink size={13} />
-                Vista previa externa de {job.source_name || "fuente autorizada"}
+                Oferta disponible en {externalPortal(job)}
               </p>
             ) : null}
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[var(--muted)]">
@@ -155,17 +176,19 @@ export function JobDetailPage() {
       </section>
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="surface-card space-y-6 p-6">
-          <Info
-            title={job.source_kind === "external" ? "Resumen de la oferta" : "Descripción"}
-            text={job.description}
-          />
+          {job.source_kind === "external" ? (
+            <div>
+              <h2 className="font-semibold">Resumen de la oferta</h2>
+              <div className="mt-3"><StructuredJobText text={job.description} /></div>
+            </div>
+          ) : <Info title="Descripción" text={job.description} />}
           {job.source_kind === "external" ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[var(--radius-lg)] border border-[var(--accent)]/30 bg-[var(--accent)]/10 p-4">
                 <h2 className="font-semibold">Qué puede analizar TalentSync</h2>
                 <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
                   El cargo, la ubicación, la empresa, el salario cuando está disponible
-                  y el resumen entregado por {job.source_name || "la fuente"}. De esas
+                  y la información pública de {externalPortal(job)}. De esas
                   señales se extraen las habilidades visibles en esta página.
                 </p>
               </div>
@@ -274,6 +297,25 @@ export function JobDetailPage() {
           ) : null}
         </aside>
       </section>
+      {similarJobs.length ? (
+        <section className="surface-card p-6">
+          <div>
+            <p className="section-kicker">También puede interesarte</p>
+            <h2 className="mt-1 text-xl font-bold">Vacantes similares</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">Relacionadas por sector, modalidad y habilidades solicitadas.</p>
+          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            {similarJobs.map((item) => (
+              <Link key={item.id} to={`/vacantes/${item.id}`} className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4 transition hover:border-[var(--accent)]">
+                <p className="text-xs font-bold uppercase tracking-wide text-[var(--accent)]">{item.company_name}</p>
+                <h3 className="mt-2 font-bold text-[var(--ink-strong)]">{item.title}</h3>
+                <p className="mt-3 text-xs text-[var(--muted)]">{item.location || "Ubicación flexible"} · {formatRelativeTime(item.created_at)}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">{(item.skills || []).slice(0, 3).map((skill) => <span key={skill} className="rounded-md border border-[var(--line)] px-2 py-1 text-[11px]">{skill}</span>)}</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
       {showQuestions ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/65 p-4 backdrop-blur-sm">
           <section role="dialog" aria-modal="true" aria-labelledby="questions-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">

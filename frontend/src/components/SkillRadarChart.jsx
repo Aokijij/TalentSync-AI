@@ -21,6 +21,17 @@ function candidateScore(skill, candidateSkills) {
   return 18;
 }
 
+function labelLines(value) {
+  const words = String(value).split(/\s+/);
+  const lines = [];
+  for (const word of words) {
+    const last = lines.at(-1);
+    if (last && `${last} ${word}`.length <= 17) lines[lines.length - 1] = `${last} ${word}`;
+    else lines.push(word);
+  }
+  return lines.slice(0, 3);
+}
+
 export function SkillRadarChart({
   candidateSkills = [],
   requiredSkills = [],
@@ -82,8 +93,8 @@ export function SkillRadarChart({
     );
   }
 
-  const center = 150;
-  const radius = 92;
+  const center = 170;
+  const radius = 88;
   const angle = (index) => (Math.PI * 2 * index) / axes.length - Math.PI / 2;
   const point = (index, value, extra = 0) => {
     const distance = radius * (value / 100) + extra;
@@ -115,7 +126,7 @@ export function SkillRadarChart({
       </div>
       <svg
         className="mx-auto mt-2 block h-auto w-full max-w-[360px]"
-        viewBox="0 0 300 300"
+        viewBox="0 0 340 320"
         role="img"
       >
         <title>{title}</title>
@@ -132,7 +143,8 @@ export function SkillRadarChart({
         ))}
         {axes.map((item, index) => {
           const [x, y] = point(index, 100);
-          const [labelX, labelY] = point(index, 100, 23);
+          const [labelX, labelY] = point(index, 100, 32);
+          const lines = labelLines(item.label);
           return (
             <g key={item.label}>
               <line
@@ -154,12 +166,15 @@ export function SkillRadarChart({
                 }
                 dominantBaseline="middle"
                 fill="var(--muted)"
-                fontSize="10"
+                fontSize="9"
                 fontWeight="600"
               >
-                {item.label.length > 16
-                  ? `${item.label.slice(0, 15)}…`
-                  : item.label}
+                <title>{item.label}</title>
+                {lines.map((line, lineIndex) => (
+                  <tspan key={line} x={labelX} dy={lineIndex ? 11 : -(lines.length - 1) * 5.5}>
+                    {line}
+                  </tspan>
+                ))}
               </text>
             </g>
           );

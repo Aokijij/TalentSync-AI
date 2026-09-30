@@ -9,7 +9,6 @@ from app.infrastructure.database.session import SessionLocal
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 from app.infrastructure.job_catalogs import (
     AdzunaJobCatalog,
-    JoobleJobCatalog,
     JSearchJobCatalog,
 )
 from app.infrastructure.nlp.text_processor import text_processor
@@ -109,14 +108,6 @@ def _scheduled_searches():
             yield international, f"remote {value}", "United States"
         return
 
-    jooble = JoobleJobCatalog(
-        api_key=settings.jooble_api_key,
-        base_url=settings.jooble_api_base_url,
-        timeout_seconds=settings.jooble_timeout_seconds,
-    )
-    if jooble.configured:
-        for value in keywords:
-            yield jooble, value, "Colombia"
     adzuna = AdzunaJobCatalog(
         app_id=settings.adzuna_app_id,
         app_key=settings.adzuna_app_key,

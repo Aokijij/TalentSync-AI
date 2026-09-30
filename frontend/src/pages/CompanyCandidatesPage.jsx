@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Flame, Minus, RefreshCw, Search, Send, UserRound, UsersRound } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flame, MessageSquareText, Minus, RefreshCw, Search, Send, UserRound, UsersRound, X } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { api } from "../api/client.js";
@@ -22,6 +22,7 @@ export function CompanyCandidatesPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [invitingId, setInvitingId] = useState(null);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   useEffect(() => {
     api.get(`/jobs/${jobId}`).then(({ data }) => setJob(data)).catch(() => setJob(null));
@@ -116,7 +117,7 @@ export function CompanyCandidatesPage() {
           <table className="w-full min-w-[900px] border-collapse text-sm">
             <thead><tr className="bg-[var(--surface-subtle)] text-left text-xs uppercase tracking-wide text-[var(--muted)]"><th className="px-5 py-3">Candidato</th><th className="px-4 py-3">Compatibilidad</th><th className="px-4 py-3">Experiencia</th><th className="px-4 py-3">Habilidades destacadas</th><th className="px-4 py-3">Idiomas solicitados</th><th className="px-5 py-3 text-right">Acción</th></tr></thead>
             <tbody className="divide-y divide-[var(--line)]">
-              {candidates.map((candidate) => <CandidateRow key={candidate.user_id} candidate={candidate} job={job} jobId={jobId} inviting={invitingId === candidate.user_id} onInvite={() => invite(candidate)} />)}
+              {candidates.map((candidate) => <CandidateRow key={candidate.user_id} candidate={candidate} job={job} jobId={jobId} inviting={invitingId === candidate.user_id} onInvite={() => invite(candidate)} onOpenSummary={() => setSelectedCandidate(candidate)} />)}
             </tbody>
           </table>
         </div>
@@ -126,23 +127,50 @@ export function CompanyCandidatesPage() {
       </section>
 
       <button type="button" className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => navigate("/empresa/vacantes")}>← Volver a mis vacantes</button>
+      {selectedCandidate ? <ApplicationSummaryModal candidate={selectedCandidate} onClose={() => setSelectedCandidate(null)} /> : null}
     </div>
   );
 }
 
-function CandidateRow({ candidate, job, jobId, inviting, onInvite }) {
+function CandidateRow({ candidate, job, jobId, inviting, onInvite, onOpenSummary }) {
   const required = (job?.skills || []).map((skill) => skill.toLowerCase());
   const matching = (candidate.skills || []).filter((skill) => required.includes(skill.toLowerCase())).slice(0, 4);
   return (
     <tr className="align-top hover:bg-[var(--surface-subtle)]">
-      <td className="px-5 py-4"><p className="font-bold text-[var(--ink-strong)]">{candidate.name}</p><p className="mt-1 text-xs text-[var(--muted)]">{candidate.profession || "Perfil profesional"}</p></td>
-      <td className="px-4 py-4"><span className="inline-flex min-w-16 justify-center rounded-full bg-[var(--accent)]/10 px-3 py-1.5 font-bold text-[var(--accent)]">{Math.round(candidate.match_percentage)}%</span></td>
+      <td className="px-5 py-4">{candidate.has_applied ? <button type="button" className="text-left hover:text-[var(--accent)]" onClick={onOpenSummary}><p className="font-bold underline-offset-4 hover:underline">{candidate.name}</p><p className="mt-1 text-xs text-[var(--muted)]">{candidate.profession || "Perfil profesional"}</p><span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]"><MessageSquareText size={13} />Ver respuestas y ajuste</span></button> : <><p className="font-bold text-[var(--ink-strong)]">{candidate.name}</p><p className="mt-1 text-xs text-[var(--muted)]">{candidate.profession || "Perfil profesional"}</p></>}</td>
+      <td className="px-4 py-4"><span className="inline-flex min-w-16 justify-center rounded-full bg-[var(--accent)]/10 px-3 py-1.5 font-bold text-[var(--accent)]">{Math.round(candidate.adjusted_match_percentage ?? candidate.match_percentage)}%</span>{candidate.has_applied && candidate.adjusted_match_percentage != null ? <p className="mt-1 text-[11px] text-[var(--muted)]">Base {Math.round(candidate.base_match_percentage ?? candidate.match_percentage)}%</p> : null}</td>
       <td className="px-4 py-4 text-[var(--muted)]">{candidate.experience_years ? `${candidate.experience_years} año${candidate.experience_years === 1 ? "" : "s"}` : candidate.experience_summary || "Sin registrar"}</td>
       <td className="px-4 py-4"><div className="flex max-w-64 flex-wrap gap-1.5">{matching.length ? matching.map((skill) => <span key={skill} className="rounded-md border border-[var(--line)] px-2 py-1 text-xs">{skill}</span>) : <span className="text-xs text-[var(--muted)]">Sin coincidencias directas</span>}</div></td>
       <td className="px-4 py-4 text-xs text-[var(--muted)]">{job?.languages?.length ? job.languages.map((item) => { const actual = candidate.languages?.find((language) => language.name === item.name); return <p key={item.name} className="mb-1"><span className="capitalize font-semibold">{item.name}</span>: {actual ? languageLevelLabel(actual.level) : "sin registrar"} <span className="text-[var(--muted)]">(mín. {languageLevelLabel(item.level)})</span></p>; }) : "No se solicitaron idiomas"}</td>
       <td className="px-5 py-4 text-right">{candidate.has_applied ? <Link className="button-secondary button-sm inline-flex" to={`/empresa/candidatos/${candidate.user_id}?job=${jobId}`}><UserRound size={14} />Ver perfil</Link> : <button type="button" className="button-primary button-sm" disabled={candidate.has_pending_invitation || inviting} onClick={onInvite}><Send size={14} />{candidate.has_pending_invitation ? "Invitación enviada" : inviting ? "Enviando…" : "Invitar"}</button>}</td>
     </tr>
   );
+}
+
+function ApplicationSummaryModal({ candidate, onClose }) {
+  const base = candidate.base_match_percentage ?? candidate.match_percentage;
+  const adjusted = candidate.adjusted_match_percentage ?? base;
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/65 p-4 backdrop-blur-sm">
+      <section role="dialog" aria-modal="true" aria-labelledby="candidate-summary-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">
+        <header className="flex items-start justify-between gap-4"><div><p className="section-kicker">Resumen de postulación</p><h2 id="candidate-summary-title" className="mt-1 text-2xl font-bold">{candidate.name}</h2><p className="mt-1 text-sm text-[var(--muted)]">{candidate.profession || "Perfil profesional"}</p></div><button type="button" className="button-secondary !h-10 !w-10 !p-0" onClick={onClose} aria-label="Cerrar"><X size={18} /></button></header>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <Score label="Antes de preguntas" value={`${Math.round(base)}%`} />
+          <Score label="Ajuste por respuestas" value={`${candidate.screening_adjustment > 0 ? "+" : ""}${candidate.screening_adjustment || 0}`} />
+          <Score label="Compatibilidad final" value={`${Math.round(adjusted)}%`} accent />
+        </div>
+        <div className="mt-5 space-y-3">
+          <h3 className="font-bold">Respuestas enviadas</h3>
+          {candidate.screening_answers?.length ? candidate.screening_answers.map((item, index) => <article key={`${item.question_id}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4"><p className="text-xs font-bold text-[var(--muted)]">{item.question || `Pregunta ${index + 1}`}</p><p className="mt-2 text-sm leading-6 text-[var(--ink-strong)]">{item.answer}</p>{item.reviewer_adjustment ? <p className="mt-2 text-xs font-bold text-[var(--accent)]">Valoración manual: {item.reviewer_adjustment > 0 ? "+" : ""}{item.reviewer_adjustment}</p> : null}</article>) : <p className="rounded-xl bg-[var(--surface-subtle)] p-4 text-sm text-[var(--muted)]">Esta vacante no solicitó preguntas adicionales.</p>}
+        </div>
+        <footer className="mt-6 flex justify-end border-t border-[var(--line)] pt-5"><button type="button" className="button-secondary" onClick={onClose}>Cerrar</button></footer>
+      </section>
+    </div>
+  );
+}
+
+function Score({ label, value, accent = false }) {
+  return <div className={`rounded-xl border p-3 ${accent ? "border-[var(--accent)]/40 bg-[var(--accent)]/10" : "border-[var(--line)] bg-[var(--surface-subtle)]"}`}><p className="text-xs text-[var(--muted)]">{label}</p><strong className={`mt-1 block text-xl ${accent ? "text-[var(--accent)]" : "text-[var(--ink-strong)]"}`}>{value}</strong></div>;
 }
 
 function CandidateHeatmap({ candidates, requiredSkills }) {

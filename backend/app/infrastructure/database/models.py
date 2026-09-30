@@ -14,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.entities.enums import ApplicationStatus, UserRole
+from app.domain.services.external_sources import external_portal
 from app.infrastructure.database.session import Base
 
 
@@ -234,6 +235,12 @@ class Job(Base):
     @property
     def company_location(self) -> str | None:
         return self.company.location if self.company else None
+
+    @property
+    def source_portal(self) -> str | None:
+        if self.source_kind != "external":
+            return None
+        return external_portal(self.external_url, self.location)
 
 
 class Application(Base):

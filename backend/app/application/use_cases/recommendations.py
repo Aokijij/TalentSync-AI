@@ -64,6 +64,11 @@ def ranked_candidates(
     ranked = []
     for user, percentage in rank_candidates_for_job(db, job, nlp=nlp):
         has_applied = user.id in applied_ids
+        application = (
+            db.applications.find_for_user_job(user.id, job.id)
+            if has_applied
+            else None
+        )
         if audience == "applied" and not has_applied:
             continue
         if audience == "invite" and (has_applied or percentage < minimum_match):
@@ -85,6 +90,23 @@ def ranked_candidates(
                     user.id, "candidate_invitation", f"/vacantes/{job.id}"
                 )
                 is not None,
+                application_id=application.id if application else None,
+                screening_answers=application.screening_answers if application else [],
+                screening_adjustment=(application.screening_adjustment or 0)
+                if application
+                else 0,
+                base_match_percentage=percentage if application else None,
+                adjusted_match_percentage=(
+                    max(
+                        0.0,
+                        min(
+                            100.0,
+                            percentage + (application.screening_adjustment or 0),
+                        ),
+                    )
+                    if application
+                    else None
+                ),
             )
         if query:
             searchable = " ".join(

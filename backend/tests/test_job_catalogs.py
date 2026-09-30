@@ -1,5 +1,9 @@
 import json
 
+from app.domain.services.external_sources import (
+    clean_external_location,
+    external_portal,
+)
 from app.infrastructure.job_catalogs import adzuna, jsearch
 
 
@@ -98,3 +102,21 @@ def test_adzuna_requires_both_credentials_and_maps_results(monkeypatch):
     assert result.total == 1
     assert result.jobs[0].company == "Remote Company"
     assert result.jobs[0].salary == "40000-50000"
+
+
+def test_external_portal_and_relative_publication_are_user_facing():
+    item = {
+        "job_id": "portal-1",
+        "job_title": "Analista de servicio",
+        "employer_name": "Empresa",
+        "job_location": "Bogotá • a través de Computrabajo",
+        "job_description": "Atención al cliente y comunicación con usuarios.",
+        "job_apply_link": "https://co.computrabajo.com/ofertas/portal-1",
+        "job_posted_at": "2 weeks ago",
+    }
+    mapped = jsearch.JSearchJobCatalog(api_key="key")._map_job(item)
+
+    assert mapped.location == "Bogotá"
+    assert 13 <= (jsearch.datetime.utcnow() - mapped.published_at).days <= 14
+    assert external_portal(mapped.url, mapped.location) == "Computrabajo"
+    assert clean_external_location("Medellín • a través de LinkedIn") == "Medellín"

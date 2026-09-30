@@ -178,6 +178,7 @@ class JobResponse(BaseModel):
     company_location: str | None = None
     source_kind: str = "internal"
     source_name: str | None = None
+    source_portal: str | None = None
     external_url: str | None = None
     expires_at: datetime | None = None
 

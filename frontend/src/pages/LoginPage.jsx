@@ -6,7 +6,6 @@ import {
   LockKeyhole,
   Mail,
   ScanSearch,
-  UsersRound,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -45,6 +44,11 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [stats, setStats] = useState(null);
+  const approximate = (value) => {
+    if (value == null) return "—";
+    const floor = Math.max(0, Math.floor(value / 50) * 50);
+    return floor ? `Más de ${floor.toLocaleString("es-CO")}` : "En crecimiento";
+  };
 
   useEffect(() => {
     api
@@ -95,15 +99,14 @@ export function LoginPage() {
               Una plataforma que convierte perfiles y vacantes en decisiones
               claras y fáciles de revisar.
             </p>
-            <div className="mt-7 grid max-w-lg grid-cols-3 gap-3" aria-label="Actividad de la plataforma">
+            <div className="mt-7 grid max-w-lg grid-cols-2 gap-3" aria-label="Actividad de la plataforma">
               {[
                 { icon: BriefcaseBusiness, value: stats?.active_jobs, label: "Vacantes activas" },
                 { icon: Building2, value: stats?.companies, label: "Empresas" },
-                { icon: UsersRound, value: stats?.applications, label: "Procesos iniciados" },
               ].map(({ icon: Icon, value, label }) => (
                 <div key={label} className="rounded-2xl border border-white/15 bg-white/[0.06] p-3 backdrop-blur-sm">
                   <Icon size={17} className="text-sky-300" aria-hidden="true" />
-                  <strong className="mt-2 block text-xl text-white">{value == null ? "—" : value.toLocaleString("es-CO")}</strong>
+                  <strong className="mt-2 block text-xl text-white">{approximate(value)}</strong>
                   <span className="mt-0.5 block text-[11px] leading-4 text-sky-100">{label}</span>
                 </div>
               ))}

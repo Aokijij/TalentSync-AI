@@ -7,6 +7,10 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
+  Building2,
+  Clock3,
+  FileText,
+  Globe2,
   ExternalLink,
   MapPin,
   Search,
@@ -24,6 +28,7 @@ import {
 } from "../constants/colombianCities.js";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { formatRelativeTime, isWithinDays } from "../utils/dates.js";
+import { externalPortal } from "../utils/externalPortal.js";
 
 const modalityLabel = {
   remote: "Remoto",
@@ -227,23 +232,20 @@ export function JobsPage() {
           </div>
         </div>
         {showFilters ? (
-          <div className="mt-5 space-y-5 border-t border-[var(--line)] pt-5">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-[var(--radius-lg)] bg-[var(--surface-subtle)] p-4 sm:col-span-2 lg:col-span-1">
-                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Ubicación</p>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                  <Filter label="Departamento"><select className="field-control input-md" value={filters.department} onChange={(event) => setFilter("department", event.target.value)}><option value="">Todo el país</option>{COLOMBIAN_DEPARTMENTS.map((department) => <option key={department}>{department}</option>)}</select></Filter>
-                  <Filter label="Ciudad"><select className="field-control input-md" value={filters.location} disabled={!filters.department} onChange={(event) => setFilter("location", event.target.value)}><option value="">{filters.department ? "Todas" : "Primero elige departamento"}</option>{availableCities.map((city) => <option key={city}>{city}</option>)}</select></Filter>
-                </div>
-              </div>
+          <div className="mt-5 rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4 sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div><h2 className="font-bold text-[var(--ink-strong)]">Afina tu búsqueda</h2><p className="mt-0.5 text-xs text-[var(--muted)]">Combina solo los criterios que necesites.</p></div>
+              {activeFilterCount ? <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-bold text-[var(--accent)]">{activeFilterCount} activos</span> : null}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Filter icon={MapPin} label="Departamento"><select className="field-control input-md" value={filters.department} onChange={(event) => setFilter("department", event.target.value)}><option value="">Todo el país</option>{COLOMBIAN_DEPARTMENTS.map((department) => <option key={department}>{department}</option>)}</select></Filter>
+              <Filter icon={MapPin} label="Ciudad"><select className="field-control input-md" value={filters.location} disabled={!filters.department} onChange={(event) => setFilter("location", event.target.value)}><option value="">{filters.department ? "Todas las ciudades" : "Elige departamento"}</option>{availableCities.map((city) => <option key={city}>{city}</option>)}</select></Filter>
+              <Filter icon={BriefcaseBusiness} label="Modalidad"><select className="field-control input-md" value={filters.modality} onChange={(event) => setFilter("modality", event.target.value)}><option value="">Todas</option><option value="remote">Remoto</option><option value="hybrid">Híbrido</option><option value="onsite">Presencial</option></select></Filter>
+              <Filter icon={FileText} label="Contrato"><select className="field-control input-md" value={filters.employment_type} onChange={(event) => setFilter("employment_type", event.target.value)}><option value="">Todos</option><option value="full_time">Tiempo completo</option><option value="part_time">Medio tiempo</option><option value="contract">Contrato</option></select></Filter>
+              <Filter icon={Building2} label="Sector"><select className="field-control input-md" value={filters.sector} onChange={(event) => setFilter("sector", event.target.value)}><option value="">Todos los sectores</option>{availableSectors.map((sector) => <option key={sector}>{sector}</option>)}</select></Filter>
+              <Filter icon={Clock3} label="Publicación"><select className="field-control input-md" value={filters.published_days} onChange={(event) => setFilter("published_days", event.target.value)}><option value="">Cualquier fecha</option><option value="1">Últimas 24 horas</option><option value="7">Última semana</option><option value="30">Último mes</option></select></Filter>
+              <Filter icon={Globe2} label="Origen"><select className="field-control input-md" value={filters.source_kind} onChange={(event) => setFilter("source_kind", event.target.value)}><option value="">Todas las vacantes</option><option value="internal">Publicadas en TalentSync</option><option value="external">Portales externos</option></select></Filter>
               <SalaryRange minimum={Number(filters.min_salary || 0)} maximum={Number(filters.max_salary || salaryCeiling)} ceiling={salaryCeiling} onMinimum={(value) => setFilter("min_salary", value ? String(value) : "")} onMaximum={(value) => setFilter("max_salary", value >= salaryCeiling ? "" : String(value))} />
-              <div className="grid gap-3 rounded-[var(--radius-lg)] bg-[var(--surface-subtle)] p-4 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
-                <Filter label="Modalidad"><select className="field-control input-md" value={filters.modality} onChange={(event) => setFilter("modality", event.target.value)}><option value="">Todas</option><option value="remote">Remoto</option><option value="hybrid">Híbrido</option><option value="onsite">Presencial</option></select></Filter>
-                <Filter label="Contrato"><select className="field-control input-md" value={filters.employment_type} onChange={(event) => setFilter("employment_type", event.target.value)}><option value="">Todos</option><option value="full_time">Tiempo completo</option><option value="part_time">Medio tiempo</option><option value="contract">Contrato</option></select></Filter>
-                <Filter label="Sector"><select className="field-control input-md" value={filters.sector} onChange={(event) => setFilter("sector", event.target.value)}><option value="">Todos</option>{availableSectors.map((sector) => <option key={sector}>{sector}</option>)}</select></Filter>
-                <Filter label="Publicación"><select className="field-control input-md" value={filters.published_days} onChange={(event) => setFilter("published_days", event.target.value)}><option value="">Cualquier fecha</option><option value="1">Últimas 24 horas</option><option value="7">Última semana</option><option value="30">Último mes</option></select></Filter>
-                <Filter label="Origen"><select className="field-control input-md" value={filters.source_kind} onChange={(event) => setFilter("source_kind", event.target.value)}><option value="">Todas las vacantes</option><option value="internal">Publicadas en TalentSync</option><option value="external">Ofertas externas</option></select></Filter>
-              </div>
             </div>
             <div className="flex flex-col gap-4 border-t border-[var(--line)] pt-4 lg:flex-row lg:items-end lg:justify-between">
               {user?.role === "candidate" ? <div className="flex flex-col gap-3 sm:flex-row sm:items-center"><label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={onlyMySkills} onChange={(event) => { setOnlyMySkills(event.target.checked); setPage(1); }} />Coincide con mis habilidades</label><Filter label="Compatibilidad mínima"><select className="field-control input-sm w-28" value={minCompatibility} onChange={(event) => { setMinCompatibility(Number(event.target.value)); setPage(1); }}>{[0, 40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}</select></Filter></div> : null}
@@ -353,7 +355,7 @@ function JobCard({ job, match, confidence, applied, showMatch }) {
       {job.source_kind === "external" ? (
         <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
           <ExternalLink size={13} />
-          Publicada originalmente en {job.source_name || "una fuente externa"}
+          Disponible en {externalPortal(job)}
         </p>
       ) : null}
       {showMatch ? (
@@ -426,24 +428,24 @@ function JobCard({ job, match, confidence, applied, showMatch }) {
 }
 
 function SalaryRange({ minimum, maximum, ceiling, onMinimum, onMaximum }) {
-  const step = 250000;
   const safeMinimum = Math.min(minimum, maximum);
   const safeMaximum = Math.max(maximum, minimum);
-  const money = (value) => `$${Number(value).toLocaleString("es-CO")}`;
   return (
-    <div className="rounded-[var(--radius-lg)] bg-[var(--surface-subtle)] p-4">
-      <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Rango salarial</p><p className="mt-1 text-sm font-semibold text-[var(--ink-strong)]">{money(safeMinimum)} – {safeMaximum >= ceiling ? "Sin límite" : money(safeMaximum)}</p></div><CircleDollarSign size={20} className="text-[var(--accent)]" /></div>
-      <label className="mt-4 block text-xs font-semibold text-[var(--muted)]">Desde {money(safeMinimum)}<input className="mt-2 block w-full accent-[var(--accent)]" type="range" min="0" max={ceiling} step={step} value={safeMinimum} onChange={(event) => onMinimum(Math.min(Number(event.target.value), safeMaximum - step))} /></label>
-      <label className="mt-3 block text-xs font-semibold text-[var(--muted)]">Hasta {safeMaximum >= ceiling ? "sin límite" : money(safeMaximum)}<input className="mt-2 block w-full accent-[var(--accent)]" type="range" min="0" max={ceiling} step={step} value={safeMaximum} onChange={(event) => onMaximum(Math.max(Number(event.target.value), safeMinimum + step))} /></label>
+    <div className="sm:col-span-2 lg:col-span-1">
+      <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--muted)]"><CircleDollarSign size={14} />Rango salarial</p>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="relative"><span className="sr-only">Salario mínimo</span><input className="field-control input-md !pl-7" type="number" min="0" step="250000" value={safeMinimum || ""} onChange={(event) => onMinimum(Math.min(Number(event.target.value || 0), safeMaximum))} placeholder="Desde" /><span className="absolute left-3 top-3 text-sm text-[var(--muted)]">$</span></label>
+        <label className="relative"><span className="sr-only">Salario máximo</span><input className="field-control input-md !pl-7" type="number" min="0" step="250000" value={safeMaximum >= ceiling ? "" : safeMaximum} onChange={(event) => onMaximum(event.target.value ? Math.max(Number(event.target.value), safeMinimum) : ceiling)} placeholder="Sin límite" /><span className="absolute left-3 top-3 text-sm text-[var(--muted)]">$</span></label>
+      </div>
     </div>
   );
 }
 
-function Filter({ label, children }) {
+function Filter({ icon: Icon = SlidersHorizontal, label, children }) {
   return (
     <label className="text-xs font-bold uppercase tracking-wide text-[var(--muted)]">
       <span className="mb-1.5 flex items-center gap-1">
-        <SlidersHorizontal size={13} />
+        <Icon size={14} />
         {label}
       </span>
       {children}

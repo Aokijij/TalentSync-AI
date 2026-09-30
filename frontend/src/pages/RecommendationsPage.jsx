@@ -15,6 +15,7 @@ import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
+import { externalPortal } from "../utils/externalPortal.js";
 
 export function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState([]);
@@ -205,7 +206,7 @@ export function RecommendationsPage() {
                       </span>
                       {job?.source_kind === "external" ? (
                         <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">
-                          Postulación en {job.source_name || "sitio externo"}
+                          Postulación en {externalPortal(job)}
                         </span>
                       ) : null}
                       {applied ? (

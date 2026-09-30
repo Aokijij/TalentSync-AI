@@ -56,7 +56,7 @@ def mark_job_applications_seen(
     )
 
 
-@router.put("/{application_id}/status", response_model=ApplicationResponse)
+@router.put("/{application_id}/status", response_model=CompanyApplicationResponse)
 def update_status(
     application_id: int,
     payload: ApplicationStatusUpdate,

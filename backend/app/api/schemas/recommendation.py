@@ -31,6 +31,11 @@ class RankedCandidate(BaseModel):
     has_applied: bool = False
     has_pending_invitation: bool = False
     languages: list[dict] = []
+    application_id: int | None = None
+    screening_answers: list[dict] = []
+    screening_adjustment: float = 0
+    base_match_percentage: float | None = None
+    adjusted_match_percentage: float | None = None
 
 
 class RankedCandidatePage(BaseModel):

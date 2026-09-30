@@ -873,9 +873,27 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmSave, setConfirmSave] = useState(false);
+  const [answerAdjustments, setAnswerAdjustments] = useState(
+    Object.fromEntries(
+      (application.screening_answers || []).map((item) => [
+        item.question_id,
+        Number(item.reviewer_adjustment || 0),
+      ]),
+    ),
+  );
+  const manualTotal = Object.values(answerAdjustments).reduce(
+    (total, value) => total + Number(value || 0),
+    0,
+  );
+  const previousManualTotal = (application.screening_answers || []).reduce(
+    (total, item) => total + Number(item.reviewer_adjustment || 0),
+    0,
+  );
+  const projectedAdjustment = Number(application.screening_adjustment || 0) - previousManualTotal + manualTotal;
   const changes = {
     recruiter_notes: notes || null,
     interview_at: interviewAt ? new Date(interviewAt).toISOString() : null,
+    screening_answer_adjustments: answerAdjustments,
   };
   return (
     <>
@@ -900,9 +918,9 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
           <div className="mt-5 grid gap-4">
             {application.screening_answers?.length ? (
               <section className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
-                <div className="flex items-center justify-between gap-3"><h3 className="font-bold">Respuestas de postulación</h3><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${application.screening_adjustment >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}>{application.screening_adjustment > 0 ? "+" : ""}{application.screening_adjustment} puntos</span></div>
-                <dl className="mt-3 space-y-3">{application.screening_answers.map((item, index) => <div key={`${item.question_id}-${index}`}><dt className="text-xs font-bold text-[var(--muted)]">{item.question || `Pregunta ${index + 1}`}</dt><dd className="mt-1 text-sm text-[var(--ink-strong)]">{item.answer}</dd></div>)}</dl>
-                {application.adjusted_match_percentage != null ? <p className="mt-4 border-t border-[var(--line)] pt-3 text-sm"><strong>Compatibilidad para tu empresa:</strong> {Math.round(application.adjusted_match_percentage)}% <span className="text-[var(--muted)]">(base {Math.round(application.base_match_percentage || 0)}%)</span></p> : null}
+                <div className="flex items-center justify-between gap-3"><h3 className="font-bold">Respuestas de postulación</h3><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${projectedAdjustment >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}>{projectedAdjustment > 0 ? "+" : ""}{projectedAdjustment} puntos</span></div>
+                <dl className="mt-3 space-y-3">{application.screening_answers.map((item, index) => { const canReview = item.type === "open" || (!item.type && String(item.answer).length > 40); return <div key={`${item.question_id}-${index}`} className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-3"><dt className="text-xs font-bold text-[var(--muted)]">{item.question || `Pregunta ${index + 1}`}</dt><dd className="mt-1 text-sm leading-6 text-[var(--ink-strong)]">{item.answer}</dd>{canReview ? <label className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3 text-xs font-bold text-[var(--muted)]"><span>Valorar esta respuesta</span><select className="field-control input-sm w-44" value={answerAdjustments[item.question_id] ?? 0} onChange={(event) => setAnswerAdjustments((current) => ({ ...current, [item.question_id]: Number(event.target.value) }))}>{[-3, -2, -1, 0, 1, 2, 3].map((value) => <option key={value} value={value}>{value > 0 ? `+${value}` : value} {value === 0 ? "· Sin ajuste" : value > 0 ? "· Suma" : "· Resta"}</option>)}</select></label> : null}</div>; })}</dl>
+                {application.base_match_percentage != null ? <p className="mt-4 border-t border-[var(--line)] pt-3 text-sm"><strong>Compatibilidad proyectada:</strong> {Math.round(Math.max(0, Math.min(100, application.base_match_percentage + projectedAdjustment)))}% <span className="text-[var(--muted)]">(base {Math.round(application.base_match_percentage || 0)}% · ajuste {projectedAdjustment > 0 ? "+" : ""}{projectedAdjustment})</span></p> : null}
               </section>
             ) : null}
             <label className="text-sm font-semibold text-[var(--muted)]">
@@ -956,7 +974,7 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
       <ConfirmModal
         open={confirmSave}
         title="Guardar cambios de la postulación"
-        description={`Se actualizarán las notas y la entrevista de ${application.candidate_name}.`}
+        description={`Se actualizarán las notas, la entrevista y la valoración de respuestas de ${application.candidate_name}.`}
         confirmLabel="Sí, guardar cambios"
         onClose={() => setConfirmSave(false)}
         onConfirm={() => onSave(changes)}

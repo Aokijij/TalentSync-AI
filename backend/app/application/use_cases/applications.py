@@ -51,7 +51,13 @@ def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
                     else question.get("negative_adjustment", 0)
                 )
         saved.append(
-            {"question_id": question["id"], "question": question["prompt"], "answer": answer}
+            {
+                "question_id": question["id"],
+                "question": question["prompt"],
+                "type": question.get("type", "open"),
+                "answer": answer,
+                "reviewer_adjustment": 0,
+            }
         )
     return saved, max(-20.0, min(20.0, adjustment))
 
@@ -177,6 +183,43 @@ def update_status(
     previous_status = application.status
     previous_stage = application.pipeline_stage
     previous_interview = application.interview_at
+    answer_adjustments = changes.pop("screening_answer_adjustments", None)
+    if answer_adjustments is not None:
+        questions = {
+            item.get("id"): item for item in application.job.application_questions or []
+        }
+        saved_answers = [dict(item) for item in application.screening_answers or []]
+        saved_ids = {item.get("question_id") for item in saved_answers}
+        unknown = set(answer_adjustments) - saved_ids
+        if unknown:
+            raise UseCaseError(
+                status_code=422,
+                detail="La valoración contiene respuestas que no pertenecen a la postulación",
+            )
+        previous_manual = sum(
+            float(item.get("reviewer_adjustment", 0) or 0) for item in saved_answers
+        )
+        new_manual = 0.0
+        for answer in saved_answers:
+            question_id = answer.get("question_id")
+            question = questions.get(question_id, {})
+            value = float(answer_adjustments.get(question_id, answer.get("reviewer_adjustment", 0)) or 0)
+            if value < -3 or value > 3:
+                raise UseCaseError(
+                    status_code=422,
+                    detail="La valoración de cada respuesta debe estar entre -3 y +3",
+                )
+            if value and question.get("type") != "open":
+                raise UseCaseError(
+                    status_code=422,
+                    detail="Solo las respuestas abiertas pueden ajustarse manualmente",
+                )
+            answer["reviewer_adjustment"] = value
+            new_manual += value
+        application.screening_answers = saved_answers
+        automatic = float(application.screening_adjustment or 0) - previous_manual
+        application.screening_adjustment = max(-20.0, min(20.0, automatic + new_manual))
+
     requested_stage = changes.pop("pipeline_stage", None)
     if requested_stage is not None:
         configured = {

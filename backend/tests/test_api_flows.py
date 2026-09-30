@@ -208,7 +208,16 @@ def test_screening_questions_adjust_only_the_company_score(client):
                     "required": True,
                     "options": ["Sí", "No"],
                     "option_scores": {"Sí": 5, "No": -3},
-                }
+                },
+                {
+                    "id": "motivation",
+                    "prompt": "Cuéntanos por qué te interesa esta oportunidad.",
+                    "type": "open",
+                    "required": True,
+                    "keywords": [],
+                    "positive_adjustment": 0,
+                    "negative_adjustment": 0,
+                },
             ],
         },
     )
@@ -237,7 +246,10 @@ def test_screening_questions_adjust_only_the_company_score(client):
         headers=candidate_headers,
         json={
             "job_id": job["id"],
-            "screening_answers": [{"question_id": "python_experience", "answer": "Sí"}],
+            "screening_answers": [
+                {"question_id": "python_experience", "answer": "Sí"},
+                {"question_id": "motivation", "answer": "Quiero aportar y aprender con el equipo."},
+            ],
         },
     )
     assert application.status_code == 201, application.text
@@ -251,6 +263,20 @@ def test_screening_questions_adjust_only_the_company_score(client):
         min(100, base + 5)
     )
     assert company_view["screening_answers"][0]["question"].startswith("¿Has trabajado")
+    adjusted = client.put(
+        f"/api/v1/applications/{company_view['id']}/status",
+        headers=owner,
+        json={"screening_answer_adjustments": {"motivation": 3}},
+    )
+    assert adjusted.status_code == 200, adjusted.text
+    assert adjusted.json()["screening_adjustment"] == 8
+    assert adjusted.json()["screening_answers"][1]["reviewer_adjustment"] == 3
+    invalid = client.put(
+        f"/api/v1/applications/{company_view['id']}/status",
+        headers=owner,
+        json={"screening_answer_adjustments": {"motivation": 4}},
+    )
+    assert invalid.status_code == 422
 
 
 def test_notifications_can_be_filtered_and_removed(client):

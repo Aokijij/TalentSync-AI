@@ -14,6 +14,7 @@ from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.catalog import CatalogJob
 from app.domain.entities.job_sectors import JOB_SECTORS
 from app.domain.entities.records import User
+from app.domain.services.external_sources import external_portal
 
 MAX_IMPORT_ROWS = 2_000
 IMPORT_HEADERS = (
@@ -509,22 +510,10 @@ def _catalog_row(
         published_at + timedelta(days=max_age_days),
         datetime.utcnow() + timedelta(days=30),
     )
-    provider_description = {
-        "JSearch": (
-            "La descripción fue publicada por la empresa y recopilada por JSearch. "
-            "Confirma las condiciones finales en la oferta original."
-        ),
-        "Adzuna": (
-            "Adzuna entrega un resumen del anuncio. Confirma los requisitos "
-            "completos en la publicación original."
-        ),
-        "Jooble": (
-            "Jooble entrega un resumen del anuncio. Confirma los requisitos "
-            "completos en la publicación original."
-        ),
-    }.get(
-        source_name,
-        "Confirma los requisitos y condiciones en la publicación original.",
+    portal = external_portal(job.url, job.location)
+    provider_description = (
+        f"{portal} publica el detalle completo de requisitos y condiciones. "
+        "Confirma la información directamente en el anuncio original."
     )
     return {
         "fuente": source_name,
@@ -532,7 +521,7 @@ def _catalog_row(
         "empresa": job.company,
         "cargo": job.title,
         "descripcion": job.description
-        or f"Consulta la descripción completa de esta oportunidad en {source_name}.",
+        or f"Consulta la descripción completa de esta oportunidad en {portal}.",
         "requisitos": job.requirements or provider_description,
         "sector": _infer_sector(text),
         "enlace_externo": job.url,
@@ -547,7 +536,7 @@ def _catalog_row(
         "beneficios": "|".join(job.benefits),
         "sitio_empresa": job.company_url,
         "descripcion_empresa": (
-            f"Empresa con una oportunidad publicada a través de {source_name}."
+            f"Empresa con una oportunidad publicada en {portal}."
         ),
     }
 

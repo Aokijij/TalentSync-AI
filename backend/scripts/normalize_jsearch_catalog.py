@@ -3,16 +3,19 @@
 import json
 from collections import defaultdict
 
+from app.domain.services.external_sources import clean_external_location
 from app.infrastructure.database.models import Job
 from app.infrastructure.database.session import SessionLocal
 from app.infrastructure.job_catalogs.jsearch import (
     _extract_colombian_salary,
     _title_without_salary,
 )
+from app.infrastructure.nlp.text_processor import text_processor
 
 
 def normalize_catalog() -> dict[str, int]:
-    titles_updated = salaries_updated = duplicates_closed = 0
+    titles_updated = salaries_updated = duplicates_closed = locations_updated = 0
+    skills_updated = 0
     with SessionLocal() as session:
         jobs = (
             session.query(Job)
@@ -33,6 +36,29 @@ def normalize_catalog() -> dict[str, int]:
             if job.salary is None and inferred_salary is not None:
                 job.salary = inferred_salary
                 salaries_updated += 1
+            clean_location = clean_external_location(job.location)
+            if clean_location != (job.location or ""):
+                job.location = clean_location or None
+                locations_updated += 1
+            portal = job.source_portal or "el sitio de la empresa"
+            if job.company:
+                job.company.description = (
+                    f"Empresa con una oportunidad publicada en {portal}."
+                )
+            if "JSearch" in (job.requirements or ""):
+                job.requirements = (
+                    f"Consulta los requisitos completos y las condiciones en {portal}."
+                )
+            analysis = text_processor.analyze_job(
+                f"{clean_title} {job.description or ''} {job.requirements or ''}"
+            )
+            enriched_skills = list(
+                dict.fromkeys([*(job.skills or []), *analysis.skills])
+            )[:30]
+            if enriched_skills != (job.skills or []):
+                job.skills = enriched_skills
+                skills_updated += 1
+            job.embedding = analysis.embedding
             key = (
                 job.company_id,
                 clean_title.casefold(),
@@ -62,6 +88,8 @@ def normalize_catalog() -> dict[str, int]:
         "titles_updated": titles_updated,
         "salaries_updated": salaries_updated,
         "duplicates_closed": duplicates_closed,
+        "locations_updated": locations_updated,
+        "skills_updated": skills_updated,
     }
 
 

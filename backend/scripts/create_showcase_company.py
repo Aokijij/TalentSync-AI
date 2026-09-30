@@ -113,6 +113,21 @@ CANDIDATES = (
     ("Santiago Peña", "Analista BI", ["power bi", "sql", "excel", "análisis de datos", "presentaciones"], 3),
 )
 
+CANDIDATE_DETAILS = (
+    ("Especialista de experiencia del cliente", "Servicios Cercanos S.A.S.", "Administración de Empresas", "Universidad de Antioquia", "Customer Experience Fundamentals", "CX Academy", "Lideró mejoras en atención que redujeron tiempos de respuesta y fortalecieron la medición de satisfacción."),
+    ("Analista de selección", "Talento Humano Integral", "Psicología", "Universidad CES", "Entrevista por competencias", "LinkedIn Learning", "Gestionó procesos de selección completos, desde la definición del perfil hasta el acompañamiento de ingreso."),
+    ("Analista de operaciones", "Operaciones Confiables", "Tecnología en Gestión Empresarial", "SENA", "Indicadores de gestión", "SENA", "Consolidó indicadores operativos, documentó controles y coordinó planes de mejora con equipos internos."),
+    ("Ejecutivo de cuenta corporativa", "Soluciones Comerciales Andinas", "Mercadeo", "Universidad EAFIT", "Ventas consultivas", "HubSpot Academy", "Desarrolló cuentas empresariales mediante diagnóstico de necesidades, negociación y seguimiento en CRM."),
+    ("Analista de inteligencia de negocio", "Datos y Decisiones S.A.S.", "Ingeniería Industrial", "Universidad Nacional de Colombia", "Microsoft Power BI Data Analyst", "Microsoft", "Construyó tableros financieros y automatizó reportes para facilitar decisiones de líderes comerciales y operativos."),
+    ("Líder de proyectos", "Gestión Estratégica Colombia", "Ingeniería Administrativa", "Universidad Nacional de Colombia", "Scrum Fundamentals", "SCRUMstudy", "Coordinó iniciativas multidisciplinarias, controló riesgos y presentó avances a patrocinadores y equipos de trabajo."),
+    ("Auxiliar de gestión documental", "Archivo Empresarial", "Técnica en Asistencia Administrativa", "SENA", "Gestión documental", "SENA", "Organizó expedientes, validó información y atendió solicitudes internas con precisión y oportunidad."),
+    ("Asesor integral de servicio", "Contacto Positivo", "Tecnología en Gestión de Servicios", "Institución Universitaria Pascual Bravo", "Servicio al cliente", "Coursera", "Resolvió solicitudes multicanal, documentó casos y mejoró la solución en primer contacto."),
+    ("Analista comercial", "Mercados Regionales", "Administración Comercial", "Universidad de Medellín", "CRM para equipos comerciales", "HubSpot Academy", "Analizó oportunidades, preparó propuestas y dio seguimiento a negociaciones usando datos comerciales."),
+    ("Profesional de operaciones", "Logística Urbana", "Ingeniería de Productividad y Calidad", "Politécnico Colombiano", "Lean Operations", "Coursera", "Supervisó procesos, explicó desviaciones y coordinó acciones para cumplir indicadores de calidad y servicio."),
+    ("Especialista de atracción de talento", "Personas y Cultura S.A.S.", "Psicología", "Universidad Pontificia Bolivariana", "Selección basada en datos", "LinkedIn Learning", "Diseñó estrategias de búsqueda, realizó entrevistas y acompañó decisiones de contratación con criterios claros."),
+    ("Analista de datos financieros", "Analítica Aplicada", "Estadística", "Universidad de Antioquia", "SQL for Data Analysis", "DataCamp", "Preparó modelos de datos, tableros en Power BI y análisis ejecutivos para seguimiento financiero."),
+)
+
 
 def create_showcase(email: str, name: str, password: str | None) -> dict[str, int]:
     email = str(TypeAdapter(EmailStr).validate_python(email)).lower()
@@ -256,10 +271,14 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
 
         candidates: list[User] = []
         for index, (candidate_name, profession, skills, years) in enumerate(CANDIDATES):
+            role, previous_company, degree, institution, certification, issuer, achievement = CANDIDATE_DETAILS[index]
             candidate_email = f"showcase.candidate.{index + 1:02d}@example.invalid"
             candidate = session.query(User).filter(User.email == candidate_email).first()
-            experience = f"{years} años de experiencia en funciones relacionadas con {profession.lower()}."
-            profile_text = f"{profession} {' '.join(skills)} {experience}"
+            experience = (
+                f"{years} años de experiencia en {profession.lower()}. {achievement} "
+                f"Manejo de {', '.join(skills)}."
+            )
+            profile_text = f"{profession} {' '.join(skills)} {experience} {degree}"
             analysis = text_processor.analyze_cv(profile_text)
             if candidate is None:
                 candidate = User(
@@ -276,23 +295,38 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             profile.profession = profession
             profile.skills = skills
             profile.experience = experience
-            profile.education = "Formación profesional o tecnológica relacionada con su área"
+            profile.education = f"{degree} — {institution}"
             profile.location = "Medellín"
             profile.department = "Antioquia"
             profile.availability = "Inmediata"
             profile.preferred_modality = "hybrid"
+            profile.preferred_sector = JOBS[index % len(JOBS)][4]
+            profile.desired_salary = 3_200_000 + years * 180_000
+            profile.phone = f"+57 300 55{index + 10:04d}"
             profile.experiences = [
                 {
-                    "role": profession,
-                    "company": "Organización anterior",
+                    "role": role,
+                    "company": previous_company,
                     "start_year": str(now.year - years),
                     "end_year": "Presente",
-                    "description": experience,
+                    "description": achievement,
                 }
             ]
-            profile.educations = []
-            profile.certifications = []
-            profile.languages = [{"name": "inglés", "level": "B1"}]
+            profile.educations = [
+                {
+                    "degree": degree,
+                    "institution": institution,
+                    "start_year": str(now.year - years - 4),
+                    "end_year": str(now.year - years),
+                }
+            ]
+            profile.certifications = [
+                {"name": certification, "issuer": issuer, "year": str(now.year - 1)}
+            ]
+            profile.languages = [
+                {"name": "inglés", "level": "B2" if index % 3 == 0 else "B1"},
+                {"name": "español", "level": "NATIVE"},
+            ]
             profile.embedding = analysis.embedding
             profile.updated_at = now
             candidates.append(candidate)
@@ -326,12 +360,16 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
                 {
                     "question_id": "relevant_experience",
                     "question": "¿Cuánta experiencia tienes en funciones relacionadas con este cargo?",
+                    "type": "choice",
                     "answer": "Entre 1 y 3 años" if index % 2 else "Más de 3 años",
+                    "reviewer_adjustment": 0,
                 },
                 {
                     "question_id": "motivation",
                     "question": "Cuéntanos por qué te interesa trabajar en el sector financiero.",
+                    "type": "open",
                     "answer": "Me interesa aportar desde el servicio, aprender y participar en iniciativas de innovación.",
+                    "reviewer_adjustment": 0,
                 },
             ]
             application.screening_adjustment = 4 if index % 2 == 0 else 2
