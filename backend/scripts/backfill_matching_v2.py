@@ -1,4 +1,4 @@
-"""Backfill explicit education signals and remove legacy automatic answer scores."""
+"""Backfill education signals and configured scores for screening answers."""
 
 import json
 
@@ -24,10 +24,29 @@ def run() -> dict[str, int]:
                 jobs_updated += 1
         applications_updated = 0
         for application in session.query(Application).all():
-            manual = sum(float(item.get("reviewer_adjustment", 0) or 0) for item in (application.screening_answers or []))
-            manual = max(-20.0, min(20.0, manual))
-            if float(application.screening_adjustment or 0) != manual:
-                application.screening_adjustment = manual
+            questions = {item.get("id"): item for item in (application.job.application_questions or [])}
+            answers = []
+            adjustment = 0.0
+            changed = False
+            for original in application.screening_answers or []:
+                answer = dict(original)
+                question = questions.get(answer.get("question_id"), {})
+                if answer.get("type") == "choice":
+                    configured = float((question.get("option_scores") or {}).get(answer.get("answer"), 0) or 0)
+                    reviewer = 0.0
+                else:
+                    configured = 0.0
+                    reviewer = float(answer.get("reviewer_adjustment", 0) or 0)
+                if answer.get("configured_adjustment") != configured or float(answer.get("reviewer_adjustment", 0) or 0) != reviewer:
+                    changed = True
+                answer["configured_adjustment"] = configured
+                answer["reviewer_adjustment"] = reviewer
+                adjustment += configured + reviewer
+                answers.append(answer)
+            adjustment = max(-20.0, min(20.0, adjustment))
+            if changed or float(application.screening_adjustment or 0) != adjustment:
+                application.screening_answers = answers
+                application.screening_adjustment = adjustment
                 applications_updated += 1
         session.commit()
         return {"jobs_updated": jobs_updated, "applications_updated": applications_updated}

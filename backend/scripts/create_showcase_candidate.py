@@ -175,8 +175,15 @@ def create_candidate(email: str, password: str) -> dict[str, int | str]:
             application.pipeline_stage = stage
             application.created_at = now - timedelta(days=index + 2)
             questions = job.application_questions or []
-            application.screening_answers = [{"question_id": question["id"], "question": question["prompt"], "type": question.get("type", "open"), "answer": (question.get("options") or ["Seis años liderando analítica, automatización y productos digitales con resultados medibles."])[-1], "reviewer_adjustment": 1 if index < 3 else 0} for question in questions]
-            application.screening_adjustment = sum(item["reviewer_adjustment"] for item in application.screening_answers)
+            answers = []
+            for question in questions:
+                is_choice = question.get("type") == "choice"
+                answer = (question.get("options") or ["Seis años liderando analítica, automatización y productos digitales con resultados medibles."])[-1]
+                configured_adjustment = float((question.get("option_scores") or {}).get(answer, 0) or 0) if is_choice else 0
+                reviewer_adjustment = 0 if is_choice else (1 if index < 3 else 0)
+                answers.append({"question_id": question["id"], "question": question["prompt"], "type": question.get("type", "open"), "answer": answer, "configured_adjustment": configured_adjustment, "reviewer_adjustment": reviewer_adjustment})
+            application.screening_answers = answers
+            application.screening_adjustment = sum(item["configured_adjustment"] + item["reviewer_adjustment"] for item in answers)
             if index == 0:
                 application.interview_at = now + timedelta(days=3, hours=2)
                 application.recruiter_notes = (

@@ -12,6 +12,7 @@ class ScreeningAnswer(BaseModel):
     answer: str = Field(min_length=1, max_length=2000)
     type: Literal["open", "choice"] | None = None
     reviewer_adjustment: float = Field(default=0, ge=-3, le=3)
+    configured_adjustment: float = Field(default=0, ge=-5, le=5)
 
 
 class ApplicationCreate(BaseModel):

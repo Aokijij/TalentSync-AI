@@ -257,21 +257,28 @@ def test_screening_questions_adjust_only_the_company_score(client):
     company_view = client.get(
         f"/api/v1/applications/jobs/{job['id']}", headers=owner
     ).json()[0]
-    assert company_view["screening_adjustment"] == 0
+    assert company_view["screening_adjustment"] == 5
     assert company_view["base_match_percentage"] == pytest.approx(base)
     assert company_view["adjusted_match_percentage"] == pytest.approx(
-        base
+        base + 5
     )
     assert company_view["screening_answers"][0]["question"].startswith("¿Has trabajado")
     adjusted = client.put(
         f"/api/v1/applications/{company_view['id']}/status",
         headers=owner,
-        json={"screening_answer_adjustments": {"python_experience": 1, "motivation": 3}},
+        json={"screening_answer_adjustments": {"motivation": 3}},
     )
     assert adjusted.status_code == 200, adjusted.text
-    assert adjusted.json()["screening_adjustment"] == 4
-    assert adjusted.json()["screening_answers"][0]["reviewer_adjustment"] == 1
+    assert adjusted.json()["screening_adjustment"] == 8
+    assert adjusted.json()["screening_answers"][0]["configured_adjustment"] == 5
+    assert adjusted.json()["screening_answers"][0]["reviewer_adjustment"] == 0
     assert adjusted.json()["screening_answers"][1]["reviewer_adjustment"] == 3
+    invalid_choice = client.put(
+        f"/api/v1/applications/{company_view['id']}/status",
+        headers=owner,
+        json={"screening_answer_adjustments": {"python_experience": 1}},
+    )
+    assert invalid_choice.status_code == 422
     invalid = client.put(
         f"/api/v1/applications/{company_view['id']}/status",
         headers=owner,

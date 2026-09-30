@@ -31,7 +31,19 @@ class ScreeningQuestionPublic(BaseModel):
 
 
 class ScreeningQuestionConfig(ScreeningQuestionPublic):
-    """Question definition only; recruiters value submitted answers manually."""
+    """Choice scores are configured up front; open answers are reviewed later."""
+
+    option_scores: dict[str, float] = Field(default_factory=dict, max_length=12)
+
+    @model_validator(mode="after")
+    def validate_choice_scores(self):
+        if self.type == "open" and self.option_scores:
+            raise ValueError("Las preguntas abiertas se valoran después de la postulación")
+        if any(option not in self.options for option in self.option_scores):
+            raise ValueError("La valoración debe pertenecer a una opción existente")
+        if any(score < -5 or score > 5 for score in self.option_scores.values()):
+            raise ValueError("La valoración de cada opción debe estar entre -5 y +5")
+        return self
 
 
 class PipelineStagesMixin(BaseModel):

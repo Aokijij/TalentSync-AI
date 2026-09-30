@@ -36,6 +36,7 @@ export function JobDetailPage() {
   const [showExternalWarning, setShowExternalWarning] = useState(false);
   const [answers, setAnswers] = useState({});
   const [availableJobs, setAvailableJobs] = useState([]);
+  const [companyId, setCompanyId] = useState(null);
 
   useEffect(() => {
     api.get(`/jobs/${jobId}`).then(({ data }) =>
@@ -77,7 +78,14 @@ export function JobDetailPage() {
         )
         .catch(() => setAlreadyApplied(false));
     }
+    if (user?.role === "company") {
+      api.get("/companies/me").then(({ data }) => setCompanyId(data.id)).catch(() => setCompanyId(null));
+    } else {
+      setCompanyId(null);
+    }
   }, [jobId, user?.role]);
+
+  const isOwnCompanyJob = user?.role === "company" && Number(companyId) === Number(job?.company_id);
 
   const similarJobs = useMemo(() => {
     if (!job) return [];
@@ -324,7 +332,7 @@ export function JobDetailPage() {
           ) : null}
         </aside>
       </section>
-      {similarJobs.length ? (
+      {!isOwnCompanyJob && similarJobs.length ? (
         <section className="surface-card p-6">
           <div>
             <p className="section-kicker">También puede interesarte</p>

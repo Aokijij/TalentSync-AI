@@ -16,6 +16,7 @@ def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
     if set(submitted_by_id) - known_ids:
         raise UseCaseError(status_code=422, detail="Hay respuestas para preguntas que no pertenecen a la vacante")
     saved: list[dict] = []
+    automatic_adjustment = 0.0
     for question in questions:
         answer = submitted_by_id.get(question["id"], "")
         if question.get("required", True) and not answer:
@@ -24,6 +25,10 @@ def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
             continue
         if question.get("type") == "choice" and answer not in question.get("options", []):
             raise UseCaseError(status_code=422, detail=f"Selecciona una opción válida para: {question['prompt']}")
+        configured_adjustment = 0.0
+        if question.get("type") == "choice":
+            configured_adjustment = float((question.get("option_scores") or {}).get(answer, 0) or 0)
+            automatic_adjustment += configured_adjustment
         saved.append(
             {
                 "question_id": question["id"],
@@ -31,11 +36,10 @@ def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
                 "type": question.get("type", "open"),
                 "answer": answer,
                 "reviewer_adjustment": 0,
+                "configured_adjustment": configured_adjustment,
             }
         )
-    # Answers never change compatibility automatically. The company reviews
-    # every answer after submission and explicitly decides each adjustment.
-    return saved, 0.0
+    return saved, max(-20.0, min(20.0, automatic_adjustment))
 
 STATUS_LABELS = {
     "submitted": "Postulación recibida",
@@ -170,6 +174,7 @@ def update_status(
                 detail="La valoración contiene respuestas que no pertenecen a la postulación",
             )
         new_manual = 0.0
+        automatic = sum(float(item.get("configured_adjustment", 0) or 0) for item in saved_answers)
         for answer in saved_answers:
             question_id = answer.get("question_id")
             value = float(answer_adjustments.get(question_id, answer.get("reviewer_adjustment", 0)) or 0)
@@ -178,10 +183,15 @@ def update_status(
                     status_code=422,
                     detail="La valoración de cada respuesta debe estar entre -3 y +3",
                 )
-            answer["reviewer_adjustment"] = value
-            new_manual += value
+            if answer.get("type") == "choice":
+                if question_id in answer_adjustments and value:
+                    raise UseCaseError(status_code=422, detail="Las respuestas de selección usan la valoración configurada en la vacante")
+                answer["reviewer_adjustment"] = 0
+            else:
+                answer["reviewer_adjustment"] = value
+                new_manual += value
         application.screening_answers = saved_answers
-        application.screening_adjustment = max(-20.0, min(20.0, new_manual))
+        application.screening_adjustment = max(-20.0, min(20.0, automatic + new_manual))
 
     requested_stage = changes.pop("pipeline_stage", None)
     if requested_stage is not None:

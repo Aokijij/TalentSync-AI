@@ -160,7 +160,7 @@ QUESTION_CONTEXTS = {
 def questions_for_job(title: str, index: int) -> list[dict]:
     key = next((name for name in QUESTION_CONTEXTS if name in title.casefold()), "")
     return [
-        {"id": f"experience_{index}", "prompt": f"¿Qué nivel de experiencia tienes en las funciones de {title}?", "type": "choice", "required": True, "options": ["Estoy iniciando", "Entre 1 y 3 años", "Más de 3 años"]},
+        {"id": f"experience_{index}", "prompt": f"¿Qué nivel de experiencia tienes en las funciones de {title}?", "type": "choice", "required": True, "options": ["Estoy iniciando", "Entre 1 y 3 años", "Más de 3 años"], "option_scores": {"Estoy iniciando": -2, "Entre 1 y 3 años": 1, "Más de 3 años": 3}},
         {"id": f"evidence_{index}", "prompt": QUESTION_CONTEXTS.get(key, "Cuéntanos un logro verificable relacionado con este cargo."), "type": "open", "required": True, "options": []},
     ]
 
@@ -241,6 +241,24 @@ CANDIDATES = (
         "Analista BI",
         ["power bi", "sql", "excel", "análisis de datos", "presentaciones"],
         3,
+    ),
+    (
+        "Lina Morales",
+        "Especialista en inteligencia de negocios",
+        ["análisis de datos", "excel", "sql", "power bi", "comunicación"],
+        5,
+    ),
+    (
+        "Sebastián Gil",
+        "Especialista de ciberseguridad",
+        ["ciberseguridad", "gestión de riesgos", "seguridad de la información", "linux", "comunicación"],
+        5,
+    ),
+    (
+        "Paula Arango",
+        "Especialista en financiación sostenible",
+        ["sostenibilidad", "análisis financiero", "gestión ambiental", "indicadores", "comunicación"],
+        6,
     ),
 )
 
@@ -353,9 +371,36 @@ CANDIDATE_DETAILS = (
         "DataCamp",
         "Preparó modelos de datos, tableros en Power BI y análisis ejecutivos para seguimiento financiero.",
     ),
+    (
+        "Especialista de inteligencia de negocios",
+        "Decisiones Financieras S.A.S.",
+        "Ingeniería de Sistemas",
+        "Universidad de Antioquia",
+        "Microsoft Power BI Data Analyst",
+        "Microsoft",
+        "Diseñó modelos SQL y tableros financieros en Power BI que redujeron el tiempo de preparación de informes ejecutivos.",
+    ),
+    (
+        "Analista sénior de seguridad de la información",
+        "Seguridad Digital Andina",
+        "Ingeniería de Sistemas",
+        "Universidad EAFIT",
+        "CompTIA Security+",
+        "CompTIA",
+        "Priorizó incidentes, fortaleció controles Linux y comunicó riesgos tecnológicos a equipos técnicos y de negocio.",
+    ),
+    (
+        "Profesional de finanzas sostenibles",
+        "Impacto Verde Colombia",
+        "Finanzas",
+        "Universidad de Medellín",
+        "Análisis ESG y finanzas sostenibles",
+        "CFA Institute",
+        "Evaluó proyectos verdes mediante indicadores financieros y ambientales y presentó recomendaciones verificables a comités de inversión.",
+    ),
 )
 
-CANDIDATE_JOB_INDEXES = (0, 1, 2, 3, 4, 5, 5, 0, 3, 2, 1, 4)
+CANDIDATE_JOB_INDEXES = (0, 1, 2, 3, 4, 5, 5, 0, 3, 2, 1, 4, 4, 7, 11)
 
 
 def create_showcase(email: str, name: str, password: str | None) -> dict[str, int]:
@@ -602,6 +647,7 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             (ApplicationStatus.REJECTED, "rejected"),
         ]
         applications = 0
+        candidates_over_70 = 0
         uow = SqlAlchemyUnitOfWork(session)
         for index, candidate in enumerate(candidates):
             job = jobs[CANDIDATE_JOB_INDEXES[index]]
@@ -621,30 +667,37 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             application.pipeline_stage = stage
             application.created_at = now - timedelta(days=index + 1)
             configured_questions = job.application_questions or questions_for_job(job.title, CANDIDATE_JOB_INDEXES[index])
+            choice_answer = "Entre 1 y 3 años" if index % 2 else "Más de 3 años"
+            choice_adjustment = float((configured_questions[0].get("option_scores") or {}).get(choice_answer, 0) or 0)
+            open_adjustment = 1 if index % 2 == 0 else 0
             application.screening_answers = [
                 {
                     "question_id": configured_questions[0]["id"],
                     "question": configured_questions[0]["prompt"],
                     "type": "choice",
-                    "answer": "Entre 1 y 3 años" if index % 2 else "Más de 3 años",
-                    "reviewer_adjustment": 1 if index % 2 == 0 else 0,
+                    "answer": choice_answer,
+                    "configured_adjustment": choice_adjustment,
+                    "reviewer_adjustment": 0,
                 },
                 {
                     "question_id": configured_questions[1]["id"],
                     "question": configured_questions[1]["prompt"],
                     "type": "open",
                     "answer": f"En mi experiencia apliqué {', '.join(candidate.profile.skills[:3])} y documenté resultados verificables para el equipo.",
-                    "reviewer_adjustment": 1 if index % 2 == 0 else 0,
+                    "configured_adjustment": 0,
+                    "reviewer_adjustment": open_adjustment,
                 },
             ]
-            application.screening_adjustment = 2 if index % 2 == 0 else 0
-            upsert_recommendation(
+            application.screening_adjustment = choice_adjustment + open_adjustment
+            recommendation = upsert_recommendation(
                 uow,
                 candidate,
                 job,
                 nlp=text_processor,
                 commit_result=False,
             )
+            if recommendation.match_percentage >= 70:
+                candidates_over_70 += 1
         session.commit()
         return {
             "company_user_id": owner.id,
@@ -652,6 +705,7 @@ def create_showcase(email: str, name: str, password: str | None) -> dict[str, in
             "jobs": len(jobs),
             "candidates": len(candidates),
             "applications_created": applications,
+            "candidates_over_70": candidates_over_70,
         }
 
 
