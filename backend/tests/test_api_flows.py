@@ -584,6 +584,47 @@ def test_profile_and_matching_contract(client):
     assert ranked.json()[0]["has_applied"] is True
 
 
+def test_profile_updates_full_name_and_builds_concise_summary(client):
+    _, headers = register(client, "nombre-completo")
+    profile = client.get("/api/v1/profiles/me", headers=headers).json()
+    profile.update(
+        {
+            "name": "Juliana Andrea Duque Pérez",
+            "profession": "Analista de datos",
+            "skills": ["Python", "SQL", "Power BI"],
+            "preferred_sector": "Tecnologia y software",
+            "experiences": [
+                {
+                    "role": "Analista de inteligencia",
+                    "company": "Empresa que no debe repetirse",
+                    "start_year": "2022",
+                    "end_year": "Presente",
+                    "description": "Creación de tableros y análisis de indicadores.",
+                }
+            ],
+            "educations": [
+                {
+                    "degree": "Ingeniería de Sistemas",
+                    "institution": "Universidad de prueba",
+                    "start_year": "2017",
+                    "end_year": "2022",
+                }
+            ],
+        }
+    )
+
+    saved = client.put("/api/v1/profiles/me", headers=headers, json=profile)
+
+    assert saved.status_code == 200, saved.text
+    assert client.get("/api/v1/auth/me", headers=headers).json()["name"] == (
+        "Juliana Andrea Duque Pérez"
+    )
+    summary = saved.json()["experience"]
+    assert "Analista de inteligencia" in summary
+    assert "python" in summary
+    assert "Empresa que no debe repetirse" not in summary
+
+
 @pytest.mark.parametrize(
     "score,expected_count,invite_status", [(50, 1, 200), (49.99, 0, 422)]
 )

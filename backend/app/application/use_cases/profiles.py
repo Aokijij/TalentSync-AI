@@ -31,6 +31,49 @@ def get_my_profile(current_user: User) -> Profile:
     return current_user.profile
 
 
+def build_professional_summary(profile: Profile, fallback: str | None = None) -> str | None:
+    """Build a short CV overview without repeating employer names."""
+    profession = (profile.profession or "").strip()
+    roles = []
+    for item in profile.experiences or []:
+        role = str(item.get("role") or "").strip()
+        if role and role.casefold() not in {value.casefold() for value in roles}:
+            roles.append(role)
+    skills = [str(value).strip() for value in (profile.skills or []) if str(value).strip()]
+    education = next(
+        (
+            str(item.get("degree") or "").strip()
+            for item in (profile.educations or [])
+            if str(item.get("degree") or "").strip()
+        ),
+        "",
+    )
+
+    sentences: list[str] = []
+    if profession and roles:
+        sentences.append(
+            f"{profession} con experiencia en {', '.join(roles[:3])}."
+        )
+    elif profession:
+        sentences.append(f"Perfil profesional en {profession}.")
+    elif roles:
+        sentences.append(f"Experiencia en {', '.join(roles[:3])}.")
+
+    if skills:
+        sentences.append(f"Fortalezas en {', '.join(skills[:6])}.")
+    if education:
+        sentences.append(f"Formación en {education}.")
+    if profile.preferred_sector:
+        sentences.append(
+            f"Interés en oportunidades del sector {profile.preferred_sector.lower()}."
+        )
+
+    summary = " ".join(sentences).strip()
+    if not summary:
+        return fallback.strip() if fallback and fallback.strip() else None
+    return summary[:600].rstrip()
+
+
 def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork) -> dict:
     candidate = db.users.get(user_id)
     if (
@@ -80,10 +123,14 @@ def update_my_profile(
     payload: dict[str, Any], current_user: User, db: UnitOfWork, *, nlp: TextAnalysis
 ) -> Profile:
     profile = current_user.profile or db.profiles.new(user_id=current_user.id)
+    requested_name = (payload.pop("name", None) or "").strip()
+    if requested_name:
+        current_user.name = requested_name
+        db.add(current_user)
     profile.profession = payload["profession"]
     profile.skills = normalize_skills(payload["skills"])
     profile.languages = payload.get("languages", [])
-    profile.experience = payload["experience"]
+    previous_summary = payload["experience"]
     profile.education = payload["education"]
     profile.location = payload["location"]
     profile.department = payload["department"]
@@ -97,13 +144,14 @@ def update_my_profile(
     profile.certifications = payload["certifications"] or []
     profile.resume_style = payload["resume_style"]
     profile.resume_color = payload.get("resume_color", "default")
+    profile.experience = build_professional_summary(profile, previous_summary)
     text = " ".join(
         filter(
             None,
             [
                 payload["profession"],
                 " ".join(profile.skills),
-                payload["experience"],
+                profile.experience,
                 payload["education"],
                 payload["location"],
                 payload["department"],
@@ -196,6 +244,10 @@ def upload_cv(
     profile.experiences = analysis.experiences or profile.experiences or []
     profile.educations = analysis.educations or profile.educations or []
     profile.certifications = analysis.certifications or profile.certifications or []
+    if analysis.experiences:
+        profile.experience = build_professional_summary(
+            profile, analysis.experience or profile.experience
+        )
     profile.embedding = analysis.embedding
     db.add(profile)
     db.commit()

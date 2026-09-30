@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BriefcaseBusiness,
+  ChevronLeft,
+  ChevronRight,
   Send,
   Sparkles,
   TrendingUp,
@@ -16,6 +18,7 @@ import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { externalPortal } from "../utils/externalPortal.js";
+import { pageItems, totalPages } from "../utils/pagination.js";
 
 export function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState([]);
@@ -32,6 +35,8 @@ export function RecommendationsPage() {
   });
 
   const [expandedReasons, setExpandedReasons] = useState({});
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
 
   async function load() {
     setLoading(true);
@@ -70,10 +75,17 @@ export function RecommendationsPage() {
   );
 
   const enriched = useRecommendations(recommendations, minCompatibility, false);
+  const pages = totalPages(enriched, pageSize);
+  const visibleRecommendations = pageItems(enriched, page, pageSize);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, pages));
+  }, [pages]);
 
   function changeMinimum(value) {
     const next = Number(value);
     setMinCompatibility(next);
+    setPage(1);
     localStorage.setItem("talentsync_recommendation_min", String(next));
   }
 
@@ -168,7 +180,7 @@ export function RecommendationsPage() {
           </div>
 
           <div className="divide-y divide-[var(--line)]">
-            {enriched.map((item) => {
+            {visibleRecommendations.map((item) => {
               const job = jobsById.get(item.job_id);
               const applied = appliedJobIds.has(item.job_id);
               const isExpanded = expandedReasons[item.id] ?? false;
@@ -307,6 +319,18 @@ export function RecommendationsPage() {
               </div>
             ) : null}
           </div>
+          {enriched.length > pageSize ? (
+            <nav className="flex flex-col gap-3 border-t border-[var(--line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between" aria-label="Paginación de recomendaciones">
+              <p className="text-sm text-[var(--muted)]">
+                Mostrando {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, enriched.length)} de {enriched.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button type="button" className="button-secondary button-sm" disabled={page === 1} onClick={() => setPage((current) => current - 1)}><ChevronLeft size={15} />Anterior</button>
+                <strong className="px-2 text-sm">{page} / {pages}</strong>
+                <button type="button" className="button-secondary button-sm" disabled={page === pages} onClick={() => setPage((current) => current + 1)}>Siguiente<ChevronRight size={15} /></button>
+              </div>
+            </nav>
+          ) : null}
         </section>
       )}
 

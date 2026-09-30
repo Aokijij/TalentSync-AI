@@ -18,7 +18,7 @@ import {
   Sparkles,
   RotateCcw,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -40,32 +40,54 @@ const contractLabel = {
   part_time: "Medio tiempo",
   contract: "Contrato",
 };
+const defaultFilters = {
+  modality: "",
+  department: "",
+  location: "",
+  sector: "",
+  employment_type: "",
+  min_salary: "",
+  max_salary: "",
+  published_days: "",
+  source_kind: "",
+  sort: "match",
+};
 
 export function JobsPage() {
   const { user } = useAuth();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [matches, setMatches] = useState({});
   const [matchConfidence, setMatchConfidence] = useState({});
   const [profileSkills, setProfileSkills] = useState([]);
-  const [onlyMySkills, setOnlyMySkills] = useState(false);
-  const [minCompatibility, setMinCompatibility] = useState(0);
-  const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState({
-    modality: "",
-    department: "",
-    location: "",
-    sector: "",
-    employment_type: "",
-    min_salary: "",
-    max_salary: "",
-    published_days: "",
-    source_kind: "",
-    sort: "match",
-  });
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(9);
-  const [showFilters, setShowFilters] = useState(false);
+  const [onlyMySkills, setOnlyMySkills] = useState(() => searchParams.get("skills") === "1");
+  const [minCompatibility, setMinCompatibility] = useState(() => Number(searchParams.get("match") || 0));
+  const [query, setQuery] = useState(() => searchParams.get("q") || "");
+  const [filters, setFilters] = useState(() => Object.fromEntries(
+    Object.keys(defaultFilters).map((key) => [key, searchParams.get(key) ?? defaultFilters[key]]),
+  ));
+  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get("page") || 1)));
+  const [pageSize, setPageSize] = useState(() => [9, 12, 24].includes(Number(searchParams.get("size"))) ? Number(searchParams.get("size")) : 9);
+  const [showFilters, setShowFilters] = useState(() => searchParams.get("filters") === "1");
+
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (query) next.set("q", query);
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value && value !== defaultFilters[key]) next.set(key, value);
+    });
+    if (filters.sort !== defaultFilters.sort) next.set("sort", filters.sort);
+    if (onlyMySkills) next.set("skills", "1");
+    if (minCompatibility) next.set("match", String(minCompatibility));
+    if (page > 1) next.set("page", String(page));
+    if (pageSize !== 9) next.set("size", String(pageSize));
+    if (showFilters) next.set("filters", "1");
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [filters, minCompatibility, onlyMySkills, page, pageSize, query, searchParams, setSearchParams, showFilters]);
 
   useEffect(() => {
     const requests = [
@@ -257,7 +279,7 @@ export function JobsPage() {
             </div>
             <div className="flex flex-col gap-4 border-t border-[var(--line)] pt-4 lg:flex-row lg:items-end lg:justify-between">
               {user?.role === "candidate" ? <div className="flex flex-col gap-3 sm:flex-row sm:items-center"><label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={onlyMySkills} onChange={(event) => { setOnlyMySkills(event.target.checked); setPage(1); }} />Coincide con mis habilidades</label><Filter label="Compatibilidad mínima"><select className="field-control input-sm w-28" value={minCompatibility} onChange={(event) => { setMinCompatibility(Number(event.target.value)); setPage(1); }}>{[0, 40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}</select></Filter></div> : null}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end"><Filter label="Ordenar por"><select className="field-control input-sm min-w-44" value={filters.sort} onChange={(event) => setFilter("sort", event.target.value)}>{user?.role === "candidate" ? <option value="match">Mayor compatibilidad</option> : null}<option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="salary_desc">Mayor sueldo</option><option value="salary_asc">Menor sueldo</option></select></Filter><button type="button" className="button-secondary button-sm" onClick={() => { setFilters({ modality: "", department: "", location: "", sector: "", employment_type: "", min_salary: "", max_salary: "", published_days: "", source_kind: "", sort: user?.role === "candidate" ? "match" : "newest" }); setQuery(""); setOnlyMySkills(false); setMinCompatibility(0); setPage(1); }}><RotateCcw size={15} />Restablecer</button></div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end"><Filter label="Ordenar por"><select className="field-control input-sm min-w-44" value={filters.sort} onChange={(event) => setFilter("sort", event.target.value)}>{user?.role === "candidate" ? <option value="match">Mayor compatibilidad</option> : null}<option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="salary_desc">Mayor sueldo</option><option value="salary_asc">Menor sueldo</option></select></Filter><button type="button" className="button-secondary button-sm" onClick={() => { setFilters({ ...defaultFilters, sort: user?.role === "candidate" ? "match" : "newest" }); setQuery(""); setOnlyMySkills(false); setMinCompatibility(0); setPage(1); }}><RotateCcw size={15} />Restablecer</button></div>
             </div>
           </div>
         ) : activeFilterCount ? <button type="button" className="mt-4 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setShowFilters(true)}>{activeFilterCount} filtro{activeFilterCount === 1 ? " activo" : "s activos"} · Ver o cambiar</button> : null}
@@ -272,6 +294,7 @@ export function JobsPage() {
             confidence={matchConfidence[job.id]}
             applied={applied.has(job.id)}
             showMatch={user?.role === "candidate"}
+            returnTo={`${location.pathname}${location.search}`}
           />
         ))}
         {!visibleJobs.length ? (
@@ -335,7 +358,7 @@ export function JobsPage() {
   );
 }
 
-function JobCard({ job, match, confidence, applied, showMatch }) {
+function JobCard({ job, match, confidence, applied, showMatch, returnTo }) {
   const score = Number(match ?? 0);
   return (
     <article className="surface-card flex flex-col p-5 transition-colors hover:border-[var(--accent)]">
@@ -423,7 +446,7 @@ function JobCard({ job, match, confidence, applied, showMatch }) {
               ? "Salario no informado"
               : "A convenir"}
         </strong>
-        <Link to={`/vacantes/${job.id}`} className="button-primary button-sm">
+        <Link to={`/vacantes/${job.id}`} state={{ returnTo }} className="button-primary button-sm">
           {job.source_kind === "external"
             ? "Ver oferta"
             : applied
@@ -438,12 +461,22 @@ function JobCard({ job, match, confidence, applied, showMatch }) {
 function SalaryRange({ minimum, maximum, ceiling, onMinimum, onMaximum }) {
   const safeMinimum = Math.min(minimum, maximum);
   const safeMaximum = Math.max(maximum, minimum);
+  const minimumPercent = (safeMinimum / ceiling) * 100;
+  const maximumPercent = (safeMaximum / ceiling) * 100;
   return (
     <div className="sm:col-span-2 lg:col-span-1">
       <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--muted)]"><CircleDollarSign size={14} />Rango salarial</p>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="relative"><span className="sr-only">Salario mínimo</span><input className="field-control input-md !pl-7" type="number" min="0" step="250000" value={safeMinimum || ""} onChange={(event) => onMinimum(Math.min(Number(event.target.value || 0), safeMaximum))} placeholder="Desde" /><span className="absolute left-3 top-3 text-sm text-[var(--muted)]">$</span></label>
-        <label className="relative"><span className="sr-only">Salario máximo</span><input className="field-control input-md !pl-7" type="number" min="0" step="250000" value={safeMaximum >= ceiling ? "" : safeMaximum} onChange={(event) => onMaximum(event.target.value ? Math.max(Number(event.target.value), safeMinimum) : ceiling)} placeholder="Sin límite" /><span className="absolute left-3 top-3 text-sm text-[var(--muted)]">$</span></label>
+      <div className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface)] px-3 py-3">
+        <div className="flex items-center justify-between text-xs font-semibold text-[var(--ink)]">
+          <span>${safeMinimum.toLocaleString("es-CO")}</span>
+          <span>{safeMaximum >= ceiling ? "Sin límite" : `$${safeMaximum.toLocaleString("es-CO")}`}</span>
+        </div>
+        <div className="relative mt-3 h-5">
+          <div className="absolute left-0 right-0 top-2 h-1.5 rounded-full bg-[var(--line)]" />
+          <div className="absolute top-2 h-1.5 rounded-full bg-[var(--accent)]" style={{ left: `${minimumPercent}%`, right: `${100 - maximumPercent}%` }} />
+          <input aria-label="Salario mínimo" className="salary-range-input absolute inset-0 w-full" type="range" min="0" max={ceiling} step="250000" value={safeMinimum} onChange={(event) => onMinimum(Math.min(Number(event.target.value), safeMaximum))} />
+          <input aria-label="Salario máximo" className="salary-range-input absolute inset-0 w-full" type="range" min="0" max={ceiling} step="250000" value={safeMaximum} onChange={(event) => onMaximum(Math.max(Number(event.target.value), safeMinimum))} />
+        </div>
       </div>
     </div>
   );

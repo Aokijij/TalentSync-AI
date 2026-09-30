@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BriefcaseBusiness,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Send,
   Sparkles,
@@ -20,6 +22,7 @@ import {
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { Link } from "react-router-dom";
+import { pageItems, totalPages } from "../utils/pagination.js";
 
 const candidateStatusLabel = {
   submitted: "Postulación recibida",
@@ -41,6 +44,8 @@ export function CandidateDashboard() {
   const [applicationError, setApplicationError] = useState("");
   const [externalJob, setExternalJob] = useState(null);
   const [expandedReasons, setExpandedReasons] = useState({});
+  const [recommendationPage, setRecommendationPage] = useState(1);
+  const recommendationPageSize = 4;
   const [minCompatibility] = useState(() => {
     const saved = Number(localStorage.getItem("talentsync_recommendation_min"));
     return [40, 50, 60, 70, 80, 90].includes(saved) ? saved : 40;
@@ -82,6 +87,16 @@ export function CandidateDashboard() {
     minCompatibility,
     false,
   );
+  const recommendationPages = totalPages(enriched, recommendationPageSize);
+  const visibleRecommendations = pageItems(
+    enriched,
+    recommendationPage,
+    recommendationPageSize,
+  );
+
+  useEffect(() => {
+    setRecommendationPage((current) => Math.min(current, recommendationPages));
+  }, [recommendationPages]);
 
   const appliedJobIds = useMemo(
     () => new Set(applications.map((application) => application.job_id)),
@@ -280,7 +295,7 @@ export function CandidateDashboard() {
           </div>
 
           <div className="divide-y divide-[var(--line)]">
-            {enriched.map((item) => {
+            {visibleRecommendations.map((item) => {
               const job = jobsById.get(item.job_id);
               const applied = appliedJobIds.has(item.job_id);
               const isExpanded = expandedReasons[item.id] ?? false;
@@ -401,6 +416,18 @@ export function CandidateDashboard() {
               </div>
             ) : null}
           </div>
+          {enriched.length > recommendationPageSize ? (
+            <nav className="flex flex-col gap-3 border-t border-[var(--line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between" aria-label="Paginación de recomendaciones del inicio">
+              <p className="text-sm text-[var(--muted)]">
+                Mostrando {(recommendationPage - 1) * recommendationPageSize + 1}–{Math.min(recommendationPage * recommendationPageSize, enriched.length)} de {enriched.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button type="button" className="button-secondary button-sm" disabled={recommendationPage === 1} onClick={() => setRecommendationPage((current) => current - 1)}><ChevronLeft size={15} />Anterior</button>
+                <strong className="px-2 text-sm">{recommendationPage} / {recommendationPages}</strong>
+                <button type="button" className="button-secondary button-sm" disabled={recommendationPage === recommendationPages} onClick={() => setRecommendationPage((current) => current + 1)}>Siguiente<ChevronRight size={15} /></button>
+              </div>
+            </nav>
+          ) : null}
         </div>
 
         <aside className="space-y-4">

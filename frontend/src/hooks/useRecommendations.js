@@ -40,14 +40,6 @@ export function selectRecommendations(
         strongSkills,
       };
     })
-    .filter(
-      (recommendation) =>
-        recommendation.match_percentage >= 40 &&
-        ((recommendation.skill_match_percentage ?? 0) >= 50 ||
-          (recommendation.semantic_match_percentage ?? 0) >= 75 ||
-          ((recommendation.skill_match_percentage ?? 0) >= 30 &&
-            (recommendation.semantic_match_percentage ?? 0) >= 65)),
-    )
     .filter((recommendation) =>
       onlyStrongSkills ? recommendation.strongSkills : true,
     )

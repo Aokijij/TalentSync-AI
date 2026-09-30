@@ -20,7 +20,7 @@ test("preserves recommendation metadata and does not mutate API records", () => 
   assert.equal(record.reasons.length, 3);
 });
 
-test("keeps the original relevance thresholds and ordering", () => {
+test("respects the percentage selected by the candidate without hidden thresholds", () => {
   const records = [
     { id: 1, match_percentage: 39.99, skill_match_percentage: 100 },
     { id: 2, match_percentage: 40, skill_match_percentage: 50 },
@@ -40,11 +40,11 @@ test("keeps the original relevance thresholds and ordering", () => {
   ];
   assert.deepEqual(
     selectRecommendations(records, 0, false).map(({ id }) => id),
-    [2, 3, 4],
+    [1, 2, 3, 4, 5],
   );
   assert.deepEqual(
     selectRecommendations(records, 55, false).map(({ id }) => id),
-    [4],
+    [4, 5],
   );
 });
 

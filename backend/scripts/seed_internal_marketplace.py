@@ -47,6 +47,29 @@ COMPANIES = (
     ("Costa Azul Turismo", "Turismo y hoteleria", "Santa Marta", "Magdalena"),
 )
 
+COMPANY_FOCUS = {
+    "Andina Digital": "productos SaaS empresariales",
+    "Nexo Salud Integral": "atención ambulatoria",
+    "Horizonte Logístico": "distribución de última milla",
+    "Prisma Financiero": "banca digital inclusiva",
+    "Verde Urbano": "proyectos urbanos sostenibles",
+    "Aula Abierta Colombia": "aprendizaje híbrido",
+    "Brújula Comercial": "soluciones B2B",
+    "Origen Alimentos": "producción de alimentos",
+    "Ruta Hotelera": "operación hotelera premium",
+    "Integra Talento": "experiencia del colaborador",
+    "Atlas Ingeniería": "infraestructura institucional",
+    "Boreal Energía": "operaciones energéticas",
+    "Vértice Manufactura": "manufactura metalmecánica",
+    "Pulso Creativo": "estrategia de marcas",
+    "Conecta Servicios": "experiencia omnicanal",
+    "Nova Agroindustria": "cadenas agroindustriales",
+    "Casa Urbana": "comercio minorista",
+    "Equilibrio Bienestar": "programas de bienestar",
+    "Cumbre Consultoría": "transformación organizacional",
+    "Costa Azul Turismo": "experiencias de turismo sostenible",
+}
+
 COMMON_ROLES = (
     (
         "Analista de operaciones",
@@ -150,6 +173,50 @@ def roles_for(sector: str):
     return (*SECTOR_ROLES.get(sector, ()), *COMMON_ROLES)
 
 
+def specialized_title(title: str, focus: str) -> str:
+    connector = "para" if title.startswith(("Analista", "Coordinador")) else "en"
+    return f"{title} {connector} {focus}"
+
+
+def application_questions(
+    role_index: int, title: str, skills: list[str], responsibility: str, focus: str
+) -> list[dict]:
+    experience_options = [
+        "Aún no tengo experiencia directa",
+        "Menos de 2 años",
+        "Entre 2 y 4 años",
+        "Más de 4 años",
+    ]
+    return [
+        {
+            "id": f"experience_{role_index}",
+            "prompt": f"¿Qué experiencia tienes como {title.lower()}?",
+            "type": "choice",
+            "required": True,
+            "options": experience_options,
+            "option_scores": {
+                experience_options[0]: -3,
+                experience_options[1]: 0,
+                experience_options[2]: 3,
+                experience_options[3]: 5,
+            },
+        },
+        {
+            "id": f"scenario_{role_index}",
+            "prompt": (
+                f"Describe una situación en la que lograste {responsibility} "
+                f"o un resultado comparable en {focus}."
+            ),
+            "type": "open",
+            "required": role_index % 2 == 1,
+            "options": [],
+            "keywords": skills[:4],
+            "positive_adjustment": 2,
+            "negative_adjustment": 0,
+        },
+    ]
+
+
 def seed_marketplace() -> dict[str, int]:
     now = datetime.utcnow()
     companies_created = jobs_created = jobs_updated = 0
@@ -206,6 +273,8 @@ def seed_marketplace() -> dict[str, int]:
 
             roles = roles_for(sector)
             for role_index, (title, skills, responsibility) in enumerate(roles, 1):
+                focus = COMPANY_FOCUS[name]
+                title = specialized_title(title, focus)
                 external_id = f"market-{company_index:02d}-{role_index:02d}"
                 job = (
                     session.query(Job)
@@ -214,48 +283,30 @@ def seed_marketplace() -> dict[str, int]:
                 )
                 description = (
                     f"En {name} buscamos una persona para {responsibility}. "
-                    f"El rol trabajará con equipos del sector {sector.lower()}, organizará prioridades, "
-                    "documentará avances y hará seguimiento a indicadores acordados. "
-                    "Entre sus responsabilidades estará analizar situaciones del día a día, proponer "
-                    "acciones de mejora, coordinar a las personas involucradas y comunicar resultados "
-                    "de forma clara a líderes, clientes o usuarios internos."
+                    f"Su trabajo estará conectado con {focus} y tendrá impacto directo en "
+                    f"{('la calidad del servicio' if role_index % 3 == 0 else 'la eficiencia del equipo' if role_index % 3 == 1 else 'la experiencia de clientes y usuarios')}. "
+                    f"Durante los primeros meses deberá {('construir una línea base de indicadores' if role_index % 2 else 'entender el proceso actual y priorizar mejoras')}, "
+                    "coordinar a las personas involucradas y comunicar resultados de forma clara."
                 )
+                education = (
+                    "Formación técnica o tecnológica relacionada con el cargo"
+                    if role_index in {2, 4, 8}
+                    else "Formación profesional relacionada con el cargo"
+                )
+                experience = (role_index % 4) + 1
                 requirements = (
-                    "Formación técnica, tecnológica o profesional relacionada con el cargo. "
-                    f"Experiencia demostrable en {', '.join(skills)}. "
-                    "Se valoran la capacidad de analizar información, resolver problemas, priorizar tareas, "
-                    "documentar decisiones y trabajar de manera colaborativa. La persona debe explicar "
-                    "ejemplos concretos de resultados obtenidos en experiencias académicas o laborales."
+                    f"{education} y al menos {experience} año{'s' if experience != 1 else ''} de experiencia. "
+                    f"Conocimientos necesarios: {', '.join(skills)}. "
+                    f"Para este reto se necesita demostrar capacidad para {responsibility}, "
+                    f"trabajar con información de {focus}, priorizar tareas y documentar decisiones. "
+                    "En la postulación se solicitarán ejemplos concretos de resultados obtenidos."
                 )
                 analysis = text_processor.analyze_job(
                     f"{title} {description} {requirements} {' '.join(skills)}"
                 )
-                questions = []
-                if role_index in {1, 3, 4}:
-                    questions = [
-                        {
-                            "id": "relevant_experience",
-                            "prompt": "¿Cuánta experiencia tienes en funciones relacionadas con este cargo?",
-                            "type": "choice",
-                            "required": True,
-                            "options": ["Menos de un año", "Entre 1 y 3 años", "Más de 3 años"],
-                            "option_scores": {
-                                "Menos de un año": -1,
-                                "Entre 1 y 3 años": 2,
-                                "Más de 3 años": 4,
-                            },
-                        },
-                        {
-                            "id": "motivation",
-                            "prompt": "Cuéntanos qué te interesa de esta oportunidad.",
-                            "type": "open",
-                            "required": False,
-                            "options": [],
-                            "keywords": skills[:3],
-                            "positive_adjustment": 2,
-                            "negative_adjustment": 0,
-                        },
-                    ]
+                questions = application_questions(
+                    role_index, title, skills, responsibility, focus
+                )
                 values = {
                     "company_id": company.id,
                     "title": title,
@@ -267,10 +318,13 @@ def seed_marketplace() -> dict[str, int]:
                     "modality": ("hybrid", "onsite", "remote")[
                         (company_index + role_index) % 3
                     ],
-                    "employment_type": "full_time",
+                    "employment_type": "contract" if role_index == 8 else "full_time",
                     "sector": sector,
                     "status": "active",
-                    "benefits": company_values["benefits"],
+                    "benefits": [
+                        company_values["benefits"][(role_index - 1) % 4],
+                        company_values["benefits"][role_index % 4],
+                    ],
                     "pipeline_stages": PIPELINE,
                     "languages": (
                         [{"name": "inglés", "level": "B1"}]

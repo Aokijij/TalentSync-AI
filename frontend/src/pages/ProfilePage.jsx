@@ -18,8 +18,10 @@ import {
   Save,
   Trash2,
   Upload,
+  UserRound,
 } from "lucide-react";
 import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
+import { CurrencyInput } from "../components/CurrencyInput.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ProfileCompletionRing } from "../components/ProfileCompletionRing.jsx";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
@@ -28,6 +30,7 @@ import {
   COLOMBIA_LOCATIONS,
   COLOMBIAN_DEPARTMENTS,
 } from "../constants/colombianCities.js";
+import { useAuth } from "../hooks/useAuth.js";
 
 const blanks = {
   experiences: {
@@ -68,6 +71,7 @@ const normalize = (data) => ({
 });
 
 export function ProfilePage() {
+  const { refreshUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -106,8 +110,9 @@ export function ProfilePage() {
   async function save() {
     setError("");
     try {
-      const { data } = await api.put("/profiles/me", profile);
+      const { data } = await api.put("/profiles/me", { ...profile, name });
       setProfile(normalize(data));
+      await refreshUser();
       setEditing(false);
       setMessage("Hoja de vida actualizada correctamente");
     } catch (requestError) {
@@ -290,10 +295,18 @@ export function ProfilePage() {
           <header className="bg-[var(--success)]/10 p-6 sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-[var(--ink)]">
+                {editing ? (
+                  <label className="mb-3 block max-w-xl text-sm font-semibold text-[var(--muted)]">
+                    Nombre completo
+                    <input className="field-control input-lg mt-1" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nombres y apellidos" />
+                  </label>
+                ) : (
+                  <h1 className="text-3xl font-bold text-[var(--ink)]">{name || "Candidato"}</h1>
+                )}
+                <div className={`${editing ? "" : "mt-1"} text-xl font-bold text-[var(--ink)]`}>
                   {editing ? (
                     <input
-                      className="field-control input-lg"
+                      className="field-control input-md max-w-xl"
                       value={profile.profession || ""}
                       onChange={(e) => update("profession", e.target.value)}
                       placeholder="Profesion"
@@ -301,7 +314,7 @@ export function ProfilePage() {
                   ) : (
                     profile.profession || "Perfil profesional"
                   )}
-                </h1>
+                </div>
                 <div className="mt-3 flex flex-wrap gap-4 text-sm text-[var(--muted)]">
                   <span className="flex items-center gap-1">
                     <Mail size={15} className="text-[var(--muted)]" />
@@ -371,6 +384,12 @@ export function ProfilePage() {
           </header>
           <div className="grid gap-8 p-6 sm:p-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.9fr)]">
             <div className="space-y-8">
+            <Section icon={UserRound} title="Resumen profesional">
+              <p className="text-sm leading-6 text-[var(--muted)]">
+                {profile.experience || "Agrega tu profesión, experiencia, formación y habilidades. Al guardar construiremos un resumen breve de tu trayectoria."}
+              </p>
+              {editing ? <p className="text-xs text-[var(--muted)]">Este resumen se actualiza automáticamente al guardar, sin repetir la lista de empresas.</p> : null}
+            </Section>
             <Section icon={Award} title="Experiencia laboral">
               <Items
                 type="experiences"
@@ -506,19 +525,11 @@ export function ProfilePage() {
                   </label>
                   <label className="text-sm font-semibold text-[var(--muted)]">
                     Aspiración salarial
-                    <input
+                    <CurrencyInput
                       className="field-control mt-1"
-                      type="number"
                       value={profile.desired_salary || ""}
-                      onChange={(event) =>
-                        update(
-                          "desired_salary",
-                          event.target.value
-                            ? Number(event.target.value)
-                            : null,
-                        )
-                      }
-                      placeholder="COP"
+                      onChange={(value) => update("desired_salary", value)}
+                      placeholder="4.500.000"
                     />
                   </label>
                 </div>

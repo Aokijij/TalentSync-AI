@@ -43,7 +43,7 @@ class ProfileBase(BaseModel):
 
 
 class ProfileUpdate(ProfileBase):
-    pass
+    name: str | None = Field(default=None, min_length=2, max_length=120)
 
 
 class ProfileResponse(ProfileBase):

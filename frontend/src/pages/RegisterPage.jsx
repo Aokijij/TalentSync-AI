@@ -1,6 +1,8 @@
 import {
   BriefcaseBusiness,
   Building2,
+  Eye,
+  EyeOff,
   LockKeyhole,
   Mail,
   UserRound,
@@ -26,6 +28,7 @@ export function RegisterPage() {
   const { register: createAccount } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const isCompany = role === "company";
 
   async function onSubmit(values) {
@@ -180,8 +183,8 @@ export function RegisterPage() {
                       aria-hidden="true"
                     />
                     <input
-                      className="min-h-0 p-0"
-                      type="password"
+                      className="min-h-0 flex-1 p-0"
+                      type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
                       placeholder="Mínimo 8 caracteres"
                       {...register("password", {
@@ -192,24 +195,43 @@ export function RegisterPage() {
                         },
                       })}
                     />
+                    <button
+                      type="button"
+                      className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--accent)]"
+                      onClick={() => setShowPassword((current) => !current)}
+                      aria-label={showPassword ? "Ocultar contraseñas" : "Mostrar contraseñas"}
+                    >
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
                   </div>
                 </Field>
                 <Field
                   label="Confirmar contraseña"
                   error={errors.confirm_password?.message}
                 >
-                  <input
-                    className="field-control"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Repite tu contraseña"
-                    {...register("confirm_password", {
-                      required: "Confirma tu contraseña",
-                      validate: (value) =>
-                        value === getValues("password") ||
-                        "Las contraseñas no coinciden",
-                    })}
-                  />
+                  <div className="field-control flex items-center">
+                    <LockKeyhole size={18} className="mr-3 shrink-0 text-[var(--accent)]" aria-hidden="true" />
+                    <input
+                      className="min-h-0 flex-1 p-0"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder="Repite tu contraseña"
+                      {...register("confirm_password", {
+                        required: "Confirma tu contraseña",
+                        validate: (value) =>
+                          value === getValues("password") ||
+                          "Las contraseñas no coinciden",
+                      })}
+                    />
+                    <button
+                      type="button"
+                      className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--accent)]"
+                      onClick={() => setShowPassword((current) => !current)}
+                      aria-label={showPassword ? "Ocultar contraseñas" : "Mostrar contraseñas"}
+                    >
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
                 </Field>
               </div>
               {isCompany ? (

@@ -41,13 +41,19 @@ export function AuthProvider({ children }) {
     return login(payload.email, payload.password);
   }
 
+  async function refreshUser() {
+    const { data } = await api.get("/auth/me");
+    setUser(data);
+    return data;
+  }
+
   function logout() {
     localStorage.removeItem("talentsync_token");
     setUser(null);
   }
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout }),
+    () => ({ user, loading, login, register, logout, refreshUser }),
     [user, loading],
   );
 

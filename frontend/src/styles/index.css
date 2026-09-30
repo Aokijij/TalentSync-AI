@@ -815,3 +815,43 @@ html[data-theme="dark"] .auth-stage {
     break-inside: avoid;
   }
 }
+/* Two native range inputs share one visual track. Only their thumbs capture input. */
+.salary-range-input {
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+.salary-range-input::-webkit-slider-runnable-track {
+  height: 0;
+  background: transparent;
+}
+
+.salary-range-input::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  border: 3px solid var(--surface);
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.salary-range-input::-moz-range-track {
+  height: 0;
+  background: transparent;
+}
+
+.salary-range-input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--surface);
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: grab;
+  pointer-events: auto;
+}

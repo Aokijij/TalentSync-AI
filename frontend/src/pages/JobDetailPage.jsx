@@ -12,7 +12,7 @@ import {
   ExternalLink,
   X,
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 
 import { api, apiFileUrl } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -25,6 +25,7 @@ import { cleanExternalLocation, externalPortal } from "../utils/externalPortal.j
 
 export function JobDetailPage() {
   const { jobId } = useParams();
+  const routeLocation = useLocation();
   const { user } = useAuth();
   const [job, setJob] = useState(null);
   const [match, setMatch] = useState(null);
@@ -129,7 +130,7 @@ export function JobDetailPage() {
   return (
     <div className="space-y-6">
       <Link
-        to={user?.role === "company" ? "/empresa/vacantes" : "/vacantes"}
+        to={user?.role === "company" ? "/empresa/vacantes" : (routeLocation.state?.returnTo || "/vacantes")}
         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
       >
         <ArrowLeft size={16} />
@@ -331,7 +332,7 @@ export function JobDetailPage() {
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             {similarJobs.map((item) => (
-              <Link key={item.id} to={`/vacantes/${item.id}`} className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4 transition hover:border-[var(--accent)]">
+              <Link key={item.id} to={`/vacantes/${item.id}`} state={{ returnTo: routeLocation.state?.returnTo || "/vacantes" }} className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4 transition hover:border-[var(--accent)]">
                 <p className="text-xs font-bold uppercase tracking-wide text-[var(--accent)]">{item.company_name}</p>
                 <h3 className="mt-2 font-bold text-[var(--ink-strong)]">{item.title}</h3>
                 <p className="mt-3 text-xs text-[var(--muted)]">{item.location || "Ubicación flexible"} · {formatRelativeTime(item.created_at)}</p>

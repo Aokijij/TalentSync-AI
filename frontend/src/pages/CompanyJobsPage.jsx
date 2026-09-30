@@ -21,6 +21,7 @@ import { Link } from "react-router-dom";
 
 import { api, getApiErrorMessage } from "../api/client.js";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
+import { CurrencyInput } from "../components/CurrencyInput.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
 import {
   COLOMBIA_LOCATIONS,
@@ -417,11 +418,10 @@ export function CompanyJobsPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <Field label="Salario">
-                  <input
-                    className="field-control"
-                    type="number"
-                    placeholder="COP"
-                    {...register("salary")}
+                  <CurrencyInput
+                    value={preview.salary}
+                    onChange={(value) => setValue("salary", value ?? "", { shouldDirty: true })}
+                    placeholder="4.500.000"
                   />
                 </Field>
                 <Field label="Departamento">
@@ -676,10 +676,10 @@ function ChoiceOptions({ question, onChange }) {
       </div>
       <div className="mt-3 space-y-2">
         {options.map((option, position) => (
-          <div key={position} className="grid gap-2 sm:grid-cols-[1fr_190px_auto] sm:items-center">
+          <div key={position} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_240px_auto] sm:items-center">
             <input className="field-control" value={option} maxLength={120} aria-label={`Opción ${position + 1}`} placeholder={`Opción ${position + 1}`} onChange={(event) => rename(position, event.target.value)} />
             <select className="field-control" aria-label={`Efecto de la opción ${position + 1}`} value={scoreFor(option)} onChange={(event) => setScore(option, event.target.value)}>
-              <option value="5">Favorece mucho (+5)</option><option value="3">Favorece (+3)</option><option value="0">No cambia (0)</option><option value="-3">Reduce (-3)</option><option value="-5">Reduce mucho (-5)</option>
+              <option value="5">+5 · Favorece mucho</option><option value="3">+3 · Favorece</option><option value="0">0 · No cambia</option><option value="-3">−3 · Reduce</option><option value="-5">−5 · Reduce mucho</option>
             </select>
             <button type="button" className="button-ghost button-sm !px-2 text-[var(--error)]" onClick={() => removeOption(position)} aria-label={`Eliminar opción ${position + 1}`}><Trash2 size={15} /></button>
           </div>
