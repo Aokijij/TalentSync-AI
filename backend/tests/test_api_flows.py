@@ -74,8 +74,10 @@ def create_job(client, headers):
     return response.json()
 
 
-def test_production_hides_api_docs_and_adds_security_headers(monkeypatch):
+def test_production_hides_api_docs_and_adds_security_headers(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "environment", "production")
+    (tmp_path / "index.html").write_text('<div id="root"></div>', encoding="utf-8")
+    monkeypatch.setattr(settings, "static_dir", str(tmp_path))
     app = create_app()
     with TestClient(app) as production_client:
         response = production_client.get("/health")
@@ -85,6 +87,9 @@ def test_production_hides_api_docs_and_adds_security_headers(monkeypatch):
         assert response.headers["strict-transport-security"].startswith("max-age=")
         assert production_client.get("/docs").status_code == 404
         assert production_client.get("/openapi.json").status_code == 404
+        assert production_client.get("/.env").status_code == 404
+        assert production_client.get("/.git/config").status_code == 404
+        assert production_client.get("/login").status_code == 200
 
 
 def company_account(client, name="empresa"):

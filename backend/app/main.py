@@ -97,7 +97,12 @@ def create_app() -> FastAPI:
 
             @app.get("/{full_path:path}", include_in_schema=False)
             def serve_frontend(full_path: str):
-                if full_path == "api" or full_path.startswith("api/"):
+                if (
+                    full_path == "api"
+                    or full_path.startswith("api/")
+                    or any(part.startswith(".") for part in Path(full_path).parts)
+                    or (production and full_path in {"docs", "redoc", "openapi.json"})
+                ):
                     return JSONResponse(status_code=404, content={"detail": "Not Found"})
                 requested = (static_dir / full_path).resolve()
                 if requested.is_relative_to(static_dir) and requested.is_file():
