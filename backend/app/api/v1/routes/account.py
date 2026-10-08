@@ -37,7 +37,11 @@ def _cookie_response(request, response, payload, db, security, admin):
     _origin(request)
     if admin and settings.admin_sso_required:
         raise UseCaseError(status_code=403, detail="Utiliza el acceso corporativo obligatorio")
-    result = cases.create_session(db, payload.model_dump(), security, admin=admin,
+    values = payload.model_dump()
+    for portal in ("candidate", "company"):
+        if f"/{portal}/login" in request.url.path:
+            values["portal"] = portal
+    result = cases.create_session(db, values, security, admin=admin,
                                   user_agent=request.headers.get("user-agent", ""))
     if result.get("mfa_required"):
         return result
@@ -65,6 +69,8 @@ def options(gateway=Depends(get_social_identity_provider)):
 
 
 @router.post("/auth/session/login")
+@router.post("/auth/session/candidate/login")
+@router.post("/auth/session/company/login")
 @limiter.limit("30/hour")
 def login(request: Request, response: Response, payload: LoginRequest,
           db=Depends(get_unit_of_work), security=Depends(get_account_security)):

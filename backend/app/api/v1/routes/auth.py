@@ -27,6 +27,8 @@ router = APIRouter()
 @router.post(
     "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
 )
+@router.post("/candidate/register", response_model=UserResponse, status_code=201)
+@router.post("/company/register", response_model=UserResponse, status_code=201)
 @limiter.limit("10/hour")
 def register(
     request: Request,
@@ -36,6 +38,9 @@ def register(
     nlp: TextAnalysis = Depends(get_text_analysis),
     security: AccountSecurity = Depends(get_account_security),
 ) -> User:
+    portal = next((role for role in ("candidate", "company") if f"/{role}/register" in request.url.path), None)
+    if portal and payload.role.value != portal:
+        raise UseCaseError(status_code=422, detail="El rol no corresponde a este formulario de registro")
     if settings.session_auth_enabled and len(payload.password) < 12:
         raise UseCaseError(status_code=422, detail="Usa una contraseña de al menos 12 caracteres")
     user = use_cases.register(
@@ -49,6 +54,8 @@ def register(
 
 
 @router.post("/login", response_model=TokenResponse)
+@router.post("/candidate/login", response_model=TokenResponse)
+@router.post("/company/login", response_model=TokenResponse)
 @limiter.limit("60/hour")
 def login(
     request: Request,
@@ -59,7 +66,11 @@ def login(
 ) -> TokenResponse:
     if settings.session_auth_enabled:
         raise UseCaseError(status_code=410, detail="Utiliza el acceso con sesión del navegador")
-    return use_cases.login(payload=payload.model_dump(), db=db, security=security)
+    values = payload.model_dump()
+    for portal in ("candidate", "company"):
+        if f"/{portal}/login" in request.url.path:
+            values["portal"] = portal
+    return use_cases.login(payload=values, db=db, security=security)
 
 
 @router.post("/admin/login", response_model=TokenResponse)

@@ -132,6 +132,8 @@ def login(
             status_code=403,
             detail="La cuenta administradora utiliza un acceso independiente",
         )
+    if payload.get("portal") and user.role.value != payload["portal"]:
+        raise UseCaseError(status_code=401, detail="Esta cuenta no pertenece a este acceso. Utiliza el portal de tu rol.")
     return dict(
         access_token=security.create_access_token(str(user.id), user.role.value)
     )

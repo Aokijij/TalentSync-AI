@@ -1,354 +1,50 @@
-import {
-  BriefcaseBusiness,
-  Building2,
-  Eye,
-  EyeOff,
-  LockKeyhole,
-  Mail,
-  UserRound,
-} from "lucide-react";
-import { useForm, useWatch } from "react-hook-form";
-import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { Link, Navigate, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useState } from "react";
-
-import { BrandLogo } from "../components/brand/BrandLogo.jsx";
+import { AuthFrame } from "../components/AuthFrame.jsx";
 import { useAuth } from "../hooks/useAuth.js";
-import { ThemeToggle } from "../components/ThemeToggle.jsx";
-import { AccessProviders } from "../components/AccessProviders.jsx";
+import { getApiErrorMessage } from "../api/client.js";
 
 export function RegisterPage() {
-  const location = useLocation();
-  const [params] = useSearchParams();
-  const invitation = params.get("invitation");
-  const {
-    control,
-    register,
-    handleSubmit,
-    getValues,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm({ defaultValues: { role: location.pathname.startsWith("/empresa") ? "company" : "candidate", skills: "" } });
-  const role = useWatch({ control, name: "role" });
+  const location = useLocation(), navigate = useNavigate(), [params] = useSearchParams();
+  const invitation = params.get("invitation"), company = location.pathname.startsWith("/empresa"), role = company ? "company" : "candidate";
   const { register: createAccount, accessOptions } = useAuth();
-  const navigate = useNavigate();
-  const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const isCompany = role === "company";
-
-  async function onSubmit(values) {
-    setError("");
-    const payload = {
-      ...values,
-      ...(invitation ? { invitation_token: invitation, role: "company" } : {}),
-      skills: values.skills
-        ? values.skills
-            .split(",")
-            .map((skill) => skill.trim())
-            .filter(Boolean)
-        : [],
-    };
+  const { register, trigger, getValues, watch, formState: { errors } } = useForm({ defaultValues: { name: "", email: "", profession: "", skills: "", password: "", confirm_password: "" } });
+  const [isSubmitting, setSubmitting] = useState(false);
+  const [step, setStep] = useState(0), [error, setError] = useState(""), [showPassword, setShowPassword] = useState(false);
+  const steps = ["Tu cuenta", company ? invitation ? "Tu invitación" : "Tu empresa" : "Tu perfil", "Seguridad", "Confirmar"];
+  const values = watch();
+  const fields = [["name", "email"], company && !invitation ? ["company_name", "nit", "company_description"] : company ? [] : ["profession", "skills"], ["password", "confirm_password"]];
+  if (invitation && !company) return <Navigate replace to={`/empresa/registro?invitation=${encodeURIComponent(invitation)}`} />;
+  const field = (name, label, options = {}, props = {}) => <label className="block text-sm font-semibold">{label}<input className="field-control mt-2" {...props} {...register(name, options)} />{errors[name] && <span className="mt-1 block text-sm text-[var(--error)]">{errors[name].message}</span>}</label>;
+  async function next(event) {
+    event.preventDefault(); setError("");
+    if (step < 3) { if (await trigger(fields[step], { shouldFocus: true })) setStep(step + 1); return; }
+    for (let index = 0; index < 3; index++) { if (!(await trigger(fields[index]))) { setStep(index); return; } }
+    const data = getValues();
+    setSubmitting(true);
     try {
-      const user = await createAccount(payload);
-      navigate(invitation ? `/seguridad?invitation=${encodeURIComponent(invitation)}` : user.role === "company" ? (accessOptions.mode === "session" ? "/seguridad" : "/empresa/equipo") : "/bienvenida");
-    } catch (requestError) {
-      const detail = requestError.response?.data?.detail;
-      setError(
-        Array.isArray(detail)
-          ? detail.map((item) => item.msg).join(". ")
-          : detail || "No fue posible crear la cuenta. Inténtalo de nuevo.",
-      );
-    }
+      await createAccount({ name: data.name.trim(), email: data.email.trim(), password: data.password, role,
+        ...(company ? invitation ? { invitation_token: invitation } : { company_name: data.company_name.trim(), nit: data.nit.trim(), company_description: data.company_description } : { profession: data.profession, skills: data.skills.split(",").map((skill) => skill.trim()).filter(Boolean) }) });
+      navigate(company ? accessOptions.mode === "session" ? `/seguridad${invitation ? `?invitation=${encodeURIComponent(invitation)}` : ""}` : "/empresa/equipo" : "/bienvenida");
+    } catch (failure) { setError(getApiErrorMessage(failure, "No fue posible crear la cuenta. Revisa tus datos e inténtalo de nuevo.")); }
+    finally { setSubmitting(false); }
   }
-
-  return (
-    <main className="auth-shell relative">
-      <ThemeToggle compact className="fixed right-5 top-5 z-20" />
-      <section className="auth-stage">
-        <aside
-          className="auth-brand-panel"
-          aria-label="Beneficios de TalentSync"
-        >
-          <div>
-            <BrandLogo
-              size="lg"
-              subtitle="Tu siguiente paso"
-              tone="inverse"
-            />
-            <p className="mt-16 text-sm font-bold uppercase tracking-[0.16em] text-sky-300">
-              Registro guiado
-            </p>
-            <h1 className="mt-4 max-w-md text-balance text-4xl font-bold text-white">
-              {isCompany
-                ? "Construye un proceso de selección con evidencia."
-                : "Convierte tu experiencia en oportunidades concretas."}
-            </h1>
-            <p className="mt-5 max-w-md text-base leading-7 text-sky-100">
-              {isCompany
-                ? "Publica vacantes, identifica compatibilidad y gestiona cada proceso desde un solo lugar."
-                : "Agrega una base profesional hoy; podrás enriquecer tu perfil y CV después."}
-            </p>
-          </div>
-          <div className="auth-signal-card">
-            <p className="text-sm font-bold text-white">
-              Un perfil, decisiones más precisas
-            </p>
-            <p className="mt-1 text-sm leading-5 text-sky-100">
-              Mantén tus habilidades actualizadas para que las recomendaciones sean
-              realmente útil.
-            </p>
-          </div>
-        </aside>
-        <div className="auth-form-panel">
-          <div className="auth-form">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="section-kicker">Crear cuenta</p>
-                <h2 className="mt-3 text-3xl font-bold sm:text-4xl">
-                  Comienza en TalentSync
-                </h2>
-              </div>
-              <Link
-                className="text-sm font-bold text-[var(--accent)] underline-offset-4 hover:underline focus-ring"
-                to="/login"
-              >
-                Ingresar
-              </Link>
-            </div>
-            <p className="mt-3 text-base leading-6 text-[var(--muted)]">
-              Elige tu espacio de trabajo y completa los datos esenciales.
-            </p>
-            <form
-              className="mt-7 space-y-5"
-              onSubmit={handleSubmit(onSubmit)}
-              noValidate
-            >
-              <input type="hidden" {...register("role")} />
-              <div hidden={Boolean(invitation)} className="role-switch" aria-label="Tipo de cuenta">
-                <button
-                  type="button"
-                  aria-pressed={role === "candidate"}
-                  onClick={() => setValue("role", "candidate")}
-                >
-                  <UserRound
-                    className="mr-2 inline"
-                    size={17}
-                    aria-hidden="true"
-                  />
-                  Candidato
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={role === "company"}
-                  onClick={() => setValue("role", "company")}
-                >
-                  <Building2
-                    className="mr-2 inline"
-                    size={17}
-                    aria-hidden="true"
-                  />
-                  Empresa
-                </button>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Nombre completo" error={errors.name?.message}>
-                  <input
-                    className="field-control"
-                    autoComplete="name"
-                    placeholder="Tu nombre"
-                    {...register("name", {
-                      required: "El nombre es obligatorio",
-                    })}
-                  />
-                </Field>
-                <Field label="Correo electrónico" error={errors.email?.message}>
-                  <div className="field-control flex items-center">
-                    <Mail
-                      size={18}
-                      className="mr-3 shrink-0 text-[var(--accent)]"
-                      aria-hidden="true"
-                    />
-                    <input
-                      className="min-h-0 p-0"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="correo@ejemplo.com"
-                      {...register("email", {
-                        required: "El correo es obligatorio",
-                      })}
-                    />
-                  </div>
-                </Field>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Contraseña" error={errors.password?.message}>
-                  <div className="field-control flex items-center">
-                    <LockKeyhole
-                      size={18}
-                      className="mr-3 shrink-0 text-[var(--accent)]"
-                      aria-hidden="true"
-                    />
-                    <input
-                      className="min-h-0 flex-1 p-0"
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      placeholder="Mínimo 12 caracteres"
-                      {...register("password", {
-                        required: "La contraseña es obligatoria",
-                        minLength: {
-                          value: 12,
-                          message: "Usa al menos 12 caracteres",
-                        },
-                      })}
-                    />
-                    <button
-                      type="button"
-                      className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--accent)]"
-                      onClick={() => setShowPassword((current) => !current)}
-                      aria-label={showPassword ? "Ocultar contraseñas" : "Mostrar contraseñas"}
-                    >
-                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                    </button>
-                  </div>
-                </Field>
-                <Field
-                  label="Confirmar contraseña"
-                  error={errors.confirm_password?.message}
-                >
-                  <div className="field-control flex items-center">
-                    <LockKeyhole size={18} className="mr-3 shrink-0 text-[var(--accent)]" aria-hidden="true" />
-                    <input
-                      className="min-h-0 flex-1 p-0"
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      placeholder="Repite tu contraseña"
-                      {...register("confirm_password", {
-                        required: "Confirma tu contraseña",
-                        validate: (value) =>
-                          value === getValues("password") ||
-                          "Las contraseñas no coinciden",
-                      })}
-                    />
-                    <button
-                      type="button"
-                      className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--accent)]"
-                      onClick={() => setShowPassword((current) => !current)}
-                      aria-label={showPassword ? "Ocultar contraseñas" : "Mostrar contraseñas"}
-                    >
-                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                    </button>
-                  </div>
-                </Field>
-              </div>
-              {invitation ? <p>Te incorporarás a la empresa que te invitó después de confirmar tu correo y configurar la seguridad.</p> : isCompany ? (
-                <section className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
-                  <p className="text-sm font-bold text-[var(--ink-strong)]">
-                    Información de la empresa
-                  </p>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <Field
-                      label="Nombre de la empresa"
-                      error={errors.company_name?.message}
-                    >
-                      <input
-                        className="field-control"
-                        placeholder="TalentSoft Labs"
-                        {...register("company_name", {
-                          required: "El nombre de la empresa es obligatorio",
-                        })}
-                      />
-                    </Field>
-                    <Field label="NIT" error={errors.nit?.message}>
-                      <input
-                        className="field-control"
-                        placeholder="900123456-7"
-                        {...register("nit", {
-                          required: "El NIT es obligatorio",
-                        })}
-                      />
-                    </Field>
-                  </div>
-                  <Field label="Descripción" className="mt-4">
-                    <textarea
-                      className="field-control min-h-24 resize-y"
-                      placeholder="Sector, cultura y propuesta de valor…"
-                      {...register("company_description")}
-                    />
-                  </Field>
-                </section>
-              ) : (
-                <details className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
-                  <summary className="cursor-pointer text-sm font-bold text-[var(--ink-strong)]">Añadir una base profesional (opcional)</summary>
-                  <div className="mt-4 space-y-4">
-                    <Field label="Profesión">
-                      <input
-                        className="field-control"
-                        placeholder="Ej. auxiliar administrativo o diseñador"
-                        {...register("profession")}
-                      />
-                    </Field>
-                    <Field label="Habilidades">
-                      <input
-                        className="field-control"
-                        placeholder="Ej. comunicación, organización, trabajo en equipo"
-                        {...register("skills")}
-                      />
-                      <p className="mt-1 text-xs text-[var(--muted)]">
-                        Sepáralas con comas.
-                      </p>
-                    </Field>
-                  </div>
-                </details>
-              )}
-              {error ? (
-                <p
-                  role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-[var(--error)]"
-                >
-                  {error}
-                </p>
-              ) : null}
-              <button
-                className="button-primary pressed focus-ring w-full"
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  "Creando cuenta…"
-                ) : (
-                  <>
-                    {isCompany ? (
-                      <Building2 size={17} aria-hidden="true" />
-                    ) : (
-                      <BriefcaseBusiness size={17} aria-hidden="true" />
-                    )}
-                    Crear cuenta
-                  </>
-                )}
-              </button>
-            </form>
-            <AccessProviders candidate={!isCompany && !invitation} />
-          </div>
-        </div>
-      </section>
-    </main>
-  );
-}
-
-function Field({ label, error, className = "", children }) {
-  return (
-    <label
-      className={`block text-sm font-semibold text-[var(--ink-strong)] ${className}`}
-    >
-      {label}
-      <div className="mt-2">{children}</div>
-      {error ? (
-        <span
-          role="alert"
-          className="mt-1 block text-sm font-medium text-[var(--error)]"
-        >
-          {error}
-        </span>
-      ) : null}
-    </label>
-  );
+  return <AuthFrame company={company} registering>
+    <div className="flex items-center justify-between gap-3"><span className="access-portal-tag">{company ? "Registro de empresa" : "Registro de candidato"}</span><Link className="text-sm text-[var(--accent)]" to={company ? "/empresa/login" : "/login"}>Ya tengo cuenta</Link></div>
+    <h2 className="mt-5 text-3xl font-bold">{company ? "Construye tu espacio de contratación" : "Comienza tu próximo capítulo"}</h2>
+    <p className="mt-2 text-sm text-[var(--muted)]">Cuatro pasos breves. Puedes volver y ajustar tus datos antes de confirmar.</p>
+    <ol className="registration-steps" aria-label="Progreso de registro">{steps.map((title, index) => <li key={title} aria-current={step === index ? "step" : undefined} className={index <= step ? "reached" : ""}><span>{index < step ? <Check size={15} /> : index + 1}</span><small>{title}</small></li>)}</ol>
+    <form onSubmit={next} noValidate className="space-y-5">
+      <h3 className="text-xl font-bold" tabIndex={-1}>Paso {step + 1}: {steps[step]}</h3>
+      {step === 0 && <>{field("name", company ? "Tu nombre como responsable" : "Nombre completo", { required: "Introduce tu nombre", minLength: { value: 2, message: "Usa al menos dos caracteres" }, maxLength: 120 }, { autoComplete: "name", placeholder: "Nombre y apellido" })}{field("email", company ? "Correo de tu cuenta empresarial" : "Correo electrónico", { required: "Introduce tu correo", pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Introduce un correo válido" } }, { type: "email", autoComplete: "email", placeholder: company ? "nombre@tuempresa.com" : "tu@correo.com" })}<p className="text-xs text-[var(--muted)]">{company ? "Usa preferiblemente tu correo corporativo. La identidad de la empresa se verifica por separado." : "Aquí recibirás las comunicaciones sobre tus procesos."}</p></>}
+      {step === 1 && (company ? invitation ? <div className="surface-card space-y-3 p-5"><ShieldCheck className="text-[var(--accent)]" /><h4 className="font-bold">Te unes a un equipo existente</h4><p className="text-sm">Usa el correo al que enviaron la invitación. No necesitas registrar otra empresa. El servidor comprobará la invitación al crear tu cuenta.</p></div> : <>{field("company_name", "Nombre de la empresa", { required: "Introduce el nombre de la empresa", minLength: { value: 2, message: "Usa al menos dos caracteres" }, maxLength: 180 }, { autoComplete: "organization", placeholder: "Nombre comercial" })}{field("nit", "NIT o identificación de la empresa", { required: "Introduce la identificación", minLength: { value: 3, message: "Revisa la identificación" }, maxLength: 80 }, { placeholder: "Ejemplo: 900123456-7" })}<label className="block text-sm font-semibold">¿A qué se dedica?<textarea className="field-control mt-2" rows={3} placeholder="Sector, actividad y qué ofrece tu equipo" {...register("company_description", { maxLength: 4000 })} /></label></> : <>{field("profession", "Profesión o cargo de interés", { required: "Indica tu profesión o cargo de interés", maxLength: 160 }, { placeholder: "Ejemplo: auxiliar contable, docente o diseñador" })}{field("skills", "Habilidades que ya tienes (opcional)", { maxLength: 2000 }, { placeholder: "Ejemplo: inventarios, Excel, atención al cliente" })}<p className="text-xs text-[var(--muted)]">Separa las habilidades con comas. Podrás completar tu experiencia y respaldarla después.</p></>)}
+      {step === 2 && <><div className="flex justify-end"><button type="button" className="flex gap-2 text-sm text-[var(--accent)]" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}{showPassword ? "Ocultar" : "Mostrar"} contraseñas</button></div>{field("password", "Crea tu contraseña", { required: "Crea una contraseña", minLength: { value: 12, message: "Usa al menos 12 caracteres" }, validate: (value) => new TextEncoder().encode(value).length <= 72 || "Máximo 72 bytes; reduce la longitud" }, { type: showPassword ? "text" : "password", autoComplete: "new-password" })}{field("confirm_password", "Repite tu contraseña", { required: "Repite la contraseña", validate: (value) => value === getValues("password") || "Las contraseñas no coinciden" }, { type: showPassword ? "text" : "password", autoComplete: "new-password" })}<p className="text-xs text-[var(--muted)]">Al menos 12 caracteres. {company ? "Después del registro configurarás tu autenticador con un código QR." : "Puedes activar la verificación en dos pasos desde Seguridad de cuenta."}</p></>}
+      {step === 3 && <div className="registration-review"><ShieldCheck size={26} /><h4 className="font-bold">Todo listo para crear tu {company ? "cuenta empresarial" : "perfil"}</h4><dl><dt>Responsable</dt><dd>{values.name}</dd><dt>Correo</dt><dd>{values.email}</dd><dt>{company ? "Organización" : "Profesión"}</dt><dd>{company ? invitation ? "Equipo de tu invitación" : values.company_name : values.profession}</dd>{!company && <><dt>Habilidades</dt><dd>{values.skills || "Las añadirás después"}</dd></>}</dl><p className="text-xs text-[var(--muted)]">{company ? "Podrás preparar tu perfil y enviar la verificación de tu organización al ingresar." : "Tu perfil comienza con habilidades declaradas. Las prácticas y evaluaciones te ayudarán a respaldarlas."}</p></div>}
+      {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}
+      <div className="flex gap-3">{step > 0 && <button type="button" className="button-secondary" disabled={isSubmitting} onClick={() => { setStep(step - 1); setError(""); }}><ArrowLeft size={17} />Atrás</button>}<button className="button-primary flex-1" disabled={isSubmitting}>{isSubmitting ? "Creando cuenta…" : step === 3 ? "Confirmar y crear cuenta" : "Continuar"}<ArrowRight size={17} /></button></div>
+    </form>
+    <div className="access-switch"><span>{company ? "¿Buscas empleo?" : "¿Representas a una empresa?"}</span><Link to={company ? "/registro" : "/empresa/registro"}>{company ? "Crear perfil de candidato" : "Registrar una empresa"}</Link></div>
+  </AuthFrame>;
 }

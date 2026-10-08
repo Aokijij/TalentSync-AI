@@ -74,9 +74,9 @@ export function AuthProvider({ children }) {
   }, []); // La validación inicial solo debe ejecutarse al montar la aplicación.
 
   async function login(email, password, options = {}) {
-    const suffix = options.admin ? "admin/login" : "login";
+    const suffix = options.admin ? "admin/login" : `${options.portal || "candidate"}/login`;
     if (accessOptions.mode === "legacy") {
-      const { data } = await api.post(`/auth/${suffix}`, { email, password });
+      const { data } = await api.post(`/auth/${suffix}`, { email, password, portal: options.portal });
       localStorage.setItem("talentsync_token", data.access_token);
     } else {
       const { data } = await api.post(`/auth/session/${suffix}`, { email, password, code: options.code || null, remember: Boolean(options.remember) });
@@ -91,8 +91,8 @@ export function AuthProvider({ children }) {
   }
 
   async function register(payload) {
-    await api.post("/auth/register", payload);
-    return login(payload.email, payload.password);
+    await api.post(`/auth/${payload.role}/register`, payload);
+    return login(payload.email, payload.password, { portal: payload.role });
   }
 
   async function refreshUser() {

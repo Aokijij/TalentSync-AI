@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.domain.entities.enums import UserRole
@@ -42,6 +44,7 @@ class LoginRequest(BaseModel):
     password: str = Field(max_length=72)
     code: str | None = Field(default=None, max_length=128)
     remember: bool = False
+    portal: Literal["candidate", "company"] | None = None
 
     @field_validator("email")
     @classmethod

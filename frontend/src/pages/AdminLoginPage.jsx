@@ -7,12 +7,14 @@ import { BrandLogo } from "../components/brand/BrandLogo.jsx";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api, getApiErrorMessage } from "../api/client.js";
+import { MfaChallenge } from "../components/MfaChallenge.jsx";
 
 export function AdminLoginPage() {
   const { user, login, accessOptions } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [mfaRequired, setMfaRequired] = useState(false);
+  const [credentials, setCredentials] = useState(null), [verifying, setVerifying] = useState(false);
   const [corporate, setCorporate] = useState(null);
   const [corporateBusy, setCorporateBusy] = useState(false);
   useEffect(() => { api.get("/auth/admin-sso/options", { __skipSessionEvent: true }).then(({ data }) => setCorporate(data)).catch(() => setError("No pudimos consultar los métodos de acceso administrativo.")); }, []);
@@ -28,7 +30,7 @@ export function AdminLoginPage() {
     setError("");
     try {
       const result = await login(values.email, values.password, { admin: true, code: values.code });
-      if (result.mfa_required) { setMfaRequired(true); return; }
+      if (result.mfa_required) { setCredentials(values); setMfaRequired(true); return; }
       navigate(accessOptions.mode !== "session" || result.mfa_enabled ? "/admin" : "/seguridad", { replace: true });
     } catch {
       setError("No fue posible validar el acceso administrativo.");
@@ -69,6 +71,7 @@ export function AdminLoginPage() {
         </aside>
         <div className="auth-form-panel">
           <div className="auth-form">
+            {mfaRequired ? <MfaChallenge email={credentials.email} error={error} busy={verifying} onBack={() => { setCredentials(null); setMfaRequired(false); setError(""); }} onVerify={async (code) => { setVerifying(true); await onSubmit({ ...credentials, code }); setVerifying(false); }} /> : <>
             <p className="section-kicker">Administración</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Iniciar sesión</h2>
             <p className="mt-3 text-[var(--muted)]">
@@ -78,7 +81,6 @@ export function AdminLoginPage() {
             {(corporate?.enabled || corporate?.required) && <div className="mt-6 space-y-3"><button className="button-primary w-full" type="button" disabled={!corporate.enabled || corporateBusy} onClick={startCorporate}>{corporateBusy ? "Abriendo proveedor…" : `Continuar con ${corporate.provider}`}</button><p className="text-xs text-[var(--muted)]">{corporate.enabled ? "Solo admite cuentas corporativas vinculadas previamente a una cuenta administradora." : "El acceso corporativo obligatorio aún no está configurado. Contacta al responsable del entorno."}</p></div>}
             {error && <p role="alert" className="mt-4 text-sm text-[var(--error)]">{error}</p>}
             {corporate && !corporate.required && <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
-              {mfaRequired && <label className="block text-sm font-semibold">Código de autenticación o recuperación<input className="field-control mt-2" autoComplete="one-time-code" {...register("code", { required: "Introduce tu código" })} /></label>}
               <label className="block text-sm font-semibold">
                 Correo administrativo
                 <div className="field-control mt-2 flex items-center">
@@ -109,6 +111,7 @@ export function AdminLoginPage() {
                 {isSubmitting ? "Validando…" : <>Entrar al panel <ArrowRight size={17} /></>}
               </button>
             </form>}
+            </>}
           </div>
         </div>
       </section>

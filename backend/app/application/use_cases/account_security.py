@@ -49,6 +49,8 @@ def create_session(db, payload, security, *, admin=False, user_agent=""):
     _password(user, payload["password"], security)
     if (user.role == UserRole.ADMIN) != admin:
         raise UseCaseError(status_code=401, detail="Credenciales inválidas para este acceso")
+    if payload.get("portal") and user.role.value != payload["portal"]:
+        raise UseCaseError(status_code=401, detail="Esta cuenta no pertenece a este acceso. Utiliza el portal de tu rol.")
     if user.mfa_enabled and not payload.get("code"):
         return {"mfa_required": True}
     _mfa(db, user, payload.get("code"), security)

@@ -73,7 +73,7 @@ function RequireAuth({ children }) {
     const adminArea = ["/admin", "/administracion"].some((path) =>
       location.pathname.startsWith(path),
     );
-    return <Navigate to={adminArea ? "/acceso-administracion" : "/login"} state={{ from: location.pathname + location.search }} replace />;
+    return <Navigate to={adminArea ? "/acceso-administracion" : location.pathname.startsWith("/empresa") ? "/empresa/login" : "/login"} state={{ from: location.pathname + location.search }} replace />;
   }
   if (accessOptions.mode === "session" && user.role !== "candidate" && !user.mfa_enabled && location.pathname !== "/seguridad") return <Navigate to="/seguridad" replace />;
   return children;

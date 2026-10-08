@@ -3,7 +3,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { useState } from "react";
 import { api, getApiErrorMessage } from "../api/client.js";
 
-export function AccessProviders({ candidate = true }) {
+export function AccessProviders({ candidate = true, availableOnly = false }) {
   const { accessOptions } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -16,7 +16,7 @@ export function AccessProviders({ candidate = true }) {
     } catch (failure) { setError(getApiErrorMessage(failure)); setBusy(false); }
   }
   return <div className="mt-5 space-y-2">
-    {candidate && accessOptions.providers?.map((provider) => <button key={provider.id} type="button" disabled={!provider.enabled || busy} onClick={() => start(provider.id)} title={provider.reason} className={`button-secondary w-full ${provider.enabled ? "" : "opacity-60"}`}>
+    {candidate && accessOptions.providers?.filter((provider) => !availableOnly || provider.enabled).map((provider) => <button key={provider.id} type="button" disabled={!provider.enabled || busy} onClick={() => start(provider.id)} title={provider.reason} className={`button-secondary w-full ${provider.enabled ? "" : "opacity-60"}`}>
       Continuar con {({ google: "Google", github: "GitHub", linkedin: "LinkedIn" })[provider.id]}{!provider.enabled && " · No disponible"}
     </button>)}
     {candidate && accessOptions.providers?.length > 0 && <p className="text-xs text-[var(--muted)]">El acceso social crea una cuenta de candidato. Los botones se habilitan al configurar el proveedor.</p>}

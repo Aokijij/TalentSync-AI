@@ -413,6 +413,60 @@ html[data-theme="dark"] .brand-mark-shell {
   --sidebar-border: #4c1d95;
 }
 
+.role-company {
+  --canvas: #f8f6fb; --surface: #ffffff; --surface-subtle: #f2edf8; --surface-hover: #ebe3f4;
+  --ink: #44344f; --ink-strong: #251c31; --muted: #776a85; --line: #ddd4e8;
+  --accent: #7446b7; --accent-hover: #60369c; --navy: #60369c;
+  --sidebar: #281b39; --sidebar-ink: #f4efff; --sidebar-muted: #c8b5df; --sidebar-border: #463257;
+}
+html[data-theme="dark"] .role-company {
+  --canvas: #121016; --surface: #1d1825; --surface-subtle: #282131; --surface-hover: #33293f;
+  --ink: #e4dbea; --ink-strong: #faf6ff; --muted: #b9aac8; --line: #42344f;
+  --accent: #c4a1ff; --accent-hover: #d3baff; --navy: #c4a1ff;
+  --sidebar: #190f24; --sidebar-ink: #f4efff; --sidebar-muted: #c8b5df; --sidebar-border: #3b294e;
+}
+.access-page { min-height: 100vh; background: var(--canvas); color: var(--ink-strong); padding: 3rem 1.5rem; display: grid; align-items: center; }
+.access-stage { display: grid; grid-template-columns: 1fr 1fr; width: min(1160px, 100%); margin: auto; border: 1px solid var(--line); border-radius: 26px; overflow: hidden; background: var(--surface); box-shadow: 0 24px 80px #00000014; }
+.access-story { background: linear-gradient(145deg, #083344, #0f172a); color: #e0f2fe; padding: 3rem; display: flex; flex-direction: column; gap: 2.4rem; }
+.role-company .access-story { background: radial-gradient(ellipse at 100% 0%, #73559066, transparent 65%), linear-gradient(150deg, #342044, #21192d); color: #ede1f9; }
+.access-story-heading h1 { font-size: clamp(2rem, 3vw, 2.65rem); line-height: 1.14; letter-spacing: -.04em; font-weight: 750; color: white; margin: .8rem 0 1rem; }
+.access-story-heading > p:last-child { line-height: 1.8; font-size: .95rem; opacity: .85; }
+.access-eyebrow { font-size: .68rem; text-transform: uppercase; letter-spacing: .2em; font-weight: 700; color: #7dd3fc; }
+.role-company .access-eyebrow { color: #dfc1ff; }
+.access-preview { border: 1px solid #ffffff26; background: #ffffff08; border-radius: 18px; padding: 1.25rem; }
+.access-preview > div:first-child { font-size: .7rem; text-transform: uppercase; letter-spacing: .12em; padding-bottom: 1rem; }
+.access-preview-row { display: flex; align-items: center; gap: .8rem; padding: .8rem 0; border-top: 1px solid #ffffff16; }
+.access-preview-row strong { display: block; color: white; font-size: .88rem; }
+.access-preview-row small { display: block; font-size: .73rem; margin-top: .2rem; opacity: .8; }
+.access-preview-icon { padding: .65rem; border-radius: 12px; background: #ffffff0e; }
+.access-preview-number { margin-left: auto; opacity: .4; font-size: .75rem; }
+.access-story-footer { font-size: .68rem; line-height: 1.8; opacity: .65; margin-top: auto; }
+.access-form-panel { padding: clamp(1.5rem, 4vw, 3.5rem); align-self: center; min-width: 0; }
+.access-portal-tag { display: inline-flex; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); padding: .4rem .7rem; border-radius: 7px; font-size: .7rem; font-weight: 700; letter-spacing: .06em; }
+.access-switch { margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1.2rem; font-size: .8rem; display: grid; gap: .4rem; color: var(--muted); }
+.access-switch a { display: flex; align-items: center; gap: .4rem; color: var(--accent); font-weight: 600; }
+.registration-steps { display: flex; gap: .4rem; padding: 1.5rem 0; }
+.registration-steps li { flex: 1; border-top: 2px solid var(--line); padding-top: .65rem; display: grid; gap: .4rem; color: var(--muted); }
+.registration-steps li.reached { color: var(--accent); border-color: var(--accent); }
+.registration-steps li span { width: 24px; height: 24px; border: 1px solid currentColor; border-radius: 50%; display: grid; place-items: center; font-size: .7rem; }
+.registration-steps small { font-size: .65rem; font-weight: 600; }
+.registration-review { display: grid; gap: 1rem; border: 1px solid var(--line); padding: 1.25rem; border-radius: 16px; background: var(--surface-subtle); }
+.registration-review dl { display: grid; grid-template-columns: 1fr 2fr; gap: .7rem; font-size: .85rem; overflow-wrap: anywhere; }
+.registration-review dt { color: var(--muted); }
+.mfa-challenge { display: grid; gap: 1.25rem; }
+.mfa-symbol { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 22px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.mfa-code { text-align: center; font-size: 2rem; font-variant-numeric: tabular-nums; letter-spacing: .35em; }
+.navigation-group + .navigation-group { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--sidebar-border); }
+.app-sidebar { overflow-y: auto; }
+@media (max-width: 800px) {
+  .access-page { padding: 3.5rem .75rem 1rem; }
+  .access-stage { grid-template-columns: 1fr; }
+  .access-story { padding: 1.5rem; gap: 1rem; }
+  .access-story-heading h1 { font-size: 1.65rem; }
+  .access-story-heading > p:last-child, .access-preview, .access-story-footer { display: none; }
+  .access-form-panel { padding: 1.5rem; }
+}
+
 html[data-theme="dark"] .role-admin {
   --accent: #a78bfa;
   --accent-hover: #8b5cf6;
