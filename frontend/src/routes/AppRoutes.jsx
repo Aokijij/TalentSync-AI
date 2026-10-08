@@ -36,6 +36,8 @@ const VerificationQueuePage = lazyNamed(() => import("../pages/OrganizationPage.
 const InvitationPage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "InvitationPage");
 const CompatibilityPage = lazyNamed(() => import("../pages/CompatibilityPage.jsx"), "CompatibilityPage");
 const ProcessPage = lazyNamed(() => import("../pages/ProcessPage.jsx"), "ProcessPage");
+const InterviewsPage = lazyNamed(() => import("../pages/InterviewPage.jsx"), "InterviewsPage");
+const InterviewRoomPage = lazyNamed(() => import("../pages/InterviewPage.jsx"), "InterviewRoomPage");
 const LearningPage = lazyNamed(() => import("../pages/LearningPage.jsx"), "LearningPage");
 const HiringQualityPage = lazyNamed(() => import("../pages/HiringQualityPage.jsx"), "HiringQualityPage");
 const TrustPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "TrustPage");
@@ -118,6 +120,8 @@ export function AppRoutes() {
         <Route path="/empresa/calidad" element={<RequireRole roles={["company"]}><HiringQualityPage /></RequireRole>} />
         <Route path="/aprendizaje" element={<RequireRole roles={["candidate"]}><LearningPage /></RequireRole>} />
         <Route path="/procesos/:applicationId" element={<ProcessPage />} />
+        <Route path="/entrevistas" element={<InterviewsPage />} />
+        <Route path="/entrevistas/:roomId" element={<InterviewRoomPage />} />
         <Route path="/compatibilidad" element={<RequireRole roles={["candidate", "company"]}><CompatibilityPage /></RequireRole>} />
         <Route path="/empresa/equipo" element={<RequireRole roles={["company"]}><OrganizationPage /></RequireRole>} />
         <Route path="/admin/verificaciones" element={<RequireRole roles={["admin"]}><VerificationQueuePage /></RequireRole>} />

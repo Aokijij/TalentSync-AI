@@ -5,6 +5,7 @@ from app.domain.repositories.applications import ApplicationRepository
 from app.domain.repositories.companies import CompanyRepository
 from app.domain.repositories.events import EventRepository
 from app.domain.repositories.jobs import JobRepository
+from app.domain.repositories.interviews import InterviewRepository
 from app.domain.repositories.learning import LearningRepository
 from app.domain.repositories.ecosystem import EcosystemRepository
 from app.domain.repositories.notifications import NotificationRepository
@@ -15,6 +16,7 @@ from app.domain.repositories.users import UserRepository
 
 
 class UnitOfWork(Protocol):
+    interviews: InterviewRepository
     ecosystem: EcosystemRepository
     learning: LearningRepository
     organizations: OrganizationRepository

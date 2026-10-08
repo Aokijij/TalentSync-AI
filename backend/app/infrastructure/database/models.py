@@ -497,6 +497,43 @@ class Recommendation(Base):
         return "source:external" in (self.reasons or [])
 
 
+class InterviewRoom(Base):
+    __tablename__ = "interview_rooms"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    application_id: Mapped[int] = mapped_column(ForeignKey("applications.id", ondelete="CASCADE"), unique=True, nullable=False)
+    creator_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    title: Mapped[str] = mapped_column(String(150), nullable=False)
+    code: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    whiteboard: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    closed: Mapped[bool] = mapped_column(default=False, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    application: Mapped[Application] = relationship()
+    __mapper_args__ = {"version_id_col": version}
+
+
+class InterviewParticipant(Base):
+    __tablename__ = "interview_participants"
+    __table_args__ = (UniqueConstraint("room_id", "slot", name="uq_interview_participant_slot"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    room_id: Mapped[str] = mapped_column(ForeignKey("interview_rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    slot: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class InterviewSignal(Base):
+    __tablename__ = "interview_signals"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    room_id: Mapped[str] = mapped_column(ForeignKey("interview_rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    sender_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    recipient_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    kind: Mapped[str] = mapped_column(String(10), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
 class TrustIncident(Base):
     __tablename__ = "trust_incidents"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

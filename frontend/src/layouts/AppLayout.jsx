@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
+  UsersRound,
   X,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
@@ -20,6 +21,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
+  { to: "/entrevistas", label: "Salas de entrevista", icon: UsersRound, roles: ["candidate", "company", "admin"] },
   { to: "/confianza", label: "Confianza e incidencias", icon: ShieldCheck, roles: ["candidate", "company"] },
   { to: "/admin/ecosistema", label: "Salud del ecosistema", icon: Sparkles, roles: ["admin"] },
   { to: "/empresa/calidad", label: "Calidad de ofertas", icon: ShieldCheck, roles: ["company"] },

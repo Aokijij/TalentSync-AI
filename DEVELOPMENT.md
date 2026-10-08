@@ -182,3 +182,27 @@ El cálculo textual utiliza evidencia profesional y elimina identificadores cono
 los textos libres pueden conservar información personal no identificada. No usa el
 embedding antiguo del CV completo para calcular afinidad. Los datos ficticios locales
 no se presentan como estadísticas del mercado ni capacidad predictiva validada.
+
+## Bloque 9: entrevistas colaborativas locales
+
+`/entrevistas` permite al equipo preparar una sala por proceso en entrevista técnica.
+El candidato recibe un aviso y ambos acceden al editor de texto y pizarra. Publicar
+comparte una versión; cada tres segundos se consultan cambios. Si existen cambios
+locales, una nueva versión no los sobrescribe. Se puede descargar el código antes
+de reemplazar el borrador. La empresa puede cerrar la sala y conservar lo publicado.
+Los entrevistadores requieren una asignación vigente; cada petición valida acceso.
+
+La videollamada usa WebRTC directo con señalización autenticada por HTTP cada 1,5
+segundos, dos pestañas, presencia de 90 segundos y señales que caducan a los 60.
+La cámara y el micrófono solo se solicitan al pulsar el botón. No se graban medios.
+Funciona en localhost con navegadores compatibles; sin STUN/TURN no garantiza
+conectividad entre redes distintas. Las señales pueden incluir datos de red y se
+eliminan al cerrar la sala o en la siguiente limpieza de conexiones. Una base apagada
+puede conservar señales caducadas hasta esa limpieza; nunca se entregan caducadas.
+
+El editor no ejecuta código en el host. Un ejecutor arbitrario necesita contenedores
+aislados, límites y un adaptador específico. Los documentos persisten localmente;
+no hay edición carácter a carácter ni resolución automática de conflictos (CRDT).
+Las pruebas verifican permisos, versiones, cierre, tamaño de mensajes, caducidad,
+privacidad de señales y retirada de asignaciones. La verificación audiovisual real
+requiere dos navegadores y permisos de cámara/micrófono del usuario.

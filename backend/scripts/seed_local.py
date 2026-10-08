@@ -1,12 +1,15 @@
 """Small fictional fixture. Refuses any database outside the isolated workspace."""
 import json
 import secrets
+from datetime import datetime
 from pathlib import Path
 
+from app.application.use_cases.interviews import create as create_interview
 from app.core.config import settings
-from app.domain.entities.enums import UserRole
+from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.infrastructure.database.models import Application, Company, Job, Profile, User
 from app.infrastructure.database.session import SessionLocal
+from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 from app.infrastructure.nlp.text_processor import text_processor
 from app.infrastructure.security.passwords import hash_password
 
@@ -63,6 +66,15 @@ def main():
                 if title == "Desarrollador Python":
                     db.add(Application(user_id=users["candidate"].id, job_id=job.id, pipeline_stage="submitted"))
         db.commit()
+        demo_job = db.query(Job).filter_by(company_id=company.id, title="Desarrollador Java").first()
+        if demo_job:
+            demo = db.query(Application).filter_by(user_id=users["candidate"].id, job_id=demo_job.id).first()
+            if demo is None:
+                demo = Application(user_id=users["candidate"].id, job_id=demo_job.id,
+                    status=ApplicationStatus.TECHNICAL_INTERVIEW, pipeline_stage="interview", identity_revealed_at=datetime.utcnow())
+                db.add(demo)
+                db.commit()
+                create_interview(SqlAlchemyUnitOfWork(db), users["company"], demo.id, "Entrevista de demostración local")
     accounts_file.write_text(json.dumps(accounts, ensure_ascii=False, indent=2), encoding="utf-8")
     print("Datos ficticios preparados sin duplicados. Credenciales: scripts/local.py accounts")
 
