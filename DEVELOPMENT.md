@@ -51,6 +51,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 12 | Vinculación de cuentas sociales existentes | Implementado con reautenticación, MFA y control de sesión; sin conexión externa real |
 | 13 | Análisis estático de proyectos | Implementado por ZIP local, vista previa y evidencia no verificada con incorporación opcional al perfil |
 | 14 | Catálogo educativo y transparencia comercial | Administración, importación JSON, brechas y planes integrados; sin compras ni certificados automáticos |
+| 15 | Acceso y vinculación LinkedIn | Adaptador OIDC implementado y probado en memoria; desactivado sin credenciales y HTTPS |
 
 ## Comprobaciones
 
@@ -495,3 +496,29 @@ Las pruebas cubren brechas, planes históricos, ausencia de acreditación autom�
 edición concurrente, importaciones atómicas, publicidad y validación de enlaces.
 La importación JSON permite trabajar localmente sin APIs de terceros; adaptadores
 contractuales de proveedores y liquidación de comisiones requieren integración real.
+
+## Bloque 15: LinkedIn para candidatos
+
+El proveedor LinkedIn utiliza los mismos estados de un uso, cookie de navegador,
+vinculación con reautenticación y sesiones del bloque 11/12. Valida JWT RS256 contra
+las claves del endpoint fijo de LinkedIn, emisor, audiencia, caducidad, nonce y parte
+autorizada; consulta userinfo con un token transitorio y exige que `sub` coincida
+con el token firmado. Si falta correo verificado o nonce, rechaza el acceso. No
+interpreta el acceso social como verificación legal ni importa el CV de LinkedIn.
+
+Para configurarlo se necesitan `OAUTH_LINKEDIN_CLIENT_ID` y
+`OAUTH_LINKEDIN_CLIENT_SECRET` en `.local/backend.env`, el producto Sign In with
+LinkedIn using OpenID Connect autorizado por el proveedor y un `PUBLIC_APP_URL`
+HTTPS con callback exacto `/api/v1/auth/social/linkedin/callback`. El lanzador local
+mantiene su origen HTTP habitual, por lo que este proveedor sigue desactivado en
+esa configuración. No se creó un túnel público ni se expuso la máquina. Una futura
+configuración HTTPS debe conservar el proxy y origen de las cookies.
+
+El adaptador envía PKCE S256 y exige un nonce de la transacción; la compatibilidad
+real de esa aplicación debe comprobarse antes de habilitarla. No reduce estas
+comprobaciones si un proveedor no entrega los datos necesarios. Doce pruebas
+cubren autorización, tokens alterados, emisor, audiencia, nonce, caducidad, correo,
+userinfo de otro sujeto y el flujo de candidato con estado consumido. También
+pasaron las pruebas anteriores de Google, GitHub y vinculación. No se conectó
+ninguna cuenta real. Referencias: [LinkedIn OIDC](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2)
+y [flujo OAuth](https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow).

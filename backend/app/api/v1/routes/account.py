@@ -55,7 +55,7 @@ def options(gateway=Depends(get_social_identity_provider)):
     return {"mode": "session" if settings.session_auth_enabled else "legacy",
             "local_mail": settings.local_mail_enabled and settings.environment == "development",
             "providers": [{"id": name, "enabled": gateway.configured(name),
-                           "reason": "Solo para candidatos" if gateway.configured(name) else "Requiere configurar credenciales" if name != "linkedin" else "Integración pendiente"}
+                           "reason": "Solo para candidatos" if gateway.configured(name) else "Requiere credenciales y origen HTTPS" if name == "linkedin" else "Requiere configurar credenciales"}
                           for name in ("google", "github", "linkedin")]}
 
 

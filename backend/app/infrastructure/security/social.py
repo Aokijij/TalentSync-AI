@@ -8,6 +8,15 @@ from email_validator import EmailNotValidError, validate_email
 
 from app.application.errors import UseCaseError
 
+OIDC = {
+    "google": {"authorize": "https://accounts.google.com/o/oauth2/v2/auth",
+               "token": "https://oauth2.googleapis.com/token", "keys": "https://www.googleapis.com/oauth2/v3/certs",
+               "issuers": ["accounts.google.com", "https://accounts.google.com"]},
+    "linkedin": {"authorize": "https://www.linkedin.com/oauth/v2/authorization",
+                 "token": "https://www.linkedin.com/oauth/v2/accessToken", "keys": "https://www.linkedin.com/oauth/openid/jwks",
+                 "issuers": ["https://www.linkedin.com"]},
+}
+
 
 class SocialIdentityProvider:
     def __init__(self, settings, transport=None):
@@ -15,7 +24,7 @@ class SocialIdentityProvider:
         self.transport = transport
 
     def configured(self, provider):
-        if provider not in {"github", "google"} or not self.settings.session_auth_enabled:
+        if provider not in {"github", *OIDC} or not self.settings.session_auth_enabled:
             return False
         try:
             url = urlsplit(self.settings.public_app_url)
@@ -29,8 +38,9 @@ class SocialIdentityProvider:
             and url.hostname in {"localhost", "127.0.0.1", "::1"})
         return bool(secure_url and not url.username and not url.password and not url.query
                     and not url.fragment and url.path in {"", "/"}
-                    and getattr(self.settings, f"oauth_{provider}_client_id")
-                    and getattr(self.settings, f"oauth_{provider}_client_secret"))
+                    and (provider != "linkedin" or url.scheme == "https")
+                    and getattr(self.settings, f"oauth_{provider}_client_id", "")
+                    and getattr(self.settings, f"oauth_{provider}_client_secret", ""))
 
     def _configuration(self, provider):
         if not self.configured(provider):
@@ -45,8 +55,10 @@ class SocialIdentityProvider:
             endpoint = "https://github.com/login/oauth/authorize"
             params.update(scope="read:user user:email")
         else:
-            endpoint = "https://accounts.google.com/o/oauth2/v2/auth"
-            params.update(scope="openid email profile", nonce=nonce, prompt="select_account")
+            endpoint = OIDC[provider]["authorize"]
+            params.update(scope="openid email profile", nonce=nonce)
+            if provider == "google":
+                params.update(prompt="select_account")
         return f"{endpoint}?{urlencode(params)}"
 
     @staticmethod
@@ -75,20 +87,31 @@ class SocialIdentityProvider:
                     subject = str(user["id"]) if type(user.get("id")) is int and user["id"] > 0 else None
                     name = user.get("name") or user.get("login")
                 else:
-                    tokens = self._json(client.post("https://oauth2.googleapis.com/token", data=params))
+                    metadata = OIDC[provider]
+                    tokens = self._json(client.post(metadata["token"], data=params))
                     id_token = tokens["id_token"]
                     header = jwt.get_unverified_header(id_token)
-                    keys = self._json(client.get("https://www.googleapis.com/oauth2/v3/certs"))["keys"]
+                    keys = self._json(client.get(metadata["keys"]))["keys"]
                     key = next(row for row in keys if row.get("kid") == header.get("kid") and row.get("kty") == "RSA")
                     user = jwt.decode(id_token, jwt.PyJWK.from_dict(key).key, algorithms=["RS256"],
-                                      audience=params["client_id"], issuer=["accounts.google.com", "https://accounts.google.com"],
+                                      audience=params["client_id"], issuer=metadata["issuers"],
                                       options={"require": ["exp", "iat", "iss", "aud", "sub", "nonce"]})
-                    if not hmac.compare_digest(str(user["nonce"]), nonce) or user.get("email_verified") is not True:
+                    if not hmac.compare_digest(str(user["nonce"]), nonce):
                         raise ValueError("Unverified identity")
                     if user.get("azp") and user["azp"] != params["client_id"]:
                         raise ValueError("Unexpected authorized party")
                     if isinstance(user["aud"], list) and len(user["aud"]) > 1 and user.get("azp") != params["client_id"]:
                         raise ValueError("Ambiguous audience")
+                    if provider == "linkedin":
+                        token = tokens.get("access_token")
+                        if not isinstance(token, str) or not token:
+                            raise ValueError("Missing access token")
+                        info = self._json(client.get("https://api.linkedin.com/v2/userinfo", headers={"Authorization": f"Bearer {token}"}))
+                        if info.get("sub") != user["sub"]:
+                            raise ValueError("Userinfo subject mismatch")
+                        user = {**user, **{key: info.get(key) for key in ("email", "email_verified", "name")}}
+                    if user.get("email_verified") is not True:
+                        raise ValueError("Unverified email")
                     email, subject, name = user.get("email"), user["sub"], user.get("name")
                 if not isinstance(subject, str) or not subject or len(subject) > 255:
                     raise ValueError("Invalid subject")

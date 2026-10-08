@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 
-const labels = { google: "Google", github: "GitHub" };
+const labels = { google: "Google", github: "GitHub", linkedin: "LinkedIn" };
 
 export function SocialAccounts({ user, providers = [], onSessionsChanged }) {
   const [identities, setIdentities] = useState(null);
@@ -35,7 +35,7 @@ export function SocialAccounts({ user, providers = [], onSessionsChanged }) {
   }
   return <section className="surface-card space-y-4 p-5">
     <h2 className="font-bold">Cuentas conectadas</h2>
-    <p className="text-sm text-[var(--muted)]">Añade Google o GitHub como otro método de acceso a esta cuenta. Autoriza únicamente una cuenta social que controles. Tu perfil, correo y habilidades se conservan.</p>
+    <p className="text-sm text-[var(--muted)]">Añade Google, GitHub o LinkedIn como otro método de acceso a esta cuenta. Autoriza únicamente una cuenta social que controles. Tu perfil, correo y habilidades se conservan.</p>
     {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}
     {message && <p role="status" className="text-sm">{message}</p>}
     {!identities && !error && <p className="text-sm">Consultando tus conexiones…</p>}

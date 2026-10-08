@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     oauth_github_client_secret: str = ""
     oauth_google_client_id: str = ""
     oauth_google_client_secret: str = ""
+    oauth_linkedin_client_id: str = ""
+    oauth_linkedin_client_secret: str = ""
     upload_dir: str = "uploads"
     cv_parser: str = "docling"
     cv_ocr_enabled: bool = True
