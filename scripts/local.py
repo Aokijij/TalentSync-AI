@@ -53,7 +53,10 @@ def main():
     env = prepare_environment()
     commands = {
         "setup": ["-m", "alembic", "upgrade", "head"],
-        "backend": ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "app", "--host", "127.0.0.1", "--port", "8000"],
+        "backend": ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "app",
+                    "--reload-exclude", "tests", "--reload-exclude", "scripts",
+                    "--reload-exclude", "alembic", "--reload-exclude", ".venv",
+                    "--host", "127.0.0.1", "--port", "8000"],
         "test": ["-m", "pytest", "-q", "-p", "no:cacheprovider"],
         "seed": ["-m", "scripts.seed_local"],
     }
