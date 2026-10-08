@@ -19,7 +19,7 @@ export function RegisterPage() {
   if (invitation && !company) return <Navigate replace to={`/empresa/registro?invitation=${encodeURIComponent(invitation)}`} />;
   const field = (name, label, options = {}, props = {}) => <label className="block text-sm font-semibold">{label}<input className="field-control mt-2" {...props} {...register(name, options)} />{errors[name] && <span className="mt-1 block text-sm text-[var(--error)]">{errors[name].message}</span>}</label>;
   async function next(event) {
-    event.preventDefault(); setError("");
+    event.preventDefault(); if (isSubmitting) return; setError("");
     if (step < 3) { if (await trigger(fields[step], { shouldFocus: true })) setStep(step + 1); return; }
     for (let index = 0; index < 3; index++) { if (!(await trigger(fields[index]))) { setStep(index); return; } }
     const data = getValues();

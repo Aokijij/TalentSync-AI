@@ -50,3 +50,24 @@ def test_journey_rejects_incomplete_cross_user_and_stale_drafts(client):  # noqa
     assert client.patch(url + "/journey", headers=first, json=payload).status_code == 200
     assert client.patch(url + "/journey", headers=first, json=payload).status_code == 409
     assert client.get("/api/v1/matching/evidence", headers=first).json() == []
+
+
+def test_revising_published_work_keeps_its_reference_until_candidate_removes_it(client):  # noqa: F811
+    _, headers = register(client, "journey-revision", skills=[])
+    url = "/api/v1/learning/plans/practice-sales-v1"
+    plan = client.put(url, headers=headers, json={"status": "in_progress"}).json()[0]
+    answers = {key: "Una propuesta completa con hechos del caso, una decisión justificada y un resultado observable." for key in ["understand", "apply", "demonstrate"]}
+    published = client.patch(url + "/journey", headers=headers, json={"version": plan["version"], "answers": answers, "finish": True}).json()[0]
+    assert client.get("/api/v1/profiles/me", headers=headers).json()["skills"] == []
+    answers["apply"] += " Con una revisión adicional."
+    draft = client.patch(url + "/journey", headers=headers, json={"version": published["version"], "answers": answers}).json()[0]
+    assert draft["progress"]["published"] and draft["progress"]["has_unpublished_changes"]
+    draft = client.patch(url + "/journey", headers=headers, json={"version": draft["version"], "answers": answers}).json()[0]
+    assert draft["progress"]["has_unpublished_changes"]
+    passport = client.get("/api/v1/learning/passport", headers=headers).json()
+    assert len(passport["practice_evidence"]) == 1 and not passport["assessments"]
+    evidence = client.get("/api/v1/matching/evidence", headers=headers).json()[0]
+    assert "revisión adicional" not in evidence["description"]
+    assert client.delete(f"/api/v1/matching/evidence/{evidence['id']}", headers=headers).status_code in {200, 204}
+    assert client.get("/api/v1/learning/passport", headers=headers).json()["practice_evidence"] == []
+    assert not client.get("/api/v1/learning/plans", headers=headers).json()[0]["progress"]["published"]

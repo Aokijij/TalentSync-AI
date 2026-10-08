@@ -75,7 +75,7 @@ base aislada vive en `.local/talentsync.sqlite3`.
 
 La validación del 8 de octubre de 2026 comprende dependencias Python, lint de
 Python/JavaScript, pruebas backend/frontend, compilación Vite y modelo neuronal
-offline. La migración vigente es 0036. Los resultados de la ejecución actual y su
+offline. La migración vigente es 0037. Los resultados de la ejecución actual y su
 huella de código están en `.local/verification/validation.json` y `rehearsal.json`.
 
 La aceptación entre los tres roles utiliza sesiones reales y MFA, bases
@@ -101,6 +101,32 @@ evidencias y retos por pasos. No modifica las cuentas existentes ni activa
 cámara o micrófono.
 
 ## Simplificación de navegación
+
+Los accesos de candidato y empresa tienen rutas de autenticación y registro
+propias. El servidor rechaza cuentas del otro rol antes de solicitar MFA o emitir
+una sesión. Los registros tienen cuatro pasos, conservan el avance al volver y
+permiten revisar datos antes de crear la cuenta. El segundo factor ocupa una
+pantalla propia, con métodos de aplicación autenticadora y recuperación.
+
+Empresa utiliza una paleta violeta tanto en el acceso como en el espacio interno
+y el perfil. Los tres roles agrupan su navegación y distinguen funciones con
+iconos. Recomendaciones reúne preferencias e intereses en un panel compacto;
+las condiciones imprescindibles excluyen conflictos conocidos, sin alterar el
+índice ni ocultar ofertas cuyos datos son desconocidos.
+
+Mi desarrollo incorpora áreas visuales, indicadores, recursos que salen del
+catálogo al añadirse y planes con tres pasos y revisión final. Los casos varían
+entre diez áreas profesionales, con competencias transversales para perfiles
+sin un área especializada. El borrador se guarda en servidor y detecta conflictos
+entre pestañas. Publicar crea una muestra de trabajo declarada en las evidencias
+del perfil; incorporar sus habilidades al matching requiere una elección explícita.
+Las quince evaluaciones independientes siguen acreditando solo sus fundamentos.
+Los planes antiguos se conservan y no reciben acreditaciones retroactivas.
+
+La preparación adicional crea cuatro candidatos de distintos sectores, tres
+organizaciones ficticias, seis vacantes y un administrador, sin reemplazar
+cuentas existentes. Las claves quedan únicamente en `.local/review-accounts.json`.
+Empresa y administración configuran su MFA con QR en el primer ingreso.
 
 Se retiraron análisis de ZIP/repositorios, salas de entrevista, videollamada,
 pizarra y creación de escenarios de trabajo. Los datos históricos permanecen;

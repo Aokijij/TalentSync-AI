@@ -1,3 +1,5 @@
+import { useAuth } from "../hooks/useAuth.js";
+import { readRecommendationSettings } from "../utils/recommendationSettings.js";
 import { useRecommendations } from "../hooks/useRecommendations.js";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -37,6 +39,7 @@ const candidateStatusLabel = {
 };
 
 export function CandidateDashboard() {
+  const { user } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -46,10 +49,7 @@ export function CandidateDashboard() {
   const [expandedReasons, setExpandedReasons] = useState({});
   const [recommendationPage, setRecommendationPage] = useState(1);
   const recommendationPageSize = 4;
-  const [minCompatibility] = useState(() => {
-    const saved = Number(localStorage.getItem("talentsync_recommendation_min"));
-    return [40, 50, 60, 70, 80, 90].includes(saved) ? saved : 40;
-  });
+  const [minCompatibility] = useState(() => readRecommendationSettings(localStorage, user.id).minimum);
 
   const [profile, setProfile] = useState(null);
 

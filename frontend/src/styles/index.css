@@ -984,3 +984,5 @@ html[data-theme="dark"] .auth-stage {
   .business-access-intro .mt-12 { margin-top: 20px; }
   .business-access-intro h1 { font-size: 26px; }
 }
+
+.company-profile-cover { background: linear-gradient(120deg, #281b39, #62407c 65%, #9262b1); }

@@ -4,6 +4,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 
 export function ProfileEvidence({ onChanged }) {
   const location = useLocation();
+  useEffect(() => { if (location.hash === "#evidencias") document.getElementById("evidencias")?.scrollIntoView({ block: "start" }); }, [location.hash]);
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");

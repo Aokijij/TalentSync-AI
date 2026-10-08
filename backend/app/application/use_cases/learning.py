@@ -78,7 +78,7 @@ def plans(db, user, resource_id=None, status=None):
         record_event(db, "learning.plan_updated", "profile", user.profile.id, actor_user_id=user.id, details={"status": status})
         db.commit()
     return [{"id": row.id, "resource": resources.get(row.resource_id), "status": row.status, "created_at": row.created_at, "completed_at": row.completed_at,
-             "version": row.version, "progress": row.progress or {}} for row in db.learning.plans(user.id)]
+             "version": row.version, "progress": {**(row.progress or {}), "published": bool((row.progress or {}).get("published")) and any(item.get("id") == (row.progress or {}).get("evidence_id") for item in user.profile.evidence or [])}} for row in db.learning.plans(user.id)]
 
 
 def save_journey(db, user, resource_id, payload):
@@ -103,7 +103,10 @@ def save_journey(db, user, resource_id, payload):
     if not db.learning.claim_progress(row.id, user.id, payload["version"]):
         raise UseCaseError(status_code=409, detail="El plan cambió en otra pestaña. Actualiza para conservar el avance más reciente")
     now = datetime.utcnow()
-    row.progress = {"answers": answers, "published": finish, "evidence_id": evidence_id if finish else (row.progress or {}).get("evidence_id")}
+    previous = row.progress or {}
+    row.progress = {"answers": answers, "published": finish or bool(previous.get("published")),
+                    "has_unpublished_changes": not finish and (bool(previous.get("has_unpublished_changes")) or answers != previous.get("answers", {})),
+                    "evidence_id": evidence_id if finish else previous.get("evidence_id")}
     row.status = "completed" if finish else "in_progress"
     row.completed_at = now if finish else None
     if finish:
@@ -189,7 +192,8 @@ def grant_fundamentals(db, user, row, now):
 
 def passport(db, user):
     now = datetime.utcnow()
-    return {"assessments": [{**public_attempt(row), "valid": bool(row.passed and row.valid_until and row.valid_until >= now)} for row in db.learning.attempts(user.id) if row.status == "completed"],
+    return {"practice_evidence": [{"id": item["id"], "title": item["title"], "skills": item["skills"]} for item in user.profile.evidence or [] if item.get("source") == "learning_practice"],
+            "assessments": [{**public_attempt(row), "valid": bool(row.passed and row.valid_until and row.valid_until >= now)} for row in db.learning.attempts(user.id) if row.status == "completed"],
             "notice": "Las micropruebas acreditan únicamente fundamentos evaluados por TalentSync; no equivalen a certificaciones profesionales ni experiencia laboral."}
 
 

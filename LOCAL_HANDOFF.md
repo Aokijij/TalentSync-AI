@@ -10,12 +10,12 @@ rol está en [FEATURES_LOCAL.md](FEATURES_LOCAL.md) y el detalle técnico en
 
 | Área solicitada | Resultado local |
 | --- | --- |
-| Login y registro por rol | Sesiones opacas revocables, CSRF, correo de verificación/recuperación en bandeja local, MFA con QR local, obligatorio para empresa y administrador, sin registro público de administradores. |
+| Login y registro por rol | Portales que rechazan cuentas de otro rol desde el servidor; registros separados de cuatro pasos, revisión final y pantalla propia de MFA. Sesiones revocables, CSRF, QR local y sin registro público de administradores. |
 | Acceso social y corporativo | Adaptadores Google, GitHub, LinkedIn, Workspace y Entra ID; estados, PKCE, firmas, identidades aprovisionadas y MFA probados con proveedores en memoria. Desactivados sin configuración real. |
 | Compatibilidad avanzada | Habilidades normalizadas, requisitos ponderados, relaciones dirigidas entre habilidades, preferencias bidireccionales y explicaciones. MiniLM multilingüe activo en CPU, con inferencia offline. |
 | Personalización y MLOps | Consentimiento, señales de interés, retirada de datos, señal colaborativa con umbral de muestra, evaluación separada y mantenimiento condicionado a datos suficientes. Los datos ficticios no entrenan modelos de contratación. |
 | Anti-ghosting | Historial, plazos, recordatorios, cierre idempotente y feedback explícitamente separado de motivos reales del reclutador. |
-| Micro-upskilling | Brechas por vacante, recursos y proyectos, plan personal, proyección hipotética y número de otras ofertas examinadas. |
+| Micro-upskilling | Brechas por vacante, catálogo visual, planes con casos por sector, borrador persistente y entrega que añade una evidencia declarada al perfil. Proyección hipotética y evaluaciones independientes. |
 | Evaluación y Zero-CV | Quince micropruebas guiadas, catálogo por perfil en diez áreas, cuatro retos SQL restringidos opcionales y pasaporte con alcance/caducidad. Evidencias en Mi perfil con impacto declarado explícito en compatibilidad. |
 | Empresa y selección | Espacio empresarial distinto, revisión manual, equipos y asignaciones por nombre de vacante, invitaciones cancelables, selección ciega, revelación controlada y calidad editable de ofertas. |
 | Simplificación | Retirados análisis de proyectos, salas, pizarra y nuevos escenarios laborales. Historial conservado. Compatibilidad, formación e intereses integrados en recomendaciones; requisitos dentro de Calidad de ofertas. |
@@ -60,7 +60,7 @@ tablas: `scripts/staging_postgres.py check`. No reemplaza ni modifica esta SQLit
 Los comandos, límites y preparación externa están en
 [infra/staging/README.md](infra/staging/README.md).
 
-La migración local vigente es 0036. SMTP está preparado con cola/reintentos y
+La migración local vigente es 0037. SMTP está preparado con cola/reintentos y
 pruebas simuladas y conexiones SSL/STARTTLS reales a un sumidero local, pero
 permanece desactivado. El presupuesto autorizado es cero:
 no se crea infraestructura Azure ni se contratan proveedores.
@@ -102,3 +102,20 @@ solo en tu terminal. Los archivos `.env` originales siguen sin modificarse.
 No hace falta cambiar de stack ni dividir la aplicación en microservicios para
 probar esta versión local. La separación física de servicios y su operación
 corresponden al diseño de infraestructura de la siguiente etapa.
+
+
+## Cuentas adicionales para revisar los cambios
+
+La fixture de revisión es independiente de tus cuentas previas. Sus ocho accesos
+están en `.local/review-accounts.json`, excluido de Git. Cuatro candidatos cubren
+ventas, finanzas, logística y atención administrativa en salud; las tres empresas
+son Comercio Aurora, Ruta Clara y Bienestar Horizonte, todas ficticias. Cada una
+tiene dos vacantes de prueba y hay un administrador adicional.
+
+Los candidatos entran en `/login`, las empresas en `/empresa/login` y el
+administrador en `/acceso-administracion`. Empresa/admin configuran MFA en su
+primer ingreso desde Seguridad, escaneando el QR. No se entrega un código TOTP
+fijo porque cambia con el tiempo. Guarda los códigos de recuperación al activar
+el autenticador. Los accesos sociales continúan desactivados sin proveedor real.
+
+Para preparar o comprobar estas fixtures sin duplicarlas: `backend/.venv/Scripts/python.exe scripts/local.py seed-review`. Este comando no restablece contraseñas ni reinicia avances.

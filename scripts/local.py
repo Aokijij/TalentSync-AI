@@ -73,7 +73,7 @@ def prepare_environment(*, testing=False):
 
 def main():
     parser = argparse.ArgumentParser(description="TalentSync: entorno local aislado")
-    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "accounts", "admin-sso", "model-prepare", "model-check", "doctor", "verify", "rehearse"))
+    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "seed-review", "accounts", "admin-sso", "model-prepare", "model-check", "doctor", "verify", "rehearse"))
     parser.add_argument("options", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.options and args.command != "admin-sso":
@@ -94,6 +94,7 @@ def main():
                     "--host", "127.0.0.1", "--port", "8000"],
         "test": ["-m", "pytest", "-q", "-p", "no:cacheprovider", "--disable-warnings", "-W", "error::sqlalchemy.exc.SAWarning"],
         "seed": ["-m", "scripts.seed_local"],
+        "seed-review": ["-m", "scripts.seed_review"],
         "admin-sso": ["-m", "scripts.admin_sso", *args.options],
         "model-prepare": ["-m", "scripts.local_model", "prepare"],
         "model-check": ["-m", "scripts.local_model", "check"],

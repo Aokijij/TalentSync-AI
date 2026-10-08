@@ -1,3 +1,5 @@
+import { useAuth } from "../hooks/useAuth.js";
+import { readRecommendationSettings, saveRecommendationSetting } from "../utils/recommendationSettings.js";
 import { RecommendationControls } from "../components/RecommendationControls.jsx";
 import { useRecommendations } from "../hooks/useRecommendations.js";
 import { useEffect, useMemo, useState } from "react";
@@ -18,13 +20,14 @@ import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { VacancyLearningPanel } from "../components/VacancyLearningPanel.jsx";
 import { JobInterestButtons } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
-import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
+import { searchJob, visibleInterest, meetsRequiredPreferences } from "../utils/jobDiscovery.js";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { externalPortal } from "../utils/externalPortal.js";
 import { pageItems, totalPages } from "../utils/pagination.js";
 
 export function RecommendationsPage() {
+  const { user } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -36,13 +39,8 @@ export function RecommendationsPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [externalJob, setExternalJob] = useState(null);
-  const [sourceFilter, setSourceFilter] = useState(
-    () => localStorage.getItem("talentsync_recommendation_source") || "all",
-  );
-  const [minCompatibility, setMinCompatibility] = useState(() => {
-    const saved = localStorage.getItem("talentsync_recommendation_min");
-    return saved !== null && [0, 40, 50, 60, 70, 80, 90].includes(Number(saved)) ? Number(saved) : 40;
-  });
+  const [sourceFilter, setSourceFilter] = useState(() => readRecommendationSettings(localStorage, user.id).source);
+  const [minCompatibility, setMinCompatibility] = useState(() => readRecommendationSettings(localStorage, user.id).minimum);
 
   const [expandedReasons, setExpandedReasons] = useState({});
   const [page, setPage] = useState(1);
@@ -86,7 +84,7 @@ export function RecommendationsPage() {
     () =>
       enriched.filter((item) => {
         const job = jobsById.get(item.job_id);
-        return job && (!respectPreferences || !item.match_details?.preferences?.unmet_conditions?.length) && searchJob(job, query) && visibleInterest(job, interests.byId, interestMode) && (sourceFilter === "all" || job.source_kind === sourceFilter);
+        return job && meetsRequiredPreferences(item, respectPreferences) && searchJob(job, query) && visibleInterest(job, interests.byId, interestMode) && (sourceFilter === "all" || job.source_kind === sourceFilter);
       }),
     [enriched, jobsById, sourceFilter, query, interestMode, interests.byId, respectPreferences],
   );
@@ -101,13 +99,13 @@ export function RecommendationsPage() {
     const next = Number(value);
     setMinCompatibility(next);
     setPage(1);
-    localStorage.setItem("talentsync_recommendation_min", String(next));
+    saveRecommendationSetting(localStorage, user.id, "minimum", next);
   }
 
   function changeSource(value) {
     setSourceFilter(value);
     setPage(1);
-    localStorage.setItem("talentsync_recommendation_source", value);
+    saveRecommendationSetting(localStorage, user.id, "source", value);
   }
 
   const appliedJobIds = useMemo(
@@ -143,7 +141,7 @@ export function RecommendationsPage() {
         description="Cada vacante muestra compatibilidad, habilidades coincidentes y una guía para mejorar."
       />
 
-      <RecommendationControls interests={interests} jobs={jobs} onSaved={() => { setPage(1); return load(false); }} respectPreferences={respectPreferences} onRespectChange={(value) => { setRespectPreferences(value); setPage(1); }} excludedCount={enriched.filter((item) => item.match_details?.preferences?.unmet_conditions?.length).length} />
+      <RecommendationControls interests={interests} jobs={jobs} onSaved={() => { setPage(1); return load(false); }} respectPreferences={respectPreferences} onRespectChange={(value) => { setRespectPreferences(value); setPage(1); }} excludedCount={enriched.filter((item) => !meetsRequiredPreferences(item)).length} />
       <div className="grid gap-3 sm:grid-cols-2"><label>Buscar recomendaciones<input className="field-control mt-1" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Cargo, empresa, ubicación o habilidad" /></label><label>Mostrar<select className="field-control mt-1" value={interestMode} onChange={(event) => { setInterestMode(event.target.value); setPage(1); }}><option value="all">Todas las sugeridas</option><option value="saved">Solo guardadas</option></select></label></div>
       {error && (
         <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)]">

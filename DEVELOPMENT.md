@@ -1055,3 +1055,26 @@ Validación: ocho pruebas dirigidas de organización, calidad e impacto de evide
 El texto del matching usa los mismos requisitos ponderados que el índice, con nueva versión de caché. Comunicación como habilidad transversal no desvía por sí sola un perfil comercial hacia diseño. Se conserva la selección de compatibilidad mínima de 0%, se aclaran filtros vacíos y el reto desplaza la vista hasta la decisión activa. El enlace a práctica SQL abre su panel. Se elimina la pantalla antigua de intereses y se actualiza el inventario funcional.
 
 Aceptación local con cuentas QA ficticias independientes: vacante comercial, curso pertinente y plan, guardar/ocultar/restaurar desde la tarjeta, evidencia declarada con impacto explícito, reto por pasos, organización/equipo y separación por rol. Los resultados de la batería completa y del ensayo PostgreSQL quedan en los informes privados habituales; las capturas del rediseño usan el prefijo redesign. No se activan proveedores ni se modifican credenciales de las cuentas previas.
+
+
+### Bloque 37 — Portales de acceso y registro multipaso
+
+Candidato y empresa usan endpoints propios de login y registro. El servidor fuerza el rol de la ruta incluso si se manipula el payload; la comprobación precede MFA y emisión de tokens o cookies. Los endpoints genéricos históricos permanecen para compatibilidad de integraciones y aceptan un portal explícito. La aplicación siempre usa las rutas por rol. Los registros se separan en cuenta, perfil/organización, seguridad y confirmación; el cambio de portal desmonta el formulario. MFA es un paso independiente para los tres roles. Empresa estrena identidad visual violeta y acceso propio.
+
+### Bloque 38 — Navegación e intereses dentro de la búsqueda
+
+Los tres roles tienen secciones de navegación e iconos distintos para sus funcionalidades. Preferencias y decisiones guardadas se reúnen en un panel con dos vistas. El filtro de condiciones imprescindibles excluye incumplimientos conocidos; datos desconocidos siguen visibles. El índice de compatibilidad permanece independiente. Búsqueda, guardadas, restauración de ocultas y paginación se conservan.
+
+### Bloque 39 — Desarrollo con entregas y progreso
+
+La migración 0037 añade progress y version a learning_plans sin modificar registros anteriores. Las prácticas contienen caso, resultado, tres consignas por sector y revisión final. PATCH /learning/plans/{resource_id}/journey guarda borradores y publica muestras de trabajo en la evidencia del propio perfil. La actualización comprueba versión mediante CAS en el repositorio y devuelve 409 ante cambios concurrentes. Publicar exige desarrollar los tres pasos, reemplaza su evidencia anterior sin duplicarla y permite incorporar habilidades declaradas solo con permiso explícito. No acredita evaluaciones ni crea certificaciones. Los cursos externos siguen requiriendo su formación real y evaluación independiente.
+
+El catálogo retira visualmente recursos guardados y el panel por vacante indica En mi plan. Planes activos y finalizados se distinguen; los resultados muestran evidencias publicadas y evaluaciones con vigencia. Se conservan los planes antiguos marcados manualmente, identificados sin trabajo publicado.
+
+### Bloque 40 — Revisión con varios perfiles y empresas
+
+backend/scripts/seed_review.py solo admite la SQLite aislada, preserva cuentas y claves existentes, y crea cuatro candidatos, tres empresas ficticias con seis ofertas y un administrador local. Las nuevas organizaciones se marcan como verificadas exclusivamente en esta fixture de revisión. No es una validación de identidad real. Las cuentas de empresa/admin requieren configurar el autenticador en el primer acceso. Credenciales privadas, no versionadas: .local/review-accounts.json.
+
+Se añaden pruebas de rechazo cruzado antes de MFA, registro manipulado, publicación y borradores en las diez áreas, propiedad del plan, conflictos de versión, evidencia idempotente y ausencia de acreditación automática. La aceptación de tres empresas usa sesiones independientes, MFA real, vacantes de distintos sectores y deniega editar vacantes ajenas. La interfaz se revisa en escritorio/móvil, temas claro/oscuro, registro, MFA, catálogo, plan y evidencia. Los informes privados contienen resultados sin contraseñas.
+
+La revisión de varias cuentas también separa los filtros de recomendaciones por usuario en el navegador. Inicio y recomendaciones comparten la lectura del porcentaje mínimo, incluido 0%, sin heredar la selección de otra cuenta.

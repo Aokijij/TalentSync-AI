@@ -104,7 +104,7 @@ export function CompanySettingsPage() {
         onSubmit={handleSubmit(save)}
       >
         <div
-          className="relative min-h-52 overflow-hidden bg-gradient-to-br from-sky-950 via-sky-800 to-cyan-600"
+          className="relative min-h-52 overflow-hidden company-profile-cover"
           style={
             company?.cover_url
               ? {
@@ -117,7 +117,7 @@ export function CompanySettingsPage() {
         >
           <div className="absolute inset-x-0 bottom-0 flex flex-col gap-4 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
             <div className="flex items-end gap-4">
-              <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-white text-3xl font-black text-sky-900 shadow-xl">
+              <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-white text-3xl font-black text-violet-950 shadow-xl">
                 {company?.logo_url ? (
                   <img
                     src={`${apiFileUrl(company.logo_url)}?v=${imageVersion}`}
@@ -130,7 +130,7 @@ export function CompanySettingsPage() {
               </div>
               <div className="pb-1 text-white">
                 <p className="text-2xl font-bold">{company?.name || "Tu empresa"}</p>
-                <p className="mt-1 text-sm text-sky-100">Vista previa del perfil público</p>
+                <p className="mt-1 text-sm text-violet-100">Vista previa del perfil público</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">

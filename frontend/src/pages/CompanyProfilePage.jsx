@@ -91,7 +91,7 @@ export function CompanyProfilePage() {
   return (
     <div className="space-y-6">
       <section
-        className="relative min-h-80 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] bg-gradient-to-br from-sky-950 via-sky-800 to-cyan-600 shadow-soft"
+        className="relative min-h-80 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] company-profile-cover shadow-soft"
         style={
           company.cover_url
             ? {
@@ -105,7 +105,7 @@ export function CompanyProfilePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
         <div className="relative flex min-h-80 flex-col justify-end gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
-            <span className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-3xl border-4 border-white bg-white text-4xl font-black text-sky-900 shadow-2xl">
+            <span className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-3xl border-4 border-white bg-white text-4xl font-black text-violet-900 shadow-2xl">
               {company.logo_url ? (
                 <img src={apiFileUrl(company.logo_url)} alt={`Logo de ${company.name}`} className="h-full w-full object-contain p-2" />
               ) : (
@@ -113,13 +113,13 @@ export function CompanyProfilePage() {
               )}
             </span>
             <div className="pb-1 text-white">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] !text-sky-200">Perfil de empresa</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] !text-violet-200">Perfil de empresa</p>
               <h1 className="mt-2 text-4xl font-bold tracking-tight !text-white">{company.name}</h1>
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-200">
                 {company.sector ? <span>{company.sector}</span> : null}
                 {company.size ? <span className="inline-flex items-center gap-1.5"><UsersRound size={15} />{company.size}</span> : null}
                 {company.location ? <span className="inline-flex items-center gap-1.5"><MapPin size={15} />{company.location}</span> : null}
-                {company.website ? <a className="inline-flex items-center gap-1.5 font-semibold text-cyan-300 hover:underline" href={company.website} target="_blank" rel="noreferrer">Visitar sitio web <ExternalLink size={14} /></a> : null}
+                {company.website ? <a className="inline-flex items-center gap-1.5 font-semibold text-violet-200 hover:underline" href={company.website} target="_blank" rel="noreferrer">Visitar sitio web <ExternalLink size={14} /></a> : null}
               </div>
             </div>
           </div>

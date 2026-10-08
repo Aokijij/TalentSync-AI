@@ -9,3 +9,7 @@ export function visibleInterest(job, byId, mode = "all") {
   const state = byId.get(job.id);
   return mode === "saved" ? state === true : mode === "hidden" ? state === false : state !== false;
 }
+
+export function meetsRequiredPreferences(recommendation, respect = true) {
+  return !respect || !(recommendation.match_details?.preferences?.unmet_conditions?.length);
+}

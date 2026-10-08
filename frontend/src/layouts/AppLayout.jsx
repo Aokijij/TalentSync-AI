@@ -118,9 +118,10 @@ const roleCopy = {
 const navigationOrder = ["/candidato", "/empresa", "/admin", "/recomendaciones", "/vacantes", "/empresa/vacantes", "/postulaciones", "/empresa/postulaciones", "/empresa/talento", "/compatibilidad", "/aprendizaje", "/entrevistas", "/mis-intereses", "/empresa/calidad", "/confianza", "/admin/verificaciones", "/admin/ecosistema", "/admin/modelos", "/admin/aprendizaje", "/perfil", "/empresa/perfil", "/empresa/equipo", "/administracion", "/notificaciones", "/seguridad"];
 
 function Navigation({ linksForRole, unreadNotifications, onNavigate, role }) {
+  const Container = role ? "nav" : "div";
   const groups = role === "company" ? [["Contratación", ["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"]], ["Organización", ["/empresa/perfil", "/empresa/equipo", "/confianza"]], ["Tu cuenta", ["/notificaciones", "/seguridad"]]] : role === "admin" ? [["Supervisión", ["/admin", "/admin/verificaciones", "/admin/ecosistema", "/vacantes"]], ["Plataforma", ["/admin/modelos", "/admin/aprendizaje", "/administracion"]], ["Tu cuenta", ["/seguridad"]]] : [["Oportunidades", ["/candidato", "/recomendaciones", "/vacantes", "/postulaciones"]], ["Tu trayectoria", ["/aprendizaje", "/perfil"]], ["Tu cuenta", ["/notificaciones", "/confianza", "/seguridad"]]];
   return (
-    <nav className="space-y-1" aria-label="Navegación principal">
+    <Container className="space-y-1" aria-label={role ? "Navegación principal" : undefined}>
       {role ? groups.map(([label, routes]) => { const group = linksForRole.filter((link) => routes.includes(link.to)); return group.length ? <div key={label} className="navigation-group"><p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--sidebar-muted)]">{label}</p><Navigation linksForRole={group} unreadNotifications={unreadNotifications} onNavigate={onNavigate} /></div> : null; }) : linksForRole.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
@@ -154,13 +155,14 @@ function Navigation({ linksForRole, unreadNotifications, onNavigate, role }) {
           )}
         </NavLink>
       ))}
-    </nav>
+    </Container>
   );
 }
 
 export function AppLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); }, [location.pathname]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [organizationName, setOrganizationName] = useState("");
   const [organization, setOrganization] = useState(null);
