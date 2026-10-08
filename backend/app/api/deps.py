@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.application.ports.services import AccountSecurity as AccountSecurityPort
+from app.application.ports.services import ProjectInspector as ProjectInspectorPort
 from app.application.ports.services import ResumeReader as ResumeReaderPort
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
@@ -100,6 +101,11 @@ def get_social_identity_provider():
 
 def get_resume_reader() -> ResumeReaderPort:
     return ResumeReader()
+
+
+def get_project_inspector() -> ProjectInspectorPort:
+    from app.infrastructure.project_inspector import ProjectInspector
+    return ProjectInspector()
 
 
 def get_jooble_job_catalog():

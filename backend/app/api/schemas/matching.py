@@ -57,3 +57,10 @@ class EvidenceSubmission(BaseModel):
         if any(not item or len(item) > 100 for item in result):
             raise ValueError("Indica habilidades de hasta 100 caracteres")
         return result
+
+
+class ProjectEvidenceSubmission(EvidenceSubmission):
+    kind: Literal["repository"] = "repository"
+    preview_token: str = Field(min_length=50, max_length=30000)
+    add_to_profile: bool = False
+    confirm_ownership: Literal[True]

@@ -33,6 +33,10 @@ class UploadedResume(Protocol):
     file: BinaryIO
 
 
+class ProjectInspector(Protocol):
+    def inspect(self, file: UploadedResume) -> dict: ...
+
+
 class ResumeReader(Protocol):
     def extract(self, file: UploadedResume, user_id: int) -> tuple[str, str]: ...
     def storage_available(self) -> bool: ...

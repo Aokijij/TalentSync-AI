@@ -1,7 +1,7 @@
 import base64
 import hashlib
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 from app.core.config import settings
 from app.infrastructure.security.jwt import create_access_token
@@ -22,4 +22,7 @@ class AccountSecurity:
         return self._cipher().encrypt(value.encode()).decode()
 
     def decrypt_secret(self, value):
-        return self._cipher().decrypt(value.encode()).decode()
+        try:
+            return self._cipher().decrypt(value.encode()).decode()
+        except (InvalidToken, UnicodeError) as error:
+            raise ValueError("Invalid encrypted value") from error

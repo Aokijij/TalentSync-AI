@@ -47,6 +47,9 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 8 | Reputación, incidencias, auditoría y tendencias | Implementado y probado con métricas internas y revisión de incidencias |
 | 9 | Entrevistas y colaboración | Implementado: editor, pizarra, versiones y señalización WebRTC local |
 | 10 | Personalización, evaluación de modelos e integraciones | Implementado localmente; estado y dependencias externas documentados |
+| 11 | Acceso social de candidatos | Google y GitHub implementados con proveedores simulados en pruebas; requieren credenciales para uso real |
+| 12 | Vinculación de cuentas sociales existentes | Implementado con reautenticación, MFA y control de sesión; sin conexión externa real |
+| 13 | Análisis estático de proyectos | Implementado por ZIP local, vista previa y evidencia no verificada con incorporación opcional al perfil |
 
 ## Comprobaciones
 
@@ -385,3 +388,77 @@ pendientes, y generación SQL PostgreSQL. Las pruebas cubren contraseña, MFA, C
 roles, propietario, intentos de unir cuentas, revocación durante el intercambio,
 desvinculación, cascadas y conservación del acceso por correo. No se conectaron
 cuentas externas reales; siguen siendo necesarias las credenciales del bloque 11.
+
+## Bloque 13: evidencias técnicas desde proyectos locales
+
+Compatibilidad incluye Analizar un proyecto local. Permite cargar un ZIP propio o
+descargado manualmente de GitHub, revisar las tecnologías detectadas, seleccionar
+las que se quieren declarar y describir la contribución antes de guardar. La
+semilla crea `.local/demo-project.zip` con un ejemplo ficticio de Python y
+TypeScript; no sobrescribe un archivo existente. Puede usarse para probar la
+pantalla con la cuenta candidata local.
+
+El analizador `local-project-inspector-v1` cuenta extensiones de archivos y examina
+dependencias conocidas en `package.json`, `requirements*.txt`, `pyproject.toml` y
+`pom.xml`, además de la presencia de Dockerfile. No ejecuta código, instala
+dependencias, extrae archivos al disco ni descarga enlaces. No lee el contenido de
+los archivos fuente. Omite carpetas de dependencias, compilaciones y archivos
+ocultos. Los manifiestos deben estar en UTF-8; los no interpretables producen un
+aviso sin descartar las señales válidas del resto del proyecto.
+
+Cada carga admite hasta 8 MiB comprimidos, 2.000 entradas y 32 MiB descomprimidos
+declarados, con relación de compresión máxima 200:1 por entrada. Solo se aceptan
+ZIP sin compresión o DEFLATE. Se leen como máximo 32 manifiestos de 256 KiB cada
+uno. Se rechazan rutas absolutas, recorridos `..`, nombres ambiguos, enlaces,
+cifrado y archivos corruptos. La profundidad máxima de rutas es veinte y cada
+nombre completo tiene hasta trescientos caracteres. No se interpretan DTD ni
+entidades externas XML. Una estructura JSON excesivamente anidada se trata como
+manifiesto no interpretable.
+
+`POST /api/v1/matching/projects/preview` recibe multipart `file` y devuelve hasta
+veinte tecnologías, sus señales de origen, avisos y estadísticas. La vista previa
+no modifica la base. Su token cifrado y autenticado se liga al candidato y vence
+en diez minutos. `POST /api/v1/matching/projects/evidence` exige ese token,
+selección de tecnologías detectadas y confirmación de participación. Ambos
+endpoints requieren rol candidato; las sesiones de navegador exigen CSRF y
+tienen un límite de veinte peticiones por hora y endpoint.
+
+Al guardar se conserva el resumen técnico y la huella SHA-256 del ZIP, junto con
+la descripción aportada por el candidato; no se conserva el ZIP, su contenido ni
+sus rutas internas. La huella impide duplicados idénticos dentro del portafolio
+actual. Se mantiene el límite de cincuenta evidencias. El resumen se puede abrir
+en la evidencia guardada y eliminar usando el flujo existente. Los eventos solo
+registran origen y versión del analizador.
+
+Todas estas evidencias tienen `verified=false`: declarar una dependencia no
+demuestra autoría ni competencia. Por defecto se conservan las habilidades del
+perfil. Solo marcar Añadir las tecnologías seleccionadas incorpora esas
+declaraciones y puede cambiar la afinidad. Guardar o eliminar evidencia invalida
+la versión del matching. No se infiere que Spring Boot demuestre microservicios,
+ni se presenta el resultado como probabilidad de contratación o certificación.
+Las micropruebas del bloque 6 siguen siendo un mecanismo separado de evaluación.
+
+La detección utiliza formatos documentados en
+[npm](https://docs.npmjs.com/cli/configuring-npm/package-json/),
+[PyPA](https://packaging.python.org/en/latest/specifications/pyproject-toml/) y
+la biblioteca [zipfile de Python](https://docs.python.org/3.13/library/zipfile.html).
+La consulta automática de repositorios GitHub sigue pendiente y no está autorizada
+por conectar una cuenta social; el acceso del bloque 11 solo solicita perfil y
+correo. También siguen pendientes las integraciones externas indicadas en los
+bloques anteriores, sus credenciales y sus comprobaciones reales.
+
+## Revisión acumulada de los bloques 12 y 13
+
+Pasaron 164 pruebas backend, incluyendo migraciones y regresión de los bloques
+anteriores, con avisos de relaciones SQLAlchemy tratados como errores. Pasaron las
+20 pruebas frontend, Ruff, ESLint y la compilación de producción. El análisis de
+proyectos tiene cobertura de límites, entradas inseguras, manifiestos corruptos,
+privacidad del resumen, roles, CSRF, token alterado, caducado o de otro candidato,
+incorporación opcional de habilidades, duplicados y portafolio lleno.
+
+Se comprobó además por HTTP contra el servidor local el acceso con cuenta ficticia,
+análisis del ZIP de ejemplo, guardado como evidencia no verificada, eliminación de
+esa evidencia temporal y cierre de la sesión de prueba. Se corrigió el arranque
+local para excluir pruebas, utilidades, migraciones y entorno virtual de la
+recarga automática mediante rutas absolutas; el filtro se comprobó en Windows.
+No se hicieron push, despliegues ni conexiones a cuentas externas.

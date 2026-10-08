@@ -16,12 +16,15 @@ def preferences(db, user, payload=None):
     return user.profile.preferences or {}
 
 
-def evidence(db, user, payload=None):
+def evidence(db, user, payload=None, *, analysis=None):
     items = user.profile.evidence or []
     if payload is not None:
         if len(items) >= 50:
             raise UseCaseError(status_code=422, detail="Puedes registrar hasta 50 evidencias")
-        user.profile.evidence = [*items, {**payload, "id": uuid4().hex, "created_at": datetime.utcnow().isoformat(), "verified": False}]
+        item = {**payload, "id": uuid4().hex, "created_at": datetime.utcnow().isoformat(), "verified": False}
+        if analysis is not None:
+            item["analysis"] = analysis
+        user.profile.evidence = [*items, item]
         user.profile.updated_at = datetime.utcnow()
         record_event(db, "profile.evidence_added", "profile", user.profile.id, actor_user_id=user.id, details={"source": payload["kind"]})
         db.commit()

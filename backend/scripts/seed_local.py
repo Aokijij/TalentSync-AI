@@ -1,6 +1,7 @@
 """Small fictional fixture. Refuses any database outside the isolated workspace."""
 import json
 import secrets
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -76,7 +77,15 @@ def main():
                 db.commit()
                 create_interview(SqlAlchemyUnitOfWork(db), users["company"], demo.id, "Entrevista de demostración local")
     accounts_file.write_text(json.dumps(accounts, ensure_ascii=False, indent=2), encoding="utf-8")
+    demo_zip = ROOT / ".local/demo-project.zip"
+    if not demo_zip.exists():
+        with zipfile.ZipFile(demo_zip, "x", compression=zipfile.ZIP_STORED) as project:
+            project.writestr("demo/requirements.txt", "fastapi\npytest\n")
+            project.writestr("demo/src/api.py", "# Proyecto ficticio para demostrar el análisis estático.\ndef health():\n    return {'status': 'demo'}\n")
+            project.writestr("demo/package.json", json.dumps({"devDependencies": {"typescript": "*"}}))
+            project.writestr("demo/web/main.ts", "// Archivo ficticio de demostración; no se ejecuta.\n")
     print("Datos ficticios preparados sin duplicados. Credenciales: scripts/local.py accounts")
+    print("ZIP ficticio para probar Compatibilidad: .local/demo-project.zip")
 
 
 if __name__ == "__main__":
