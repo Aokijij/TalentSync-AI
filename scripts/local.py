@@ -36,6 +36,7 @@ def prepare_environment():
     # Explicit values also override inherited shell variables and dotenv files.
     values.update({"TALENTSYNC_ENV_FILE": str(ENV_FILE), "PERIODIC_MAINTENANCE_ENABLED": "false",
                    "SESSION_AUTH_ENABLED": "true", "LOCAL_MAIL_ENABLED": "true",
+                   "WORKFLOW_MAINTENANCE_ENABLED": "true",
                    "SESSION_COOKIE_SECURE": "false", "PUBLIC_APP_URL": "http://127.0.0.1:5173",
                    "AZURE_STORAGE_ACCOUNT_URL": "", "JSEARCH_API_KEY": "", "ADZUNA_APP_ID": "",
                    "ADZUNA_APP_KEY": "", "JOOBLE_API_KEY": "", "STATIC_DIR": ""})
@@ -49,7 +50,7 @@ def main():
     env = prepare_environment()
     commands = {
         "setup": ["-m", "alembic", "upgrade", "head"],
-        "backend": ["-m", "uvicorn", "app.main:app", "--reload", "--host", "127.0.0.1", "--port", "8000"],
+        "backend": ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "app", "--host", "127.0.0.1", "--port", "8000"],
         "test": ["-m", "pytest", "-q", "-p", "no:cacheprovider"],
         "seed": ["-m", "scripts.seed_local"],
     }

@@ -95,10 +95,8 @@ export function ApplicationsPage() {
   );
 
   async function withdraw(applicationId) {
-    await api.delete(`/applications/${applicationId}`);
-    setApplications((current) =>
-      current.filter((item) => item.id !== applicationId),
-    );
+    await api.post(`/workflow/applications/${applicationId}/withdraw`);
+    setApplications((await api.get("/applications/me")).data);
     setPendingWithdrawal(null);
   }
 
@@ -224,6 +222,7 @@ export function ApplicationsPage() {
               </div>
 
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
+                <Link className="button-secondary" to={`/procesos/${application.id}`}>Historial, plazos y feedback</Link>
                 <div>
                   {application.interview_at ? (
                     <p className="flex items-center gap-2 text-sm font-semibold text-[var(--accent)]">

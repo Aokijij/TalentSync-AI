@@ -1,5 +1,8 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import StaleDataError
+
+from app.application.errors import UseCaseError
 
 from app.infrastructure.database.models import (
     Application,
@@ -47,7 +50,11 @@ class SqlAlchemyUnitOfWork:
         self.session.flush()
 
     def commit(self) -> None:
-        self.session.commit()
+        try:
+            self.session.commit()
+        except StaleDataError:
+            self.session.rollback()
+            raise UseCaseError(status_code=409, detail="El proceso cambió mientras lo editabas; actualiza y vuelve a intentar") from None
 
     def refresh(self, entity: object) -> None:
         self.session.refresh(entity)

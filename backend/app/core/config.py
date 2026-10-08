@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     catalog_max_age_days: int = 60
     catalog_min_skills: int = 3
     periodic_maintenance_enabled: bool = False
+    workflow_maintenance_enabled: bool = False
     periodic_maintenance_interval_hours: int = 24
     periodic_maintenance_initial_delay_seconds: int = 90
     catalog_sync_keywords: str = (

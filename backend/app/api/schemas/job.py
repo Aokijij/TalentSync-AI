@@ -67,6 +67,7 @@ def default_pipeline_stages() -> list[PipelineStage]:
 
 
 class JobCreate(PipelineStagesMixin):
+    response_days: int = Field(default=7, ge=1, le=30)
     skill_requirements: list[SkillRequirement] = Field(default_factory=list, max_length=50)
     _unique_requirements = field_validator("skill_requirements")(unique_requirements)
     status: Literal["active", "draft"] = "active"
@@ -108,6 +109,7 @@ class JobCreate(PipelineStagesMixin):
 
 
 class JobUpdate(PipelineStagesMixin):
+    response_days: int | None = Field(default=None, ge=1, le=30)
     skill_requirements: list[SkillRequirement] | None = Field(default=None, max_length=50)
     _unique_requirements = field_validator("skill_requirements")(unique_requirements)
     languages: list[LanguageLevel] | None = Field(default=None, max_length=20)
@@ -150,6 +152,7 @@ class JobUpdate(PipelineStagesMixin):
 
 
 class JobResponse(BaseModel):
+    response_days: int = 7
     skill_requirements: list[SkillRequirement] = Field(default_factory=list)
     languages: list[LanguageLevel] = Field(default_factory=list)
     application_questions: list[ScreeningQuestionPublic] = Field(default_factory=list)

@@ -21,6 +21,8 @@ class ApplicationCreate(BaseModel):
 
 
 class ApplicationStatusUpdate(BaseModel):
+    expected_version: int | None = Field(default=None, ge=1)
+    candidate_feedback: "CandidateFeedback | None" = None
     status: ApplicationStatus | None = None
     pipeline_stage: str | None = None
     recruiter_notes: str | None = None
@@ -28,7 +30,19 @@ class ApplicationStatusUpdate(BaseModel):
     screening_answer_adjustments: dict[str, float] | None = None
 
 
+class CandidateFeedback(BaseModel):
+    reason_code: Literal["skills_gap", "experience_gap", "position_closed", "other"]
+    message: str = Field(min_length=10, max_length=1500)
+
+
+ApplicationStatusUpdate.model_rebuild()
+
+
 class ApplicationResponse(BaseModel):
+    version: int = 1
+    response_due_at: datetime | None = None
+    released_at: datetime | None = None
+    candidate_feedback: dict = Field(default_factory=dict)
     id: int
     user_id: int
     job_id: int

@@ -142,6 +142,8 @@ def update_job(
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
     ensure_job_access(db, job, current_user)
     changes = dict(payload)
+    if "response_days" in changes and changes["response_days"] is None:
+        raise UseCaseError(status_code=422, detail="Indica un plazo de 1 a 30 días")
     if changes.get("status") == "active" and job.company.verification_required and job.company.verification_status != "verified":
         raise UseCaseError(status_code=403, detail="Verifica la empresa antes de publicar")
     previous_status = job.status
@@ -188,6 +190,8 @@ def update_job(
             application.resolution_reason = "another_candidate_selected"
             if rejected_stage:
                 application.pipeline_stage = rejected_stage
+            from app.application.use_cases.workflow import transition
+            transition(db, application, current_user.id)
             db.add(
                 db.notifications.new(
                     user_id=application.user_id,
@@ -204,6 +208,15 @@ def update_job(
         analysis = nlp.analyze_job(f"{job.title} {job.description} {job.requirements}")
         job.skills = analysis.skills
         job.embedding = analysis.embedding
+    if previous_status != "closed" and job.status == "closed":
+        from app.application.use_cases.workflow import FINAL, transition
+        for application in job.applications:
+            if application.status not in FINAL and application.released_at is None:
+                application.status = ApplicationStatus.REJECTED
+                application.resolution_reason = "position_closed"
+                application.candidate_feedback = {"source": "system", "reason_code": "position_closed", "message": "La empresa cerró la vacante. El proceso ha finalizado.", "created_at": datetime.utcnow().isoformat()}
+                transition(db, application, current_user.id)
+                db.add(db.notifications.new(user_id=application.user_id, type="application_closed", title="La vacante fue cerrada", body=f"La empresa cerró {job.title}.", action_url=f"/procesos/{application.id}"))
     db.commit()
     db.refresh(job)
     return job

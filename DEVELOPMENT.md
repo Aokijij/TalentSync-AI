@@ -41,7 +41,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 2 | Correo local, recuperación, verificación, sesiones, MFA y privacidad | Implementado y probado; SSO externo pendiente del bloque 9 |
 | 3 | Verificación empresarial, equipos y permisos | Implementado: revisión manual local, borradores, invitaciones y permisos en API |
 | 4 | Requisitos, evidencias, preferencias y matching avanzado | Base explicable implementada; embeddings neuronales y modelos de comportamiento en bloque 9 |
-| 5 | Historial de etapas, plazos, avisos y feedback | Pendiente |
+| 5 | Historial de etapas, plazos, avisos y feedback | Implementado: plazos, worker local, cierre idempotente e historial |
 | 6 | Brechas, recursos, planes, evaluaciones, pasaporte y portafolio | Pendiente |
 | 7 | Selección ciega, calidad de vacantes y contratación por potencial | Pendiente |
 | 8 | Reputación, incidencias, auditoría y tendencias | Pendiente |
@@ -113,3 +113,19 @@ no alterar el mérito técnico. El componente textual actual usa HashingVectoriz
 local y se identifica como lexical-hashing-v1. No se presenta como un modelo
 neuronal ni una probabilidad de éxito. El procesamiento de CV existente se conserva.
 Validación acumulada: 81 pruebas backend; lint y build frontend aprobados.
+
+## Bloque 5: seguimiento y plazos
+
+`/procesos/:id` presenta el historial real de cambios, feedback público y plazo
+de respuesta. Las notas internas no se exponen. Nuevas postulaciones reciben
+un plazo de siete días naturales por avance, configurable en la API entre 1 y 30.
+Los procesos anteriores conservan su estado sin imponerles plazos retroactivos.
+El candidato puede retirarse conservando el historial.
+
+El lanzador local activa una revisión cada minuto, independiente de sincronizaciones
+externas. Emite un recordatorio el día anterior y cierra una sola vez al vencer.
+El aviso distingue falta de respuesta de una evaluación del candidato. Las
+actualizaciones del proceso usan control de versión para evitar sobrescrituras.
+La revisión se ejecuta al volver a encender el backend; no funciona con el equipo
+apagado. También puede ejecutarse con POST /api/v1/admin/workflow/run.
+Las métricas de estos vencimientos alimentarán reputación en el bloque 8.

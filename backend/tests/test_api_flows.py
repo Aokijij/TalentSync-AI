@@ -37,6 +37,7 @@ def client(monkeypatch):
     monkeypatch.setattr(settings, "environment", "development")
     monkeypatch.setattr(settings, "session_auth_enabled", False)
     monkeypatch.setattr(settings, "local_mail_enabled", False)
+    monkeypatch.setattr(settings, "workflow_maintenance_enabled", False)
     monkeypatch.setattr(limiter, "enabled", False)
     app = create_app()
     app.dependency_overrides[get_db] = test_database

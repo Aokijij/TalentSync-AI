@@ -547,6 +547,7 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
         </div>
       ) : null}
       <div className="mt-4 flex items-center gap-2">
+        <Link className="button-ghost button-sm" to={`/procesos/${item.id}`}>Historial y feedback</Link>
         <button
           type="button"
           className="button-secondary button-sm flex-1"

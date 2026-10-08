@@ -19,7 +19,11 @@ from app.core.limiter import limiter
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     task = None
+    workflow_task = None
     stop_event = asyncio.Event()
+    if settings.workflow_maintenance_enabled:
+        from app.infrastructure.workflow_scheduler import periodic_workflow
+        workflow_task = asyncio.create_task(periodic_workflow(stop_event))
     if settings.periodic_maintenance_enabled:
         from app.infrastructure.scheduling import periodic_maintenance
 
@@ -30,6 +34,8 @@ async def lifespan(app: FastAPI):
         stop_event.set()
         if task:
             await task
+        if workflow_task:
+            await workflow_task
 
 
 def create_app() -> FastAPI:

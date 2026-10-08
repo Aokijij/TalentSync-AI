@@ -3,6 +3,8 @@ from typing import Any
 
 from app.application.errors import UseCaseError
 from app.application.ports.unit_of_work import UnitOfWork
+from app.application.use_cases.events import record_event
+from app.application.use_cases.workflow import transition
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Application, User
 
@@ -92,6 +94,8 @@ def apply_to_job(
         screening_adjustment=screening_adjustment,
     )
     db.add(application)
+    db.flush()
+    transition(db, application, current_user.id, source="candidate")
     invitation = db.notifications.find_unread(
         current_user.id, "candidate_invitation", f"/vacantes/{job.id}"
     )
@@ -160,6 +164,16 @@ def update_status(
                 status_code=403, detail="No puedes gestionar esta postulacion"
             )
     changes = dict(payload)
+    if application.released_at:
+        raise UseCaseError(status_code=409, detail="El proceso fue cerrado o retirado; no puedes reactivarlo sin una nueva postulación")
+    expected = changes.pop("expected_version", None)
+    if expected is not None and application.version != expected:
+        raise UseCaseError(status_code=409, detail="El proceso cambió; actualiza antes de guardar")
+    feedback = changes.pop("candidate_feedback", None)
+    if feedback:
+        application.candidate_feedback = {**feedback, "source": "company", "created_at": datetime.utcnow().isoformat()}
+        record_event(db, "application.feedback_shared", "application", application.id, actor_user_id=current_user.id, details={"reason_code": feedback["reason_code"]})
+        db.add(db.notifications.new(user_id=application.user_id, type="application_feedback", title="Recibiste feedback de la empresa", body=f"Consulta el mensaje sobre {application.job.title}.", action_url=f"/procesos/{application.id}"))
     previous_status = application.status
     previous_stage = application.pipeline_stage
     previous_interview = application.interview_at
@@ -212,6 +226,8 @@ def update_status(
     status_changed = application.status != previous_status
     stage_changed = application.pipeline_stage != previous_stage
     interview_changed = application.interview_at != previous_interview
+    if status_changed or stage_changed or interview_changed:
+        transition(db, application, current_user.id, previous_status=previous_status, previous_stage=previous_stage)
     if (status_changed or stage_changed) and application.status != ApplicationStatus.REJECTED:
         application.resolution_reason = None
     if application.status == ApplicationStatus.HIRED and (

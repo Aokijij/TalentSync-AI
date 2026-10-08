@@ -9,6 +9,18 @@ from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class ApplicationRepository(SqlAlchemyRepository[Application]):
+    def approaching_deadlines(self, before):
+        return self.session.query(Application).filter(Application.response_due_at <= before, Application.released_at.is_(None),
+            Application.status.notin_([ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED, ApplicationStatus.REJECTED])).order_by(Application.response_due_at).limit(500).all()
+
+    def claim_deadline(self, row, now):
+        return self.session.query(Application).filter(Application.id == row.id, Application.version == row.version,
+            Application.response_due_at <= now, Application.released_at.is_(None),
+            Application.status.notin_([ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED, ApplicationStatus.REJECTED])).update({
+                Application.released_at: now, Application.status: ApplicationStatus.REJECTED,
+                Application.resolution_reason: "response_deadline", Application.response_due_at: None,
+                Application.version: Application.version + 1}, synchronize_session="fetch") == 1
+
     def count(self) -> int:
         return self.session.query(Application).count()
 

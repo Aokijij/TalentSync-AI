@@ -272,6 +272,7 @@ class Job(Base):
     )
     skills: Mapped[list[str]] = mapped_column(JSON, default=list)
     skill_requirements: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
+    response_days: Mapped[int] = mapped_column(Integer, default=7, server_default="7", nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
@@ -339,6 +340,12 @@ class Application(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
+    response_due_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime)
+    candidate_feedback: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    __mapper_args__ = {"version_id_col": version}
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), nullable=False)
     status: Mapped[ApplicationStatus] = mapped_column(
