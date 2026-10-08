@@ -1,0 +1,6 @@
+from typing import Any, Protocol
+
+
+class EventRepository(Protocol):
+    def new(self, **values: Any) -> object: ...
+    def for_entity(self, entity_type: str, entity_id: int, limit: int = 100) -> list: ...

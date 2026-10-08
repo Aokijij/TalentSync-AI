@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.infrastructure.database.models import (
     Application,
     Company,
+    EventLog,
     Job,
     Notification,
     Profile,
@@ -12,6 +13,7 @@ from app.infrastructure.database.models import (
 )
 from app.infrastructure.repositories.applications import ApplicationRepository
 from app.infrastructure.repositories.companies import CompanyRepository
+from app.infrastructure.repositories.events import EventRepository
 from app.infrastructure.repositories.jobs import JobRepository
 from app.infrastructure.repositories.notifications import NotificationRepository
 from app.infrastructure.repositories.profiles import ProfileRepository
@@ -22,6 +24,7 @@ from app.infrastructure.repositories.users import UserRepository
 class SqlAlchemyUnitOfWork:
     def __init__(self, session: Session):
         self.session = session
+        self.events = EventRepository(session, EventLog)
         self.users = UserRepository(session, User)
         self.profiles = ProfileRepository(session, Profile)
         self.companies = CompanyRepository(session, Company)

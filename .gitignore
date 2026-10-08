@@ -37,6 +37,7 @@ Thumbs.db
 /output/
 /tmp/
 .tmp/
+.local/
 /backups/
 *.doc
 *.docx

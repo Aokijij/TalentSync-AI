@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 
 from pydantic import Field, field_validator
@@ -63,7 +64,7 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings(_env_file=os.environ.get("TALENTSYNC_ENV_FILE", ".env"))
 
 
 settings = get_settings()

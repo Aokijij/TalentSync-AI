@@ -3,6 +3,7 @@ from typing import Any
 from app.application.errors import UseCaseError
 from app.application.ports.services import AccountSecurity, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
+from app.application.use_cases.events import record_event
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import User
 from app.domain.services.skills import normalize_skills
@@ -94,6 +95,8 @@ def register(
                 description=payload["company_description"],
             )
         )
+    record_event(db, "account.created", "user", user.id,
+                 actor_user_id=user.id, details={"role": user.role.value})
     db.commit()
     db.refresh(user)
     return user
