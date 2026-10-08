@@ -4,10 +4,12 @@ from uuid import uuid4
 from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
 from app.domain.services.learning_catalog import ASSESSMENTS, LOCAL_RESOURCES
+from app.domain.services.sql_challenges import CHALLENGES
 
 
 def enrich(resource):
-    return {**resource, "assessment_ids": [key for key, bank in ASSESSMENTS.items() if bank["skill"] in resource["skills"]]}
+    return {**resource, "assessment_ids": [key for key, bank in ASSESSMENTS.items() if bank["skill"] in resource["skills"]],
+            "practical_ids": [key for key, bank in CHALLENGES.items() if bank["skill"] in resource["skills"]]}
 
 
 def resources(db, include_inactive=False):

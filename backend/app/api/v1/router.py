@@ -19,10 +19,12 @@ from app.api.v1.routes import (
     profiles,
     recommendations,
     social_access,
+    sql_practice,
     workflow,
 )
 
 api_router = APIRouter()
+api_router.include_router(sql_practice.router, tags=["learning"])
 api_router.include_router(admin_sso.router, tags=["account"])
 api_router.include_router(account.router, tags=["account"])
 api_router.include_router(social_access.router, tags=["account"])

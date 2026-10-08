@@ -104,6 +104,8 @@ def submit_assessment(db, user, attempt_id, answers):
     now = datetime.utcnow()
     if row is None or row.user_id != user.id:
         raise UseCaseError(status_code=404, detail="Intento no encontrado")
+    if row.assessment_id not in ASSESSMENTS:
+        raise UseCaseError(status_code=422, detail="Este intento utiliza el formulario de reto práctico")
     if row.status != "active" or row.expires_at < now:
         raise UseCaseError(status_code=409, detail="El intento ya se entregó o venció")
     expected = {question["id"] for question in row.snapshot}
@@ -117,16 +119,20 @@ def submit_assessment(db, user, attempt_id, answers):
     row.feedback = [{"question_id": item["id"], "correct": answers[item["id"]] == item["answer"], "message": item["feedback"]} for item in row.snapshot]
     row.valid_until = now + timedelta(days=180) if row.passed else None
     if row.passed:
-        user.profile.skills = normalize_skills([*user.profile.skills, row.skill])
-        user.profile.updated_at = now
-        if (user.privacy_preferences or {}).get("notify_new_skills", False):
-            recipients = {application.job.company.owner_user_id for application in user.applications if application.released_at is None and application.status.value not in {"rejected", "hired", "accepted"}}
-            for recipient in recipients:
-                db.add(db.notifications.new(user_id=recipient, type="candidate_skill_validated", title="Nueva evaluación de fundamentos aprobada",
-                    body=f"Un candidato de tus procesos aprobó fundamentos de {row.skill}.", action_url="/empresa/postulaciones"))
+        grant_fundamentals(db, user, row, now)
     record_event(db, "assessment.completed", "profile", user.profile.id, actor_user_id=user.id, details={"assessment_id": row.assessment_id, "result": "passed" if row.passed else "not_passed", "version": row.version})
     db.commit()
     return public_attempt(row)
+
+
+def grant_fundamentals(db, user, row, now):
+    user.profile.skills = normalize_skills([*(user.profile.skills or []), row.skill])
+    user.profile.updated_at = now
+    if (user.privacy_preferences or {}).get("notify_new_skills", False):
+        recipients = {application.job.company.owner_user_id for application in user.applications if application.released_at is None and application.status.value not in {"rejected", "hired", "accepted"}}
+        for recipient in recipients:
+            db.add(db.notifications.new(user_id=recipient, type="candidate_skill_validated", title="Nueva evaluación de fundamentos aprobada",
+                body=f"Un candidato de tus procesos aprobó fundamentos de {row.skill}.", action_url="/empresa/postulaciones"))
 
 
 def passport(db, user):

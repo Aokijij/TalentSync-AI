@@ -54,6 +54,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 15 | Acceso y vinculación LinkedIn | Adaptador OIDC implementado y probado en memoria; desactivado sin credenciales y HTTPS |
 | 16 | Lectura de repositorios públicos GitHub | Adaptador con consentimiento, revisión fija y límites; desactivado localmente por defecto |
 | 17 | SSO administrativo de Google Workspace | Aprovisionamiento local, validación de dominio y sujeto, MFA y política obligatoria opcional |
+| 18 | Retos SQL con consultas reales | Dos retos, vista previa, ejecución restringida en memoria y pasaporte integrado |
 
 ## Comprobaciones
 
@@ -607,3 +608,42 @@ cambio de dominio/rol y aplicación de la política a sesiones y JWT anteriores.
 Google Workspace es el proveedor implementado; Microsoft Entra ID no está integrado.
 VPN y restricciones de infraestructura no se han creado. Referencia:
 [validación del dominio Google Workspace](https://developers.google.com/identity/openid-connect/openid-connect).
+
+## Bloque 18: retos prácticos SQL
+
+Aprendizaje incluye dos ejercicios originales: sumar pedidos pagados por cliente
+y contar pedidos pagados conservando clientes sin coincidencias. El candidato
+escribe una consulta SQLite, puede probarla con los datos visibles y entregar una
+vez para evaluarla contra tres conjuntos ficticios, incluidos casos límite. Los
+otros conjuntos y respuestas esperadas no se entregan al cliente. Las pruebas
+rechazan una respuesta escrita de forma fija que solo satisface la muestra.
+
+Cada reto tiene quince minutos, un intento nuevo por veinticuatro horas y exige
+superar todas las comprobaciones. Se incorpora al pasaporte existente con alcance
+de fundamentos SQL y vigencia de 180 días; no acredita experiencia profesional.
+Una aprobación actualiza habilidades y caché, y respeta el consentimiento existente
+para avisar a empresas. Completar cursos o pulsar Probar no concede acreditación.
+
+El ejecutor crea una SQLite `:memory:` nueva por consulta, con tablas y datos propios.
+No usa la conexión, archivos ni credenciales de TalentSync. Solo autoriza SELECT,
+lectura de las tablas indicadas y una lista limitada de funciones. Deniega escritura,
+ATTACH, PRAGMA, extensiones, lectura de archivos y consultas al esquema interno.
+Aplica límites de cuatro mil caracteres, treinta y dos columnas, profundidad de
+expresiones treinta, diez SELECT compuestos, diez mil instrucciones al compilar,
+cien mil pasos de ejecución y doscientos milisegundos por consulta. Los resultados
+tienen hasta cien filas y dieciséis KiB; no admite binarios ni números no finitos.
+Cada conexión se cierra explícitamente. No es un ejecutor de Python, Java o shell.
+
+La API `/api/v1/learning/practical` lista los retos; `/{challenge_id}/start` crea o
+recupera el intento. `/attempts/{id}/preview` solo ejecuta la muestra, y
+`/attempts/{id}/submit` consume el intento atómicamente antes de evaluar. Requiere
+candidato, CSRF en sesiones y límites de peticiones. Los endpoints de preguntas
+y de consultas no aceptan intentos del otro tipo. No se guarda el SQL enviado en
+la base ni en eventos; el borrador solo vive en la página abierta.
+
+Dieciséis pruebas nuevas cubren restricciones, límites, consultas reales,
+respuestas fijas, aislamiento de candidatos, caducidad, CSRF, entrega repetida y
+pasaporte. Pasaron también las pruebas de aprendizaje, catálogo y arquitectura.
+Se reforzó la fábrica temporal de la suite para que retirar una dependencia
+sobrescrita no permita recurrir a la base anterior. Referencia:
+[autorización y límites de SQLite en Python](https://docs.python.org/3/library/sqlite3.html).

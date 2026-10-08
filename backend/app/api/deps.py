@@ -117,6 +117,11 @@ def get_repository_inspector():
     return GitHubProjectInspector(settings)
 
 
+def get_sql_sandbox():
+    from app.infrastructure.sql_sandbox import SQLSandbox
+    return SQLSandbox()
+
+
 def get_jooble_job_catalog():
     from app.core.config import settings
 
