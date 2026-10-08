@@ -59,8 +59,8 @@ export function useInterviewCall(roomId) {
         const pc = new RTCPeerConnection({ iceServers: [] });
         current.pc = pc;
         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-        pc.ontrack = (event) => { if (remoteVideo.current) remoteVideo.current.srcObject = event.streams[0]; };
-        pc.onicecandidate = (event) => { if (event.candidate) send("ice", event.candidate.toJSON()).catch((failure) => setError(getApiErrorMessage(failure))); };
+        pc.ontrack = (event) => { if (current.pc === pc && remoteVideo.current) remoteVideo.current.srcObject = event.streams[0]; };
+        pc.onicecandidate = (event) => { if (current.pc === pc && event.candidate) send("ice", event.candidate.toJSON()).catch((failure) => setError(getApiErrorMessage(failure))); };
         pc.onconnectionstatechange = () => {
           if (state.current !== current || current.pc !== pc) return;
           setStatus(pc.connectionState === "connected" ? "Videollamada conectada" : pc.connectionState === "failed" ? "No se pudo conectar. Desconecta y vuelve a intentar en la misma red local." : "Conectando navegadores…");

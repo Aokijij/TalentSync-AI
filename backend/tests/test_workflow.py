@@ -59,3 +59,11 @@ def test_deadline_reminders_release_once_and_conflicting_update(client):
     assert response["status"] == "rejected"
     assert response["feedback"]["reason_code"] == "response_deadline"
     assert len([item for item in response["events"] if item["type"] == "application.deadline_released"]) == 1
+
+
+def test_company_cannot_erase_process_history_with_legacy_delete_endpoints(client):
+    application, company, candidate = process(client)
+    assert client.delete(f"/api/v1/applications/{application['id']}", headers=company).status_code == 403
+    assert client.delete(f"/api/v1/jobs/{application['job_id']}", headers=company).status_code == 409
+    assert client.put(f"/api/v1/applications/{application['id']}/status", headers=company, json={"status": "rejected"}).status_code == 200
+    assert client.get(f"/api/v1/workflow/applications/{application['id']}", headers=candidate).json()["status"] == "rejected"

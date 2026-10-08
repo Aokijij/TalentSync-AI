@@ -255,7 +255,9 @@ def delete_admin_user(user_id: int, current_user: User, db: UnitOfWork) -> None:
     if user is None:
         raise UseCaseError(status_code=404, detail="Usuario no encontrado")
     company = db.companies.find_by_owner(user.id)
-    if company is not None:
+    if company is not None and company.owner_user_id == user.id:
         db.delete(company)
+    if db.personalization.feedback(user.id):
+        db.personalization.purge_user(user.id)
     db.delete(user)
     db.commit()

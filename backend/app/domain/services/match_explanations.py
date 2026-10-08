@@ -16,8 +16,8 @@ def weighted_coverage(profile, job):
     return round(sum(row["weight"] for row in rows if row["covered"]) / total * 100, 2) if total else 0
 
 
-def input_version(profile, job):
-    payload = [MATCH_VERSION, profile.skills, profile.embedding, getattr(profile, "preferences", {}),
+def input_version(profile, job, text_method="lexical-hashing-v1"):
+    payload = [MATCH_VERSION, text_method, profile.skills, profile.embedding, getattr(profile, "preferences", {}),
                profile.profession, profile.experience, profile.education, getattr(profile, "experiences", []),
                getattr(profile, "educations", []), getattr(profile, "certifications", []), getattr(profile, "languages", []),
                getattr(profile, "evidence", []), job.skills, job.embedding, job.title, job.description, job.requirements,
@@ -41,7 +41,7 @@ def preference_alignment(profile, job):
     return {"score": score, "checks": checks, "unmet_conditions": [row["label"] for row in checks if row["required"] and row["matches"] is False], "unknown_conditions": [row["label"] for row in checks if row["matches"] is None]}
 
 
-def explain(profile, job, *, context, skills, language, education, certifications, confidence, percentage):
+def explain(profile, job, *, context, skills, language, education, certifications, confidence, percentage, text_method="lexical-hashing-v1"):
     if education is None and certifications is None:
         components = [{"key": "skills", "label": "Habilidades", "score": skills, "weight": .6},
                       {"key": "context", "label": "Contexto profesional", "score": context, "weight": .3 if language is not None else .4}]
@@ -61,9 +61,9 @@ def explain(profile, job, *, context, skills, language, education, certification
     factor = .75 + confidence / 400 if getattr(job, "source_kind", "internal") == "external" else 1
     for component in components:
         component["points"] = round(component["score"] * component["weight"] * factor, 3)
-    return {"version": MATCH_VERSION, "input_version": input_version(profile, job), "score_type": "compatibility_index",
+    return {"version": MATCH_VERSION, "input_version": input_version(profile, job, text_method), "score_type": "compatibility_index",
             "notice": "Índice de afinidad con los datos registrados; no es una probabilidad de contratación.",
-            "text_method": "lexical-hashing-v1", "components": components, "requirements": rows,
+            "text_method": text_method, "components": components, "requirements": rows,
             "unmet_essential_skills": [row["skill"] for row in rows if row.get("essential") and not row["covered"]],
             "preferences": preferences, "candidate_interest_score": preferences["score"], "overall_score": percentage,
             "data_confidence": confidence, "ontology_version": "foundations-v1"}

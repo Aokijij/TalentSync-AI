@@ -229,6 +229,8 @@ def delete_job(job_id: int, current_user: User, db: UnitOfWork) -> None:
     if job is None:
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
     ensure_job_access(db, job, current_user)
+    if current_user.role == UserRole.COMPANY and job.applications:
+        raise UseCaseError(status_code=409, detail="Esta vacante tiene procesos con historial. Ciérrala para conservar su trazabilidad")
     db.delete(job)
     db.commit()
 

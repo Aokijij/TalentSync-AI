@@ -84,6 +84,11 @@ def get_text_analysis() -> TextAnalysis:
     return text_processor
 
 
+def get_interest_trainer():
+    from app.infrastructure.nlp.interest_trainer import InterestTrainer
+    return InterestTrainer()
+
+
 def get_account_security() -> AccountSecurityPort:
     return AccountSecurity()
 

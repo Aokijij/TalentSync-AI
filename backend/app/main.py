@@ -20,7 +20,14 @@ from app.core.limiter import limiter
 async def lifespan(app: FastAPI):
     task = None
     workflow_task = None
+    model_task = None
     stop_event = asyncio.Event()
+    if settings.match_model_path:
+        from app.infrastructure.nlp.matching_encoder import matching_encoder
+        await asyncio.to_thread(matching_encoder)
+    if settings.model_maintenance_enabled:
+        from app.infrastructure.model_scheduler import periodic_models
+        model_task = asyncio.create_task(periodic_models(stop_event))
     if settings.workflow_maintenance_enabled:
         from app.infrastructure.workflow_scheduler import periodic_workflow
         workflow_task = asyncio.create_task(periodic_workflow(stop_event))
@@ -36,6 +43,8 @@ async def lifespan(app: FastAPI):
             await task
         if workflow_task:
             await workflow_task
+        if model_task:
+            await model_task
 
 
 def create_app() -> FastAPI:

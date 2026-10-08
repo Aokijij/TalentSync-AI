@@ -21,6 +21,8 @@ import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
+  { to: "/mis-intereses", label: "Mis intereses", icon: Sparkles, roles: ["candidate"] },
+  { to: "/admin/modelos", label: "Motor e integraciones", icon: Sparkles, roles: ["admin"] },
   { to: "/entrevistas", label: "Salas de entrevista", icon: UsersRound, roles: ["candidate", "company", "admin"] },
   { to: "/confianza", label: "Confianza e incidencias", icon: ShieldCheck, roles: ["candidate", "company"] },
   { to: "/admin/ecosistema", label: "Salud del ecosistema", icon: Sparkles, roles: ["admin"] },
@@ -115,6 +117,8 @@ const roleCopy = {
   admin: { label: "Administrador", caption: "Operación y salud de plataforma" },
 };
 
+const navigationOrder = ["/candidato", "/empresa", "/admin", "/recomendaciones", "/vacantes", "/empresa/vacantes", "/postulaciones", "/empresa/postulaciones", "/empresa/talento", "/compatibilidad", "/aprendizaje", "/entrevistas", "/mis-intereses", "/empresa/calidad", "/confianza", "/admin/verificaciones", "/admin/ecosistema", "/admin/modelos", "/perfil", "/empresa/perfil", "/empresa/equipo", "/administracion", "/notificaciones", "/seguridad"];
+
 function Navigation({ linksForRole, unreadNotifications, onNavigate }) {
   return (
     <nav className="space-y-1" aria-label="Navegación principal">
@@ -162,7 +166,8 @@ export function AppLayout() {
   const [organization, setOrganization] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const copy = roleCopy[user.role] ?? roleCopy.candidate;
-  const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"));
+  const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones", "/entrevistas"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"))
+    .sort((left, right) => navigationOrder.indexOf(left.to) - navigationOrder.indexOf(right.to));
 
   useEffect(() => {
     if (user.role !== "candidate" && user.role !== "company") return;

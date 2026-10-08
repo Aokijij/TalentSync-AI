@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
+from app.application.use_cases.personalization import order as personalize
 from app.domain.entities.records import Job, Recommendation, User
 from app.domain.services.match_explanations import (
     explain,
@@ -17,14 +18,17 @@ from app.domain.services.matching import (
     recommendation_reasons,
     required_skill_coverage,
 )
-from app.domain.services.professions import certification_match, education_match
-from app.domain.services.skills import skill_set
 from app.domain.services.matching_text import professional_text
+from app.domain.services.professions import certification_match, education_match
 from app.domain.services.reputation import company_health
+from app.domain.services.skills import skill_set
 
 
 def candidate_match(profile, job, *, nlp):
-    raw_semantic = nlp.similarity_percentage(nlp.embed(professional_text(profile)), job.embedding)
+    if hasattr(nlp, "matching_similarity"):
+        raw_semantic = nlp.matching_similarity(professional_text(profile), " ".join(filter(None, [job.title, job.description, job.requirements])), job.embedding)
+    else:
+        raw_semantic = nlp.similarity_percentage(nlp.embed(professional_text(profile)), job.embedding)
     context_score = professional_context_alignment(profile, job, raw_semantic)
     skill_score = required_skill_coverage(profile.skills, job.skills)
     if getattr(job, "skill_requirements", None):
@@ -74,7 +78,8 @@ def upsert_recommendation(
     recommendation.match_percentage = percentage
     recommendation.created_at = datetime.utcnow()
     recommendation.match_details = explain(user.profile, job, context=context_score, skills=skill_score, language=language_score,
-        education=education_score, certifications=certification_score, confidence=confidence, percentage=percentage)
+        education=education_score, certifications=certification_score, confidence=confidence, percentage=percentage,
+        text_method=getattr(nlp, "match_method", "lexical-hashing-v1"))
     recommendation.reasons = recommendation_reasons(
         user.profile, job, semantic=context_score, skill_score=skill_score, education_score=education_score, certification_score=certification_score
     )
@@ -120,7 +125,7 @@ def refresh_user_recommendations(
     if profile_updated and profile_updated > cache_cutoff:
         cache_cutoff = profile_updated
     cache_is_fresh = len(existing) == len(jobs) and all(
-        item.created_at >= cache_cutoff and (getattr(item, "match_details", None) or {}).get("input_version") == input_version(user.profile, db.jobs.get(item.job_id)) for item in existing
+        item.created_at >= cache_cutoff and (getattr(item, "match_details", None) or {}).get("input_version") == input_version(user.profile, db.jobs.get(item.job_id), getattr(nlp, "match_method", "lexical-hashing-v1")) for item in existing
     )
     if cache_is_fresh:
         recommendations = existing
@@ -139,7 +144,7 @@ def refresh_user_recommendations(
         # main latency reduction for candidate dashboards with a large catalog.
         db.commit()
     if include_all:
-        return sorted(recommendations, key=lambda item: (company_health(db.jobs.get(item.job_id).company)["visibility_reduced"], -item.match_percentage))
+        return personalize(db, user, sorted(recommendations, key=lambda item: (company_health(db.jobs.get(item.job_id).company)["visibility_reduced"], -item.match_percentage)))
     recommendations = sorted(
         (
             item
@@ -163,7 +168,7 @@ def refresh_user_recommendations(
             used_skill_tokens |= job_tokens
         if len(diverse_recommendations) >= 50:
             break
-    return diverse_recommendations
+    return personalize(db, user, diverse_recommendations)
 
 
 def rank_candidates_for_job(

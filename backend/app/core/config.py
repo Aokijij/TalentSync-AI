@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     catalog_min_skills: int = 3
     periodic_maintenance_enabled: bool = False
     workflow_maintenance_enabled: bool = False
+    model_maintenance_enabled: bool = False
+    match_model_path: str = ""
     periodic_maintenance_interval_hours: int = 24
     periodic_maintenance_initial_delay_seconds: int = 90
     catalog_sync_keywords: str = (

@@ -38,14 +38,15 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | Bloque | Alcance | Estado |
 | --- | --- | --- |
 | 1 | Entorno aislado, semilla ficticia e historial de eventos | Completado: 71 pruebas backend, 20 frontend, lint y build |
-| 2 | Correo local, recuperación, verificación, sesiones, MFA y privacidad | Implementado y probado; SSO externo pendiente del bloque 9 |
+| 2 | Correo local, recuperación, verificación, sesiones, MFA y privacidad | Implementado y probado; SSO externo desactivado y pendiente |
 | 3 | Verificación empresarial, equipos y permisos | Implementado: revisión manual local, borradores, invitaciones y permisos en API |
-| 4 | Requisitos, evidencias, preferencias y matching avanzado | Base explicable implementada; embeddings neuronales y modelos de comportamiento en bloque 9 |
+| 4 | Requisitos, evidencias, preferencias y matching avanzado | Implementado; método lexical activo y adaptador neuronal opcional en bloque 10 |
 | 5 | Historial de etapas, plazos, avisos y feedback | Implementado: plazos, worker local, cierre idempotente e historial |
 | 6 | Brechas, recursos, planes, evaluaciones, pasaporte y portafolio | Implementado con catálogo de proyectos y evaluaciones locales de fundamentos |
 | 7 | Selección ciega, calidad de vacantes y contratación por potencial | Implementado: identidad protegida, reglas locales y escenarios laborales |
-| 8 | Reputación, incidencias, auditoría y tendencias | Pendiente |
-| 9 | Entrevistas, colaboración e integraciones avanzadas | Pendiente |
+| 8 | Reputación, incidencias, auditoría y tendencias | Implementado y probado con métricas internas y revisión de incidencias |
+| 9 | Entrevistas y colaboración | Implementado: editor, pizarra, versiones y señalización WebRTC local |
+| 10 | Personalización, evaluación de modelos e integraciones | Implementado localmente; estado y dependencias externas documentados |
 
 ## Comprobaciones
 
@@ -73,8 +74,8 @@ SQLite y acceso de loopback. Contiene enlaces temporales sensibles de prueba;
 no es un servicio de correo ni debe exponerse a redes externas.
 
 Los botones sociales aparecen desactivados: todavía no hay adaptadores OAuth.
-Su implementación y vinculación segura corresponden al bloque 9; añadir
-credenciales por sí solo no los habilita en este punto.
+Su implementación y vinculación segura quedan pendientes; añadir credenciales
+por sí solo no los habilita. El panel del bloque 10 muestra esta limitación.
 
 Validación del bloque: 77 pruebas backend en conjunto; 11 pruebas de seguridad,
 arquitectura y migración repetidas tras endurecer el consumo de códigos MFA;
@@ -129,6 +130,10 @@ actualizaciones del proceso usan control de versión para evitar sobrescrituras.
 La revisión se ejecuta al volver a encender el backend; no funciona con el equipo
 apagado. También puede ejecutarse con POST /api/v1/admin/workflow/run.
 Las métricas de estos vencimientos alimentarán reputación en el bloque 8.
+Las empresas no pueden eliminar postulaciones ni vacantes con procesos para borrar
+el historial. La acción anterior de eliminar pasa a finalizar y notificar, conservando
+los registros. Se mantiene el borrado administrativo y el endpoint anterior del
+candidato; su interfaz normal usa la retirada con conservación del historial.
 
 ## Bloque 6: aprendizaje dirigido
 
@@ -206,3 +211,65 @@ no hay edición carácter a carácter ni resolución automática de conflictos (
 Las pruebas verifican permisos, versiones, cierre, tamaño de mensajes, caducidad,
 privacidad de señales y retirada de asignaciones. La verificación audiovisual real
 requiere dos navegadores y permisos de cámara/micrófono del usuario.
+
+## Bloque 10: personalización y evaluación de modelos
+
+`/mis-intereses` guarda una decisión por candidato y vacante, solo con consentimiento.
+Permite ocultar ofertas, deshacer decisiones y retirar todas las interacciones al
+desactivar la personalización en Seguridad. No registra navegación. La señal
+colaborativa usa similitud de habilidades declaradas y exige tres candidatos
+consentidos distintos por oferta. No entrega identidades de vecinos. Ordena dentro
+de bandas de diez puntos de afinidad, conservando el índice técnico y el nivel de
+reputación. El historial permite recuperar ofertas ocultas. Se procesan como máximo
+las 5.000 decisiones más recientes por consulta.
+
+`/admin/modelos` muestra método activo, datos disponibles y experimentos persistentes.
+La regresión logística aprende interés declarado con seis características numéricas;
+no aprende ni ofrece probabilidades de contratación. Se requieren cien decisiones,
+veinte candidatos, diez vacantes y veinte casos de cada respuesta. Se excluyen cuentas
+de dominios de ejemplo o `.test`. La evaluación separa usuarios con semilla fija 42
+y compara AUC/Brier con una referencia constante. Los coeficientes y parámetros se
+guardan como JSON, fuera del ranking. Un resultado favorable en una partición pequeña
+no demuestra capacidad de generalización ni ausencia de sesgos.
+
+El lanzador activa una revisión horaria: solo entrena con datos suficientes, como
+máximo una vez al día y si cambiaron los datos. No inventa muestras. Eliminar señales
+o retirar consentimiento elimina los artefactos aprendidos que pudieran incluirlas;
+se conservan métricas históricas agregadas. El control de sesgos demográficos y una
+eventual promoción de modelos al ranking necesitan validaciones adicionales.
+
+### Embeddings neuronales opcionales
+
+El método instalado continúa siendo `lexical-hashing-v1`. Hay un adaptador opcional
+para un Sentence Transformer ya disponible en disco. No se instalaron sus dependencias
+ni se descargaron pesos, y no se probó inferencia con un modelo real. Las pruebas
+comprueban que no admite nombres remotos ni formatos ejecutables.
+
+Para activarlo posteriormente: instalar `backend/requirements-model-local.txt`,
+proporcionar un modelo compatible en una carpeta absoluta y añadir
+`MATCH_MODEL_PATH=C:/ruta/al/modelo` a `.local/backend.env`. Debe contener
+`modules.json`, módulos estándar Transformer/Pooling/Dense/Normalize y pesos
+safetensors, sin archivos Python, pickle o binarios PyTorch. Un error de configuración
+impide el arranque; no hay sustitución silenciosa. La huella de archivos identifica
+el método y cambia las versiones de caché, feedback y auditorías. El parser de CV y
+sus vectores antiguos se conservan; la comparación neuronal calcula ambos textos
+con el mismo modelo.
+
+La carga usa `local_files_only=True`, `trust_remote_code=False` y modo offline según
+la [documentación oficial de Sentence Transformers](https://sbert.net/docs/package_reference/sentence_transformer/model.html).
+La dependencia opcional está fijada a [6.1.0 en PyPI](https://pypi.org/project/sentence-transformers/6.1.0/).
+
+### Alcance que sigue pendiente
+
+El panel muestra explícitamente integraciones sin implementar: OAuth social y SSO
+corporativo, extracción automática de GitHub, catálogos educativos, afiliación,
+validación contra registros oficiales, servidor TURN y ejecutor de código aislado.
+Requieren adaptadores/configuración o acuerdos reales; no basta con pegar claves.
+VPN, dominios separados y restricciones de red corresponden a infraestructura futura.
+No se crean microservicios para esta versión: se extienden los módulos y puertos del
+FastAPI/React existente para preservar compatibilidad. No hay despliegue ni push.
+
+Validación acumulada: 101 pruebas backend y 20 frontend; lint y build aprobados.
+Las pruebas de migraciones cubren una base SQLite nueva, actualización desde una
+versión anterior y generación SQL PostgreSQL sin conexión. Esto no sustituye probar
+las migraciones contra un servidor PostgreSQL real antes de un despliegue futuro.

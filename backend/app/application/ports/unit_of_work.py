@@ -11,11 +11,13 @@ from app.domain.repositories.ecosystem import EcosystemRepository
 from app.domain.repositories.notifications import NotificationRepository
 from app.domain.repositories.organizations import OrganizationRepository
 from app.domain.repositories.profiles import ProfileRepository
+from app.domain.repositories.personalization import PersonalizationRepository
 from app.domain.repositories.recommendations import RecommendationRepository
 from app.domain.repositories.users import UserRepository
 
 
 class UnitOfWork(Protocol):
+    personalization: PersonalizationRepository
     interviews: InterviewRepository
     ecosystem: EcosystemRepository
     learning: LearningRepository

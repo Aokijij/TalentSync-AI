@@ -109,6 +109,7 @@ class IdentityVariant:
 
 
 def run_audit(db, user, nlp):
+    version = f"{MATCH_VERSION}:{getattr(nlp, 'match_method', 'lexical-hashing-v1')}"
     candidates = db.users.candidates_with_profiles()[:20]
     jobs = db.jobs.active()[:10]
     scores = []
@@ -120,7 +121,7 @@ def run_audit(db, user, nlp):
             violations += abs(baseline - variant) > .01
             scores.append(baseline)
     histogram = [sum(lower <= value < upper for value in scores) for lower, upper in [(0, 20), (20, 40), (40, 60), (60, 80), (80, 101)]]
-    previous = next((row.metrics for row in db.ecosystem.audits() if row.version == MATCH_VERSION), None)
+    previous = next((row.metrics for row in db.ecosystem.audits() if row.version == version), None)
     psi = None
     if previous and len(scores) >= 20 and previous.get("pair_count", 0) >= 20:
         current = [(value + .5) / (len(scores) + 2.5) for value in histogram]
@@ -131,7 +132,7 @@ def run_audit(db, user, nlp):
                "demographic_fairness": "unavailable_no_consented_demographic_dataset", "distribution_psi": psi,
                "distribution_review_suggested": psi is not None and psi >= .2,
                "notice": "Control de invariancia sobre metadatos de identidad y distribución de puntuaciones; no demuestra ausencia de sesgos demográficos ni precisión predictiva."}
-    audit = db.ecosystem.new_audit(actor_user_id=user.id, version=MATCH_VERSION, metrics=metrics)
+    audit = db.ecosystem.new_audit(actor_user_id=user.id, version=version, metrics=metrics)
     db.add(audit)
     record_event(db, "model.audit_completed", "platform", None, actor_user_id=user.id, details={"version": MATCH_VERSION, "result": "review_required" if violations else "checks_passed"})
     db.commit()

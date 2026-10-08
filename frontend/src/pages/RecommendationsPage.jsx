@@ -278,6 +278,7 @@ export function RecommendationsPage() {
                     </div>
 
                     <div className="mt-3">
+                      {item.personalization?.enabled && <p className="mb-2 text-xs text-[var(--muted)]">{item.personalization.score == null ? "Interés colaborativo: todavía no hay una muestra suficiente." : `Interés agregado de perfiles similares: ${item.personalization.score}/100.`} <Link className="text-[var(--accent)]" to="/mis-intereses">Ajustar mis intereses</Link></p>}
                       <Link
                         to={`/vacantes/${item.job_id}`}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline hover-lift"

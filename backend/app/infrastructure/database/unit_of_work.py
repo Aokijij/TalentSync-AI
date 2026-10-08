@@ -26,6 +26,7 @@ from app.infrastructure.repositories.learning import LearningRepository
 from app.infrastructure.repositories.notifications import NotificationRepository
 from app.infrastructure.repositories.organizations import OrganizationRepository
 from app.infrastructure.repositories.profiles import ProfileRepository
+from app.infrastructure.repositories.personalization import PersonalizationRepository
 from app.infrastructure.repositories.recommendations import RecommendationRepository
 from app.infrastructure.repositories.users import UserRepository
 
@@ -33,6 +34,7 @@ from app.infrastructure.repositories.users import UserRepository
 class SqlAlchemyUnitOfWork:
     def __init__(self, session: Session):
         self.session = session
+        self.personalization = PersonalizationRepository(session)
         self.interviews = InterviewRepository(session)
         self.organizations = OrganizationRepository(session)
         self.ecosystem = EcosystemRepository(session)

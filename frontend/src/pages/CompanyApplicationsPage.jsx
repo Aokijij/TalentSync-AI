@@ -248,16 +248,17 @@ export function CompanyApplicationsPage() {
 
   async function remove(applicationId) {
     try {
-      await api.delete(`/applications/${applicationId}`);
-      setApplications((current) =>
-        current.filter((item) => item.id !== applicationId),
-      );
+      const process = applications.find((item) => item.id === applicationId);
+      await api.put(`/applications/${applicationId}/status`, { status: "rejected", expected_version: process?.version,
+        candidate_feedback: { reason_code: "other", message: "La empresa finalizó tu participación en este proceso de selección." } });
+      await loadApplications();
+      setMessage("Proceso finalizado y comunicado al candidato; el historial se conserva.");
       setSelected(null);
     } catch (requestError) {
       setError(
         getApiErrorMessage(
           requestError,
-          "No fue posible eliminar la postulación",
+          "No fue posible finalizar el proceso",
         ),
       );
     }
@@ -948,10 +949,11 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
             <button
               type="button"
               className="button-ghost text-[var(--error)]"
+              disabled={["rejected", "accepted", "hired"].includes(application.status)}
               onClick={() => setConfirmDelete(true)}
             >
               <Trash2 size={16} />
-              Eliminar
+              Finalizar participación
             </button>
             <div className="flex gap-2">
               <button
@@ -983,9 +985,9 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
       />
       <ConfirmModal
         open={confirmDelete}
-        title="Eliminar del proceso"
-        description={`Se eliminará la postulación de ${application.candidate_name}. Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar postulación"
+        title="Finalizar participación"
+        description={`Se comunicará a ${application.candidate_name} que su participación ha finalizado. La postulación y su historial se conservarán.`}
+        confirmLabel="Finalizar y notificar"
         destructive
         onClose={() => setConfirmDelete(false)}
         onConfirm={onDelete}

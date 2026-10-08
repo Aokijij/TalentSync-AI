@@ -73,6 +73,14 @@ class User(Base):
     company_follows: Mapped[list["CompanyFollower"]] = relationship(
         back_populates="candidate", cascade="all, delete-orphan"
     )
+    sessions: Mapped[list["UserSession"]] = relationship(cascade="all, delete-orphan")
+    account_tokens: Mapped[list["AccountToken"]] = relationship(cascade="all, delete-orphan")
+    memberships: Mapped[list["CompanyMember"]] = relationship(cascade="all, delete-orphan")
+    learning_plans: Mapped[list["LearningPlan"]] = relationship(cascade="all, delete-orphan")
+    assessment_attempts: Mapped[list["AssessmentAttempt"]] = relationship(cascade="all, delete-orphan")
+    reported_incidents: Mapped[list["TrustIncident"]] = relationship(cascade="all, delete-orphan")
+    recommendation_feedback: Mapped[list["RecommendationFeedback"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    interview_participants: Mapped[list["InterviewParticipant"]] = relationship(cascade="all, delete-orphan")
 
 
 class UserSession(Base):
@@ -184,6 +192,8 @@ class Company(Base):
         back_populates="company", cascade="all, delete-orphan"
     )
     incidents: Mapped[list["TrustIncident"]] = relationship(back_populates="company", cascade="all, delete-orphan")
+    members: Mapped[list["CompanyMember"]] = relationship(cascade="all, delete-orphan")
+    invitations: Mapped[list["CompanyInvitation"]] = relationship(cascade="all, delete-orphan")
     followers: Mapped[list["CompanyFollower"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"
     )
@@ -291,6 +301,7 @@ class Job(Base):
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     company: Mapped[Company] = relationship(back_populates="jobs")
+    recommendation_feedback: Mapped[list["RecommendationFeedback"]] = relationship(back_populates="job", cascade="all, delete-orphan")
     applications: Mapped[list["Application"]] = relationship(
         back_populates="job", cascade="all, delete-orphan"
     )
@@ -377,6 +388,8 @@ class Application(Base):
 
     user: Mapped[User] = relationship(back_populates="applications")
     job: Mapped[Job] = relationship(back_populates="applications")
+    interview_room: Mapped["InterviewRoom | None"] = relationship(back_populates="application", cascade="all, delete-orphan")
+    trust_incidents: Mapped[list["TrustIncident"]] = relationship()
 
     @property
     def job_title(self) -> str | None:
@@ -497,6 +510,30 @@ class Recommendation(Base):
         return "source:external" in (self.reasons or [])
 
 
+class RecommendationFeedback(Base):
+    __tablename__ = "recommendation_feedback"
+    __table_args__ = (UniqueConstraint("user_id", "job_id", name="uq_recommendation_feedback_pair"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)
+    interested: Mapped[bool] = mapped_column(nullable=False)
+    features: Mapped[list] = mapped_column(JSON, nullable=False)
+    feature_version: Mapped[str] = mapped_column(String(180), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    user: Mapped[User] = relationship(back_populates="recommendation_feedback")
+    job: Mapped[Job] = relationship(back_populates="recommendation_feedback")
+
+
+class ModelExperiment(Base):
+    __tablename__ = "model_experiments"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version: Mapped[str] = mapped_column(String(180), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False)
+    metrics: Mapped[dict] = mapped_column(JSON, nullable=False)
+    artifact: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class InterviewRoom(Base):
     __tablename__ = "interview_rooms"
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
@@ -509,7 +546,9 @@ class InterviewRoom(Base):
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    application: Mapped[Application] = relationship()
+    application: Mapped[Application] = relationship(back_populates="interview_room")
+    participants: Mapped[list["InterviewParticipant"]] = relationship(cascade="all, delete-orphan")
+    signals: Mapped[list["InterviewSignal"]] = relationship(cascade="all, delete-orphan")
     __mapper_args__ = {"version_id_col": version}
 
 

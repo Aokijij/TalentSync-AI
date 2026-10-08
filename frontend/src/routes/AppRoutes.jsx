@@ -42,6 +42,8 @@ const LearningPage = lazyNamed(() => import("../pages/LearningPage.jsx"), "Learn
 const HiringQualityPage = lazyNamed(() => import("../pages/HiringQualityPage.jsx"), "HiringQualityPage");
 const TrustPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "TrustPage");
 const EcosystemPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "EcosystemPage");
+const ModelPage = lazyNamed(() => import("../pages/ModelPage.jsx"), "ModelPage");
+const PersonalizationPage = lazyNamed(() => import("../pages/ModelPage.jsx"), "PersonalizationPage");
 
 function RequireAuth({ children }) {
   const { user, loading, authError, retryAuth, logout, accessOptions } = useAuth();
@@ -117,6 +119,8 @@ export function AppRoutes() {
         <Route path="/seguridad" element={<SecurityPage />} />
         <Route path="/confianza" element={<RequireRole roles={["candidate", "company"]}><TrustPage /></RequireRole>} />
         <Route path="/admin/ecosistema" element={<RequireRole roles={["admin"]}><EcosystemPage /></RequireRole>} />
+        <Route path="/admin/modelos" element={<RequireRole roles={["admin"]}><ModelPage /></RequireRole>} />
+        <Route path="/mis-intereses" element={<RequireRole roles={["candidate"]}><PersonalizationPage /></RequireRole>} />
         <Route path="/empresa/calidad" element={<RequireRole roles={["company"]}><HiringQualityPage /></RequireRole>} />
         <Route path="/aprendizaje" element={<RequireRole roles={["candidate"]}><LearningPage /></RequireRole>} />
         <Route path="/procesos/:applicationId" element={<ProcessPage />} />

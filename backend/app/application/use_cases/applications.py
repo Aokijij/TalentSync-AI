@@ -316,6 +316,7 @@ def delete_application(application_id: int, current_user: User, db: UnitOfWork) 
             raise UseCaseError(
                 status_code=403, detail="No puedes eliminar esta postulacion"
             )
+        raise UseCaseError(status_code=403, detail="El historial del proceso se conserva. Comunica su finalización en lugar de eliminarlo")
     if current_user.role not in {UserRole.CANDIDATE, UserRole.COMPANY, UserRole.ADMIN}:
         raise UseCaseError(status_code=403, detail="Rol no autorizado")
     db.delete(application)

@@ -16,6 +16,7 @@ class RecommendationResponse(BaseModel):
     is_estimated: bool = False
     reasons: list[str]
     match_details: dict = Field(default_factory=dict)
+    personalization: dict = Field(default_factory=dict)
     created_at: datetime
 
     model_config = {"from_attributes": True}

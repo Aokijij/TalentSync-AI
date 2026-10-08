@@ -74,3 +74,14 @@ def test_interviewer_access_follows_current_assignment(client):
         member.assigned_job_ids = []
         db.commit()
     assert client.get(endpoint, headers=interviewer).status_code == 404
+
+
+def test_legacy_application_deletion_cleans_related_room_and_presence(client):
+    room, company, candidate, _, _ = prepared(client)
+    endpoint = f"/api/v1/interviews/rooms/{room['id']}"
+    participant = client.post(endpoint + "/connect", headers=candidate).json()["participant_id"]
+    assert client.delete(f"/api/v1/applications/{room['application_id']}", headers=candidate).status_code == 204
+    assert client.get(endpoint, headers=company).status_code == 404
+    assert client.get("/api/v1/interviews/rooms", headers=company).json() == []
+    with client.session_factory() as db:
+        assert db.get(InterviewParticipant, participant) is None

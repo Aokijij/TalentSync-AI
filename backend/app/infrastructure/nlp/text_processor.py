@@ -1349,6 +1349,19 @@ class TextProcessor:
             .tolist()
         )
 
+    @property
+    def match_method(self):
+        from app.infrastructure.nlp.matching_encoder import matching_encoder
+        encoder = matching_encoder()
+        return encoder.method if encoder else "lexical-hashing-v1"
+
+    def matching_similarity(self, left, right, stored_job_embedding):
+        from app.infrastructure.nlp.matching_encoder import matching_encoder
+        encoder = matching_encoder()
+        if encoder:
+            return encoder.similarity(left, right)
+        return self.similarity_percentage(self.embed(left), stored_job_embedding)
+
     def analyze_cv(self, text: str) -> NLPResult:
         clean = self.clean_text(text)
         experiences, educations, certifications = self.extract_resume_items(text)

@@ -185,7 +185,10 @@ def privacy(db, user, preferences=None):
     if preferences is not None:
         if preferences.keys() - defaults.keys() or any(type(v) is not bool for v in preferences.values()):
             raise UseCaseError(status_code=422, detail="Preferencias inválidas")
+        previously_personalized = (user.privacy_preferences or {}).get("personalize_recommendations", False)
         user.privacy_preferences = {**defaults, **user.privacy_preferences, **preferences}
+        if previously_personalized and not user.privacy_preferences["personalize_recommendations"]:
+            db.personalization.purge_user(user.id)
         record_event(db, "account.privacy_updated", "user", user.id, actor_user_id=user.id)
         db.commit()
     return {**defaults, **(user.privacy_preferences or {})}
