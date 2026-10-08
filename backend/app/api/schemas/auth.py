@@ -16,6 +16,18 @@ class RegisterRequest(BaseModel):
     nit: str | None = Field(default=None, min_length=3, max_length=80)
     company_description: str | None = None
 
+    @field_validator("email")
+    @classmethod
+    def normalized_email(cls, value):
+        return value.casefold()
+
+    @field_validator("password")
+    @classmethod
+    def password_bytes(cls, value):
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("La contraseña no puede superar 72 bytes")
+        return value
+
     @field_validator("role")
     @classmethod
     def public_roles_only(cls, value: UserRole) -> UserRole:
@@ -26,7 +38,21 @@ class RegisterRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(max_length=72)
+    code: str | None = Field(default=None, max_length=128)
+    remember: bool = False
+
+    @field_validator("email")
+    @classmethod
+    def normalized_email(cls, value):
+        return value.casefold()
+
+    @field_validator("password")
+    @classmethod
+    def password_bytes(cls, value):
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("La contraseña no puede superar 72 bytes")
+        return value
 
 
 class TokenResponse(BaseModel):
@@ -39,5 +65,7 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     role: UserRole
+    email_verified: bool = False
+    mfa_enabled: bool = False
 
     model_config = {"from_attributes": True}

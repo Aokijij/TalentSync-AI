@@ -11,6 +11,7 @@ from app.infrastructure.database.models import (
     Recommendation,
     User,
 )
+from app.infrastructure.repositories.accounts import AccountRepository
 from app.infrastructure.repositories.applications import ApplicationRepository
 from app.infrastructure.repositories.companies import CompanyRepository
 from app.infrastructure.repositories.events import EventRepository
@@ -24,6 +25,7 @@ from app.infrastructure.repositories.users import UserRepository
 class SqlAlchemyUnitOfWork:
     def __init__(self, session: Session):
         self.session = session
+        self.accounts = AccountRepository(session)
         self.events = EventRepository(session, EventLog)
         self.users = UserRepository(session, User)
         self.profiles = ProfileRepository(session, Profile)

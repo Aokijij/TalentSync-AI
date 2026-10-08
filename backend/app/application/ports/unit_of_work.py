@@ -1,5 +1,6 @@
 from typing import Protocol
 
+from app.domain.repositories.accounts import AccountRepository
 from app.domain.repositories.applications import ApplicationRepository
 from app.domain.repositories.companies import CompanyRepository
 from app.domain.repositories.events import EventRepository
@@ -11,6 +12,7 @@ from app.domain.repositories.users import UserRepository
 
 
 class UnitOfWork(Protocol):
+    accounts: AccountRepository
     events: EventRepository
     users: UserRepository
     profiles: ProfileRepository

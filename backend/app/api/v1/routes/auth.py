@@ -12,9 +12,12 @@ from app.api.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
+from app.application.errors import UseCaseError
 from app.application.ports.services import AccountSecurity, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import auth as use_cases
+from app.application.use_cases.account_security import request_action
+from app.core.config import settings
 from app.core.limiter import limiter
 from app.domain.entities.records import User
 
@@ -33,9 +36,15 @@ def register(
     nlp: TextAnalysis = Depends(get_text_analysis),
     security: AccountSecurity = Depends(get_account_security),
 ) -> User:
-    return use_cases.register(
+    if settings.session_auth_enabled and len(payload.password) < 12:
+        raise UseCaseError(status_code=422, detail="Usa una contraseña de al menos 12 caracteres")
+    user = use_cases.register(
         payload=payload.model_dump(), db=db, nlp=nlp, security=security
     )
+    if settings.local_mail_enabled:
+        request_action(db, user.email, "verify", app_url=settings.public_app_url,
+                       mail_enabled=True, target_email=user.email)
+    return user
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -47,6 +56,8 @@ def login(
     *,
     security: AccountSecurity = Depends(get_account_security),
 ) -> TokenResponse:
+    if settings.session_auth_enabled:
+        raise UseCaseError(status_code=410, detail="Utiliza el acceso con sesión del navegador")
     return use_cases.login(payload=payload.model_dump(), db=db, security=security)
 
 
@@ -59,6 +70,8 @@ def admin_login(
     *,
     security: AccountSecurity = Depends(get_account_security),
 ) -> TokenResponse:
+    if settings.session_auth_enabled:
+        raise UseCaseError(status_code=410, detail="Utiliza el acceso administrativo con sesión")
     return use_cases.login(
         payload=payload.model_dump(),
         db=db,

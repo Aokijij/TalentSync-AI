@@ -19,13 +19,19 @@ def main():
         raise SystemExit("Esta semilla solo admite la base SQLite aislada de .local/.")
     accounts_file = ROOT / ".local/accounts.json"
     accounts = json.loads(accounts_file.read_text(encoding="utf-8")) if accounts_file.exists() else [
-        {"role": role, "email": f"{role}@talentsync.test", "password": secrets.token_urlsafe(18)}
+        {"role": role, "email": f"{role}@talentsync.example.com", "password": secrets.token_urlsafe(18)}
         for role in ("candidate", "company", "admin")
     ]
     with SessionLocal() as db:
         users = {}
         for account in accounts:
             user = db.query(User).filter_by(email=account["email"]).first()
+            # EmailStr rejects special-use .test domains. Preserve seeded
+            # accounts and passwords when moving to reserved example.com.
+            if account["email"].endswith("@talentsync.test"):
+                account["email"] = account["email"].replace("@talentsync.test", "@talentsync.example.com")
+                if user is not None:
+                    user.email = account["email"]
             if user is None:
                 user = User(name={"candidate": "Alex Ejemplo", "company": "Equipo Nexo", "admin": "Administración Local"}[account["role"]],
                             email=account["email"], role=UserRole(account["role"]), password_hash=hash_password(account["password"]))

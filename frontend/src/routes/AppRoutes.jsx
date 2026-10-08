@@ -27,9 +27,13 @@ const NotificationsPage = lazyNamed(() => import("../pages/NotificationsPage.jsx
 const ProfilePage = lazyNamed(() => import("../pages/ProfilePage.jsx"), "ProfilePage");
 const RecommendationsPage = lazyNamed(() => import("../pages/RecommendationsPage.jsx"), "RecommendationsPage");
 const RegisterPage = lazyNamed(() => import("../pages/RegisterPage.jsx"), "RegisterPage");
+const SecurityPage = lazyNamed(() => import("../pages/SecurityPage.jsx"), "SecurityPage");
+const AccountActionPage = lazyNamed(() => import("../pages/AccountActionPage.jsx"), "AccountActionPage");
+const LocalMailboxPage = lazyNamed(() => import("../pages/LocalMailboxPage.jsx"), "LocalMailboxPage");
+const OnboardingPage = lazyNamed(() => import("../pages/OnboardingPage.jsx"), "OnboardingPage");
 
 function RequireAuth({ children }) {
-  const { user, loading, authError, retryAuth, logout } = useAuth();
+  const { user, loading, authError, retryAuth, logout, accessOptions } = useAuth();
   const location = useLocation();
 
   if (loading)
@@ -41,7 +45,7 @@ function RequireAuth({ children }) {
         </div>
       </div>
     );
-  if (authError && localStorage.getItem("talentsync_token"))
+  if (authError)
     return (
       <div className="grid min-h-screen place-items-center bg-[var(--canvas)] px-5">
         <section className="surface-card max-w-md p-7 text-center">
@@ -58,8 +62,9 @@ function RequireAuth({ children }) {
     const adminArea = ["/admin", "/administracion"].some((path) =>
       location.pathname.startsWith(path),
     );
-    return <Navigate to={adminArea ? "/acceso-administracion" : "/login"} replace />;
+    return <Navigate to={adminArea ? "/acceso-administracion" : "/login"} state={{ from: location.pathname + location.search }} replace />;
   }
+  if (accessOptions.mode === "session" && user.role !== "candidate" && !user.mfa_enabled && location.pathname !== "/seguridad") return <Navigate to="/seguridad" replace />;
   return children;
 }
 
@@ -83,6 +88,11 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/acceso-administracion" element={<AdminLoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
+      <Route path="/empresa/login" element={<LoginPage />} />
+      <Route path="/empresa/registro" element={<RegisterPage />} />
+      <Route path="/recuperar-acceso" element={<AccountActionPage recover />} />
+      <Route path="/cuenta/confirmar" element={<AccountActionPage />} />
+      <Route path="/desarrollo/correos" element={<LocalMailboxPage />} />
       <Route path="/" element={<HomeRedirect />} />
 
       <Route
@@ -92,6 +102,8 @@ export function AppRoutes() {
           </RequireAuth>
         }
       >
+        <Route path="/seguridad" element={<SecurityPage />} />
+        <Route path="/bienvenida" element={<RequireRole roles={["candidate"]}><OnboardingPage /></RequireRole>} />
         <Route
           path="/candidato"
           element={

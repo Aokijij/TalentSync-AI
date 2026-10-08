@@ -5,9 +5,14 @@ import { resolveApiBase } from "./config.js";
 export const api = axios.create({
   baseURL: resolveApiBase(import.meta.env.VITE_API_URL, window.location),
   timeout: 25000,
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
+  const csrf = document.cookie.split("; ").find((part) => part.startsWith("talentsync_csrf="))?.split("=")[1];
+  if (csrf && !["get", "head", "options"].includes(String(config.method ?? "get").toLowerCase())) {
+    config.headers["X-CSRF-Token"] = decodeURIComponent(csrf);
+  }
   const token = localStorage.getItem("talentsync_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -32,9 +37,8 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    const token = localStorage.getItem("talentsync_token");
-    const isLogin = /\/auth\/(?:admin\/)?login$/.test(config.url ?? "");
-    if (status === 401 && token && !isLogin) {
+    const isLogin = /\/auth\/(?:session\/)?(?:admin\/)?login$/.test(config.url ?? "");
+    if (status === 401 && !isLogin && !config.__skipSessionEvent) {
       localStorage.removeItem("talentsync_token");
       window.dispatchEvent(new CustomEvent("talentsync:session-expired"));
     }

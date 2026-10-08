@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 120
+    session_auth_enabled: bool = False
+    local_mail_enabled: bool = False
+    session_cookie_secure: bool = True
+    public_app_url: str = "http://127.0.0.1:5173"
     upload_dir: str = "uploads"
     cv_parser: str = "docling"
     cv_ocr_enabled: bool = True

@@ -8,9 +8,10 @@ import { ThemeToggle } from "../components/ThemeToggle.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 
 export function AdminLoginPage() {
-  const { user, login } = useAuth();
+  const { user, login, accessOptions } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
   const {
     register,
     handleSubmit,
@@ -22,8 +23,9 @@ export function AdminLoginPage() {
   async function onSubmit(values) {
     setError("");
     try {
-      await login(values.email, values.password, { admin: true });
-      navigate("/admin", { replace: true });
+      const result = await login(values.email, values.password, { admin: true, code: values.code });
+      if (result.mfa_required) { setMfaRequired(true); return; }
+      navigate(accessOptions.mode !== "session" || result.mfa_enabled ? "/admin" : "/seguridad", { replace: true });
     } catch {
       setError("No fue posible validar el acceso administrativo.");
     }
@@ -64,6 +66,7 @@ export function AdminLoginPage() {
               Ingresa las credenciales de una cuenta administradora.
             </p>
             <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
+              {mfaRequired && <label className="block text-sm font-semibold">Código de autenticación o recuperación<input className="field-control mt-2" autoComplete="one-time-code" {...register("code", { required: "Introduce tu código" })} /></label>}
               <label className="block text-sm font-semibold">
                 Correo administrativo
                 <div className="field-control mt-2 flex items-center">

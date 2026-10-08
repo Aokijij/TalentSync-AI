@@ -5,16 +5,19 @@ import {
   Building2,
   LockKeyhole,
   Mail,
+  Eye,
+  EyeOff,
   ScanSearch,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import { BrandLogo } from "../components/brand/BrandLogo.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 import { api } from "../api/client.js";
+import { AccessProviders } from "../components/AccessProviders.jsx";
 
 const signals = [
   {
@@ -40,8 +43,12 @@ export function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm();
-  const { login } = useAuth();
+  const { login, accessOptions } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isBusiness = location.pathname.startsWith("/empresa");
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [stats, setStats] = useState(null);
   const approximate = (value) => {
@@ -60,7 +67,11 @@ export function LoginPage() {
   async function onSubmit(values) {
     setError("");
     try {
-      const user = await login(values.email, values.password);
+      const user = await login(values.email, values.password, { code: values.code, remember: values.remember });
+      if (user.mfa_required) { setMfaRequired(true); return; }
+      if (accessOptions.mode === "session" && user.role !== "candidate" && !user.mfa_enabled) { navigate("/seguridad"); return; }
+      const destination = location.state?.from;
+      if (typeof destination === "string" && destination.startsWith("/") && !destination.startsWith("//")) { navigate(destination); return; }
       navigate(
         user.role === "company"
           ? "/empresa"
@@ -136,10 +147,10 @@ export function LoginPage() {
           <div className="auth-form">
             <p className="section-kicker">Acceso seguro</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">
-              Bienvenido de nuevo
+              {isBusiness ? "Ingresa a tu empresa" : "Bienvenido de nuevo"}
             </h2>
             <p className="mt-3 text-base leading-6 text-[var(--muted)]">
-              Inicia sesión para continuar con tu espacio de trabajo.
+              {isBusiness ? "Gestiona tus vacantes y procesos con tu equipo de selección." : "Continúa con tus oportunidades y procesos de selección."}
             </p>
             <form
               className="mt-8 space-y-5"
@@ -184,7 +195,7 @@ export function LoginPage() {
                   />
                   <input
                     className="min-h-0 p-0"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     placeholder="Ingresa tu contraseña"
                     aria-invalid={errors.password ? "true" : undefined}
@@ -192,6 +203,7 @@ export function LoginPage() {
                       required: "La contraseña es obligatoria",
                     })}
                   />
+                  <button type="button" className="ml-2 p-1" aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                 </div>
                 {errors.password ? (
                   <span
@@ -202,6 +214,11 @@ export function LoginPage() {
                   </span>
                 ) : null}
               </label>
+              {mfaRequired && <label className="block text-sm font-semibold">Código de autenticación o recuperación<input className="field-control mt-2" autoComplete="one-time-code" {...register("code", { required: "Introduce tu código" })} /></label>}
+              <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                {!isBusiness && <label className="flex items-center gap-2"><input type="checkbox" {...register("remember")} />Mantener sesión en este dispositivo personal</label>}
+                <Link className="font-semibold text-[var(--accent)]" to="/recuperar-acceso">Olvidé mi contraseña</Link>
+              </div>
               {error ? (
                 <p
                   role="alert"
@@ -224,15 +241,17 @@ export function LoginPage() {
                 )}
               </button>
             </form>
+            <AccessProviders />
             <p className="mt-7 text-center text-sm text-[var(--muted)]">
               ¿Aún no tienes cuenta?{" "}
               <Link
                 className="font-bold text-[var(--accent)] underline-offset-4 hover:underline focus-ring"
-                to="/registro"
+                to={isBusiness ? "/empresa/registro" : "/registro"}
               >
                 Crear cuenta
               </Link>
             </p>
+            {!isBusiness && <Link className="mt-3 block text-center text-sm text-[var(--accent)]" to="/empresa/login">Acceso para empresas</Link>}
           </div>
         </div>
       </section>

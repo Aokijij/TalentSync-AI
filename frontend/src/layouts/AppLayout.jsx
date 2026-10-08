@@ -20,6 +20,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
+  { to: "/seguridad", label: "Seguridad y privacidad", icon: ShieldCheck, roles: ["candidate", "company", "admin"] },
   { to: "/admin", label: "Inicio", icon: LayoutDashboard, roles: ["admin"] },
   {
     to: "/administracion",

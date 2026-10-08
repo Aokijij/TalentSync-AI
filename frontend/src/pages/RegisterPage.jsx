@@ -8,14 +8,16 @@ import {
   UserRound,
 } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 
 import { BrandLogo } from "../components/brand/BrandLogo.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
+import { AccessProviders } from "../components/AccessProviders.jsx";
 
 export function RegisterPage() {
+  const location = useLocation();
   const {
     control,
     register,
@@ -23,9 +25,9 @@ export function RegisterPage() {
     getValues,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm({ defaultValues: { role: "candidate", skills: "" } });
+  } = useForm({ defaultValues: { role: location.pathname.startsWith("/empresa") ? "company" : "candidate", skills: "" } });
   const role = useWatch({ control, name: "role" });
-  const { register: createAccount } = useAuth();
+  const { register: createAccount, accessOptions } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +46,7 @@ export function RegisterPage() {
     };
     try {
       const user = await createAccount(payload);
-      navigate(user.role === "company" ? "/empresa" : "/candidato");
+      navigate(user.role === "company" ? (accessOptions.mode === "session" ? "/seguridad" : "/empresa") : "/bienvenida");
     } catch (requestError) {
       const detail = requestError.response?.data?.detail;
       setError(
@@ -186,12 +188,12 @@ export function RegisterPage() {
                       className="min-h-0 flex-1 p-0"
                       type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
-                      placeholder="Mínimo 8 caracteres"
+                      placeholder="Mínimo 12 caracteres"
                       {...register("password", {
                         required: "La contraseña es obligatoria",
                         minLength: {
-                          value: 8,
-                          message: "Usa al menos 8 caracteres",
+                          value: 12,
+                          message: "Usa al menos 12 caracteres",
                         },
                       })}
                     />
@@ -271,10 +273,8 @@ export function RegisterPage() {
                   </Field>
                 </section>
               ) : (
-                <section className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
-                  <p className="text-sm font-bold text-[var(--ink-strong)]">
-                    Base de tu perfil
-                  </p>
+                <details className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
+                  <summary className="cursor-pointer text-sm font-bold text-[var(--ink-strong)]">Añadir una base profesional (opcional)</summary>
                   <div className="mt-4 space-y-4">
                     <Field label="Profesión">
                       <input
@@ -294,7 +294,7 @@ export function RegisterPage() {
                       </p>
                     </Field>
                   </div>
-                </section>
+                </details>
               )}
               {error ? (
                 <p
@@ -323,6 +323,7 @@ export function RegisterPage() {
                 )}
               </button>
             </form>
+            <AccessProviders />
           </div>
         </div>
       </section>

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 
 from app.domain.entities.enums import UserRole
 from app.infrastructure.database.models import Profile, User
@@ -9,7 +9,7 @@ from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 class UserRepository(SqlAlchemyRepository[User]):
     def find_by_email(self, email: str) -> User | None:
-        return self.session.query(User).filter(User.email == email).first()
+        return self.session.query(User).filter(func.lower(User.email) == email.casefold()).first()
 
     def candidates_with_profiles(self) -> list[User]:
         return (
