@@ -64,3 +64,8 @@ class ProjectEvidenceSubmission(EvidenceSubmission):
     preview_token: str = Field(min_length=50, max_length=30000)
     add_to_profile: bool = False
     confirm_ownership: Literal[True]
+
+
+class RepositoryPreviewRequest(BaseModel):
+    url: str = Field(min_length=10, max_length=250)
+    confirm_public_access: Literal[True]

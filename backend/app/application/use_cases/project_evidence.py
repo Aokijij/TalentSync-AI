@@ -41,6 +41,8 @@ def save(db, user, payload, security):
     if payload["add_to_profile"]:
         user.profile.skills = normalize_skills([*(user.profile.skills or []), *payload["skills"]])
     record_event(db, "profile.project_analyzed", "profile", user.profile.id, actor_user_id=user.id,
-                 details={"source": "local_zip", "version": report["version"]})
+                 details={"source": report.get("origin", "local_zip"), "version": report["version"]})
     values = {key: payload[key] for key in ("title", "kind", "description", "url", "skills")}
+    if report.get("origin") == "github_public":
+        values["url"] = report["repository_url"]
     return evidence(db, user, values, analysis=report)

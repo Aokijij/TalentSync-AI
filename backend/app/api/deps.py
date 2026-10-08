@@ -108,6 +108,11 @@ def get_project_inspector() -> ProjectInspectorPort:
     return ProjectInspector()
 
 
+def get_repository_inspector():
+    from app.infrastructure.github_projects import GitHubProjectInspector
+    return GitHubProjectInspector(settings)
+
+
 def get_jooble_job_catalog():
     from app.core.config import settings
 

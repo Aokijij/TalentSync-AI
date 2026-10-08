@@ -52,6 +52,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 13 | Análisis estático de proyectos | Implementado por ZIP local, vista previa y evidencia no verificada con incorporación opcional al perfil |
 | 14 | Catálogo educativo y transparencia comercial | Administración, importación JSON, brechas y planes integrados; sin compras ni certificados automáticos |
 | 15 | Acceso y vinculación LinkedIn | Adaptador OIDC implementado y probado en memoria; desactivado sin credenciales y HTTPS |
+| 16 | Lectura de repositorios públicos GitHub | Adaptador con consentimiento, revisión fija y límites; desactivado localmente por defecto |
 
 ## Comprobaciones
 
@@ -522,3 +523,39 @@ userinfo de otro sujeto y el flujo de candidato con estado consumido. También
 pasaron las pruebas anteriores de Google, GitHub y vinculación. No se conectó
 ninguna cuenta real. Referencias: [LinkedIn OIDC](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2)
 y [flujo OAuth](https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow).
+
+## Bloque 16: analizar repositorios públicos de GitHub
+
+Compatibilidad muestra una opción adicional cuando se configura
+`GITHUB_PROJECT_ANALYSIS_ENABLED=true` explícitamente en `.local/backend.env` y se
+reinicia el servidor. Por defecto es `false`, incluso si existe una variable
+heredada. Cada consulta exige marcar autorización de acceso público; no se consulta
+GitHub al cargar la página, conectar una cuenta social o navegar por el catálogo.
+No se habilitó esta conexión ni se consultaron proyectos reales durante el desarrollo.
+
+`POST /api/v1/matching/projects/github/preview` requiere candidato, CSRF de sesión,
+`url` raíz del repositorio y `confirm_public_access=true`, con cinco consultas por
+hora. Solo acepta `https://github.com/propietario/repositorio`, sin credenciales,
+puerto, fragmento, subrutas ni parámetros. Construye solicitudes únicamente hacia
+`https://api.github.com`; no sigue redirecciones, usa proxies heredados ni envía
+tokens. Los repositorios privados no son accesibles mediante este adaptador.
+
+Consulta el commit HEAD, fija su árbol por SHA y lee únicamente blobs de manifiestos
+reconocidos por el bloque 13. Los nombres de otros archivos sirven para contar
+extensiones; sus contenidos no se descargan. Omite enlaces, submódulos, dependencias
+y archivos ocultos. Rechaza árboles truncados o de más de dos mil entradas,
+manifiestos mayores de 256 KiB y más de treinta y dos manifiestos. Cada respuesta
+se limita a un MiB, o cuatrocientos mil bytes para blobs. Hay timeout de ocho
+segundos por operación y no se empiezan nuevas operaciones tras treinta segundos.
+Un fallo no genera evidencia parcial ni descarga alternativas.
+
+La vista previa y el guardado conservan el contrato cifrado de diez minutos del
+bloque 13. Se añade la URL pública y revisión analizada al resumen; al guardar se
+fija ese enlace para no atribuir el informe a otro repositorio. La huella de
+repositorio y revisión detecta duplicados. Sigue siendo evidencia no verificada y
+requiere confirmar participación. No ejecuta, clona ni guarda código fuente.
+Diecinueve pruebas con transporte HTTP en memoria cubren límites, redirecciones,
+URLs inseguras, cuota, repositorio privado, consentimiento, CSRF y guardado. No
+demuestran autoría ni sustituyen la comprobación con una conexión real habilitada.
+Referencia: [GitHub REST, árboles y blobs](https://docs.github.com/en/rest/git/trees)
+y [commits](https://docs.github.com/en/rest/commits/commits).
