@@ -36,6 +36,7 @@ def prepare_environment(*, testing=False):
     # Explicit values also override inherited shell variables and dotenv files.
     values.update({"TALENTSYNC_ENV_FILE": str(ENV_FILE), "PERIODIC_MAINTENANCE_ENABLED": "false",
                    "SMTP_ENABLED": "false", "SMTP_HOST": "", "SMTP_USERNAME": "", "SMTP_PASSWORD": "", "SMTP_FROM": "",
+                   "SMTP_PORT": "587", "SMTP_SECURITY": "starttls",
                    "SESSION_AUTH_ENABLED": "true", "LOCAL_MAIL_ENABLED": "true",
                    "WORKFLOW_MAINTENANCE_ENABLED": "true",
                    "MODEL_MAINTENANCE_ENABLED": "true", "MATCH_MODEL_PATH": values.get("MATCH_MODEL_PATH", ""),
@@ -72,15 +73,16 @@ def prepare_environment(*, testing=False):
 
 def main():
     parser = argparse.ArgumentParser(description="TalentSync: entorno local aislado")
-    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "accounts", "admin-sso", "model-prepare", "model-check", "doctor", "verify"))
+    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "accounts", "admin-sso", "model-prepare", "model-check", "doctor", "verify", "rehearse"))
     parser.add_argument("options", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.options and args.command != "admin-sso":
         parser.error("Solo admin-sso admite argumentos adicionales")
-    if args.command in {"doctor", "verify"}:
+    if args.command in {"doctor", "verify", "rehearse"}:
         if not PYTHON.is_file():
             raise SystemExit("Falta backend/.venv. Instala requirements-lite.txt y requirements-dev.txt.")
-        raise SystemExit(subprocess.call([str(PYTHON), str(ROOT / "scripts/local_checks.py"), args.command], cwd=ROOT))
+        command = [str(ROOT / "scripts/local_rehearsal.py")] if args.command == "rehearse" else [str(ROOT / "scripts/local_checks.py"), args.command]
+        raise SystemExit(subprocess.call([str(PYTHON), *command], cwd=ROOT))
     env = prepare_environment(testing=args.command == "test")
     commands = {
         "setup": ["-m", "alembic", "upgrade", "head"],

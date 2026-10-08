@@ -963,3 +963,22 @@ del rango de cada pregunta. Una entrada inválida no consume el intento. La
 caducidad usa el mismo límite inclusivo que el resto de los retos. Pasaron 43
 pruebas focalizadas de aprendizaje, catálogo y consultas SQL, incluidos entrega,
 pasaporte, privacidad, controles de acceso y rechazo de respuestas inválidas.
+# Bloque 29 — ensayo local completo sin presupuesto
+
+`scripts/local.py rehearse` reúne `verify`, PostgreSQL real aislado y `doctor`.
+Comprueba que los informes correspondan a la misma huella de código y escribe
+`.local/verification/rehearsal.json`, sin secretos. PostgreSQL requiere la
+instalación local ya detectada; no usa la base original ni crea recursos externos.
+
+Se añaden conexiones SMTP SSL/STARTTLS reales contra un sumidero exclusivo en
+127.0.0.1: certificado confiable de prueba, rechazo de CA desconocida y rechazo de
+hostname incorrecto antes de enviar credenciales. No se desactiva la validación TLS
+ni se entrega correo fuera del equipo.
+
+La prueba de capacidad usa ocho candidatos simultáneos, 50 ofertas sintéticas,
+sesiones independientes, CSRF y escrituras aisladas en una SQLite temporal con
+WAL. Guarda latencias y estados HTTP en `capacity.json`; mide ASGI dentro del
+proceso, matching léxico y limitador desactivado, sin representar una capacidad
+de producción. La matriz `matching-regressions.json` comprueba orden por cobertura,
+invariancia ante identificadores, alias, duplicados, componentes y confianza de
+ofertas externas. No estima éxito de contratación ni equidad demográfica.
