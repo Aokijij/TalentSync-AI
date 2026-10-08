@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.domain.entities.catalog import CatalogJob, CatalogPage
 from app.domain.entities.enums import UserRole
+from app.infrastructure.database import session as database_session
 from app.infrastructure.database.models import Company, Job, User
 from app.infrastructure.database.session import Base, get_db
 from app.infrastructure.nlp import resumes
@@ -29,6 +30,9 @@ def client(monkeypatch):
     )
     Base.metadata.create_all(engine)
     session_factory = sessionmaker(bind=engine, autoflush=False)
+    # Keep the fallback dependency isolated even if a test removes app overrides.
+    monkeypatch.setattr(database_session, "SessionLocal", session_factory)
+    monkeypatch.setattr(settings, "database_url", "sqlite://")
 
     def test_database():
         with session_factory() as session:
