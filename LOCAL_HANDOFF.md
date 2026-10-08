@@ -53,6 +53,11 @@ Los informes se guardan en `.local/verification/doctor.json` y `validation.json`
 sin credenciales, tokens ni contenido de perfiles. `.local/` está excluido de Git.
 Las pruebas de migración comprueban subida/bajada en SQLite y SQL de PostgreSQL
 offline; no equivalen a una ejecución contra un servidor PostgreSQL real.
+En la siguiente etapa, el bloque 25 añade un ensayo independiente contra
+PostgreSQL 18 real con aceptación entre roles y restauración exacta de sus 27
+tablas: `scripts/staging_postgres.py check`. No reemplaza ni modifica esta SQLite.
+Los comandos, límites y preparación externa están en
+[infra/staging/README.md](infra/staging/README.md).
 
 Para arrancar: `scripts/local.py backend` y, desde `frontend/`,
 `npm run dev -- --host 127.0.0.1`. La aplicación está en

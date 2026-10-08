@@ -21,7 +21,7 @@ candidate = require_roles(UserRole.CANDIDATE)
 
 def _temporary_cookie(response, name, value, seconds):
     response.set_cookie(name, value, max_age=seconds, httponly=True, samesite="lax", path="/",
-        secure=settings.session_cookie_secure or settings.environment == "production")
+        secure=settings.session_cookie_secure or settings.environment.casefold() in {"production", "staging"})
     response.headers["Cache-Control"] = "no-store"
 
 

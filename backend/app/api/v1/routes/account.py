@@ -44,7 +44,7 @@ def _cookie_response(request, response, payload, db, security, admin):
 
 
 def set_session_cookies(response, result):
-    options = {"secure": settings.session_cookie_secure or settings.environment == "production",
+    options = {"secure": settings.session_cookie_secure or settings.environment.casefold() in {"production", "staging"},
                "samesite": "lax", "path": "/"}
     if result["remember"]:
         options["max_age"] = 30 * 86400

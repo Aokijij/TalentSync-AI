@@ -874,3 +874,28 @@ El alcance terminado, comandos y dependencias para pasar a integración están e
 [LOCAL_HANDOFF.md](LOCAL_HANDOFF.md). El entorno local conserva las cuentas, la
 base aislada y la migración 0035. No se activaron proveedores, infraestructura,
 correo real, cámara o micrófono ni se ejecutó código arbitrario en el host.
+
+## Bloque 25: ensayo PostgreSQL y configuración segura de staging
+
+`scripts/staging_postgres.py check` usa PostgreSQL 18 en un clúster propio,
+loopback puerto 55432, SCRAM y rol de aplicación sin privilegios administrativos.
+No conecta al servicio PostgreSQL anterior ni lee su configuración. Cada ensayo
+usa bases sintéticas nuevas; aplica todas las migraciones, recorre la aceptación
+entre roles con sesiones/MFA, baja/sube la última revisión y restaura un backup.
+Compara todas las filas de las 27 tablas, incluidas sesiones y eventos. Los datos
+y credenciales quedan en `.local/staging`, fuera de Git y del contexto Docker.
+Se evita capturar `pg_ctl` con pipes en Windows porque el daemon hereda esos
+handles y la lectura puede quedar esperando EOF. Se detiene solo el clúster
+propio si lo arrancó esa ejecución; los ensayos previos se conservan.
+
+`ENVIRONMENT=staging` exige HTTPS de mismo origen, sesiones seguras, host explícito,
+buzón local desactivado y PostgreSQL con TLS. Oculta documentación y añade HSTS.
+Docker excluye `.local`, que podía entrar en el contexto remoto de construcción,
+y desactiva logs de acceso para evitar registrar códigos de callbacks OAuth.
+El runner local y los valores de producción existentes se conservan.
+
+Pasaron 319 pruebas backend y siete adicionales de protección del lanzador; la aceptación PostgreSQL pasa por separado
+y se omite en el runner SQLite habitual. El ensayo PostgreSQL 18.4 pasó con
+subida/bajada y restauración exacta de las 27 tablas. Todavía no se ha construido
+ni ejecutado la imagen Docker en este equipo; no hay Docker/Podman disponible.
+

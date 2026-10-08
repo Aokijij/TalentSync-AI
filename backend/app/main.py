@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    production = settings.environment.casefold() == "production"
+    production = settings.environment.casefold() in {"production", "staging"}
     app = FastAPI(
         title=settings.app_name,
         description="API REST para TalentSync AI, plataforma de matching laboral con NLP.",

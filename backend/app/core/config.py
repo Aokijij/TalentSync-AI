@@ -1,7 +1,7 @@
 import os
 from functools import lru_cache
 from typing import Literal
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -106,6 +106,24 @@ class Settings(BaseSettings):
             raise ValueError("TURN requiere un secreto compartido de al menos 32 caracteres")
         if self.webrtc_relay_only and not self.webrtc_turn_urls:
             raise ValueError("El modo relay requiere un servidor TURN configurado")
+        return self
+
+    @model_validator(mode="after")
+    def safe_staging_configuration(self):
+        if self.environment.casefold() != "staging":
+            return self
+        origin = urlsplit(self.public_app_url)
+        if (origin.scheme != "https" or not origin.hostname or origin.username or origin.password
+                or origin.path or origin.query or origin.fragment or origin.port not in {None, 443}):
+            raise ValueError("Staging requiere PUBLIC_APP_URL como origen HTTPS sin ruta")
+        if not self.session_auth_enabled or not self.session_cookie_secure or self.local_mail_enabled:
+            raise ValueError("Staging requiere sesiones seguras y buzón local desactivado")
+        if self.allowed_hosts != [origin.hostname] or self.cors_origins != [self.public_app_url]:
+            raise ValueError("Staging requiere host explícito y frontend/API del mismo origen")
+        database = urlsplit(self.database_url)
+        if (database.scheme not in {"postgresql", "postgresql+psycopg"} or not database.hostname
+                or parse_qs(database.query).get("sslmode") not in [["require"], ["verify-full"]]):
+            raise ValueError("Staging requiere PostgreSQL con TLS")
         return self
 
     @field_validator("catalog_max_age_days", "catalog_min_skills")

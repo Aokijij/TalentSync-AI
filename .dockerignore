@@ -2,6 +2,8 @@
 .azure
 .github
 .tmp
+.local
+**/.local
 **/.env
 **/.dev.vars*
 **/.wrangler
