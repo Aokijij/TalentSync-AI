@@ -94,7 +94,7 @@ def model_status(db, nlp):
             {"name": "SSO corporativo del administrador", "status": "Adaptador Google Workspace disponible con aprovisionamiento por sujeto y dominio; requiere credenciales. Entra ID pendiente."},
             {"name": "Verificación oficial de empresas", "status": "Revisión manual local; falta proveedor de registros"},
             {"name": "Videollamada por Internet", "status": "Adaptador STUN/TURN disponible; requiere servidor de retransmisión configurado"},
-            {"name": "Ejecución de código", "status": "Desactivada; falta ejecutor aislado con límites de recursos"},
+            {"name": "Retos con ejecución", "status": "SQL restringido en memoria disponible en Aprendizaje. Otros lenguajes requieren un ejecutor aislado adicional."},
         ],
         "observed_processes": len(applications), "processes_advanced_to_interview": sum(row.status == "technical_interview" or any(event.details.get("status") == "technical_interview" for event in db.events.for_entity("application", row.id)) for row in applications),
         "experiments": [{"id": row.id, "version": row.version, "status": row.status, "metrics": row.metrics, "created_at": row.created_at} for row in db.personalization.experiments()],

@@ -38,9 +38,9 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | Bloque | Alcance | Estado |
 | --- | --- | --- |
 | 1 | Entorno aislado, semilla ficticia e historial de eventos | Completado: 71 pruebas backend, 20 frontend, lint y build |
-| 2 | Correo local, recuperación, verificación, sesiones, MFA y privacidad | Implementado y probado; SSO externo desactivado y pendiente |
+| 2 | Correo local, recuperación, verificación, sesiones, MFA y privacidad | Implementado y probado; adaptadores sociales y SSO en bloques posteriores |
 | 3 | Verificación empresarial, equipos y permisos | Implementado: revisión manual local, borradores, invitaciones y permisos en API |
-| 4 | Requisitos, evidencias, preferencias y matching avanzado | Implementado; método lexical activo y adaptador neuronal opcional en bloque 10 |
+| 4 | Requisitos, evidencias, preferencias y matching avanzado | Implementado; modelo neuronal local activado y verificado en bloque 20 |
 | 5 | Historial de etapas, plazos, avisos y feedback | Implementado: plazos, worker local, cierre idempotente e historial |
 | 6 | Brechas, recursos, planes, evaluaciones, pasaporte y portafolio | Implementado con catálogo de proyectos y evaluaciones locales de fundamentos |
 | 7 | Selección ciega, calidad de vacantes y contratación por potencial | Implementado: identidad protegida, reglas locales y escenarios laborales |
@@ -56,6 +56,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 17 | SSO administrativo de Google Workspace | Aprovisionamiento local, validación de dominio y sujeto, MFA y política obligatoria opcional |
 | 18 | Retos SQL con consultas reales | Dos retos, vista previa, ejecución restringida en memoria y pasaporte integrado |
 | 19 | Conectividad STUN/TURN de entrevistas | Configuración validada, credenciales temporales y autorización por sala; servidor externo no configurado |
+| 20 | Modelo semántico multilingüe en CPU | Pesos fijados y verificados, inferencia offline activa y caché acotada |
 
 ## Comprobaciones
 
@@ -119,7 +120,7 @@ contribuciones al resultado y brechas. El caché detecta cambios del candidato y
 la vacante. La interfaz usa los pesos del servidor, incluidos idiomas y formación.
 El porcentaje es un índice de afinidad; las preferencias se comparan aparte para
 no alterar el mérito técnico. El componente textual actual usa HashingVectorizer
-local y se identifica como lexical-hashing-v1. No se presenta como un modelo
+local de respaldo se identifica como lexical-hashing-v1. El bloque 20 activa un modelo neuronal; no se presenta como un modelo
 neuronal ni una probabilidad de éxito. El procesamiento de CV existente se conserva.
 Validación acumulada: 81 pruebas backend; lint y build frontend aprobados.
 
@@ -248,10 +249,10 @@ eventual promoción de modelos al ranking necesitan validaciones adicionales.
 
 ### Embeddings neuronales opcionales
 
-El método instalado continúa siendo `lexical-hashing-v1`. Hay un adaptador opcional
-para un Sentence Transformer ya disponible en disco. No se instalaron sus dependencias
-ni se descargaron pesos, y no se probó inferencia con un modelo real. Las pruebas
-comprueban que no admite nombres remotos ni formatos ejecutables.
+Este bloque añadió el adaptador opcional. El bloque 20 instaló sus dependencias,
+descargó una revisión fijada y comprobó inferencia real en CPU. El entorno aislado
+actual usa el modelo multilingüe local; sin MATCH_MODEL_PATH usa lexical-hashing-v1.
+Las pruebas comprueban que no admite nombres remotos ni formatos ejecutables.
 
 Para activarlo posteriormente: instalar `backend/requirements-model-local.txt`,
 proporcionar un modelo compatible en una carpeta absoluta y añadir
@@ -269,10 +270,11 @@ La dependencia opcional está fijada a [6.1.0 en PyPI](https://pypi.org/project/
 
 ### Alcance que sigue pendiente
 
-El panel muestra explícitamente integraciones pendientes: LinkedIn y SSO
-corporativo, extracción automática de GitHub, catálogos educativos, afiliación,
-validación contra registros oficiales, servidor TURN y ejecutor de código aislado.
-Requieren adaptadores/configuración o acuerdos reales; no basta con pegar claves.
+Los bloques 14 a 20 incorporan catálogo administrable, LinkedIn, lectura pública
+de GitHub, SSO Workspace, retos SQL, configuración STUN/TURN y modelo neuronal.
+Quedan fuera del uso local las compras/acuerdos educativos, registros oficiales,
+servidor TURN operativo y ejecución arbitraria de código. Los proveedores de
+identidad requieren credenciales; no se conectaron cuentas externas reales.
 VPN, dominios separados y restricciones de red corresponden a infraestructura futura.
 No se crean microservicios para esta versión: se extienden los módulos y puertos del
 FastAPI/React existente para preservar compatibilidad. No hay despliegue ni push.
@@ -675,3 +677,51 @@ de la red; una instalación accesible por Internet requiere HTTPS y comprobar el
 servidor elegido. Diez pruebas nuevas verifican configuración, HMAC, caducidad,
 opacidad, pertenencia y cierre; pasaron también las de entrevistas y arquitectura.
 Referencia: [coturn TURN REST](https://github.com/coturn/coturn/wiki/turnserver).
+
+
+## Bloque 20: inferencia semántica multilingüe local
+
+El entorno aislado tiene activo `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`,
+revisión `e8f8c211226b894fcb81acc59f3b34ba3efd5f42`, con licencia Apache-2.0
+según la ficha del editor. Los pesos y tokenizadores viven únicamente en
+`.local/models/`, excluidos de Git. Se conservaron la ficha y procedencia local.
+La huella calculada identifica el método como
+`local-sentence-transformer:97473d94587537f6`.
+
+Para reproducir, instalar las dependencias sin cambiar las versiones base:
+
+```powershell
+backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-lite.txt -r backend/requirements-model-local-lock.txt
+backend/.venv/Scripts/python.exe scripts/local.py model-prepare
+backend/.venv/Scripts/python.exe scripts/local.py model-check
+```
+
+`model-prepare` es una descarga explícita de archivos públicos de esa revisión;
+no envía perfiles, claves ni tokens de cuenta. Verifica tamaño y huella SHA-256
+para archivos LFS, o la huella Git para archivos normales, antes de reemplazar
+el destino. Solo descarga los doce archivos enumerados, sin Python ni pickle.
+Es idempotente y no activa el modelo automáticamente. La procedencia se guarda
+fuera de la carpeta del modelo para que no cambie su huella de inferencia.
+
+Después de comprobarlo, añadir la ruta absoluta a `MATCH_MODEL_PATH` en
+`.local/backend.env` y reiniciar. Esto ya se realizó en esta máquina. No se cambió
+`backend/.env`. La carga durante el arranque usa solo archivos locales,
+safetensors, módulos estándar y `trust_remote_code=False`; no descarga archivos.
+Un fallo impide arrancar. Sin ruta configurada sigue disponible el método lexical.
+
+La inferencia CPU usa dos hilos por defecto, ajustables entre uno y ocho mediante
+`MATCH_MODEL_CPU_THREADS`. Una caché por proceso conserva hasta 512 pares de
+huellas/vectores inmutables, sin texto original ni persistencia. Serializa la
+inferencia para evitar saturación por peticiones simultáneas. La huella del modelo
+participa en la versión de matching, caché de recomendaciones y señales de interés.
+No cambia el parser ni interpreta relación semántica como habilidad acreditada.
+
+La comprobación real offline obtuvo 100 para textos iguales, 95,53 para
+"Desarrollo de aplicaciones web" / "Web application development" y 16,42 contra
+una frase de jardinería. La primera carga y tres comparaciones tomaron 20,32 s,
+incluida importación de librerías. Son ejemplos sintéticos de funcionamiento,
+no una evaluación de precisión en contratación. El modelo preentrenado complementa
+los requisitos explícitos, preferencias y explicaciones; el índice no es una
+probabilidad de éxito ni garantiza equidad. Tres pruebas nuevas cubren integridad
+de descarga, caché acotada, versiones y rechazo de módulos no admitidos.
+Referencia: [ficha original del modelo](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2).

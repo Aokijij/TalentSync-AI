@@ -38,6 +38,7 @@ def prepare_environment():
                    "SESSION_AUTH_ENABLED": "true", "LOCAL_MAIL_ENABLED": "true",
                    "WORKFLOW_MAINTENANCE_ENABLED": "true",
                    "MODEL_MAINTENANCE_ENABLED": "true", "MATCH_MODEL_PATH": values.get("MATCH_MODEL_PATH", ""),
+                   "MATCH_MODEL_CPU_THREADS": values.get("MATCH_MODEL_CPU_THREADS", "2"),
                    "GITHUB_PROJECT_ANALYSIS_ENABLED": values.get("GITHUB_PROJECT_ANALYSIS_ENABLED", "false"),
                    "WORKSPACE_DOMAIN": values.get("WORKSPACE_DOMAIN", ""),
                    "ADMIN_SSO_REQUIRED": values.get("ADMIN_SSO_REQUIRED", "false"),
@@ -57,7 +58,7 @@ def prepare_environment():
 
 def main():
     parser = argparse.ArgumentParser(description="TalentSync: entorno local aislado")
-    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "accounts", "admin-sso"))
+    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "accounts", "admin-sso", "model-prepare", "model-check"))
     parser.add_argument("options", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.options and args.command != "admin-sso":
@@ -74,6 +75,8 @@ def main():
         "test": ["-m", "pytest", "-q", "-p", "no:cacheprovider"],
         "seed": ["-m", "scripts.seed_local"],
         "admin-sso": ["-m", "scripts.admin_sso", *args.options],
+        "model-prepare": ["-m", "scripts.local_model", "prepare"],
+        "model-check": ["-m", "scripts.local_model", "check"],
     }
     if args.command == "accounts":
         account_file = LOCAL / "accounts.json"

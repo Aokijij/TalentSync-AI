@@ -2,8 +2,10 @@
 import hashlib
 import json
 import os
+from collections import OrderedDict
 from functools import lru_cache
 from pathlib import Path
+from threading import Lock
 
 from app.core.config import settings
 
@@ -35,16 +37,33 @@ class LocalMatchingEncoder:
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
         try:
+            import torch
             from sentence_transformers import SentenceTransformer
         except ImportError:
             raise ValueError("Falta la dependencia opcional sentence-transformers; consulta DEVELOPMENT.md") from None
+        torch.set_num_threads(settings.match_model_cpu_threads)
         self.model = SentenceTransformer(str(path), device="cpu", local_files_only=True, trust_remote_code=False,
             model_kwargs={"use_safetensors": True, "local_files_only": True})
         self.method = f"local-sentence-transformer:{fingerprint.hexdigest()[:16]}"
+        self._vectors = OrderedDict()
+        self._lock = Lock()
+
+    def _embedding(self, text):
+        text = text[:20000]
+        key = hashlib.sha256(text.encode()).digest()
+        # Bounded, process-only cache. Retains hashes and vectors, never original text.
+        with self._lock:
+            if key not in self._vectors:
+                vector = self.model.encode([text], normalize_embeddings=True, show_progress_bar=False)[0]
+                vector.setflags(write=False)
+                self._vectors[key] = vector
+                if len(self._vectors) > 512:
+                    self._vectors.popitem(last=False)
+            self._vectors.move_to_end(key)
+            return self._vectors[key]
 
     def similarity(self, left, right):
-        vectors = self.model.encode([left[:20000], right[:20000]], normalize_embeddings=True, show_progress_bar=False)
-        return round(max(0, min(1, float(vectors[0] @ vectors[1]))) * 100, 2)
+        return round(max(0, min(1, float(self._embedding(left) @ self._embedding(right)))) * 100, 2)
 
 
 @lru_cache

@@ -1,3 +1,4 @@
-# Optional. Not installed by the local setup. Requires trusted local weights.
+# Optional install; tested full Windows CPU additions: requirements-model-local-lock.txt.
+# Never installed or downloaded automatically by the backend or local setup.
 # https://pypi.org/project/sentence-transformers/6.1.0/
 sentence-transformers==6.1.0
