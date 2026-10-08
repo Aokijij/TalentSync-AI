@@ -27,7 +27,7 @@ export function SecurityPage() {
     finally { setBusy(false); }
   }
   return <div className="space-y-5">
-    <PageHeader kicker="Tu cuenta" title="Seguridad y privacidad" description="Controla el acceso, las sesiones y cómo se comparten tus evidencias." />
+    <PageHeader kicker="Tu cuenta" title={user.role === "candidate" ? "Seguridad y privacidad" : "Seguridad de cuenta"} description={user.role === "candidate" ? "Controla el acceso, las sesiones y cómo se comparten tus evidencias." : "Administra tu correo, autenticador y sesiones. Los permisos del equipo se gestionan en Organización y equipo."} />
     {user.role === "candidate" && accessOptions.mode === "session" && <SocialAccounts user={user} providers={accessOptions.providers} onSessionsChanged={load} />}
     {error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}
     {message && <p role="status" className="surface-card p-4">{message}</p>}

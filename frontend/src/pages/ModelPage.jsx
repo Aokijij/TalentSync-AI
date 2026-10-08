@@ -3,24 +3,6 @@ import { Link } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 
-export function PersonalizationPage() {
-  const [signals, setSignals] = useState([]); const [jobs, setJobs] = useState([]); const [enabled, setEnabled] = useState(false);
-  const [error, setError] = useState(""); const [busy, setBusy] = useState(false); const [notice, setNotice] = useState("");
-  async function load() {
-    const [a, b, c] = await Promise.all([api.get("/personalization/feedback"), api.get("/jobs"), api.get("/account/privacy")]);
-    setSignals(a.data); setJobs(b.data); setEnabled(c.data.personalize_recommendations);
-  }
-  useEffect(() => { load().catch((failure) => setError(getApiErrorMessage(failure))); }, []);
-  async function act(action) { setBusy(true); setError(""); setNotice(""); try { await action(); await load(); setNotice("Preferencia actualizada"); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }
-  return <div className="space-y-5"><PageHeader kicker="Recomendaciones a tu medida" title="Mis intereses" description="Indica qué ofertas te interesan. Se utiliza para ordenar oportunidades y ocultar las que descartes; el índice de afinidad técnica se conserva." />
-    {error && <p role="alert" className="text-[var(--error)]">{error}</p>}{notice && <p role="status">{notice}</p>}
-    <section className="surface-card space-y-3 p-5"><h2 className="font-bold">Personalización {enabled ? "activada" : "desactivada"}</h2><p className="text-sm text-[var(--muted)]">Solo se registran tus decisiones explícitas con tu consentimiento. Desactivarla borra tus interacciones y los modelos experimentales que pudieran incluirlas. No se registra tu navegación.</p><Link className="button-outline inline-flex" to="/seguridad">Configurar consentimiento en Seguridad</Link></section>
-    <form className="surface-card grid gap-3 p-5 sm:grid-cols-3" onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); act(() => api.put("/personalization/feedback", { job_id: Number(form.get("job")), interested: form.get("interested") === "true" })); }}><label>Vacante<select className="field-control mt-1" name="job" required disabled={!enabled || busy}><option value="">Selecciona una oferta</option>{jobs.map((job) => <option value={job.id} key={job.id}>{job.title} · {job.company_name}</option>)}</select></label><label>Mi interés<select className="field-control mt-1" name="interested" disabled={!enabled || busy}><option value="true">Me interesa</option><option value="false">Ocultar de recomendaciones</option></select></label><button className="button-primary self-end" disabled={!enabled || busy}>Guardar interés</button></form>
-    <section className="space-y-3"><h2 className="font-bold">Decisiones guardadas</h2>{!signals.length && <p className="text-[var(--muted)]">Aún no hay decisiones guardadas.</p>}{signals.map((row) => <article className="surface-card flex flex-wrap items-center justify-between gap-3 p-5" key={row.job_id}><div><Link className="font-semibold text-[var(--accent)]" to={`/vacantes/${row.job_id}`}>{row.title}</Link><p className="text-sm">{row.interested ? "Me interesa" : "Oculta de mis recomendaciones"}</p></div><button className="button-outline" disabled={busy} onClick={() => act(() => api.delete(`/personalization/feedback/${row.job_id}`))}>Deshacer decisión</button></article>)}</section>
-    <Link className="button-primary inline-flex" to="/recomendaciones">Ver mis recomendaciones</Link>
-  </div>;
-}
-
 const statuses = { insufficient_data: "Faltan datos reales", insufficient_validation_data: "Faltan datos de validación", validated_shadow: "Validado en evaluación; fuera del ranking", needs_review_shadow: "Requiere revisión; fuera del ranking", invalidated_consent_withdrawal: "Invalidado por retirada de consentimiento", invalidated_feedback_removal: "Invalidado por retirada de una señal" };
 
 export function ModelPage() {

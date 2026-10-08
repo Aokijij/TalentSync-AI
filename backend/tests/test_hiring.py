@@ -61,3 +61,8 @@ def test_quality_checklist_changes_after_saving_actionable_corrections(client):
     after = client.get(endpoint, headers=headers).json()
     assert after["completeness"] > before["completeness"] and after["completeness"] == 100
     assert all(row["passed"] for row in after["checks"])
+    _, candidate = register(client, "sales-quality-match", profession="Asesor comercial", skills=["ventas"])
+    match = client.post(f"/api/v1/jobs/{job['id']}/match", headers=candidate)
+    assert match.status_code == 200
+    assert match.json()["skill_match_percentage"] == 100
+    assert "Cumples todas las habilidades requeridas" in match.json()["reasons"]

@@ -1049,3 +1049,9 @@ Acceso empresarial con composición propia, centro de contratación persistente 
 Calidad de ofertas incorpora ocho comprobaciones orientativas y edición de los campos que las resuelven, incluidos requisitos ponderados. Se retira la creación y modificación de escenarios de trabajo, conservando registros antiguos. Los selectores muestran títulos y estados, sin identificadores globales. No se renumeran ni eliminan vacantes existentes.
 
 Validación: ocho pruebas dirigidas de organización, calidad e impacto de evidencias; Ruff, ESLint y 21 pruebas frontend aprobados. Revisión visual con cuentas QA ficticias, incluyendo guardado y recálculo de una oferta comercial.
+
+### Bloque 36 — Coherencia y aceptación del rediseño
+
+El texto del matching usa los mismos requisitos ponderados que el índice, con nueva versión de caché. Comunicación como habilidad transversal no desvía por sí sola un perfil comercial hacia diseño. Se conserva la selección de compatibilidad mínima de 0%, se aclaran filtros vacíos y el reto desplaza la vista hasta la decisión activa. El enlace a práctica SQL abre su panel. Se elimina la pantalla antigua de intereses y se actualiza el inventario funcional.
+
+Aceptación local con cuentas QA ficticias independientes: vacante comercial, curso pertinente y plan, guardar/ocultar/restaurar desde la tarjeta, evidencia declarada con impacto explícito, reto por pasos, organización/equipo y separación por rol. Los resultados de la batería completa y del ensayo PostgreSQL quedan en los informes privados habituales; las capturas del rediseño usan el prefijo redesign. No se activan proveedores ni se modifican credenciales de las cuentas previas.

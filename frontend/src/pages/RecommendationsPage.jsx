@@ -337,9 +337,9 @@ export function RecommendationsPage() {
                   size={20}
                   className="mx-auto mb-3 text-[var(--accent)]"
                 />
-                No hay vacantes de este origen que alcancen el {minCompatibility}%
-                de compatibilidad. Puedes cambiar el origen, reducir el porcentaje
-                o completar mejor tu experiencia y habilidades.
+                No hay recomendaciones con estos filtros. Puedes cambiar la
+                búsqueda, mostrar todas en lugar de solo guardadas, cambiar el
+                origen o reducir el mínimo de {minCompatibility}%.
               </div>
             ) : null}
           </div>

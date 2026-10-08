@@ -3,7 +3,7 @@ import json
 
 from app.domain.services.skills import skill_gap
 
-MATCH_VERSION = "transparent-match-v3"
+MATCH_VERSION = "transparent-match-v4"
 
 
 def requirements_for(job):

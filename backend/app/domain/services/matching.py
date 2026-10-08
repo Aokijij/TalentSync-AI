@@ -154,7 +154,8 @@ def recommendation_reasons(
     education_score: float | None = None, certification_score: float | None = None,
 ) -> list[str]:
     profile_skills = skill_set(profile.skills)
-    job_skills = skill_set(job.skills)
+    requirements = getattr(job, "skill_requirements", None)
+    job_skills = skill_set([row["skill"] for row in requirements] if requirements else job.skills)
     overlap = sorted(profile_skills.intersection(job_skills))
     missing = sorted(job_skills - profile_skills)
     reasons: list[str] = []

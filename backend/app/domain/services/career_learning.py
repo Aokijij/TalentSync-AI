@@ -85,8 +85,14 @@ EXERCISES = {
 
 
 def profile_areas(profile):
-    text = skill_key(" ".join([str(getattr(profile, "profession", "") or ""), str(getattr(profile, "preferred_sector", "") or ""), *(getattr(profile, "skills", []) or [])]))
-    return [area for area, row in AREAS.items() if any(re.search(r"\b" + re.escape(term) + r"\w*\b", text) for term in row["terms"])] or ["general"]
+    career = skill_key(" ".join([str(getattr(profile, "profession", "") or ""), str(getattr(profile, "preferred_sector", "") or "")]))
+    skills = skill_key(" ".join(getattr(profile, "skills", []) or []))
+    # Communication is useful across professions; it alone does not imply design.
+    return [area for area, row in AREAS.items() if any(
+        re.search(r"\b" + re.escape(term) + r"\w*\b", career)
+        or term != "comunicacion" and re.search(r"\b" + re.escape(term) + r"\w*\b", skills)
+        for term in row["terms"]
+    )] or ["general"]
 
 
 def assessment_banks():
