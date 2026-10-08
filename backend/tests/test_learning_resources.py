@@ -20,7 +20,7 @@ def test_curated_courses_target_gaps_preserve_plans_and_never_grant_credit(clien
     endpoint = "/api/v1/admin/learning/resources"
     response = client.post(endpoint, headers=admin, json=content())
     assert response.status_code == 201, response.text
-    course = next(row for row in response.json() if row["kind"] == "course")
+    course = next(row for row in response.json() if row["provider"] == "Catálogo revisado")
     assert course["skills"] == ["python"] and course["assessment_ids"] == ["python-foundations-v1"]
     recommendations = client.get(f"/api/v1/learning/jobs/{job['id']}", headers=candidate).json()["resources"]
     assert course["id"] in {row["id"] for row in recommendations}
@@ -62,7 +62,7 @@ def test_import_is_atomic_bounded_and_commercial_status_does_not_change_ranking(
     response = client.post(endpoint, headers=admin, json={"resources": [content(), content(title="Curso anunciado", sponsored=True, affiliate=True, disclosure="La plataforma puede recibir una comisión por esta compra.")]})
     assert response.status_code == 201
     recommendations = client.get(f"/api/v1/learning/jobs/{job['id']}", headers=candidate).json()["resources"]
-    courses = [row for row in recommendations if row["kind"] == "course"]
+    courses = [row for row in recommendations if row["provider"] == "Catálogo revisado"]
     assert len(courses) == 2
     assert courses[0]["estimated_gain"] == courses[1]["estimated_gain"]
     assert [row["id"] for row in courses] == sorted(row["id"] for row in courses)

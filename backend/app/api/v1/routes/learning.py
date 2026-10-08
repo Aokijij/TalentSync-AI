@@ -23,8 +23,8 @@ class Submission(BaseModel):
 
 
 @router.get("/learning/catalog")
-def catalog(user=Depends(candidate), db=Depends(get_unit_of_work)):
-    return cases.catalog(db)
+def catalog(area: str = "recommended", user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.catalog(db, user, area)
 
 
 @router.get("/admin/learning/resources")

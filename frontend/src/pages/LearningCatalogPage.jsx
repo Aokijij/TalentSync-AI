@@ -19,7 +19,7 @@ export function LearningCatalogPage() {
   function save(event) {
     event.preventDefault(); const form = event.currentTarget; const values = new FormData(form);
     const content = { title: values.get("title"), provider: values.get("provider"), url: values.get("url"), instructions: values.get("instructions"),
-      kind: values.get("kind"), hours: Number(values.get("hours")), skills: values.get("skills").split(",").map((item) => item.trim()).filter(Boolean),
+      category: values.get("category"), kind: values.get("kind"), hours: Number(values.get("hours")), skills: values.get("skills").split(",").map((item) => item.trim()).filter(Boolean),
       cost: values.get("cost"), sponsored: values.has("sponsored"), affiliate: values.has("affiliate"), disclosure: values.get("disclosure"), active: values.has("active") };
     act(async () => {
       const { data } = editing ? await api.put(`/admin/learning/resources/${editing.id}`, { ...content, version: editing.version }) : await api.post("/admin/learning/resources", content);
@@ -31,6 +31,7 @@ export function LearningCatalogPage() {
     <form key={editing?.id || "new"} onSubmit={save} className="surface-card grid gap-4 p-5 sm:grid-cols-2">
       <h2 className="font-bold sm:col-span-2">{editing ? "Editar recurso" : "Añadir recurso"}</h2>
       {[ ["title", "Título", 160], ["provider", "Proveedor", 120], ["url", "Enlace HTTPS", 1000], ["skills", "Habilidades separadas por comas", 2000] ].map(([name, label, max]) => <label key={name}>{label}<input className="field-control mt-1" name={name} required maxLength={max} type={name === "url" ? "url" : "text"} defaultValue={name === "skills" ? editing?.skills.join(", ") : editing?.[name] || ""} /></label>)}
+      <label>Área<select className="field-control mt-1" name="category" defaultValue={editing?.category || "general"}>{[["general", "Transversales"], ["technology", "Tecnología y datos"], ["service", "Servicio al cliente"], ["sales", "Ventas"], ["administration", "Administración"], ["finance", "Finanzas"], ["logistics", "Logística"], ["education", "Educación"], ["design", "Diseño"], ["care", "Atención en salud"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label>Tipo<select className="field-control mt-1" name="kind" defaultValue={editing?.kind || "course"}><option value="course">Curso</option><option value="workshop">Taller</option><option value="documentation">Documentación</option></select></label>
       <label>Horas estimadas<input className="field-control mt-1" name="hours" type="number" step="0.25" min="0.25" max="1000" required defaultValue={editing?.hours || 1} /></label>
       <label>Coste<select className="field-control mt-1" name="cost" defaultValue={editing?.cost || "unknown"}><option value="unknown">Por confirmar</option><option value="free">Gratuito</option><option value="paid">De pago</option></select></label>

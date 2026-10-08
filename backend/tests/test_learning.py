@@ -12,7 +12,7 @@ from app.infrastructure.database.models import AssessmentAttempt
 def test_each_assessment_has_public_questions_and_scoped_credential(client, assessment_id):
     bank = ASSESSMENTS[assessment_id]
     _, headers = register(client, "assessment-candidate", skills=[])
-    catalog = client.get("/api/v1/learning/catalog", headers=headers).json()
+    catalog = client.get("/api/v1/learning/catalog?area=all", headers=headers).json()
     assert any(row["id"] == assessment_id for row in catalog["assessments"])
     attempt = client.post(f"/api/v1/learning/assessments/{assessment_id}/start", headers=headers).json()
     assert len(attempt["questions"]) == 5

@@ -8,6 +8,7 @@ from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import get_job
 from app.application.use_cases.learning_resources import resources as catalog_resources
 from app.application.use_cases.matching import candidate_match
+from app.domain.services.career_learning import AREAS, profile_areas
 from app.domain.services.learning_catalog import ASSESSMENTS
 from app.domain.services.match_explanations import requirements_for
 from app.domain.services.skills import normalize_skills, skill_gap, skill_set
@@ -22,9 +23,18 @@ class ProjectedProfile:
         return getattr(self.profile, name)
 
 
-def catalog(db):
-    return {"resources": catalog_resources(db), "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "level": "fundamentals"} for key, row in ASSESSMENTS.items()],
-            "external_catalogs_enabled": False, "notice": "Catálogo local y enlaces revisados por administración. Horas y costes orientativos; no se verifican compras ni certificados externos. La publicidad no mejora el orden de recomendación."}
+def catalog(db, user, area="recommended"):
+    if area not in {"recommended", "all", *AREAS}:
+        raise UseCaseError(status_code=422, detail="Área de aprendizaje desconocida")
+    recommended = profile_areas(user.profile)
+    selected = {*recommended, "general"} if area == "recommended" else set(AREAS) if area == "all" else {area}
+    available = catalog_resources(db)
+    return {"resources": [row for row in available if row.get("category", "general") in selected],
+            "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "level": "fundamentals", "category": row["category"], "context": row.get("context", "Resuelve cinco decisiones sobre esta habilidad y revisa la explicación al entregar.")}
+                            for key, row in ASSESSMENTS.items() if row["category"] in selected],
+            "areas": [{"id": key, "label": row["label"]} for key, row in AREAS.items()],
+            "recommended_areas": recommended, "selected_area": area,
+            "external_catalogs_enabled": False, "notice": "Sugerencias por profesión, sector y habilidades. Puedes explorar otra área. Las prácticas locales no son certificaciones profesionales; los cursos externos requieren revisión y validación independientes."}
 
 
 def opportunities(db, user, job_id, nlp):

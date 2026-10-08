@@ -68,3 +68,23 @@ LOCAL_RESOURCES = [
     {"id": "project-security", "title": "Revisa la seguridad de una API de práctica", "skills": ["seguridad de aplicaciones"], "hours": 4, "provider": "TalentSync · proyecto local", "kind": "project", "sponsored": False,
      "instructions": "Usa una aplicación ficticia propia. Documenta validación, autorización por recurso, sesiones/CSRF, tratamiento de archivos y protección de logs. Escribe casos negativos con datos sintéticos y explica las correcciones; no pruebes sistemas ajenos."},
 ]
+
+
+from app.domain.services.career_learning import assessment_banks, practice_resources
+
+for bank in ASSESSMENTS.values():
+    bank["category"] = "technology"
+for resource in LOCAL_RESOURCES:
+    resource["category"] = "technology"
+ASSESSMENTS.update(assessment_banks())
+LOCAL_RESOURCES.extend(practice_resources())
+
+# Direct provider pages reviewed on 2026-10-08; no affiliate or remote catalog calls.
+LOCAL_RESOURCES.extend([
+    {"id": "hubspot-inbound-sales", "category": "sales", "title": "Ventas inbound · curso con certificación del proveedor", "skills": ["ventas"], "hours": 3.1,
+     "provider": "HubSpot Academy", "kind": "course", "sponsored": False, "url": "https://academy.hubspot.com/courses/inbound-sales",
+     "instructions": "Curso gratuito de venta consultiva y conversaciones comerciales, con opción en español. Requiere cuenta externa y evaluación del proveedor. La certificación no se emite ni verifica automáticamente en TalentSync."},
+    {"id": "microsoft-data-analytics", "category": "technology", "title": "Introducción al análisis de datos de Microsoft", "skills": ["power bi"], "hours": 3,
+     "provider": "Microsoft Learn", "kind": "course", "sponsored": False, "url": "https://learn.microsoft.com/es-es/training/paths/data-analytics-microsoft/",
+     "instructions": "Ruta de cuatro módulos sobre análisis de datos y Power BI. Tiempo de estudio orientativo. La formación es independiente de los exámenes de certificación y puede requerir herramientas del proveedor para la práctica."},
+])

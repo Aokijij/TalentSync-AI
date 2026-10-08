@@ -8,6 +8,7 @@ from app.domain.services.skills import normalize_skills
 
 
 class ResourceContent(BaseModel):
+    category: Literal["general", "technology", "service", "sales", "administration", "finance", "logistics", "education", "design", "care"] = "general"
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=3, max_length=160)
     provider: str = Field(min_length=2, max_length=120)

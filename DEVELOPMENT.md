@@ -1028,3 +1028,11 @@ las dependencias del modelo CPU y las herramientas de desarrollo.
 Se retiran las rutas HTTP y de navegación de análisis de proyectos y salas de entrevista. No se borran datos históricos ni se modifica el esquema. La preparación local deja de crear salas y archivos ZIP de demostración. La privacidad de evidencias e intereses se restringe a candidatos. El autenticador incorpora un QR generado en el navegador y una entrada de seis dígitos con instrucciones.
 
 Validación: 38 pruebas dirigidas de retiro y compatibilidad de adaptadores; pruebas de seguridad de cuenta aprobadas; ESLint y Ruff sin errores. El recorrido de aceptación mantiene el avance a entrevista sin la sala integrada.
+
+### Bloque 33 — Aprendizaje por perfil y retos guiados
+
+Catálogo por profesión, sector y habilidades, con diez áreas y exploración manual. Nueve bancos nuevos de cinco decisiones amplían las seis pruebas técnicas; cada intento conserva límites, evaluación en servidor y vigencia. La interfaz muestra una decisión por paso, progreso, revisión final y borrador por cuenta e intento en la pestaña. SQL queda como práctica especializada opcional, con pasos, columnas esperadas y pistas.
+
+Los planes y resultados se reúnen en Mi desarrollo. Administración puede categorizar nuevos recursos. Se añaden enlaces directos revisados a HubSpot Academy y Microsoft Learn, sin compras, afiliación ni descargas automáticas.
+
+Validación: pruebas parametrizadas de cada banco y acreditación, filtros por perfiles de varias profesiones, catálogo administrable, límites y respuestas estrictas. Frontend: ESLint y compilación aprobados.
