@@ -30,7 +30,7 @@ export function BrandLogo({
       <span
         className={`brand-mark-shell grid shrink-0 place-items-center overflow-hidden border ${scale.mark} ${
           inverse
-            ? "border-white/20 bg-white/10 shadow-sm"
+            ? "border-white/20 bg-white/10 shadow-xs"
             : "border-sky-200 bg-sky-50"
         }`}
       >

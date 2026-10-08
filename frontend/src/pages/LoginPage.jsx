@@ -115,7 +115,7 @@ export function LoginPage() {
                 { icon: BriefcaseBusiness, value: stats?.active_jobs, label: "Vacantes activas" },
                 { icon: Building2, value: stats?.companies, label: "Empresas" },
               ].map(({ icon: Icon, value, label }) => (
-                <div key={label} className="rounded-2xl border border-white/15 bg-white/[0.06] p-3 backdrop-blur-sm">
+                <div key={label} className="rounded-2xl border border-white/15 bg-white/[0.06] p-3 backdrop-blur-xs">
                   <Icon size={17} className="text-sky-300" aria-hidden="true" />
                   <strong className="mt-2 block text-xl text-white">{approximate(value)}</strong>
                   <span className="mt-0.5 block text-[11px] leading-4 text-sky-100">{label}</span>

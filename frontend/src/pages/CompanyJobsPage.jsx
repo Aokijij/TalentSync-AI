@@ -359,7 +359,7 @@ export function CompanyJobsPage() {
       </section>
 
       {showModal ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-xs">
           <section className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl sm:p-7">
             <header className="flex items-start justify-between gap-4 border-b border-[var(--line)] pb-5">
               <div>
@@ -541,7 +541,7 @@ export function CompanyJobsPage() {
       ) : null}
 
       {showPreview ? (
-        <div className="fixed inset-0 z-[65] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[65] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-xs">
           <section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl">
             <header className="mb-4 flex items-center justify-between">
               <div>
@@ -589,7 +589,7 @@ export function CompanyJobsPage() {
         onClose={() => setPendingSave(null)}
         onConfirm={() => pendingSave && persistJob(pendingSave)}
       />
-      {publishedJob && <div className="fixed inset-0 z-[75] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-sm"><section role="dialog" aria-modal="true" aria-labelledby="published-title" className="w-full max-w-md rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl"><h2 id="published-title" className="text-xl font-bold text-[var(--success)]">Vacante publicada correctamente</h2><p className="mt-3 text-sm text-[var(--muted)]">“{publishedJob.title}” ya está activa y disponible para recibir postulaciones.</p><button type="button" className="button-primary mt-5 w-full" onClick={() => setPublishedJob(null)}>Entendido</button></section></div>}
+      {publishedJob && <div className="fixed inset-0 z-[75] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-xs"><section role="dialog" aria-modal="true" aria-labelledby="published-title" className="w-full max-w-md rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl"><h2 id="published-title" className="text-xl font-bold text-[var(--success)]">Vacante publicada correctamente</h2><p className="mt-3 text-sm text-[var(--muted)]">“{publishedJob.title}” ya está activa y disponible para recibir postulaciones.</p><button type="button" className="button-primary mt-5 w-full" onClick={() => setPublishedJob(null)}>Entendido</button></section></div>}
       {reopeningJob && <ReopenJobModal job={reopeningJob} onClose={() => setReopeningJob(null)} onReopened={async (_, mode) => { await load(); setMessage(mode === "continue" ? "Vacante activa. Se conservaron los candidatos y sus seguimientos, sin enviar notificaciones." : "Nueva vacante publicada. El proceso anterior conserva su historial."); }} />}
     </div>
   );

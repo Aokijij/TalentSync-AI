@@ -1,7 +1,7 @@
 # Funcionalidades de la versión local
 
 Proyecto compatible con su stack existente: FastAPI, React y SQLAlchemy.
-Rama `codex/desarrollo-funcionalidades-local`, bloques 1–30.
+Rama `codex/desarrollo-funcionalidades-local`, bloques 1–31.
 No se realizó despliegue ni push. Los datos de demostración son ficticios y la
 base aislada vive en `.local/talentsync.sqlite3`.
 
@@ -95,6 +95,12 @@ La capacidad local utiliza ocho candidatos concurrentes y 50 ofertas sintéticas
 La matriz de regresión comprueba cobertura, identificadores, alias y explicaciones;
 SMTP valida certificados y hostname en conexiones SSL/STARTTLS reales, sin entregar
 correo externo. Los informes no incluyen credenciales ni datos personales.
+
+La auditoría de dependencias llevó a actualizar Tailwind a 4.3.3 con su plugin
+Vite y a retirar la cadena de globbing vulnerable del compilador anterior.
+Se conserva el tema del proyecto y se ajustan las utilidades que cambiaron de
+nombre. La interfaz requiere navegadores modernos (Chrome 111+, Safari 16.4+,
+Firefox 128+), según la [guía oficial de Tailwind](https://tailwindcss.com/docs/upgrade-guide).
 
 La revisión visual usa cuentas QA ficticias independientes: acceso del candidato,
 catálogo ampliado y entrega del nuevo reto de totales/promedios, con tres

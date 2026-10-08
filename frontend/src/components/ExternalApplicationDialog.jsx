@@ -7,7 +7,7 @@ export function ExternalApplicationDialog({ job, onClose }) {
   const source = externalPortal(job);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4 backdrop-blur-xs">
       <section
         role="dialog"
         aria-modal="true"

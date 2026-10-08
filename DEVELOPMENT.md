@@ -995,3 +995,31 @@ administrativo con MFA, paneles y catálogo educativo. Sin cambiar las cuentas
 de demostración previas ni activar permisos audiovisuales. Los informes actuales
 y su huella están en `.local/verification/` y `.local/staging/verification.json`;
 el inventario por rol está en `FEATURES_LOCAL.md`.
+# Bloque 31 — dependencias de construcción sin avisos conocidos
+
+La auditoría adicional detectó avisos de denegación de servicio en braces,
+postcss-selector-parser y source-map-js. Braces no tenía versión corregida;
+se elimina esa cadena actualizando Tailwind a 4.3.3 y usando el plugin oficial
+`@tailwindcss/vite`. Se retiran PostCSS/Autoprefixer como dependencias directas y
+su configuración anterior. El lockfile actualiza source-map-js a su versión
+corregida. No se omiten avisos ni se aplica `audit fix --force`.
+
+Se carga explícitamente el tema existente con `@config`, se mantienen los
+defaults anteriores de bordes/foco y se adaptan sombras y desenfoques renombrados.
+La interfaz se revisa en navegador después de reiniciar Vite; Tailwind 4 requiere
+navegadores modernos. Referencias primarias:
+[migración oficial](https://tailwindcss.com/docs/upgrade-guide),
+[braces](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) y
+[source-map-js](https://github.com/advisories/GHSA-68fv-2mgg-jv7q).
+
+Las auditorías npm y pip-audit se ejecutan además del ensayo local completo. Sus
+resultados quedan en `.local/verification/`, fuera de Git. Consultan metadatos
+públicos de dependencias; no envían perfiles ni activan servicios de empleo.
+
+La auditoría ampliada al entorno Python instalado detectó también herramientas
+antiguas y paquetes de una instalación previa. Se actualizan pytest a 9.0.3,
+urllib3 a 2.8.0 y pip local a 26.2. Se retiran python-jose y ecdsa de la `.venv`
+tras comprobar que no los importa el proyecto y que ningún otro paquete los
+necesita; la autenticación ya utiliza PyJWT. Se comprueba `pip check` y se repite
+la suite sobre el entorno corregido. La auditoría del entorno instalado incluye
+las dependencias del modelo CPU y las herramientas de desarrollo.

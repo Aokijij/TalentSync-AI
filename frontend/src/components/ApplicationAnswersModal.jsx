@@ -25,7 +25,7 @@ export function ApplicationAnswersModal({ application, candidateName, onClose, o
     } catch (requestError) { setError(getApiErrorMessage(requestError, "No fue posible guardar la valoración")); }
     finally { setSaving(false); }
   }
-  return <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/70 p-4 backdrop-blur-sm">
+  return <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/70 p-4 backdrop-blur-xs">
     <section role="dialog" aria-modal="true" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">
       <header className="flex items-start justify-between gap-4"><div><p className="section-kicker">Respuestas de postulación</p><h2 className="mt-1 text-2xl font-bold">{candidateName || application.candidate_name || "Candidato"}</h2><p className="mt-2 text-sm text-[var(--muted)]">Las opciones usan el efecto definido al crear la vacante. Tu equipo solo valora manualmente las respuestas abiertas.</p></div><button type="button" className="button-ghost !px-2" onClick={onClose} aria-label="Cerrar"><X size={20}/></button></header>
       <div className="mt-5 grid grid-cols-3 gap-3 text-center"><Metric label="Base del perfil" value={`${Math.round(base)}%`}/><Metric label="Ajuste total" value={`${adjustment > 0 ? "+" : ""}${adjustment}`}/><Metric label="Compatibilidad final" value={`${Math.round(final)}%`} accent/></div>

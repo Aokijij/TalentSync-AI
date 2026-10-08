@@ -513,7 +513,7 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
         event.dataTransfer.effectAllowed = "move";
         onDragStart();
       }}
-      className="cursor-grab rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm active:cursor-grabbing"
+      className="cursor-grab rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-xs active:cursor-grabbing"
     >
       <div className="flex items-start gap-2">
         <GripVertical
@@ -592,7 +592,7 @@ function JobPickerModal({ jobs, selectedId, onSelect, onClose }) {
       .includes(query.toLowerCase()),
   );
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-xs">
       <section className="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-2xl">
         <header className="flex items-start justify-between gap-4 border-b border-[var(--line)] p-5">
           <div>
@@ -740,7 +740,7 @@ function StageEditorModal({ stages: initialStages, counts, onSave, onClose }) {
     );
   return (
     <>
-      <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-xs">
         <section className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">
           <div className="flex items-start justify-between">
             <div>

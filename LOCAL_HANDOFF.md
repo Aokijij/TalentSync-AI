@@ -72,6 +72,15 @@ aisladas) y `matching-regressions.json` (matriz sintética con 16 variantes de
 identidad). La capacidad mide ASGI en proceso y matching léxico con limitador
 desactivado; no certifica rendimiento en producción ni equidad demográfica.
 
+Las auditorías adicionales se repiten con `npm audit --audit-level=high` desde
+`frontend/` y `python -m pip_audit -r requirements-lite.txt --progress-spinner off`
+desde `backend/` (requiere pip-audit instalado). Consultan avisos públicos en
+Internet; no activan proveedores de la plataforma ni generan cargos. El bloque
+31 migra Tailwind a 4.3.3 para eliminar dependencias vulnerables de construcción.
+La auditoría ampliada `python -m pip_audit --local --progress-spinner off` examina
+también el modelo CPU y herramientas instaladas. Se recomienda pip 26.2 o
+posterior; pytest y urllib3 corregidos están fijados en los requisitos.
+
 Para arrancar: `scripts/local.py backend` y, desde `frontend/`,
 `npm run dev -- --host 127.0.0.1`. La aplicación está en
 `http://127.0.0.1:5173`. `scripts/local.py accounts` muestra los accesos ficticios

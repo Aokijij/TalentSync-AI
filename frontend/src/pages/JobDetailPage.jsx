@@ -353,7 +353,7 @@ export function JobDetailPage() {
         </section>
       ) : null}
       {showQuestions ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/65 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/65 p-4 backdrop-blur-xs">
           <section role="dialog" aria-modal="true" aria-labelledby="questions-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">
             <header className="flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4"><div><p className="section-kicker">Último paso</p><h2 id="questions-title" className="mt-1 text-2xl font-bold">Responde antes de postularte</h2><p className="mt-2 text-sm text-[var(--muted)]">Tus respuestas serán revisadas por {job.company_name}. Los campos con * son obligatorios.</p></div><button type="button" className="button-secondary !h-10 !w-10 !p-0" onClick={() => setShowQuestions(false)} aria-label="Cerrar"><X size={18} /></button></header>
             <div className="mt-5 space-y-5">

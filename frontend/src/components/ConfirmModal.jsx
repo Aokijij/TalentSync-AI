@@ -14,7 +14,7 @@ export function ConfirmModal({
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-xs"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !loading) onClose();
