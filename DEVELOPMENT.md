@@ -59,6 +59,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 20 | Modelo semántico multilingüe en CPU | Pesos fijados y verificados, inferencia offline activa y caché acotada |
 | 21 | Cierre de revisión e inventario | 249 pruebas backend, 20 frontend, lint completo, build y recorrido SQL en navegador |
 | 22 | SSO administrativo de Microsoft Entra ID | Tenant fijo, identidad aprovisionada, MFA y sesiones vinculadas a la aplicación; 290 pruebas backend y 20 frontend |
+| 23 | Aceptación completa entre roles y aprendizaje | Flujo integrado con sesiones, MFA, verificación, selección ciega, práctica SQL, entrevista, plazos, privacidad y auditoría |
 
 ## Comprobaciones
 
@@ -827,3 +828,25 @@ Se comprobó por HTTP local salud, opciones de SSO desactivadas, login de candid
 perfil, catálogo y logout. La migración local aplicada es 0035. Las pruebas usan
 firmas RSA y transporte en memoria; el login contra una organización real requiere
 registrar y configurar su aplicación y aún no se ha verificado externamente.
+
+## Bloque 23: aceptación local entre roles
+
+La prueba `tests/test_local_acceptance.py` recorre el proceso con tres navegadores
+HTTP independientes y una base temporal: registro, correo local, sesiones opacas,
+CSRF y MFA real, revisión empresarial, publicación y reclutamiento ciego. Después
+comprueba aprendizaje y una consulta SQL contra los tres conjuntos sintéticos,
+pasaporte y aviso consentido a la empresa; continúa con revelación controlada,
+feedback, editor/pizarra compartidos y conflicto de versión. Finalmente verifica
+cierre por plazo, reputación, privacidad de incidencias, revisión administrativa,
+auditoría, retirada de personalización, logout y recuperación MFA de un uso.
+
+Las cuentas, documentos y procesos son ficticios. Solo el fixture de esa base
+aprovisiona al administrador; el registro público sigue sin permitir ese rol.
+La prueba no utiliza cuentas de `.local`, tokens JWT anteriores ni proveedores
+externos. Comprueba que consultas SQL, código, claves y detalles privados no
+aparezcan en metadatos de eventos.
+
+Se corrigió la proyección de aprendizaje para excluir la vacante seleccionada
+del número de **otras vacantes** examinadas y beneficiadas. La interfaz aclara
+ese alcance; las ofertas pausadas no se cuentan. Cuatro pruebas focalizadas
+de aprendizaje y aceptación pasaron después del cambio.

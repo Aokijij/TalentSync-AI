@@ -48,3 +48,19 @@ def test_expired_assessments_and_unsupported_skills_cannot_grant_credit(client):
     answers = {row["id"]: row["answer"] for row in ASSESSMENTS["sql-foundations-v1"]["questions"]}
     assert client.post(f"/api/v1/learning/attempts/{attempt['id']}/submit", headers=candidate, json={"answers": answers}).status_code == 409
     assert client.get("/api/v1/learning/passport", headers=candidate).json()["assessments"] == []
+
+
+def test_learning_impact_counts_other_active_jobs_once(client):
+    _, company = company_account(client)
+    target = create_job(client, company)
+    _, candidate = register(client, "impact-learner", skills=["Java"])
+    endpoint = f"/api/v1/learning/jobs/{target['id']}"
+    only_target = client.get(endpoint, headers=candidate).json()
+    assert only_target["sampled_jobs"] == 0
+    assert all(row["other_jobs_impacted"] == 0 for row in only_target["resources"])
+    other = create_job(client, company)
+    additional = client.get(endpoint, headers=candidate).json()
+    assert additional["sampled_jobs"] == 1
+    assert all(row["other_jobs_impacted"] == 1 for row in additional["resources"])
+    assert client.patch(f"/api/v1/jobs/{other['id']}", headers=company, json={"status": "paused"}).status_code == 200
+    assert client.get(endpoint, headers=candidate).json()["sampled_jobs"] == 0

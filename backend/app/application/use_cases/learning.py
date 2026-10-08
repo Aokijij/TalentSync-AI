@@ -32,7 +32,7 @@ def opportunities(db, user, job_id, nlp):
     gaps = [row for row in skill_gap(user.profile.skills, requirements_for(job)) if not row["covered"]]
     missing = {row["key"] for row in gaps}
     baseline = candidate_match(user.profile, job, nlp=nlp)[0]
-    active = db.jobs.active()[:200]
+    active = [other for other in db.jobs.active() if other.id != job.id][:200]
     resources = []
     eligible = [resource for resource in catalog_resources(db) if missing & skill_set(resource["skills"])]
     eligible.sort(key=lambda row: (-len(missing & skill_set(row["skills"])), row["hours"], row["id"]))

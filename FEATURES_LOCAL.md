@@ -1,7 +1,7 @@
 # Funcionalidades de la versión local
 
 Proyecto compatible con su stack existente: FastAPI, React y SQLAlchemy.
-Rama `codex/desarrollo-funcionalidades-local`, bloques 1–22.
+Rama `codex/desarrollo-funcionalidades-local`, bloques 1–23.
 No se realizó despliegue ni push. Los datos de demostración son ficticios y la
 base aislada vive en `.local/talentsync.sqlite3`.
 
@@ -16,7 +16,7 @@ base aislada vive en `.local/talentsync.sqlite3`.
 | Explicaciones de compatibilidad | Componentes ponderados, requisitos esenciales, datos ausentes, brechas y bases relacionadas. La relación entre habilidades no acredita dominio. |
 | Semántica multilingüe | Modelo MiniLM activo en CPU, con pesos locales verificados y sin inferencia remota. El porcentaje es un índice de afinidad. |
 | Seguimiento de procesos | Etapas, historial, plazos, notificaciones y cierre automático por falta de respuesta; feedback basado en datos registrados, separado de la razón real del reclutador. `/procesos/{id}`. |
-| Aprendizaje dirigido | Brecha por vacante, recursos asociados, estimación hipotética de mejora por hora y vacantes examinadas. `/aprendizaje`. |
+| Aprendizaje dirigido | Brecha por vacante, recursos asociados, estimación hipotética de mejora por hora y otras vacantes examinadas, excluyendo la seleccionada. `/aprendizaje`. |
 | Plan de práctica | Guardar recursos, marcar progreso y conservar planes aunque se archive un recurso. Completar el plan no acredita la habilidad. |
 | Brechas recurrentes | Patrones de habilidades pendientes en procesos finalizados, sin atribuir automáticamente el rechazo a esa brecha. |
 | Micropruebas | Evaluaciones locales de fundamentos SQL, Python y microservicios; tiempo limitado, entrega única, repetición limitada y feedback. |
