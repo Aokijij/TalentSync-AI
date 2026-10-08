@@ -899,3 +899,23 @@ y se omite en el runner SQLite habitual. El ensayo PostgreSQL 18.4 pasó con
 subida/bajada y restauración exacta de las 27 tablas. Todavía no se ha construido
 ni ejecutado la imagen Docker en este equipo; no hay Docker/Podman disponible.
 
+## Bloque 26: plantilla y vista previa de infraestructura
+
+`infra/staging` contiene Bicep separado de producción para PostgreSQL 18 privado,
+VNet/DNS, entorno Container Apps Consumption, ACR Basic sin usuario administrador,
+Blob privado con identidad administrada y Log Analytics. El rol de datos se
+limita al contenedor de documentos; la contraseña PostgreSQL es parámetro seguro
+y no aparece en outputs. `scripts/staging-plan.ps1` compila o ejecuta `what-if`
+con parámetro ficticio; no contiene despliegue, publicación o creación de recursos.
+
+Bicep 0.48.1 compiló la plantilla. La vista previa Azure en eastus2 devolvió
+Succeeded, 15 creaciones y ningún cambio fuera de `rg-talentsync-staging`.
+El catálogo de capacidades de la región incluye PostgreSQL 18. Estos resultados
+no garantizan capacidad, cuota o coste de despliegue. No se creó el grupo ni se
+publicó la aplicación. Los informes quedan en `.local/staging`.
+
+El README de staging describe los recursos facturables y la siguiente fase:
+correo externo con reintentos, rol PostgreSQL de aplicación y secretos, imagen y
+revisión HTTPS, pruebas reales de proveedores y restauración Azure. El buzón
+local no entrega correo; la plantilla de infraestructura no es un despliegue
+completo de la aplicación y no reutiliza los scripts antiguos de producción.
