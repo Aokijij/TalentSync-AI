@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 
 from app.application.errors import UseCaseError
-
 from app.infrastructure.database.models import (
     Application,
     Company,
@@ -20,13 +19,13 @@ from app.infrastructure.repositories.applications import ApplicationRepository
 from app.infrastructure.repositories.companies import CompanyRepository
 from app.infrastructure.repositories.ecosystem import EcosystemRepository
 from app.infrastructure.repositories.events import EventRepository
-from app.infrastructure.repositories.jobs import JobRepository
 from app.infrastructure.repositories.interviews import InterviewRepository
+from app.infrastructure.repositories.jobs import JobRepository
 from app.infrastructure.repositories.learning import LearningRepository
 from app.infrastructure.repositories.notifications import NotificationRepository
 from app.infrastructure.repositories.organizations import OrganizationRepository
-from app.infrastructure.repositories.profiles import ProfileRepository
 from app.infrastructure.repositories.personalization import PersonalizationRepository
+from app.infrastructure.repositories.profiles import ProfileRepository
 from app.infrastructure.repositories.recommendations import RecommendationRepository
 from app.infrastructure.repositories.users import UserRepository
 

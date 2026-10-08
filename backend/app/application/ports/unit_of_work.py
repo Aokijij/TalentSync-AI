@@ -3,15 +3,15 @@ from typing import Protocol
 from app.domain.repositories.accounts import AccountRepository
 from app.domain.repositories.applications import ApplicationRepository
 from app.domain.repositories.companies import CompanyRepository
-from app.domain.repositories.events import EventRepository
-from app.domain.repositories.jobs import JobRepository
-from app.domain.repositories.interviews import InterviewRepository
-from app.domain.repositories.learning import LearningRepository
 from app.domain.repositories.ecosystem import EcosystemRepository
+from app.domain.repositories.events import EventRepository
+from app.domain.repositories.interviews import InterviewRepository
+from app.domain.repositories.jobs import JobRepository
+from app.domain.repositories.learning import LearningRepository
 from app.domain.repositories.notifications import NotificationRepository
 from app.domain.repositories.organizations import OrganizationRepository
-from app.domain.repositories.profiles import ProfileRepository
 from app.domain.repositories.personalization import PersonalizationRepository
+from app.domain.repositories.profiles import ProfileRepository
 from app.domain.repositories.recommendations import RecommendationRepository
 from app.domain.repositories.users import UserRepository
 

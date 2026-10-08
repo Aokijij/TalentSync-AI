@@ -15,8 +15,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
-from app.domain.services.reputation import company_health
 from app.domain.services.external_sources import external_portal
+from app.domain.services.reputation import company_health
 from app.infrastructure.database.session import Base
 
 
@@ -81,6 +81,29 @@ class User(Base):
     reported_incidents: Mapped[list["TrustIncident"]] = relationship(cascade="all, delete-orphan")
     recommendation_feedback: Mapped[list["RecommendationFeedback"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     interview_participants: Mapped[list["InterviewParticipant"]] = relationship(cascade="all, delete-orphan")
+    social_identities: Mapped[list["SocialIdentity"]] = relationship(cascade="all, delete-orphan")
+
+
+class SocialIdentity(Base):
+    __tablename__ = "social_identities"
+    __table_args__ = (UniqueConstraint("provider", "subject", name="uq_social_identity_subject"),
+                      UniqueConstraint("user_id", "provider", name="uq_social_identity_user_provider"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class OAuthAttempt(Base):
+    __tablename__ = "oauth_attempts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    state_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    browser_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    verifier_cipher: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class UserSession(Base):

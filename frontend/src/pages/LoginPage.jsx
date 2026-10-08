@@ -241,7 +241,7 @@ export function LoginPage() {
                 )}
               </button>
             </form>
-            <AccessProviders />
+            <AccessProviders candidate={!isBusiness} />
             <p className="mt-7 text-center text-sm text-[var(--muted)]">
               ¿Aún no tienes cuenta?{" "}
               <Link

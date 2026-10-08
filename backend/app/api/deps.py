@@ -93,6 +93,11 @@ def get_account_security() -> AccountSecurityPort:
     return AccountSecurity()
 
 
+def get_social_identity_provider():
+    from app.infrastructure.security.social import SocialIdentityProvider
+    return SocialIdentityProvider(settings)
+
+
 def get_resume_reader() -> ResumeReaderPort:
     return ResumeReader()
 

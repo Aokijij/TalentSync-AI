@@ -17,11 +17,13 @@ from app.api.v1.routes import (
     personalization,
     profiles,
     recommendations,
+    social_access,
     workflow,
 )
 
 api_router = APIRouter()
 api_router.include_router(account.router, tags=["account"])
+api_router.include_router(social_access.router, tags=["account"])
 api_router.include_router(organizations.router, tags=["organizations"])
 api_router.include_router(match_settings.router, tags=["matching"])
 api_router.include_router(workflow.router, tags=["workflow"])

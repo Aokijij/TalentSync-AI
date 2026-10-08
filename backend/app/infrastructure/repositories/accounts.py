@@ -5,6 +5,8 @@ from sqlalchemy import update
 from app.infrastructure.database.models import (
     AccountToken,
     MailMessage,
+    OAuthAttempt,
+    SocialIdentity,
     User,
     UserSession,
 )
@@ -16,6 +18,28 @@ class AccountRepository:
 
     def new_session(self, **values):
         return UserSession(**values)
+
+    def new_identity(self, **values):
+        return SocialIdentity(**values)
+
+    def identity(self, provider, subject):
+        return self.session.query(SocialIdentity).filter_by(provider=provider, subject=subject).first()
+
+    def new_oauth_attempt(self, **values):
+        return OAuthAttempt(**values)
+
+    def oauth_attempt(self, state_hash):
+        return self.session.query(OAuthAttempt).filter_by(state_hash=state_hash).first()
+
+    def claim_oauth_attempt(self, attempt_id):
+        result = self.session.execute(update(OAuthAttempt).where(
+            OAuthAttempt.id == attempt_id, OAuthAttempt.used_at.is_(None),
+            OAuthAttempt.expires_at > datetime.utcnow(),
+        ).values(used_at=datetime.utcnow(), verifier_cipher="").execution_options(synchronize_session=False))
+        return result.rowcount == 1
+
+    def purge_oauth_attempts(self):
+        self.session.query(OAuthAttempt).filter(OAuthAttempt.expires_at <= datetime.utcnow()).delete(synchronize_session=False)
 
     def new_token(self, **values):
         return AccountToken(**values)

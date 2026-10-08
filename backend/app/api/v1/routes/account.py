@@ -1,6 +1,11 @@
 from fastapi import APIRouter, Depends, Request, Response
 
-from app.api.deps import get_account_security, get_current_user, get_unit_of_work
+from app.api.deps import (
+    get_account_security,
+    get_current_user,
+    get_social_identity_provider,
+    get_unit_of_work,
+)
 from app.api.schemas.account import (
     ActionRequest,
     ChangeEmail,
@@ -31,21 +36,26 @@ def _cookie_response(request, response, payload, db, security, admin):
                                   user_agent=request.headers.get("user-agent", ""))
     if result.get("mfa_required"):
         return result
+    set_session_cookies(response, result)
+    return {"user": UserResponse.model_validate(result["user"]).model_dump(),
+            "mfa_setup_required": result["mfa_setup_required"]}
+
+
+def set_session_cookies(response, result):
     options = {"secure": settings.session_cookie_secure or settings.environment == "production",
                "samesite": "lax", "path": "/"}
     if result["remember"]:
         options["max_age"] = 30 * 86400
     response.set_cookie("talentsync_session", result["token"], httponly=True, **options)
     response.set_cookie("talentsync_csrf", result["csrf"], httponly=False, **options)
-    return {"user": UserResponse.model_validate(result["user"]).model_dump(),
-            "mfa_setup_required": result["mfa_setup_required"]}
 
 
 @router.get("/auth/options")
-def options():
+def options(gateway=Depends(get_social_identity_provider)):
     return {"mode": "session" if settings.session_auth_enabled else "legacy",
             "local_mail": settings.local_mail_enabled and settings.environment == "development",
-            "providers": [{"id": name, "enabled": False, "reason": "Integración pendiente de configuración"}
+            "providers": [{"id": name, "enabled": gateway.configured(name),
+                           "reason": "Solo para candidatos" if gateway.configured(name) else "Requiere configurar credenciales" if name != "linkedin" else "Integración pendiente"}
                           for name in ("google", "github", "linkedin")]}
 
 

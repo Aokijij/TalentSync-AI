@@ -2,8 +2,8 @@ import re
 import unicodedata
 
 from app.domain.entities.records import Job, Profile, Recommendation
-from app.domain.services.skills import skill_set
 from app.domain.services.professions import education_match
+from app.domain.services.skills import skill_set
 
 SKILL_WEIGHT = 0.6
 SEMANTIC_WEIGHT = 0.4

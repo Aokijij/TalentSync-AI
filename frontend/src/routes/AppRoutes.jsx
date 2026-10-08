@@ -23,6 +23,7 @@ const CompanyTalentPage = lazyNamed(() => import("../pages/CompanyTalentPage.jsx
 const JobDetailPage = lazyNamed(() => import("../pages/JobDetailPage.jsx"), "JobDetailPage");
 const JobsPage = lazyNamed(() => import("../pages/JobsPage.jsx"), "JobsPage");
 const LoginPage = lazyNamed(() => import("../pages/LoginPage.jsx"), "LoginPage");
+const SocialAccessPage = lazyNamed(() => import("../pages/SocialAccessPage.jsx"), "SocialAccessPage");
 const NotificationsPage = lazyNamed(() => import("../pages/NotificationsPage.jsx"), "NotificationsPage");
 const ProfilePage = lazyNamed(() => import("../pages/ProfilePage.jsx"), "ProfilePage");
 const RecommendationsPage = lazyNamed(() => import("../pages/RecommendationsPage.jsx"), "RecommendationsPage");
@@ -99,6 +100,7 @@ export function AppRoutes() {
     <Suspense fallback={<div className="grid min-h-screen place-items-center text-[var(--muted)]">Cargando sección...</div>}>
       <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/acceso-social" element={<SocialAccessPage />} />
       <Route path="/acceso-administracion" element={<AdminLoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/empresa/login" element={<LoginPage />} />

@@ -261,7 +261,7 @@ La dependencia opcional está fijada a [6.1.0 en PyPI](https://pypi.org/project/
 
 ### Alcance que sigue pendiente
 
-El panel muestra explícitamente integraciones sin implementar: OAuth social y SSO
+El panel muestra explícitamente integraciones pendientes: LinkedIn y SSO
 corporativo, extracción automática de GitHub, catálogos educativos, afiliación,
 validación contra registros oficiales, servidor TURN y ejecutor de código aislado.
 Requieren adaptadores/configuración o acuerdos reales; no basta con pegar claves.
@@ -269,7 +269,89 @@ VPN, dominios separados y restricciones de red corresponden a infraestructura fu
 No se crean microservicios para esta versión: se extienden los módulos y puertos del
 FastAPI/React existente para preservar compatibilidad. No hay despliegue ni push.
 
-Validación acumulada: 101 pruebas backend y 20 frontend; lint y build aprobados.
+Validación acumulada tras el bloque 11: 128 pruebas backend y 20 frontend; lint y build aprobados.
 Las pruebas de migraciones cubren una base SQLite nueva, actualización desde una
 versión anterior y generación SQL PostgreSQL sin conexión. Esto no sustituye probar
 las migraciones contra un servidor PostgreSQL real antes de un despliegue futuro.
+
+## Bloque 11: acceso social de candidatos
+
+Se implementaron adaptadores OAuth de GitHub y Google sobre las sesiones revocables
+existentes. Solo crean cuentas de candidato. Las empresas conservan su registro,
+verificación y MFA; el acceso administrativo permanece independiente. Los proveedores
+se desactivan por defecto y los botones muestran su disponibilidad real.
+
+Para habilitar uno, registra una aplicación en ese proveedor y configura únicamente
+sus variables en `.local/backend.env`, que está excluido de Git:
+
+```dotenv
+OAUTH_GITHUB_CLIENT_ID=
+OAUTH_GITHUB_CLIENT_SECRET=
+OAUTH_GOOGLE_CLIENT_ID=
+OAUTH_GOOGLE_CLIENT_SECRET=
+```
+
+Reinicia el backend después de cambiar configuración. El lanzador no hereda claves
+OAuth del sistema: solo acepta las de este archivo aislado. Registra exactamente
+estas URL de retorno; navega desde `127.0.0.1:5173`, sin alternar con `localhost`:
+
+- GitHub: `http://127.0.0.1:5173/api/v1/auth/social/github/callback`
+- Google: `http://127.0.0.1:5173/api/v1/auth/social/google/callback`
+
+El retorno pasa por el proxy de Vite para conservar el origen de las cookies. En
+otra instalación, `PUBLIC_APP_URL` debe ser el origen público de la aplicación,
+con proxy para `/api`; se exige HTTPS excepto en loopback de desarrollo. No hay
+redirecciones configurables por el visitante. Activar el proveedor permite al
+candidato autorizar explícitamente el acceso en su página externa.
+
+Cada autorización utiliza PKCE S256 y estado aleatorio ligado a una cookie HttpOnly
+de ese navegador. El estado vence en diez minutos, se consume atómicamente antes
+del intercambio y el verificador cifrado se borra al consumirlo. Los intentos
+vencidos se limpian al iniciar el siguiente acceso. Google valida firma RS256,
+emisor, audiencia, caducidad, nonce y correo verificado. GitHub exige el correo
+principal verificado y consulta la identidad en cada acceso. Solo solicita perfil
+y correo; no obtiene repositorios. Los tokens del proveedor no se guardan en la
+base ni se entregan al frontend. El callback vuelve a rutas fijas y usa no-store
+y no-referrer. Los registros HTTP del servidor/proxy deben excluir parámetros del
+callback antes de una futura exposición pública, pues contienen códigos temporales.
+
+La identidad estable del proveedor permite volver a entrar sin sobrescribir el
+correo o nombre local. Si ese correo ya pertenece a otra cuenta, el acceso se
+detiene y solicita el método original: no vincula cuentas automáticamente. Vincular
+proveedores a una cuenta existente sigue pendiente de un flujo de reautenticación.
+Las cuentas nuevas reciben una contraseña aleatoria no entregada; pueden definir
+una mediante Recuperar acceso y la bandeja local si necesitan funciones que exigen
+confirmación con contraseña, como activar MFA o cambiar el correo.
+
+El primer acceso termina en Bienvenida. Si el usuario ya activó MFA en TalentSync,
+se exige el código o recuperación en `/acceso-social`, mediante un desafío HttpOnly
+de cinco minutos y un uso, antes de emitir la nueva sesión de ocho horas. El acceso
+social no activa por defecto una sesión persistente de treinta días.
+
+Las pruebas usan proveedores simulados y transporte HTTP en memoria: cubren creación,
+retorno, cookies y CSRF, rechazo de correo existente, identidad estable, MFA, borrado
+en cascada, estados vencidos o repetidos, cancelación, fallos externos y validación
+criptográfica de Google. No se registraron aplicaciones externas ni se probaron
+cuentas reales: ambas integraciones permanecen desactivadas localmente.
+
+Referencias del flujo: [GitHub OAuth](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+y [Google OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect).
+
+### Revisión de compatibilidad de los bloques anteriores
+
+La regresión completa cubre acceso y sesiones, permisos y verificación empresarial,
+compatibilidad explicada y preferencias, plazos y cierre de procesos, aprendizaje y
+micropruebas, selección ciega, reputación y auditorías, salas y señalización, y
+personalización consentida. Se ejecutó con los avisos de SQLAlchemy sobre relaciones
+tratados como errores. Las migraciones verifican instalación nueva, actualización
+y generación SQL PostgreSQL. También pasaron las pruebas frontend, ESLint y build.
+
+Se corrigió un fallo transversal: ahora `flush`, al igual que `commit`, revierte
+conflictos de unicidad o edición concurrente y devuelve 409, en vez de dejar la
+sesión inutilizable o devolver 500. Dos pruebas comprueban que se puede continuar
+usando la sesión tras el conflicto. Se versionó esta corrección por separado.
+
+Quedan las comprobaciones externas y manuales ya indicadas: videollamada real entre
+dos navegadores, inferencia con pesos neuronales reales, proveedores OAuth reales y
+migraciones en PostgreSQL. Las pruebas locales no acreditan precisión predictiva,
+ausencia de sesgos demográficos ni validación oficial de empresas o cursos.

@@ -52,9 +52,14 @@ def create_session(db, payload, security, *, admin=False, user_agent=""):
     if user.mfa_enabled and not payload.get("code"):
         return {"mfa_required": True}
     _mfa(db, user, payload.get("code"), security)
+    return issue_session(db, user, remember=payload.get("remember"), user_agent=user_agent)
+
+
+def issue_session(db, user, *, remember=False, user_agent=""):
+    # Callers must authenticate the user and complete any configured MFA first.
     token, csrf = secrets.token_urlsafe(48), secrets.token_urlsafe(32)
     now = datetime.utcnow()
-    remember = bool(payload.get("remember")) and user.role == UserRole.CANDIDATE
+    remember = bool(remember) and user.role == UserRole.CANDIDATE
     lifetime = timedelta(days=30) if remember else timedelta(hours=8)
     session = db.accounts.new_session(user_id=user.id, token_hash=token_digest(token),
         csrf_hash=token_digest(csrf), user_agent=user_agent[:255], created_at=now,

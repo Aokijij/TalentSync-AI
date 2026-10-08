@@ -88,7 +88,7 @@ def model_status(db, nlp):
         "training_data": training_gate(rows), "features": FEATURES, "minimum_data": {"rows": 100, "users": 20, "jobs": 10, "each_label": 20},
         "integrations": [
             {"name": "Modelo neuronal local", "status": "Activo" if getattr(nlp, "match_method", "").startswith("local-sentence-transformer:") else "Adaptador disponible; faltan dependencia y pesos locales"},
-            {"name": "Google, GitHub y LinkedIn SSO", "status": "Desactivado; faltan adaptadores OAuth y credenciales"},
+            {"name": "Acceso social de candidatos", "status": "Adaptadores Google y GitHub disponibles; requieren credenciales OAuth. LinkedIn pendiente. Consulta el login para ver cuáles están activos."},
             {"name": "Catálogos de cursos y afiliación", "status": "Desactivado; faltan adaptadores, acuerdos y reglas de publicidad"},
             {"name": "Análisis automático de repositorios", "status": "Desactivado; falta adaptador con permisos de lectura"},
             {"name": "SSO corporativo del administrador", "status": "Desactivado; falta integración con el proveedor de identidad"},

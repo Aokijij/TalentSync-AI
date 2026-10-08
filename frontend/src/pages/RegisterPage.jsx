@@ -326,7 +326,7 @@ export function RegisterPage() {
                 )}
               </button>
             </form>
-            <AccessProviders />
+            <AccessProviders candidate={!isCompany && !invitation} />
           </div>
         </div>
       </section>

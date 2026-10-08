@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     local_mail_enabled: bool = False
     session_cookie_secure: bool = True
     public_app_url: str = "http://127.0.0.1:5173"
+    oauth_github_client_id: str = ""
+    oauth_github_client_secret: str = ""
+    oauth_google_client_id: str = ""
+    oauth_google_client_secret: str = ""
     upload_dir: str = "uploads"
     cv_parser: str = "docling"
     cv_ocr_enabled: bool = True
