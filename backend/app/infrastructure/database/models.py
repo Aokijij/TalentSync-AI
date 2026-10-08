@@ -116,6 +116,8 @@ class Profile(Base):
     )
     profession: Mapped[str | None] = mapped_column(String(160))
     skills: Mapped[list[str]] = mapped_column(JSON, default=list)
+    preferences: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    evidence: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     experience: Mapped[str | None] = mapped_column(Text)
     education: Mapped[str | None] = mapped_column(Text)
     location: Mapped[str | None] = mapped_column(String(120))
@@ -269,6 +271,7 @@ class Job(Base):
         JSON, default=list, server_default="[]", nullable=False
     )
     skills: Mapped[list[str]] = mapped_column(JSON, default=list)
+    skill_requirements: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
@@ -425,6 +428,7 @@ class Recommendation(Base):
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), nullable=False)
     match_percentage: Mapped[float] = mapped_column(Float, nullable=False)
     reasons: Mapped[list[str]] = mapped_column(JSON, default=list)
+    match_details: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )

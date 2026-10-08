@@ -1,0 +1,46 @@
+from test_api_flows import client, company_account, create_job, register  # noqa: F401
+
+from app.domain.services.skills import skill_gap, skill_key
+
+
+def test_related_skills_are_not_equivalent():
+    assert skill_key("SpringBoot") == "spring boot"
+    rows = skill_gap(["Java", "Docker"], [{"skill": "spring boot", "essential": True, "weight": 3}])
+    assert rows[0]["status"] == "related"
+    assert rows[0]["foundations"] == ["java"]
+    assert not rows[0]["covered"]
+
+
+def test_weighted_match_explanations_preferences_evidence_and_cache(client):  # noqa: F811
+    _, company = company_account(client)
+    job = create_job(client, company)
+    candidate, headers = register(client, "match-user", skills=["Python"])
+    requirements = [{"skill": "python", "essential": False, "weight": 1}, {"skill": "java", "essential": True, "weight": 3}]
+    assert client.patch(f"/api/v1/jobs/{job['id']}", headers=company, json={"skill_requirements": requirements}).status_code == 200
+    endpoint = f"/api/v1/matching/jobs/{job['id']}"
+    details = client.get(endpoint, headers=headers).json()
+    assert details["components"][0]["score"] == 25
+    assert details["unmet_essential_skills"] == ["java"]
+    assert abs(sum(row["points"] for row in details["components"]) - details["overall_score"]) < .02
+    assert details["score_type"] == "compatibility_index"
+    assert client.put("/api/v1/matching/preferences", headers=headers, json={"minimum_salary": 8_000_000, "salary_required": True, "modalities": ["onsite"], "modality_required": True}).status_code == 200
+    evidence = {"title": "API personal", "kind": "repository", "url": "https://example.com/project", "description": "API implementada con Python y pruebas", "skills": ["Python"]}
+    response = client.post("/api/v1/matching/evidence", headers=headers, json=evidence)
+    assert response.status_code == 200
+    row = response.json()[0]
+    assert not row["verified"]
+    details = client.get(endpoint, headers=headers).json()
+    assert details["preferences"]["unmet_conditions"] == ["Modalidad"]
+    assert details["preferences"]["unknown_conditions"] == ["Salario mínimo"]
+    assert details["requirements"][0]["evidence"][0]["verified"] is False
+    _, other = register(client, "other-evidence")
+    assert client.delete(f"/api/v1/matching/evidence/{row['id']}", headers=other).status_code == 404
+    assert client.delete(f"/api/v1/matching/evidence/{row['id']}", headers=headers).status_code == 204
+    records = client.get("/api/v1/recommendations/me/jobs", headers=headers, params={"include_all": True})
+    assert records.status_code == 200
+    # A changed requirement invalidates cached recommendations even within ten minutes.
+    assert client.patch(f"/api/v1/jobs/{job['id']}", headers=company, json={"skill_requirements": [{"skill": "python", "essential": True, "weight": 1}]}).status_code == 200
+    fresh = client.get("/api/v1/recommendations/me/jobs", headers=headers, params={"include_all": True}).json()[0]["match_details"]
+    assert fresh["components"][0]["score"] == 100
+    assert fresh["input_version"] != details["input_version"]
+    assert client.patch(f"/api/v1/jobs/{job['id']}", headers=company, json={"skill_requirements": [requirements[0], requirements[0]]}).status_code == 422

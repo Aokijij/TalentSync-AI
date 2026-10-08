@@ -311,6 +311,7 @@ export function RecommendationsPage() {
                   {isExpanded ? (
                     <div className="grid gap-6 border-t border-[var(--line)] pt-5 lg:col-span-3 lg:grid-cols-2">
                       <MatchBreakdown
+                        details={item.match_details}
                         skillMatch={item.skill_match_percentage}
                         semanticMatch={item.professional_context_percentage ?? item.semantic_match_percentage}
                         languageMatch={item.language_match_percentage}

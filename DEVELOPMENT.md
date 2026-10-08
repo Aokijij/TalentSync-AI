@@ -40,7 +40,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 1 | Entorno aislado, semilla ficticia e historial de eventos | Completado: 71 pruebas backend, 20 frontend, lint y build |
 | 2 | Correo local, recuperación, verificación, sesiones, MFA y privacidad | Implementado y probado; SSO externo pendiente del bloque 9 |
 | 3 | Verificación empresarial, equipos y permisos | Implementado: revisión manual local, borradores, invitaciones y permisos en API |
-| 4 | Requisitos, evidencias, preferencias y matching avanzado | Pendiente |
+| 4 | Requisitos, evidencias, preferencias y matching avanzado | Base explicable implementada; embeddings neuronales y modelos de comportamiento en bloque 9 |
 | 5 | Historial de etapas, plazos, avisos y feedback | Pendiente |
 | 6 | Brechas, recursos, planes, evaluaciones, pasaporte y portafolio | Pendiente |
 | 7 | Selección ciega, calidad de vacantes y contratación por potencial | Pendiente |
@@ -96,3 +96,20 @@ solo consulta las vacantes asignadas con alias de candidatos. Cambiar permisos r
 las sesiones anteriores. Los borradores solo son visibles a la empresa y al admin.
 Las invitaciones están ligadas al correo, almacenadas como hash y se consumen una vez.
 La revisión local no consulta registros oficiales ni equivale a una verificación legal.
+
+## Bloque 4: compatibilidad explicable
+
+`/compatibilidad` permite al candidato comparar requisitos ponderados (esenciales
+y deseables), preferencias imprescindibles y evidencias de portafolio. La empresa
+edita allí los requisitos. Las bases relacionadas del grafo se muestran separadas:
+Java no acredita Spring Boot y Spring Boot no acredita microservicios.
+Los enlaces aportados son declaraciones; no se descargan ni se verifican solos.
+
+Cada recomendación conserva versión del algoritmo, huella de sus entradas,
+contribuciones al resultado y brechas. El caché detecta cambios del candidato y de
+la vacante. La interfaz usa los pesos del servidor, incluidos idiomas y formación.
+El porcentaje es un índice de afinidad; las preferencias se comparan aparte para
+no alterar el mérito técnico. El componente textual actual usa HashingVectorizer
+local y se identifica como lexical-hashing-v1. No se presenta como un modelo
+neuronal ni una probabilidad de éxito. El procesamiento de CV existente se conserva.
+Validación acumulada: 81 pruebas backend; lint y build frontend aprobados.

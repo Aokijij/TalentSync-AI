@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.api.schemas.language import LanguageLevel, unique_languages
+from app.api.schemas.matching import SkillRequirement, unique_requirements
 from app.domain.entities.job_sectors import JOB_SECTORS
 
 
@@ -66,6 +67,8 @@ def default_pipeline_stages() -> list[PipelineStage]:
 
 
 class JobCreate(PipelineStagesMixin):
+    skill_requirements: list[SkillRequirement] = Field(default_factory=list, max_length=50)
+    _unique_requirements = field_validator("skill_requirements")(unique_requirements)
     status: Literal["active", "draft"] = "active"
     languages: list[LanguageLevel] = Field(default_factory=list, max_length=20)
     _unique_languages = field_validator("languages")(unique_languages)
@@ -105,6 +108,8 @@ class JobCreate(PipelineStagesMixin):
 
 
 class JobUpdate(PipelineStagesMixin):
+    skill_requirements: list[SkillRequirement] | None = Field(default=None, max_length=50)
+    _unique_requirements = field_validator("skill_requirements")(unique_requirements)
     languages: list[LanguageLevel] | None = Field(default=None, max_length=20)
     _unique_languages = field_validator("languages")(unique_languages)
     title: str | None = Field(default=None, min_length=2, max_length=180)
@@ -145,6 +150,7 @@ class JobUpdate(PipelineStagesMixin):
 
 
 class JobResponse(BaseModel):
+    skill_requirements: list[SkillRequirement] = Field(default_factory=list)
     languages: list[LanguageLevel] = Field(default_factory=list)
     application_questions: list[ScreeningQuestionPublic] = Field(default_factory=list)
     required_education_level: str | None = None

@@ -3,6 +3,11 @@ from datetime import datetime, timedelta
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.records import Job, Recommendation, User
+from app.domain.services.match_explanations import (
+    explain,
+    input_version,
+    weighted_coverage,
+)
 from app.domain.services.matching import (
     combined_match,
     is_relevant_candidate_recommendation,
@@ -12,14 +17,16 @@ from app.domain.services.matching import (
     recommendation_reasons,
     required_skill_coverage,
 )
-from app.domain.services.skills import skill_set
 from app.domain.services.professions import certification_match, education_match
+from app.domain.services.skills import skill_set
 
 
 def candidate_match(profile, job, *, nlp):
     raw_semantic = nlp.similarity_percentage(profile.embedding, job.embedding)
     context_score = professional_context_alignment(profile, job, raw_semantic)
     skill_score = required_skill_coverage(profile.skills, job.skills)
+    if getattr(job, "skill_requirements", None):
+        skill_score = weighted_coverage(profile, job)
     language_score = language_coverage(profile, job)
     education_score = education_match(profile, job)
     certification_score = certification_match(profile, job)
@@ -64,6 +71,8 @@ def upsert_recommendation(
         db.add(recommendation)
     recommendation.match_percentage = percentage
     recommendation.created_at = datetime.utcnow()
+    recommendation.match_details = explain(user.profile, job, context=context_score, skills=skill_score, language=language_score,
+        education=education_score, certifications=certification_score, confidence=confidence, percentage=percentage)
     recommendation.reasons = recommendation_reasons(
         user.profile, job, semantic=context_score, skill_score=skill_score, education_score=education_score, certification_score=certification_score
     )
@@ -109,7 +118,7 @@ def refresh_user_recommendations(
     if profile_updated and profile_updated > cache_cutoff:
         cache_cutoff = profile_updated
     cache_is_fresh = len(existing) == len(jobs) and all(
-        item.created_at >= cache_cutoff for item in existing
+        item.created_at >= cache_cutoff and (getattr(item, "match_details", None) or {}).get("input_version") == input_version(user.profile, db.jobs.get(item.job_id)) for item in existing
     )
     if cache_is_fresh:
         recommendations = existing

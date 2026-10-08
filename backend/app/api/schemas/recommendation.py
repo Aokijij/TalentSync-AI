@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RecommendationResponse(BaseModel):
@@ -15,6 +15,7 @@ class RecommendationResponse(BaseModel):
     data_confidence_percentage: float = 100
     is_estimated: bool = False
     reasons: list[str]
+    match_details: dict = Field(default_factory=dict)
     created_at: datetime
 
     model_config = {"from_attributes": True}

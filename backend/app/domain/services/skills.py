@@ -8,6 +8,13 @@ def skill_key(skill: object) -> str:
     )
     aliases = {
         "node.js": "nodejs",
+        "springboot": "spring boot",
+        "microservices": "microservicios",
+        "postgres": "postgresql",
+        "k8s": "kubernetes",
+        "js": "javascript",
+        "ts": "typescript",
+        "mlops": "mlops",
         "rest api": "api rest",
         "restful api": "api rest",
         "atencion al cliente": "servicio al cliente",
@@ -33,3 +40,29 @@ def normalize_skills(skills: list[str] | None) -> list[str]:
 
 def skill_set(skills: list[str] | None) -> set[str]:
     return {skill_key(skill) for skill in skills or [] if str(skill).strip()}
+
+
+# Directional relationships describe a learning foundation, never equivalence.
+SKILL_FOUNDATIONS = {
+    "spring boot": {"java", "arquitectura mvc"},
+    "microservicios": {"spring boot", "api rest", "docker"},
+    "kubernetes": {"docker", "linux"},
+    "mlops": {"machine learning", "python", "docker"},
+    "angular": {"typescript", "javascript"},
+    "react": {"javascript", "typescript"},
+    "fastapi": {"python", "api rest"},
+    "power bi": {"excel", "sql"},
+    "terraform": {"aws", "azure", "linux"},
+}
+
+
+def skill_gap(candidate_skills, requirements):
+    available = skill_set(candidate_skills)
+    result = []
+    for requirement in requirements:
+        key = skill_key(requirement["skill"])
+        foundations = sorted(available & SKILL_FOUNDATIONS.get(key, set()))
+        result.append({**requirement, "key": key, "covered": key in available,
+                       "foundations": foundations if key not in available else [],
+                       "status": "declared" if key in available else "related" if foundations else "missing"})
+    return result

@@ -26,8 +26,9 @@ function Signal({ label, value, weight, description, color }) {
   );
 }
 
-export function MatchBreakdown({ skillMatch = 0, semanticMatch = 0, languageMatch = null }) {
+export function MatchBreakdown({ skillMatch = 0, semanticMatch = 0, languageMatch = null, details = null }) {
   const hasLanguages = languageMatch !== null && languageMatch !== undefined;
+  if (details?.components?.length) return <section className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4"><h3 className="font-bold">¿Cómo se calcula?</h3><p className="mt-1 text-xs text-[var(--muted)]">Cada señal aporta su puntuación multiplicada por el peso. Los datos externos incompletos reducen el resultado. Las preferencias se muestran por separado.</p><div className="mt-4 space-y-4">{details.components.map((row) => <Signal key={row.key} label={row.label} value={row.score} weight={Math.round(row.weight * 100)} description={`Aporta ${row.points.toFixed(1)} puntos`} color="var(--accent)" />)}</div></section>;
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
       <h3 className="font-bold text-[var(--ink-strong)]">¿Cómo se calcula?</h3>
