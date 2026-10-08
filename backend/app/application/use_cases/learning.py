@@ -106,11 +106,13 @@ def submit_assessment(db, user, attempt_id, answers):
         raise UseCaseError(status_code=404, detail="Intento no encontrado")
     if row.assessment_id not in ASSESSMENTS:
         raise UseCaseError(status_code=422, detail="Este intento utiliza el formulario de reto práctico")
-    if row.status != "active" or row.expires_at < now:
+    if row.status != "active" or row.expires_at <= now:
         raise UseCaseError(status_code=409, detail="El intento ya se entregó o venció")
     expected = {question["id"] for question in row.snapshot}
     if set(answers) != expected:
         raise UseCaseError(status_code=422, detail="Responde exactamente las preguntas del intento")
+    if any(type(answers[item["id"]]) is not int or not 0 <= answers[item["id"]] < len(item["choices"]) for item in row.snapshot):
+        raise UseCaseError(status_code=422, detail="Selecciona una opción válida para cada pregunta")
     if not db.learning.claim_submission(row.id, user.id, now):
         raise UseCaseError(status_code=409, detail="El intento ya se entregó o venció")
     correct = sum(answers[item["id"]] == item["answer"] for item in row.snapshot)

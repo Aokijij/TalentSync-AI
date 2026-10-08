@@ -19,6 +19,22 @@ CHALLENGES = {
         "columns": ["customer", "paid_orders"], "datasets": DATASETS,
         "expected": [[["Ana", 2], ["Luis", 0], ["Maya", 1]], [["Noa", 1], ["Iván", 1], ["Sara", 2], ["Sol", 0]], [["Sin pedidos", 0], ["Solo pendientes", 0]]],
     },
+    "sql-paid-average-v1": {
+        "title": "Informe de totales y promedios", "skill": "sql", "version": "1", "minutes": 15,
+        "prompt": "Devuelve todos los clientes, incluso sin pedidos pagados: nombre como customer, suma de pedidos con status='paid' como paid_total y promedio de esos pedidos, redondeado a dos decimales, como paid_average. Usa cero en ambas métricas si no hay pedidos pagados. El orden no importa; no escribas resultados fijos.",
+        "columns": ["customer", "paid_total", "paid_average"], "datasets": DATASETS,
+        "expected": [[["Ana", 150, 75], ["Luis", 0, 0], ["Maya", 90, 90]],
+                     [["Noa", 99, 99], ["Iván", 100, 100], ["Sara", 150, 75], ["Sol", 0, 0]],
+                     [["Sin pedidos", 0, 0], ["Solo pendientes", 0, 0]]],
+    },
+    "sql-latest-order-v1": {
+        "title": "Último pedido por cliente", "skill": "sql", "version": "1", "minutes": 15,
+        "prompt": "Devuelve el pedido con mayor id de cada cliente que tenga pedidos, sin filtrar por estado. Columnas: nombre del cliente como customer, id del pedido como last_order, importe como total y estado como status. Omite clientes sin pedidos. El orden no importa; debe funcionar con otros datos.",
+        "columns": ["customer", "last_order", "total", "status"], "datasets": DATASETS,
+        "expected": [[["Ana", 2, 50, "paid"], ["Luis", 3, 200, "pending"], ["Maya", 4, 90, "paid"]],
+                     [["Noa", 50, 500, "cancelled"], ["Iván", 20, 100, "paid"], ["Sara", 40, 75, "paid"]],
+                     [["Solo pendientes", 6, 500, "pending"]]],
+    },
 }
 
 

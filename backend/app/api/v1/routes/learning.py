@@ -1,7 +1,7 @@
 from typing import Literal
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictInt
 
 from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
 from app.api.schemas.learning import ResourceContent, ResourceImport, ResourceUpdate
@@ -19,7 +19,7 @@ class PlanUpdate(BaseModel):
 
 
 class Submission(BaseModel):
-    answers: dict[str, int] = Field(max_length=30)
+    answers: dict[str, StrictInt] = Field(max_length=30)
 
 
 @router.get("/learning/catalog")

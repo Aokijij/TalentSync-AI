@@ -12,6 +12,8 @@ from app.infrastructure.sql_sandbox import SQLSandbox
 
 TOTALS = "SELECT c.name AS customer, SUM(o.total) AS total FROM customers c JOIN orders o ON o.customer_id=c.id WHERE o.status='paid' GROUP BY c.id,c.name HAVING SUM(o.total)>=100"
 COUNTS = "SELECT c.name AS customer, COUNT(o.id) AS paid_orders FROM customers c LEFT JOIN orders o ON o.customer_id=c.id AND o.status='paid' GROUP BY c.id,c.name"
+AVERAGE = "SELECT c.name AS customer, COALESCE(SUM(o.total),0) AS paid_total, COALESCE(ROUND(AVG(o.total),2),0) AS paid_average FROM customers c LEFT JOIN orders o ON o.customer_id=c.id AND o.status='paid' GROUP BY c.id,c.name"
+LATEST = "SELECT c.name AS customer, o.id AS last_order, o.total AS total, o.status AS status FROM customers c JOIN orders o ON o.customer_id=c.id WHERE o.id=(SELECT MAX(recent.id) FROM orders recent WHERE recent.customer_id=c.id)"
 
 
 @pytest.mark.parametrize("query", ["ATTACH DATABASE '/private/file.db' AS secret", "SELECT * FROM sqlite_master", "DELETE FROM orders", "DROP TABLE customers", "PRAGMA database_list", "SELECT load_extension('/private/library')", "SELECT readfile('/private/file')", "SELECT randomblob(1000000000)", "SELECT 1; SELECT 2", "SELECT 1e999", "SELECT x'fffe'"])
@@ -31,7 +33,8 @@ def test_sql_work_and_result_budgets_interrupt_expensive_queries():
     assert sandbox.run("SELECT '" + "x" * 4001 + "'", DATASETS[0])["ok"] is False
 
 
-@pytest.mark.parametrize("challenge,query", [("sql-paid-totals-v1", TOTALS), ("sql-paid-counts-v1", COUNTS)])
+@pytest.mark.parametrize("challenge,query", [("sql-paid-totals-v1", TOTALS), ("sql-paid-counts-v1", COUNTS),
+                                           ("sql-paid-average-v1", AVERAGE), ("sql-latest-order-v1", LATEST)])
 def test_real_queries_are_evaluated_once_and_enter_existing_passport(client, challenge, query):
     _, candidate = register(client, "sql-practitioner", skills=["Java"])
     start = client.post(f"/api/v1/learning/practical/{challenge}/start", headers=candidate)

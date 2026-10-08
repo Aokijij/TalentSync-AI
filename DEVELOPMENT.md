@@ -948,3 +948,18 @@ lease. Se prueban migraciones con correos existentes, subida/bajada y restauraci
 El envío externo permanece sin verificar: no se conectó ningún SMTP real ni se
 envió correo a personas. La entrega permite duplicados si el proceso cae después
 de la aceptación SMTP; Message-ID estable no garantiza entrega exactamente una vez.
+
+## Bloque 28: ampliación de práctica local y validación de respuestas
+
+Se incorporaron micropruebas originales de APIs REST, Git y seguridad de
+aplicaciones, con cinco preguntas cada una y sus proyectos de práctica. El
+catálogo ofrece seis evaluaciones de fundamentos y seis proyectos locales.
+Se añadieron dos retos SQL, informe de totales/promedios y último pedido por
+cliente, para un total de cuatro. Todos conservan tres conjuntos sintéticos,
+ejecución de solo lectura, plazos, entrega única y alcance de fundamentos.
+
+Las respuestas de micropruebas ahora exigen enteros estrictos y una opción dentro
+del rango de cada pregunta. Una entrada inválida no consume el intento. La
+caducidad usa el mismo límite inclusivo que el resto de los retos. Pasaron 43
+pruebas focalizadas de aprendizaje, catálogo y consultas SQL, incluidos entrega,
+pasaporte, privacidad, controles de acceso y rechazo de respuestas inválidas.
