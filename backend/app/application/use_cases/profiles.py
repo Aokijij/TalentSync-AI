@@ -13,6 +13,7 @@ from app.application.ports.services import (
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
+from app.domain.services.blind_hiring import identity_hidden
 from app.domain.services.skills import normalize_skills
 
 
@@ -22,9 +23,7 @@ def company_can_view_candidate(
     company = db.companies.find_by_owner(company_user.id)
     if company is None:
         return False
-    return (
-        db.applications.find_for_candidate_company(candidate_id, company.id) is not None
-    )
+    return any(row.user_id == candidate_id and not identity_hidden(job, row) for job in company.jobs for row in job.applications)
 
 
 def get_my_profile(current_user: User) -> Profile:

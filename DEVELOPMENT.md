@@ -43,7 +43,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 4 | Requisitos, evidencias, preferencias y matching avanzado | Base explicable implementada; embeddings neuronales y modelos de comportamiento en bloque 9 |
 | 5 | Historial de etapas, plazos, avisos y feedback | Implementado: plazos, worker local, cierre idempotente e historial |
 | 6 | Brechas, recursos, planes, evaluaciones, pasaporte y portafolio | Implementado con catálogo de proyectos y evaluaciones locales de fundamentos |
-| 7 | Selección ciega, calidad de vacantes y contratación por potencial | Pendiente |
+| 7 | Selección ciega, calidad de vacantes y contratación por potencial | Implementado: identidad protegida, reglas locales y escenarios laborales |
 | 8 | Reputación, incidencias, auditoría y tendencias | Pendiente |
 | 9 | Entrevistas, colaboración e integraciones avanzadas | Pendiente |
 
@@ -145,3 +145,22 @@ habilidad al perfil y conserva el alcance "fundamentos", la versión y vigencia 
 La finalización de recursos externos, títulos y compras no se simulan. Catálogos
 educativos y afiliación siguen desactivados hasta disponer de integraciones reales.
 Validación acumulada: 85 pruebas backend; lint y build frontend aprobados.
+
+## Bloque 7: selección y calidad
+
+Las nuevas vacantes activan selección ciega por defecto. Antes de la entrevista
+se muestran alias por vacante, habilidades y resultados compartidos. La API
+oculta nombres, perfiles completos, fotos y respuestas libres, incluidos avisos
+de nuevas postulaciones. Avanzar a entrevista o selección registra la apertura
+de identidad. Vacantes anteriores conservan su comportamiento para migración gradual.
+
+`/empresa/calidad` revisa requisitos contradictorios, información salarial y
+restricciones personales mediante reglas explícitas. Las referencias salariales
+requieren cinco ofertas comparables de esta misma base y se etiquetan como locales.
+No representan el mercado en tiempo real. Permite añadir escenarios de decisiones
+del trabajo al flujo de postulación existente, conservando su categoría. No hay
+diagnóstico de personalidad ni puntuación psicológica.
+
+El buscador de talento distingue bases relacionadas de habilidades acreditadas
+y muestra evaluaciones de fundamentos solo si el candidato comparte evidencias.
+Validación acumulada: 87 pruebas backend; lint y build frontend aprobados.

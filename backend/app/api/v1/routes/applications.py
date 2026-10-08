@@ -42,7 +42,7 @@ def job_applications(
     current_user: User = Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)),
     db: UnitOfWork = Depends(get_unit_of_work),
 ) -> list[Application]:
-    return use_cases.job_applications(job_id=job_id, current_user=current_user, db=db)
+    return [use_cases.company_application_view(row, current_user) for row in use_cases.job_applications(job_id=job_id, current_user=current_user, db=db)]
 
 
 @router.put("/jobs/{job_id}/mark-seen")
@@ -63,12 +63,13 @@ def update_status(
     current_user: User = Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)),
     db: UnitOfWork = Depends(get_unit_of_work),
 ) -> Application:
-    return use_cases.update_status(
+    row = use_cases.update_status(
         application_id=application_id,
         payload=payload.model_dump(exclude_unset=True),
         current_user=current_user,
         db=db,
     )
+    return use_cases.company_application_view(row, current_user)
 
 
 @router.delete("/{application_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -68,6 +68,7 @@ def create_job(client, headers):
         headers=headers,
         json={
             "title": "Desarrollador Python",
+            "blind_hiring": False,
             "description": "Desarrollo de APIs con Python y SQL",
             "requirements": "Experiencia en Python, SQL y FastAPI",
             "sector": "Tecnologia y software",
@@ -218,6 +219,7 @@ def test_screening_questions_adjust_only_the_company_score(client):
         headers=owner,
         json={
             "title": "Backend Python",
+            "blind_hiring": False,
             "description": "Construcción y mantenimiento de servicios internos.",
             "requirements": "Experiencia con Python, APIs y bases de datos.",
             "sector": "Tecnologia y software",

@@ -60,6 +60,7 @@ class ApplicationResponse(BaseModel):
 
 
 class CompanyApplicationResponse(ApplicationResponse):
+    identity_hidden: bool = False
     recruiter_notes: str | None = None
     screening_answers: list[ScreeningAnswer] = Field(default_factory=list)
     screening_adjustment: float = 0

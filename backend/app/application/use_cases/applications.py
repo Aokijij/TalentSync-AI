@@ -7,6 +7,7 @@ from app.application.use_cases.events import record_event
 from app.application.use_cases.workflow import transition
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Application, User
+from app.domain.services.blind_hiring import candidate_alias, identity_hidden
 
 
 def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
@@ -106,7 +107,7 @@ def apply_to_job(
             user_id=job.company.owner_user_id,
             type="application_received",
             title="Nueva postulación",
-            body=f"{current_user.name} se postuló a {job.title}.",
+            body=f"{candidate_alias(job.id, current_user.id) if job.blind_hiring else current_user.name} se postuló a {job.title}.",
             action_url=f"/empresa/postulaciones?job={job.id}",
         )
     )
@@ -179,6 +180,8 @@ def update_status(
     previous_interview = application.interview_at
     answer_adjustments = changes.pop("screening_answer_adjustments", None)
     if answer_adjustments is not None:
+        if identity_hidden(application.job, application):
+            raise UseCaseError(status_code=403, detail="La valoración de texto libre se habilita después de la fase ciega")
         saved_answers = [dict(item) for item in application.screening_answers or []]
         saved_ids = {item.get("question_id") for item in saved_answers}
         unknown = set(answer_adjustments) - saved_ids
@@ -226,6 +229,9 @@ def update_status(
     status_changed = application.status != previous_status
     stage_changed = application.pipeline_stage != previous_stage
     interview_changed = application.interview_at != previous_interview
+    if application.status in {ApplicationStatus.TECHNICAL_INTERVIEW, ApplicationStatus.PSYCHOMETRIC_TEST, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED} and application.identity_revealed_at is None:
+        application.identity_revealed_at = datetime.utcnow()
+        record_event(db, "application.identity_revealed", "application", application.id, actor_user_id=current_user.id, details={"stage": application.pipeline_stage, "job_id": application.job_id})
     if status_changed or stage_changed or interview_changed:
         transition(db, application, current_user.id, previous_status=previous_status, previous_stage=previous_stage)
     if (status_changed or stage_changed) and application.status != ApplicationStatus.REJECTED:
@@ -314,3 +320,12 @@ def delete_application(application_id: int, current_user: User, db: UnitOfWork) 
         raise UseCaseError(status_code=403, detail="Rol no autorizado")
     db.delete(application)
     db.commit()
+
+
+def company_application_view(row, user):
+    hidden = user.role != UserRole.ADMIN and identity_hidden(row.job, row)
+    fields = ["id", "user_id", "job_id", "status", "created_at", "job_title", "company_name", "candidate_name", "interview_at", "pipeline_stage", "pipeline_stage_title", "resolution_reason", "recruiter_notes", "screening_adjustment", "base_match_percentage", "adjusted_match_percentage", "version", "response_due_at", "released_at", "candidate_feedback"]
+    result = {key: getattr(row, key) for key in fields}
+    result["identity_hidden"] = hidden
+    result["screening_answers"] = [] if hidden else row.screening_answers or []
+    return result

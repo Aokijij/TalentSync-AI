@@ -44,7 +44,7 @@ def authorize_request(db, user, path, method):
         if member.role == "interviewer" and not path.startswith(("/api/v1/organization/", "/api/v1/notifications", "/api/v1/interviews")):
             raise UseCaseError(status_code=403, detail="Tu acceso se limita a entrevistas asignadas")
     if company.verification_required and company.verification_status != "verified":
-        if not path.startswith(("/api/v1/organization/", "/api/v1/companies", "/api/v1/jobs", "/api/v1/notifications")):
+        if not path.startswith(("/api/v1/organization/", "/api/v1/companies", "/api/v1/jobs", "/api/v1/notifications", "/api/v1/hiring/quality/")):
             raise UseCaseError(status_code=403, detail="La empresa debe verificarse antes de consultar talento")
 
 

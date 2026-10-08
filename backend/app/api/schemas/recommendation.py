@@ -22,6 +22,9 @@ class RecommendationResponse(BaseModel):
 
 
 class RankedCandidate(BaseModel):
+    identity_hidden: bool = False
+    related_skills: list[dict] = Field(default_factory=list)
+    validated_foundations: list[dict] = Field(default_factory=list)
     user_id: int
     name: str
     profession: str | None

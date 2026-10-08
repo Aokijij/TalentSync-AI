@@ -557,6 +557,7 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
           Editar proceso
         </button>
         <Link
+          hidden={item.identity_hidden}
           className="button-ghost button-sm !px-2"
           to={`/empresa/candidatos/${item.user_id}?job=${item.job_id}`}
           aria-label="Ver perfil"

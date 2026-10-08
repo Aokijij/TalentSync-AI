@@ -245,6 +245,7 @@ def reopen_job(job_id: int, mode: str, current_user: User, db: UnitOfWork, *, nl
         return job
     # A new vacancy keeps the previous selection process and notifications intact.
     payload = {key: getattr(job, key) for key in ["company_id", "title", "description", "requirements", "salary", "location", "department", "modality", "employment_type", "sector", "benefits", "languages", "application_questions", "required_education_level", "required_study_fields"]}
+    payload.update({key: getattr(job, key) for key in ["blind_hiring", "skill_requirements", "response_days"]})
     payload["pipeline_stages"] = job.pipeline_stages
     return create_job(payload, current_user, db, nlp=nlp)
 

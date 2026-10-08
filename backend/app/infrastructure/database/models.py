@@ -14,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.entities.enums import ApplicationStatus, UserRole
+from app.domain.services.blind_hiring import candidate_alias, identity_hidden
 from app.domain.services.external_sources import external_portal
 from app.infrastructure.database.session import Base
 
@@ -273,6 +274,7 @@ class Job(Base):
     skills: Mapped[list[str]] = mapped_column(JSON, default=list)
     skill_requirements: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     response_days: Mapped[int] = mapped_column(Integer, default=7, server_default="7", nullable=False)
+    blind_hiring: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
@@ -341,6 +343,7 @@ class Application(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
+    identity_revealed_at: Mapped[datetime | None] = mapped_column(DateTime)
     response_due_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
     released_at: Mapped[datetime | None] = mapped_column(DateTime)
@@ -378,7 +381,7 @@ class Application(Base):
 
     @property
     def candidate_name(self) -> str | None:
-        return self.user.name if self.user else None
+        return candidate_alias(self.job_id, self.user_id) if identity_hidden(self.job, self) else self.user.name if self.user else None
 
     @property
     def pipeline_stage_title(self) -> str | None:

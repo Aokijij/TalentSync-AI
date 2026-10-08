@@ -12,6 +12,9 @@ from app.application.use_cases.matching import (
 )
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Notification, Recommendation, User
+from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.match_explanations import requirements_for
+from app.domain.services.skills import skill_gap
 
 
 def profile_experience(profile) -> tuple[float | None, str | None]:
@@ -76,22 +79,30 @@ def ranked_candidates(
         if audience == "all" and not has_applied and percentage < minimum_match:
             continue
         years, summary = profile_experience(user.profile)
+        hidden = current_user.role != UserRole.ADMIN and identity_hidden(job, application)
+        gaps = [row for row in skill_gap(user.profile.skills, requirements_for(job)) if not row["covered"]]
+        related = [{"skill": row["skill"], "foundations": row["foundations"]} for row in gaps if row["foundations"]]
+        validated = [{"skill": row.skill, "score": row.score, "level": "fundamentals", "valid_until": row.valid_until}
+                     for row in db.learning.attempts(user.id) if row.passed and row.valid_until and row.valid_until >= datetime.utcnow()] if (user.privacy_preferences or {}).get("share_evidence", True) else []
         candidate = dict(
                 user_id=user.id,
-                name=user.name,
+                name=candidate_alias(job.id, user.id) if hidden else user.name,
+                identity_hidden=hidden,
+                related_skills=related,
+                validated_foundations=validated,
                 profession=user.profile.profession,
                 match_percentage=(max(0.0, min(100.0, percentage + (application.screening_adjustment or 0))) if application else percentage),
                 skills=user.profile.skills or [],
                 languages=user.profile.languages or [],
                 experience_years=years,
-                experience_summary=summary,
+                experience_summary=None if hidden else summary,
                 has_applied=has_applied,
                 has_pending_invitation=db.notifications.find_unread(
                     user.id, "candidate_invitation", f"/vacantes/{job.id}"
                 )
                 is not None,
                 application_id=application.id if application else None,
-                screening_answers=application.screening_answers if application else [],
+                screening_answers=application.screening_answers if application and not hidden else [],
                 screening_adjustment=(application.screening_adjustment or 0)
                 if application
                 else 0,

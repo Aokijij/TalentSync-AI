@@ -14,6 +14,7 @@ class PipelineStage(BaseModel):
 
 
 class ScreeningQuestionPublic(BaseModel):
+    category: Literal["screening", "work_scenario"] = "screening"
     id: str = Field(min_length=2, max_length=80, pattern=r"^[a-z0-9][a-z0-9_-]*$")
     prompt: str = Field(min_length=5, max_length=300)
     type: Literal["open", "choice"] = "open"
@@ -67,6 +68,7 @@ def default_pipeline_stages() -> list[PipelineStage]:
 
 
 class JobCreate(PipelineStagesMixin):
+    blind_hiring: bool = True
     response_days: int = Field(default=7, ge=1, le=30)
     skill_requirements: list[SkillRequirement] = Field(default_factory=list, max_length=50)
     _unique_requirements = field_validator("skill_requirements")(unique_requirements)
@@ -152,6 +154,7 @@ class JobUpdate(PipelineStagesMixin):
 
 
 class JobResponse(BaseModel):
+    blind_hiring: bool = False
     response_days: int = 7
     skill_requirements: list[SkillRequirement] = Field(default_factory=list)
     languages: list[LanguageLevel] = Field(default_factory=list)
