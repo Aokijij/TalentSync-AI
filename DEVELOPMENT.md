@@ -55,6 +55,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 16 | Lectura de repositorios públicos GitHub | Adaptador con consentimiento, revisión fija y límites; desactivado localmente por defecto |
 | 17 | SSO administrativo de Google Workspace | Aprovisionamiento local, validación de dominio y sujeto, MFA y política obligatoria opcional |
 | 18 | Retos SQL con consultas reales | Dos retos, vista previa, ejecución restringida en memoria y pasaporte integrado |
+| 19 | Conectividad STUN/TURN de entrevistas | Configuración validada, credenciales temporales y autorización por sala; servidor externo no configurado |
 
 ## Comprobaciones
 
@@ -81,9 +82,8 @@ La bandeja `/desarrollo/correos` solo funciona con la opción local activada,
 SQLite y acceso de loopback. Contiene enlaces temporales sensibles de prueba;
 no es un servicio de correo ni debe exponerse a redes externas.
 
-Los botones sociales aparecen desactivados: todavía no hay adaptadores OAuth.
-Su implementación y vinculación segura quedan pendientes; añadir credenciales
-por sí solo no los habilita. El panel del bloque 10 muestra esta limitación.
+Los botones sociales permanecen desactivados sin credenciales. Los adaptadores y
+la vinculación se incorporaron posteriormente en los bloques 11, 12, 15 y 17.
 
 Validación del bloque: 77 pruebas backend en conjunto; 11 pruebas de seguridad,
 arquitectura y migración repetidas tras endurecer el consumo de códigos MFA;
@@ -647,3 +647,31 @@ pasaporte. Pasaron también las pruebas de aprendizaje, catálogo y arquitectura
 Se reforzó la fábrica temporal de la suite para que retirar una dependencia
 sobrescrita no permita recurrir a la base anterior. Referencia:
 [autorización y límites de SQLite en Python](https://docs.python.org/3/library/sqlite3.html).
+
+
+## Bloque 19: conectividad STUN/TURN
+
+El navegador solicita `/api/v1/interviews/rooms/{id}/ice` antes de activar cámara
+y micrófono. La API comprueba pertenencia actual a la sala y proceso abierto,
+limita las peticiones y devuelve `Cache-Control: no-store`. El frontend entrega
+esa configuración a RTCPeerConnection. No se solicitan permisos multimedia al
+cargar la página.
+
+La configuración explícita en `.local/backend.env` usa listas JSON, por ejemplo:
+`WEBRTC_STUN_URLS=["stun:localhost:3478"]` y
+`WEBRTC_TURN_URLS=["turn:localhost:3478?transport=udp"]`.
+TURN exige `WEBRTC_TURN_SECRET` de al menos 32 caracteres, compartido con un servidor
+compatible con TURN REST, como coturn. Nunca se incluye ese secreto en la respuesta.
+Las credenciales se calculan con HMAC-SHA1, caducan en una hora y usan identificadores
+aleatorios opacos. Una nueva activación obtiene credenciales nuevas. Una reconexión
+posterior al vencimiento puede requerir desconectar y activar de nuevo.
+`WEBRTC_RELAY_ONLY=true` obliga a retransmitir y requiere TURN configurado.
+
+No se heredan estas opciones del entorno exterior al lanzador. Por defecto no
+hay servidores STUN/TURN ni solicitudes a terceros. No se instaló un servidor de
+retransmisión, no se probó conectividad entre redes externas y no se activaron
+cámaras ni micrófonos durante la validación. La conexión directa sigue dependiendo
+de la red; una instalación accesible por Internet requiere HTTPS y comprobar el
+servidor elegido. Diez pruebas nuevas verifican configuración, HMAC, caducidad,
+opacidad, pertenencia y cierre; pasaron también las de entrevistas y arquitectura.
+Referencia: [coturn TURN REST](https://github.com/coturn/coturn/wiki/turnserver).

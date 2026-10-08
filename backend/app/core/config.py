@@ -1,7 +1,8 @@
 import os
 from functools import lru_cache
+from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,6 +28,10 @@ class Settings(BaseSettings):
     oauth_workspace_client_secret: str = ""
     workspace_domain: str = ""
     admin_sso_required: bool = False
+    webrtc_stun_urls: list[str] = Field(default_factory=list, max_length=4)
+    webrtc_turn_urls: list[str] = Field(default_factory=list, max_length=4)
+    webrtc_turn_secret: str = ""
+    webrtc_relay_only: bool = False
     upload_dir: str = "uploads"
     cv_parser: str = "docling"
     cv_ocr_enabled: bool = True
@@ -69,6 +74,33 @@ class Settings(BaseSettings):
         if len(v) < 32:
             raise ValueError("SECRET_KEY must be at least 32 characters long")
         return v
+
+    @field_validator("webrtc_stun_urls", "webrtc_turn_urls")
+    @classmethod
+    def valid_ice_urls(cls, values, info):
+        allowed = {"stun", "stuns"} if info.field_name == "webrtc_stun_urls" else {"turn", "turns"}
+        for value in values:
+            try:
+                scheme, target = value.split(":", 1)
+                parsed = urlsplit(f"//{target}")
+                if (scheme not in allowed or len(value) > 250 or not parsed.hostname or parsed.path
+                        or parsed.username or parsed.password or parsed.fragment or any(char.isspace() for char in value)
+                        or parsed.query not in {"", "transport=udp", "transport=tcp"}
+                        or parsed.port is not None and not 1 <= parsed.port <= 65535):
+                    raise ValueError()
+                if scheme.startswith("stun") and parsed.query:
+                    raise ValueError()
+            except ValueError:
+                raise ValueError("URL ICE inválida; usa stun:servidor:puerto o turn:servidor:puerto?transport=udp, sin credenciales") from None
+        return values
+
+    @model_validator(mode="after")
+    def valid_turn_configuration(self):
+        if self.webrtc_turn_urls and len(self.webrtc_turn_secret) < 32:
+            raise ValueError("TURN requiere un secreto compartido de al menos 32 caracteres")
+        if self.webrtc_relay_only and not self.webrtc_turn_urls:
+            raise ValueError("El modo relay requiere un servidor TURN configurado")
+        return self
 
     @field_validator("catalog_max_age_days", "catalog_min_skills")
     @classmethod

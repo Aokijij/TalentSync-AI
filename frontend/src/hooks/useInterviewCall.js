@@ -33,7 +33,9 @@ export function useInterviewCall(roomId) {
     const current = { stream: null, id: null, pc: null, peer: null, timer: null, cursor: 0, pendingIce: [] };
     state.current = current;
     try {
-      if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) throw new Error("Este navegador no permite videollamadas. Usa localhost en un navegador compatible.");
+      if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) throw new Error("Este navegador no permite videollamadas. Usa localhost o HTTPS en un navegador compatible.");
+      const { data: connection } = await api.get(`/interviews/rooms/${roomId}/ice`);
+      if (state.current !== current) return;
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       if (state.current !== current) { stream.getTracks().forEach((track) => track.stop()); return; }
       current.stream = stream;
@@ -55,15 +57,14 @@ export function useInterviewCall(roomId) {
         current.peer = peer;
         if (remoteVideo.current) remoteVideo.current.srcObject = null;
         if (!peer) { current.pc = null; setStatus("Esperando al otro participante"); return; }
-        // Local connections only: no external STUN/TURN or media relay.
-        const pc = new RTCPeerConnection({ iceServers: [] });
+        const pc = new RTCPeerConnection({ iceServers: connection.ice_servers, iceTransportPolicy: connection.ice_transport_policy });
         current.pc = pc;
         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
         pc.ontrack = (event) => { if (current.pc === pc && remoteVideo.current) remoteVideo.current.srcObject = event.streams[0]; };
         pc.onicecandidate = (event) => { if (current.pc === pc && event.candidate) send("ice", event.candidate.toJSON()).catch((failure) => setError(getApiErrorMessage(failure))); };
         pc.onconnectionstatechange = () => {
           if (state.current !== current || current.pc !== pc) return;
-          setStatus(pc.connectionState === "connected" ? "Videollamada conectada" : pc.connectionState === "failed" ? "No se pudo conectar. Desconecta y vuelve a intentar en la misma red local." : "Conectando navegadores…");
+          setStatus(pc.connectionState === "connected" ? "Videollamada conectada" : pc.connectionState === "failed" ? "No se pudo conectar. Desconecta y vuelve a intentar; la conectividad depende de la red y del servidor de retransmisión configurado." : "Conectando navegadores…");
         };
       }
 

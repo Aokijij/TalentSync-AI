@@ -30,7 +30,7 @@ def room_view(room):
     return {"id": room.id, "application_id": room.application_id, "title": room.title,
         "code": room.code, "whiteboard": room.whiteboard, "version": room.version, "closed": room.closed,
         "active": active(room), "created_at": room.created_at, "updated_at": room.updated_at,
-        "execution_enabled": False, "video_mode": "local_webrtc_no_relay"}
+        "execution_enabled": False, "video_mode": "webrtc"}
 
 
 def get(db, user, room_id, *, writable=False):
@@ -44,6 +44,11 @@ def get(db, user, room_id, *, writable=False):
 
 def rooms(db, user):
     return [room_view(row) for row in db.interviews.rooms() if allowed(db, user, row.application)]
+
+
+def connectivity(db, user, room_id, issuer):
+    room = get(db, user, room_id, writable=True)
+    return issuer.configuration(room.id, user.id)
 
 
 def create(db, user, application_id, title):

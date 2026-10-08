@@ -93,7 +93,7 @@ def model_status(db, nlp):
             {"name": "Análisis de proyectos", "status": "ZIP local disponible; adaptador de repositorios públicos GitHub activable por configuración y consentimiento. No verifica autoría ni dominio técnico."},
             {"name": "SSO corporativo del administrador", "status": "Adaptador Google Workspace disponible con aprovisionamiento por sujeto y dominio; requiere credenciales. Entra ID pendiente."},
             {"name": "Verificación oficial de empresas", "status": "Revisión manual local; falta proveedor de registros"},
-            {"name": "Videollamada por Internet", "status": "Conexión directa local; falta servidor TURN y su configuración"},
+            {"name": "Videollamada por Internet", "status": "Adaptador STUN/TURN disponible; requiere servidor de retransmisión configurado"},
             {"name": "Ejecución de código", "status": "Desactivada; falta ejecutor aislado con límites de recursos"},
         ],
         "observed_processes": len(applications), "processes_advanced_to_interview": sum(row.status == "technical_interview" or any(event.details.get("status") == "technical_interview" for event in db.events.for_entity("application", row.id)) for row in applications),

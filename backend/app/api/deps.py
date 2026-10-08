@@ -122,6 +122,11 @@ def get_sql_sandbox():
     return SQLSandbox()
 
 
+def get_interview_ice():
+    from app.infrastructure.interview_ice import InterviewIce
+    return InterviewIce(settings)
+
+
 def get_jooble_job_catalog():
     from app.core.config import settings
 

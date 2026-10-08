@@ -1,11 +1,12 @@
 import json
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field, model_validator
 
-from app.api.deps import get_current_user, get_unit_of_work
+from app.api.deps import get_current_user, get_interview_ice, get_unit_of_work
 from app.application.use_cases import interviews as cases
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/interviews")
 
@@ -62,6 +63,15 @@ def create(payload: RoomCreate, user=Depends(get_current_user), db=Depends(get_u
 @router.get("/rooms/{room_id}")
 def room(room_id: str, user=Depends(get_current_user), db=Depends(get_unit_of_work)):
     return cases.room_view(cases.get(db, user, room_id))
+
+
+@router.get("/rooms/{room_id}/ice")
+@limiter.limit("20/minute")
+def connectivity(request: Request, response: Response, room_id: str, user=Depends(get_current_user),
+                 db=Depends(get_unit_of_work), issuer=Depends(get_interview_ice)):
+    result = cases.connectivity(db, user, room_id, issuer)
+    response.headers["Cache-Control"] = "no-store"
+    return result
 
 
 @router.put("/rooms/{room_id}")
