@@ -9,7 +9,6 @@ from app.api.v1.routes import (
     companies,
     ecosystem,
     hiring,
-    interviews,
     jobs,
     learning,
     match_settings,
@@ -33,7 +32,6 @@ api_router.include_router(match_settings.router, tags=["matching"])
 api_router.include_router(workflow.router, tags=["workflow"])
 api_router.include_router(learning.router, tags=["learning"])
 api_router.include_router(hiring.router, tags=["hiring"])
-api_router.include_router(interviews.router, tags=["interviews"])
 api_router.include_router(personalization.router, tags=["personalization"])
 api_router.include_router(ecosystem.router, tags=["ecosystem"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])

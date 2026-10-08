@@ -5,6 +5,7 @@ from app.api.deps import (
     get_current_user,
     get_social_identity_provider,
     get_unit_of_work,
+    require_roles,
 )
 from app.api.schemas.account import (
     ActionRequest,
@@ -20,8 +21,10 @@ from app.application.errors import UseCaseError
 from app.application.use_cases import account_security as cases
 from app.core.config import settings
 from app.core.limiter import limiter
+from app.domain.entities.enums import UserRole
 
 router = APIRouter()
+candidate = require_roles(UserRole.CANDIDATE)
 
 
 def _origin(request):
@@ -131,12 +134,12 @@ def revoke(session_id: int, user=Depends(get_current_user), db=Depends(get_unit_
 
 
 @router.get("/account/privacy")
-def privacy(user=Depends(get_current_user), db=Depends(get_unit_of_work)):
+def privacy(user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.privacy(db, user)
 
 
 @router.put("/account/privacy")
-def update_privacy(payload: PrivacyRequest, user=Depends(get_current_user), db=Depends(get_unit_of_work)):
+def update_privacy(payload: PrivacyRequest, user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.privacy(db, user, payload.model_dump())
 
 

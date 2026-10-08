@@ -7,7 +7,6 @@ import pytest
 from test_account_security import browser, csrf, login  # noqa: F401
 from test_api_flows import client, register  # noqa: F401
 
-from app.api.deps import get_repository_inspector
 from app.application.errors import UseCaseError
 from app.infrastructure.github_projects import GitHubProjectInspector
 
@@ -76,21 +75,3 @@ def test_disabled_reader_makes_no_request():
     assert error.value.status_code == 503 and requests == []
 
 
-def test_browser_consent_csrf_and_existing_evidence_flow(browser):
-    register(browser, "alex")
-    login(browser)
-    inspector, requests = adapter()
-    browser.app.dependency_overrides[get_repository_inspector] = lambda: inspector
-    endpoint = "/api/v1/matching/projects/github/preview"
-    payload = {"url": "https://github.com/demo/project", "confirm_public_access": True}
-    assert browser.post(endpoint, json=payload).status_code == 403
-    assert browser.post(endpoint, headers=csrf(browser), json={**payload, "confirm_public_access": False}).status_code == 422
-    assert requests == []
-    preview = browser.post(endpoint, headers=csrf(browser), json=payload)
-    assert preview.status_code == 200, preview.text
-    saved = browser.post("/api/v1/matching/projects/evidence", headers=csrf(browser), json={"preview_token": preview.json()["preview_token"],
-        "title": "Mi proyecto público", "description": "Contribuí al código y puedo explicar sus decisiones.", "skills": ["react"], "confirm_ownership": True,
-        "url": "https://unrelated.example.com", "add_to_profile": False})
-    assert saved.status_code == 200, saved.text
-    assert saved.json()[0]["url"] == "https://github.com/demo/project" and saved.json()[0]["verified"] is False
-    assert saved.json()[0]["analysis"]["revision"] == SHA

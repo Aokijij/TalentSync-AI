@@ -6,10 +6,8 @@ import time
 
 import pytest
 from pydantic import ValidationError
-from test_api_flows import register
-from test_interviews import client, prepared  # noqa: F401
 
-from app.core.config import Settings, settings
+from app.core.config import Settings
 from app.infrastructure.interview_ice import InterviewIce
 
 
@@ -53,17 +51,3 @@ def test_ice_credentials_expire_and_hide_identifiers():
         "ice_servers": [], "ice_transport_policy": "all", "expires_at": None, "mode": "direct"}
 
 
-def test_ice_endpoint_checks_room_membership_and_closed_state(client, monkeypatch):
-    room, company, candidate, _, _ = prepared(client)
-    endpoint = f"/api/v1/interviews/rooms/{room['id']}"
-    monkeypatch.setattr(settings, "webrtc_turn_urls", ["turn:localhost:3478"])
-    monkeypatch.setattr(settings, "webrtc_turn_secret", "only-test-secret" * 3)
-    _, outsider = register(client, "ice-outsider")
-    assert client.get(endpoint + "/ice", headers=outsider).status_code == 404
-    response = client.get(endpoint + "/ice", headers=candidate)
-    assert response.status_code == 200, response.text
-    assert response.headers["cache-control"] == "no-store"
-    assert response.json()["mode"] == "turn_configured"
-    assert client.get(endpoint + "/ice", headers=company).status_code == 200
-    assert client.post(endpoint + "/close", headers=company).status_code == 200
-    assert client.get(endpoint + "/ice", headers=candidate).status_code == 409

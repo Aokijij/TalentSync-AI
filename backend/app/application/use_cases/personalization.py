@@ -90,7 +90,6 @@ def model_status(db, nlp):
             {"name": "Modelo neuronal local", "status": "Activo" if getattr(nlp, "match_method", "").startswith("local-sentence-transformer:") else "Adaptador disponible; faltan dependencia y pesos locales"},
             {"name": "Acceso social de candidatos", "status": "Adaptadores Google, GitHub y LinkedIn disponibles; requieren credenciales OAuth. LinkedIn exige origen HTTPS. Consulta el login para ver cuáles están activos."},
             {"name": "Catálogos de cursos y afiliación", "status": "Catálogo local administrable e importación JSON disponibles; patrocinios visibles sin alterar ranking. APIs, compras y acuerdos externos pendientes."},
-            {"name": "Análisis de proyectos", "status": "ZIP local disponible; adaptador de repositorios públicos GitHub activable por configuración y consentimiento. No verifica autoría ni dominio técnico."},
             {"name": "SSO corporativo del administrador", "status": "Google Workspace y Microsoft Entra ID disponibles con identidades aprovisionadas y MFA; requieren credenciales y selección del proveedor."},
             {"name": "Verificación oficial de empresas", "status": "Revisión manual local; falta proveedor de registros"},
             {"name": "Videollamada por Internet", "status": "Adaptador STUN/TURN disponible; requiere servidor de retransmisión configurado"},

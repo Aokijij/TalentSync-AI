@@ -1023,3 +1023,8 @@ tras comprobar que no los importa el proyecto y que ningún otro paquete los
 necesita; la autenticación ya utiliza PyJWT. Se comprueba `pip check` y se repite
 la suite sobre el entorno corregido. La auditoría del entorno instalado incluye
 las dependencias del modelo CPU y las herramientas de desarrollo.
+### Bloque 32 — Simplificación de capacidades y seguridad por rol
+
+Se retiran las rutas HTTP y de navegación de análisis de proyectos y salas de entrevista. No se borran datos históricos ni se modifica el esquema. La preparación local deja de crear salas y archivos ZIP de demostración. La privacidad de evidencias e intereses se restringe a candidatos. El autenticador incorpora un QR generado en el navegador y una entrada de seis dígitos con instrucciones.
+
+Validación: 38 pruebas dirigidas de retiro y compatibilidad de adaptadores; pruebas de seguridad de cuenta aprobadas; ESLint y Ruff sin errores. El recorrido de aceptación mantiene el avance a entrevista sin la sala integrada.

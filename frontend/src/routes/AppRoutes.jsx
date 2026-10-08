@@ -35,17 +35,13 @@ const OnboardingPage = lazyNamed(() => import("../pages/OnboardingPage.jsx"), "O
 const OrganizationPage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "OrganizationPage");
 const VerificationQueuePage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "VerificationQueuePage");
 const InvitationPage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "InvitationPage");
-const CompatibilityPage = lazyNamed(() => import("../pages/CompatibilityPage.jsx"), "CompatibilityPage");
 const ProcessPage = lazyNamed(() => import("../pages/ProcessPage.jsx"), "ProcessPage");
-const InterviewsPage = lazyNamed(() => import("../pages/InterviewPage.jsx"), "InterviewsPage");
-const InterviewRoomPage = lazyNamed(() => import("../pages/InterviewPage.jsx"), "InterviewRoomPage");
 const LearningPage = lazyNamed(() => import("../pages/LearningPage.jsx"), "LearningPage");
 const LearningCatalogPage = lazyNamed(() => import("../pages/LearningCatalogPage.jsx"), "LearningCatalogPage");
 const HiringQualityPage = lazyNamed(() => import("../pages/HiringQualityPage.jsx"), "HiringQualityPage");
 const TrustPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "TrustPage");
 const EcosystemPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "EcosystemPage");
 const ModelPage = lazyNamed(() => import("../pages/ModelPage.jsx"), "ModelPage");
-const PersonalizationPage = lazyNamed(() => import("../pages/ModelPage.jsx"), "PersonalizationPage");
 
 function RequireAuth({ children }) {
   const { user, loading, authError, retryAuth, logout, accessOptions } = useAuth();
@@ -86,7 +82,7 @@ function RequireAuth({ children }) {
 function HomeRedirect() {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role === "company") return <Navigate to="/empresa/equipo" replace />;
+  if (user.role === "company") return <Navigate to="/empresa" replace />;
   if (user.role === "admin") return <Navigate to="/admin" replace />;
   return <Navigate to="/candidato" replace />;
 }
@@ -125,13 +121,12 @@ export function AppRoutes() {
         <Route path="/admin/ecosistema" element={<RequireRole roles={["admin"]}><EcosystemPage /></RequireRole>} />
         <Route path="/admin/modelos" element={<RequireRole roles={["admin"]}><ModelPage /></RequireRole>} />
         <Route path="/admin/aprendizaje" element={<RequireRole roles={["admin"]}><LearningCatalogPage /></RequireRole>} />
-        <Route path="/mis-intereses" element={<RequireRole roles={["candidate"]}><PersonalizationPage /></RequireRole>} />
+        <Route path="/mis-intereses" element={<RequireRole roles={["candidate"]}><Navigate to="/recomendaciones?intereses=1" replace /></RequireRole>} />
         <Route path="/empresa/calidad" element={<RequireRole roles={["company"]}><HiringQualityPage /></RequireRole>} />
         <Route path="/aprendizaje" element={<RequireRole roles={["candidate"]}><LearningPage /></RequireRole>} />
         <Route path="/procesos/:applicationId" element={<ProcessPage />} />
-        <Route path="/entrevistas" element={<InterviewsPage />} />
-        <Route path="/entrevistas/:roomId" element={<InterviewRoomPage />} />
-        <Route path="/compatibilidad" element={<RequireRole roles={["candidate", "company"]}><CompatibilityPage /></RequireRole>} />
+        <Route path="/entrevistas/*" element={<HomeRedirect />} />
+        <Route path="/compatibilidad" element={<HomeRedirect />} />
         <Route path="/empresa/equipo" element={<RequireRole roles={["company"]}><OrganizationPage /></RequireRole>} />
         <Route path="/admin/verificaciones" element={<RequireRole roles={["admin"]}><VerificationQueuePage /></RequireRole>} />
         <Route path="/bienvenida" element={<RequireRole roles={["candidate"]}><OnboardingPage /></RequireRole>} />

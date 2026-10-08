@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
-  UsersRound,
   X,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
@@ -22,14 +21,11 @@ import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
   { to: "/admin/aprendizaje", label: "Catálogo educativo", icon: FileCheck2, roles: ["admin"] },
-  { to: "/mis-intereses", label: "Mis intereses", icon: Sparkles, roles: ["candidate"] },
   { to: "/admin/modelos", label: "Motor e integraciones", icon: Sparkles, roles: ["admin"] },
-  { to: "/entrevistas", label: "Salas de entrevista", icon: UsersRound, roles: ["candidate", "company", "admin"] },
   { to: "/confianza", label: "Confianza e incidencias", icon: ShieldCheck, roles: ["candidate", "company"] },
   { to: "/admin/ecosistema", label: "Salud del ecosistema", icon: Sparkles, roles: ["admin"] },
   { to: "/empresa/calidad", label: "Calidad de ofertas", icon: ShieldCheck, roles: ["company"] },
-  { to: "/aprendizaje", label: "Aprendizaje y pasaporte", icon: FileCheck2, roles: ["candidate"] },
-  { to: "/compatibilidad", label: "Compatibilidad y evidencia", icon: Sparkles, roles: ["candidate", "company"] },
+  { to: "/aprendizaje", label: "Mi desarrollo", icon: FileCheck2, roles: ["candidate"] },
   { to: "/empresa/equipo", label: "Verificación y equipo", icon: Building2, roles: ["company"] },
   { to: "/admin/verificaciones", label: "Verificar empresas", icon: ShieldCheck, roles: ["admin"] },
   { to: "/seguridad", label: "Seguridad y privacidad", icon: ShieldCheck, roles: ["candidate", "company", "admin"] },

@@ -99,15 +99,6 @@ def test_local_journey_connects_all_roles_with_sessions_and_mfa(browser):
         assert "PRIVATE-RECRUITER-NOTE" not in str(timeline)
         assert timeline["feedback"]["source"] == "company" and timeline["version"] == updated["version"]
 
-        room = request(company, "POST", "/interviews/rooms", expected=201, json={"application_id": application["id"]})
-        endpoint = f"/interviews/rooms/{room['id']}"
-        document = {"expected_version": room["version"], "code": "# FICTITIOUS-SHARED-CODE", "whiteboard": [{"points": [{"x": 10, "y": 20}]}]}
-        request(browser, "PUT", endpoint, json=document)
-        assert request(company, "GET", endpoint)["code"] == document["code"]
-        request(company, "PUT", endpoint, expected=409, json=document)
-        request(company, "POST", endpoint + "/close")
-        assert not request(browser, "GET", endpoint)["active"]
-
         # The worker endpoint also closes a real overdue process and emits its public feedback exactly once.
         with browser.session_factory() as db:
             db.get(Application, application["id"]).response_due_at = datetime.utcnow() - timedelta(seconds=1)
