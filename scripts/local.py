@@ -54,8 +54,10 @@ def main():
     commands = {
         "setup": ["-m", "alembic", "upgrade", "head"],
         "backend": ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "app",
-                    "--reload-exclude", "tests", "--reload-exclude", "scripts",
-                    "--reload-exclude", "alembic", "--reload-exclude", ".venv",
+                    "--reload-exclude", str(ROOT / "backend/tests"),
+                    "--reload-exclude", str(ROOT / "backend/scripts"),
+                    "--reload-exclude", str(ROOT / "backend/alembic"),
+                    "--reload-exclude", str(ROOT / "backend/.venv"),
                     "--host", "127.0.0.1", "--port", "8000"],
         "test": ["-m", "pytest", "-q", "-p", "no:cacheprovider"],
         "seed": ["-m", "scripts.seed_local"],
