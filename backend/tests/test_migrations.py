@@ -58,7 +58,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0036_mail_delivery"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0037_learning_journeys"
     finally:
         engine.dispose()
 

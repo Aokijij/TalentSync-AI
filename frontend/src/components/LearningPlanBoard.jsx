@@ -1,0 +1,44 @@
+import { ArrowLeft, ArrowRight, BadgeCheck, Check, FileText, PencilLine, Save } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { api, getApiErrorMessage } from "../api/client.js";
+import { AreaIcon } from "./LearningVisuals.jsx";
+
+function JourneyWorkspace({ plan, onSaved, onClose, onReload }) {
+  const journey = plan.resource.journey;
+  const [answers, setAnswers] = useState(plan.progress?.answers || {}), [step, setStep] = useState(plan.progress?.published ? 3 : 0);
+  const [addSkills, setAddSkills] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState(""), [message, setMessage] = useState("");
+  const complete = journey.steps.filter((item) => (answers[item.id]?.trim().length || 0) >= 40).length;
+  const current = journey.steps[step];
+  async function save(finish = false, advance = false) {
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const { data } = await api.patch(`/learning/plans/${plan.resource.id}/journey`, { version: plan.version, answers, finish, add_to_profile: finish && addSkills });
+      onSaved(data); setMessage(finish ? "Trabajo publicado en las evidencias de tu perfil." : "Borrador guardado. Puedes retomarlo desde cualquier sesión.");
+      if (advance) setStep(Math.min(3, step + 1));
+      return true;
+    } catch (failure) { setError(getApiErrorMessage(failure)); return false; } finally { setBusy(false); }
+  }
+  return <section className="journey-workspace" aria-label="Práctica guiada">
+    <div className="flex flex-wrap items-center justify-between gap-3"><button className="button-secondary" disabled={busy} onClick={async () => { const dirty = JSON.stringify(answers) !== JSON.stringify(plan.progress?.answers || {}); if (!dirty || await save()) onClose(); }}><ArrowLeft size={16} />Volver al plan</button><span className="learning-tag">{plan.progress?.published ? "Evidencia publicada" : "Borrador personal"}</span></div>
+    <div className="journey-heading"><span className="learning-area-icon"><AreaIcon area={plan.resource.category} size={28} /></span><div><p className="section-kicker">Tu práctica profesional</p><h2 className="text-2xl font-bold">{journey.title}</h2><p className="text-sm text-[var(--muted)]">Vas a crear: {journey.outcome}.</p></div></div>
+    <div className="journey-case"><h3 className="font-bold">El caso que vas a resolver</h3><p>{journey.scenario}</p>{plan.resource.url && <a className="text-sm font-semibold text-[var(--accent)]" href={plan.resource.url} target="_blank" rel="noopener noreferrer">Abrir la formación externa antes de practicar →</a>}</div>
+    <ol className="journey-steps" aria-label="Pasos de la práctica">{[...journey.steps, { id: "review", title: "Revisa y publica" }].map((item, index) => <li key={item.id}><button aria-current={step === index ? "step" : undefined} onClick={() => setStep(index)} disabled={busy}><span>{index < 3 && (answers[item.id]?.trim().length || 0) >= 40 ? <Check size={16} /> : index + 1}</span>{item.title}</button></li>)}</ol>
+    <progress className="w-full" max={3} value={complete} aria-label="Pasos desarrollados" />
+    {current ? <div className="space-y-3"><label className="block" htmlFor="practice-answer"><h3 className="text-lg font-bold">{current.title}</h3><p className="my-2 text-sm text-[var(--muted)]">{current.prompt}</p></label><textarea id="practice-answer" className="field-control" rows={7} maxLength={550} value={answers[current.id] || ""} onChange={(event) => setAnswers({ ...answers, [current.id]: event.target.value })} placeholder="Describe tu propuesta con hechos del caso y explica el porqué de tus decisiones…" disabled={busy} /><p className="text-xs text-[var(--muted)]">{answers[current.id]?.length || 0}/550 caracteres · Desarrolla al menos 40 para publicar. Guardar no evalúa si tu respuesta es correcta.</p></div> : <div className="space-y-4"><h3 className="text-lg font-bold">Tu muestra de trabajo</h3>{journey.steps.map((item, index) => <article className="journey-answer" key={item.id}><h4 className="font-semibold">{item.title}</h4><p className="whitespace-pre-wrap text-sm">{answers[item.id] || "Este paso está pendiente."}</p><button className="mt-2 flex items-center gap-1 text-xs text-[var(--accent)]" onClick={() => setStep(index)}><PencilLine size={14} />Revisar este paso</button></article>)}<div className="journey-case"><h4 className="font-semibold">Antes de publicar, revisa tu trabajo</h4><ul className="list-disc space-y-1 pl-5 text-sm">{journey.criteria.map((criterion) => <li key={criterion}>{criterion}</li>)}</ul></div><label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={addSkills} disabled={busy} onChange={(event) => setAddSkills(event.target.checked)} />Añadir también las habilidades de esta práctica a mi perfil como declaradas: {plan.resource.skills.join(", ")}.</label><p className="text-xs text-[var(--muted)]">{journey.notice} La publicación respeta tus ajustes de privacidad.</p></div>}
+    {error && <div role="alert" className="text-sm text-[var(--error)]">{error}<button className="ml-3 underline" onClick={async () => { await onReload(); setMessage("Versión actualizada. Revisa tu borrador antes de guardar de nuevo."); }}>Actualizar versión del plan</button></div>}{message && <p role="status" className="text-sm text-[var(--success)]">{message}</p>}
+    <div className="flex flex-wrap gap-3"><button className="button-secondary" disabled={busy} onClick={() => save()}><Save size={16} />Guardar borrador</button>{current ? <button className="button-primary" disabled={busy || (answers[current.id]?.trim().length || 0) < 40} onClick={() => save(false, true)}>Guardar y continuar<ArrowRight size={16} /></button> : <button className="button-primary" disabled={busy || complete !== 3} onClick={() => save(true)}><BadgeCheck size={17} />{plan.progress?.published ? "Actualizar evidencia" : "Finalizar y añadir evidencia"}</button>}</div>
+    {plan.progress?.published && <div className="learning-published"><BadgeCheck size={24} /><div><strong>Tu avance ya forma parte de tu perfil</strong><p className="text-sm">Puedes revisar la evidencia y acreditar los fundamentos con una evaluación del catálogo.</p><Link className="text-sm underline" to="/perfil#evidencias">Ver mi evidencia →</Link></div></div>}
+  </section>;
+}
+
+export function LearningPlanBoard({ plans, onSaved, onReload, onExplore }) {
+  const [selected, setSelected] = useState(null), [showCompleted, setShowCompleted] = useState(false);
+  const plan = plans.find((row) => row.id === selected);
+  if (plan?.resource?.journey) return <JourneyWorkspace key={plan.id} plan={plan} onSaved={onSaved} onReload={onReload} onClose={() => setSelected(null)} />;
+  const visible = plans.filter((row) => showCompleted ? row.status === "completed" : row.status !== "completed");
+  return <section className="space-y-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Tu siguiente avance</h2><div className="flex gap-2">{[[false, "En marcha"], [true, "Finalizados"]].map(([value, label]) => <button key={label} className={showCompleted === value ? "button-primary" : "button-secondary"} onClick={() => setShowCompleted(value)}>{label} ({plans.filter((row) => value ? row.status === "completed" : row.status !== "completed").length})</button>)}</div></div>
+    {!visible.length && <div className="learning-empty"><FileText size={34} /><h3 className="text-lg font-bold">{showCompleted ? "Tus trabajos terminados aparecerán aquí" : "Elige tu primera práctica"}</h3><p>Resuelve un caso de tu área, guarda tu avance y publica el resultado en tu perfil.</p><button className="button-primary" onClick={onExplore}>Explorar prácticas<ArrowRight size={16} /></button></div>}
+    <div className="grid gap-4 lg:grid-cols-2">{visible.map((row) => { const count = row.resource?.journey?.steps.filter((item) => (row.progress?.answers?.[item.id]?.trim().length || 0) >= 40).length || 0; return <article className="learning-resource" key={row.id}><div className="flex justify-between"><span className="learning-area-icon"><AreaIcon area={row.resource?.category} /></span><span className="learning-tag">{row.progress?.published ? "Publicado en tu perfil" : row.status === "completed" ? "Marcado por ti · sin trabajo publicado" : `${count} de 3 pasos`}</span></div><h3 className="text-lg font-bold">{row.resource?.title || "Recurso archivado"}</h3><p className="text-sm text-[var(--muted)]">{row.resource?.journey?.outcome}</p><progress className="w-full" max={3} value={count} aria-label={`Avance de ${row.resource?.title || "práctica"}`} /><button className="button-primary self-start" disabled={!row.resource?.journey} onClick={() => setSelected(row.id)}>{row.progress?.published ? "Ver mi trabajo" : count ? "Continuar práctica" : "Comenzar práctica"}<ArrowRight size={16} /></button></article>; })}</div>
+  </section>;
+}

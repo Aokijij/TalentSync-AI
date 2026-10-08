@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, StrictInt
@@ -20,6 +20,13 @@ class PlanUpdate(BaseModel):
 
 class Submission(BaseModel):
     answers: dict[str, StrictInt] = Field(max_length=30)
+
+
+class JourneyUpdate(BaseModel):
+    version: StrictInt = Field(ge=1)
+    answers: dict[str, Annotated[str, Field(max_length=550)]] = Field(max_length=3)
+    finish: bool = False
+    add_to_profile: bool = False
 
 
 @router.get("/learning/catalog")
@@ -65,6 +72,11 @@ def update_plan(resource_id: str, payload: PlanUpdate, user=Depends(candidate), 
 @router.post("/learning/assessments/{assessment_id}/start")
 def start(assessment_id: str, user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.start_assessment(db, user, assessment_id)
+
+
+@router.patch("/learning/plans/{resource_id}/journey")
+def save_journey(resource_id: str, payload: JourneyUpdate, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.save_journey(db, user, resource_id, payload.model_dump())
 
 
 @router.post("/learning/attempts/{attempt_id}/submit")

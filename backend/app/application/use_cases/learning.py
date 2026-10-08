@@ -74,9 +74,49 @@ def plans(db, user, resource_id=None, status=None):
             db.add(row)
         row.status = status
         row.completed_at = datetime.utcnow() if status == "completed" else None
+        row.version = (row.version or 0) + 1
         record_event(db, "learning.plan_updated", "profile", user.profile.id, actor_user_id=user.id, details={"status": status})
         db.commit()
-    return [{"id": row.id, "resource": resources.get(row.resource_id), "status": row.status, "created_at": row.created_at, "completed_at": row.completed_at} for row in db.learning.plans(user.id)]
+    return [{"id": row.id, "resource": resources.get(row.resource_id), "status": row.status, "created_at": row.created_at, "completed_at": row.completed_at,
+             "version": row.version, "progress": row.progress or {}} for row in db.learning.plans(user.id)]
+
+
+def save_journey(db, user, resource_id, payload):
+    resource = next((row for row in catalog_resources(db, include_inactive=True) if row["id"] == resource_id), None)
+    row = db.learning.plan(user.id, resource_id)
+    if resource is None or row is None:
+        raise UseCaseError(status_code=404, detail="Añade primero esta práctica a tu plan")
+    steps = resource["journey"]["steps"]
+    answers = {key: value.strip() for key, value in payload["answers"].items()}
+    if set(answers) - {step["id"] for step in steps}:
+        raise UseCaseError(status_code=422, detail="La práctica contiene un paso desconocido")
+    finish = payload.get("finish", False)
+    if finish and any(len(answers.get(step["id"], "")) < 40 for step in steps):
+        raise UseCaseError(status_code=422, detail="Desarrolla cada paso con al menos 40 caracteres antes de publicar")
+    evidence_id = uuid5(NAMESPACE_URL, f"talentsync:learning-evidence:{user.id}:{resource_id}").hex
+    existing = [item for item in user.profile.evidence or [] if item["id"] != evidence_id]
+    if finish and len(existing) >= 50:
+        raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cincuenta evidencias; retira una antes de publicar")
+    skills = normalize_skills([*(user.profile.skills or []), *resource["skills"]]) if payload.get("add_to_profile") else user.profile.skills
+    if finish and len(skills) > 100:
+        raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cien habilidades")
+    if not db.learning.claim_progress(row.id, user.id, payload["version"]):
+        raise UseCaseError(status_code=409, detail="El plan cambió en otra pestaña. Actualiza para conservar el avance más reciente")
+    now = datetime.utcnow()
+    row.progress = {"answers": answers, "published": finish, "evidence_id": evidence_id if finish else (row.progress or {}).get("evidence_id")}
+    row.status = "completed" if finish else "in_progress"
+    row.completed_at = now if finish else None
+    if finish:
+        user.profile.evidence = [*existing, {"id": evidence_id, "title": resource["journey"]["title"], "kind": "project", "url": None,
+            "skills": resource["skills"], "description": "\n\n".join(f"{step['title']}: {answers[step['id']]}" for step in steps),
+            "verified": False, "add_to_profile": bool(payload.get("add_to_profile")), "source": "learning_practice", "created_at": now.isoformat()}]
+        if payload.get("add_to_profile"):
+            user.profile.skills = skills
+        user.profile.updated_at = now
+    record_event(db, "learning.practice_published" if finish else "learning.practice_saved", "profile", user.profile.id,
+                 actor_user_id=user.id, details={"status": row.status})
+    db.commit()
+    return plans(db, user)
 
 
 def public_attempt(row):

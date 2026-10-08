@@ -27,6 +27,10 @@ class LearningRepository:
     def new_plan(self, **values):
         return LearningPlan(**values)
 
+    def claim_progress(self, plan_id, user_id, version):
+        return self.session.query(LearningPlan).filter_by(id=plan_id, user_id=user_id, version=version).update(
+            {LearningPlan.version: version + 1}, synchronize_session="fetch") == 1
+
     def attempts(self, user_id):
         return self.session.query(AssessmentAttempt).filter_by(user_id=user_id).order_by(AssessmentAttempt.started_at.desc()).all()
 

@@ -657,6 +657,8 @@ class LearningPlan(Base):
     status: Mapped[str] = mapped_column(String(30), default="in_progress", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    progress: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
 
 
 class AssessmentAttempt(Base):
