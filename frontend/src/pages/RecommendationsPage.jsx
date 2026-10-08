@@ -1,4 +1,4 @@
-import { SearchPreferences } from "../components/SearchPreferences.jsx";
+import { RecommendationControls } from "../components/RecommendationControls.jsx";
 import { useRecommendations } from "../hooks/useRecommendations.js";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -16,7 +16,7 @@ import { api } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { VacancyLearningPanel } from "../components/VacancyLearningPanel.jsx";
-import { JobInterestButtons, InterestsSettings } from "../components/JobInterests.jsx";
+import { JobInterestButtons } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
 import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
@@ -31,6 +31,7 @@ export function RecommendationsPage() {
   const interests = useJobInterests(true, () => load(false));
   const [query, setQuery] = useState("");
   const [interestMode, setInterestMode] = useState("all");
+  const [respectPreferences, setRespectPreferences] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -85,9 +86,9 @@ export function RecommendationsPage() {
     () =>
       enriched.filter((item) => {
         const job = jobsById.get(item.job_id);
-        return job && searchJob(job, query) && visibleInterest(job, interests.byId, interestMode) && (sourceFilter === "all" || job.source_kind === sourceFilter);
+        return job && (!respectPreferences || !item.match_details?.preferences?.unmet_conditions?.length) && searchJob(job, query) && visibleInterest(job, interests.byId, interestMode) && (sourceFilter === "all" || job.source_kind === sourceFilter);
       }),
-    [enriched, jobsById, sourceFilter, query, interestMode, interests.byId],
+    [enriched, jobsById, sourceFilter, query, interestMode, interests.byId, respectPreferences],
   );
   const pages = totalPages(filteredRecommendations, pageSize);
   const visibleRecommendations = pageItems(filteredRecommendations, page, pageSize);
@@ -142,8 +143,7 @@ export function RecommendationsPage() {
         description="Cada vacante muestra compatibilidad, habilidades coincidentes y una guía para mejorar."
       />
 
-      <SearchPreferences onSaved={() => load(false)} />
-      <InterestsSettings interests={interests} jobs={jobs} />
+      <RecommendationControls interests={interests} jobs={jobs} onSaved={() => { setPage(1); return load(false); }} respectPreferences={respectPreferences} onRespectChange={(value) => { setRespectPreferences(value); setPage(1); }} excludedCount={enriched.filter((item) => item.match_details?.preferences?.unmet_conditions?.length).length} />
       <div className="grid gap-3 sm:grid-cols-2"><label>Buscar recomendaciones<input className="field-control mt-1" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Cargo, empresa, ubicación o habilidad" /></label><label>Mostrar<select className="field-control mt-1" value={interestMode} onChange={(event) => { setInterestMode(event.target.value); setPage(1); }}><option value="all">Todas las sugeridas</option><option value="saved">Solo guardadas</option></select></label></div>
       {error && (
         <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)]">

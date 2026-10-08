@@ -11,6 +11,7 @@ import {
   Sparkles,
   UserRound,
   X,
+  BookOpen, BadgeCheck, HeartPulse, Network, Settings2, UsersRound, Search, Flag, LockKeyhole,
 } from "lucide-react";
 import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
 
@@ -20,20 +21,20 @@ import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
-  { to: "/admin/aprendizaje", label: "Catálogo educativo", icon: FileCheck2, roles: ["admin"] },
-  { to: "/admin/modelos", label: "Motor e integraciones", icon: Sparkles, roles: ["admin"] },
-  { to: "/confianza", label: "Confianza e incidencias", icon: ShieldCheck, roles: ["candidate", "company"] },
-  { to: "/admin/ecosistema", label: "Salud del ecosistema", icon: Sparkles, roles: ["admin"] },
-  { to: "/empresa/calidad", label: "Calidad de ofertas", icon: ShieldCheck, roles: ["company"] },
-  { to: "/aprendizaje", label: "Mi desarrollo", icon: FileCheck2, roles: ["candidate"] },
-  { to: "/empresa/equipo", label: "Organización y equipo", icon: Building2, roles: ["company"] },
+  { to: "/admin/aprendizaje", label: "Catálogo educativo", icon: BookOpen, roles: ["admin"] },
+  { to: "/admin/modelos", label: "Motor e integraciones", icon: Network, roles: ["admin"] },
+  { to: "/confianza", label: "Confianza e incidencias", icon: Flag, roles: ["candidate", "company"] },
+  { to: "/admin/ecosistema", label: "Salud del ecosistema", icon: HeartPulse, roles: ["admin"] },
+  { to: "/empresa/calidad", label: "Calidad de ofertas", icon: BadgeCheck, roles: ["company"] },
+  { to: "/aprendizaje", label: "Mi desarrollo", icon: BookOpen, roles: ["candidate"] },
+  { to: "/empresa/equipo", label: "Organización y equipo", icon: UsersRound, roles: ["company"] },
   { to: "/admin/verificaciones", label: "Verificar empresas", icon: ShieldCheck, roles: ["admin"] },
-  { to: "/seguridad", label: "Seguridad de cuenta", icon: ShieldCheck, roles: ["candidate", "company", "admin"] },
+  { to: "/seguridad", label: "Seguridad de cuenta", icon: LockKeyhole, roles: ["candidate", "company", "admin"] },
   { to: "/admin", label: "Inicio", icon: LayoutDashboard, roles: ["admin"] },
   {
     to: "/administracion",
     label: "Gestionar plataforma",
-    icon: ShieldCheck,
+    icon: Settings2,
     roles: ["admin"],
   },
   {
@@ -82,7 +83,7 @@ const links = [
   {
     to: "/empresa/talento",
     label: "Buscar talento",
-    icon: Sparkles,
+    icon: Search,
     roles: ["company"],
   },
   {
@@ -116,13 +117,11 @@ const roleCopy = {
 
 const navigationOrder = ["/candidato", "/empresa", "/admin", "/recomendaciones", "/vacantes", "/empresa/vacantes", "/postulaciones", "/empresa/postulaciones", "/empresa/talento", "/compatibilidad", "/aprendizaje", "/entrevistas", "/mis-intereses", "/empresa/calidad", "/confianza", "/admin/verificaciones", "/admin/ecosistema", "/admin/modelos", "/admin/aprendizaje", "/perfil", "/empresa/perfil", "/empresa/equipo", "/administracion", "/notificaciones", "/seguridad"];
 
-function Navigation({ linksForRole, unreadNotifications, onNavigate, business = false }) {
+function Navigation({ linksForRole, unreadNotifications, onNavigate, role }) {
+  const groups = role === "company" ? [["Contratación", ["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"]], ["Organización", ["/empresa/perfil", "/empresa/equipo", "/confianza"]], ["Tu cuenta", ["/notificaciones", "/seguridad"]]] : role === "admin" ? [["Supervisión", ["/admin", "/admin/verificaciones", "/admin/ecosistema", "/vacantes"]], ["Plataforma", ["/admin/modelos", "/admin/aprendizaje", "/administracion"]], ["Tu cuenta", ["/seguridad"]]] : [["Oportunidades", ["/candidato", "/recomendaciones", "/vacantes", "/postulaciones"]], ["Tu trayectoria", ["/aprendizaje", "/perfil"]], ["Tu cuenta", ["/notificaciones", "/confianza", "/seguridad"]]];
   return (
     <nav className="space-y-1" aria-label="Navegación principal">
-      {business ? [
-        ["Contratación", linksForRole.filter((link) => ["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"].includes(link.to))],
-        ["Organización", linksForRole.filter((link) => !["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"].includes(link.to))],
-      ].map(([label, group]) => <div key={label} className="mb-5"><p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--sidebar-muted)]">{label}</p><Navigation linksForRole={group} unreadNotifications={unreadNotifications} onNavigate={onNavigate} /></div>) : linksForRole.map(({ to, label, icon: Icon }) => (
+      {role ? groups.map(([label, routes]) => { const group = linksForRole.filter((link) => routes.includes(link.to)); return group.length ? <div key={label} className="navigation-group"><p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--sidebar-muted)]">{label}</p><Navigation linksForRole={group} unreadNotifications={unreadNotifications} onNavigate={onNavigate} /></div> : null; }) : linksForRole.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
@@ -212,7 +211,7 @@ export function AppLayout() {
         <Brand copy={copy} user={user} displayName={organizationName} />
         <div className="mt-8">
           <Navigation
-            business={user.role === "company"}
+            role={user.role}
             linksForRole={visibleLinks}
             unreadNotifications={unreadNotifications}
           />
@@ -248,7 +247,7 @@ export function AppLayout() {
             <Brand copy={copy} user={user} displayName={organizationName} />
             <div className="mt-8">
               <Navigation
-                business={user.role === "company"}
+                role={user.role}
             linksForRole={visibleLinks}
                 unreadNotifications={unreadNotifications}
                 onNavigate={closeMenu}

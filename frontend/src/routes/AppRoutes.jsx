@@ -96,13 +96,13 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<div className="grid min-h-screen place-items-center text-[var(--muted)]">Cargando sección...</div>}>
       <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPage key="candidate" />} />
       <Route path="/acceso-social" element={<SocialAccessPage />} />
       <Route path="/acceso-administracion" element={<AdminLoginPage />} />
       <Route path="/acceso-corporativo" element={<SocialAccessPage administrative />} />
-      <Route path="/registro" element={<RegisterPage />} />
-      <Route path="/empresa/login" element={<LoginPage />} />
-      <Route path="/empresa/registro" element={<RegisterPage />} />
+      <Route path="/registro" element={<RegisterPage key="candidate" />} />
+      <Route path="/empresa/login" element={<LoginPage key="company" />} />
+      <Route path="/empresa/registro" element={<RegisterPage key="company" />} />
       <Route path="/recuperar-acceso" element={<AccountActionPage recover />} />
       <Route path="/cuenta/confirmar" element={<AccountActionPage />} />
       <Route path="/desarrollo/correos" element={<LocalMailboxPage />} />

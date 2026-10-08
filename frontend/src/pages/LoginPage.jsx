@@ -18,7 +18,7 @@ export function LoginPage() {
     setError("");
     try {
       const user = await login(values.email, values.password, { code, remember: values.remember, portal });
-      if (user.mfa_required) { setCredentials(values); resetField("password"); return; }
+      if (user.mfa_required) { setCredentials({ ...values }); resetField("password"); return; }
       setCredentials(null);
       if (accessOptions.mode === "session" && company && !user.mfa_enabled) { navigate("/seguridad"); return; }
       const from = location.state?.from;

@@ -425,6 +425,7 @@ html[data-theme="dark"] .role-company {
   --accent: #c4a1ff; --accent-hover: #d3baff; --navy: #c4a1ff;
   --sidebar: #190f24; --sidebar-ink: #f4efff; --sidebar-muted: #c8b5df; --sidebar-border: #3b294e;
 }
+html[data-theme="dark"] .role-company .button-primary { color: #251335; }
 .access-page { min-height: 100vh; background: var(--canvas); color: var(--ink-strong); padding: 3rem 1.5rem; display: grid; align-items: center; }
 .access-stage { display: grid; grid-template-columns: 1fr 1fr; width: min(1160px, 100%); margin: auto; border: 1px solid var(--line); border-radius: 26px; overflow: hidden; background: var(--surface); box-shadow: 0 24px 80px #00000014; }
 .access-story { background: linear-gradient(145deg, #083344, #0f172a); color: #e0f2fe; padding: 3rem; display: flex; flex-direction: column; gap: 2.4rem; }
@@ -457,6 +458,45 @@ html[data-theme="dark"] .role-company {
 .mfa-symbol { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 22px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .mfa-code { text-align: center; font-size: 2rem; font-variant-numeric: tabular-nums; letter-spacing: .35em; }
 .navigation-group + .navigation-group { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--sidebar-border); }
+.recommendation-controls, .learning-area-picker { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 1.25rem; }
+.development-overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.development-overview > div { display: flex; align-items: center; gap: 1rem; padding: 1.2rem; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.development-overview strong { font-size: 2rem; color: var(--accent); line-height: 1; }
+.development-overview span { font-size: .85rem; font-weight: 650; }
+.development-overview small { display: block; font-size: .7rem; margin-top: .2rem; color: var(--muted); font-weight: 400; }
+.area-tiles { margin-top: 1.25rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
+.area-tiles button { display: flex; align-items: center; gap: .7rem; text-align: left; border: 1px solid var(--line); border-radius: 12px; padding: .8rem; font-size: .75rem; color: var(--muted); transition: background .15s, border-color .15s; }
+.area-tiles button svg { flex-shrink: 0; }
+.area-tiles button:hover, .area-tiles button.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); }
+.learning-resource, .assessment-card { display: flex; flex-direction: column; align-items: stretch; gap: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 1.5rem; transition: border-color .15s, box-shadow .15s; }
+.learning-resource:hover, .assessment-card:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 5px 20px #0000000d; }
+.learning-area-icon { display: inline-flex; align-items: center; justify-content: center; align-self: start; width: 48px; height: 48px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); flex-shrink: 0; }
+.learning-tag, .learning-skill { border-radius: 6px; padding: .3rem .55rem; background: var(--surface-subtle); font-size: .68rem; color: var(--muted); align-self: start; }
+.learning-skill { color: var(--accent); }
+.learning-projection { display: grid; gap: .25rem; padding: .8rem; border-radius: 10px; background: var(--surface-subtle); font-size: .8rem; }
+.learning-projection small { color: var(--muted); font-size: .65rem; }
+.learning-empty { display: flex; align-items: center; flex-direction: column; text-align: center; gap: .8rem; padding: 2.5rem 1rem; border: 1px dashed var(--line); border-radius: 18px; color: var(--muted); }
+.journey-workspace { display: grid; gap: 1.5rem; padding: clamp(1rem, 3vw, 2rem); border-radius: 20px; background: var(--surface); border: 1px solid var(--line); }
+.journey-heading { display: flex; align-items: start; gap: 1rem; }
+.journey-case { padding: 1.2rem; border-radius: 14px; background: var(--surface-subtle); border-left: 3px solid var(--accent); display: grid; gap: .6rem; font-size: .9rem; line-height: 1.7; }
+.journey-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; }
+.journey-steps button { width: 100%; height: 100%; display: flex; align-items: center; gap: .6rem; border-radius: 10px; border: 1px solid var(--line); padding: .7rem; text-align: left; font-size: .75rem; color: var(--muted); }
+.journey-steps button[aria-current="step"] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.journey-steps button span { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; border: 1px solid currentColor; }
+.journey-answer { border: 1px solid var(--line); border-radius: 12px; padding: 1rem; }
+.journey-answer p { margin-top: .5rem; overflow-wrap: anywhere; }
+.learning-published { border-radius: 14px; background: color-mix(in srgb, var(--success) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--success) 30%, var(--line)); padding: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+progress { height: .5rem; border: none; border-radius: 10px; overflow: hidden; accent-color: var(--accent); }
+progress::-webkit-progress-bar { background: var(--surface-subtle); }
+progress::-webkit-progress-value { background: var(--accent); border-radius: 10px; }
+@media (max-width: 640px) {
+  .development-overview { gap: .4rem; }
+  .development-overview > div { flex-direction: column; align-items: start; gap: .6rem; padding: .7rem; }
+  .development-overview span { font-size: .7rem; }
+  .development-overview small { font-size: .6rem; }
+  .journey-steps { grid-template-columns: repeat(2, 1fr); }
+  .area-tiles { grid-template-columns: repeat(2, 1fr); }
+}
 .app-sidebar { overflow-y: auto; }
 @media (max-width: 800px) {
   .access-page { padding: 3.5rem .75rem 1rem; }
