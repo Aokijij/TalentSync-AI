@@ -58,6 +58,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 19 | Conectividad STUN/TURN de entrevistas | Configuración validada, credenciales temporales y autorización por sala; servidor externo no configurado |
 | 20 | Modelo semántico multilingüe en CPU | Pesos fijados y verificados, inferencia offline activa y caché acotada |
 | 21 | Cierre de revisión e inventario | 249 pruebas backend, 20 frontend, lint completo, build y recorrido SQL en navegador |
+| 22 | SSO administrativo de Microsoft Entra ID | Tenant fijo, identidad aprovisionada, MFA y sesiones vinculadas a la aplicación; 290 pruebas backend y 20 frontend |
 
 ## Comprobaciones
 
@@ -616,7 +617,7 @@ como `password` y añade contexto a los desafíos de autenticación.
 Las pruebas cubren aprovisionamiento, ausencia de creación/elevación automática,
 aislamiento de flujos, vínculo al navegador, CSRF/origen, MFA, caducidad, revocación,
 cambio de dominio/rol y aplicación de la política a sesiones y JWT anteriores.
-Google Workspace es el proveedor implementado; Microsoft Entra ID no está integrado.
+Este bloque incorporó Google Workspace; el bloque 22 añade Microsoft Entra ID.
 VPN y restricciones de infraestructura no se han creado. Referencia:
 [validación del dominio Google Workspace](https://developers.google.com/identity/openid-connect/openid-connect).
 
@@ -756,5 +757,73 @@ identidades vinculadas, denegación del panel administrativo a candidatos y logo
 En navegador una cuenta ficticia independiente resolvió el reto SQL, probó la
 muestra, entregó y recibió la acreditación tras las tres comprobaciones. La captura
 queda en `.local/verification/retos-sql.jpg`. No se cambiaron credenciales del usuario
-ni se activaron permisos de cámara o micrófono. La migración local vigente es 0034.
+ni se activaron permisos de cámara o micrófono. La migración de este bloque era 0034.
 El inventario actual y sus dependencias externas están en [FEATURES_LOCAL.md](FEATURES_LOCAL.md).
+
+## Bloque 22: SSO administrativo de Microsoft Entra ID
+
+El mismo portal permite seleccionar Google Workspace o Microsoft Entra ID como
+proveedor corporativo. El botón muestra el proveedor configurado; el acceso social
+de candidatos sigue separado. Entra está desactivado en esta entrega porque no se
+han configurado credenciales ni conectado cuentas reales. El acceso local por
+contraseña conserva la política opcional anterior.
+
+Para una organización con una aplicación confidencial **Web** registrada, estas
+variables se pueden configurar explícitamente en `.local/backend.env`:
+
+```dotenv
+ADMIN_SSO_PROVIDER=entra
+ENTRA_TENANT_ID=UUID_CANONICO_DEL_TENANT
+OAUTH_ENTRA_CLIENT_ID=UUID_CANONICO_DE_LA_APLICACION
+OAUTH_ENTRA_CLIENT_SECRET=SECRETO_DE_LA_APLICACION
+```
+
+Tenant y aplicación deben ser UUID en minúsculas, sin llaves. No se admiten
+`common`, `organizations`, `consumers` ni URLs proporcionadas como tenant. Los
+endpoints de autorización, token y claves se construyen exclusivamente bajo
+`login.microsoftonline.com` para ese tenant. El intercambio de código ocurre en
+FastAPI; no se debe registrar como aplicación SPA ni exponer el secreto en React.
+Los ámbitos solicitados son `openid profile`, sin Graph ni renovación persistente.
+
+Callback local exacto:
+`http://127.0.0.1:5173/api/v1/auth/admin-sso/callback`.
+Microsoft indica que las direcciones HTTP con `127.0.0.1` se registran mediante
+`replyUrlsWithType` en el manifiesto de la aplicación, ya que el cuadro de texto
+del portal las rechaza. No se admite loopback IPv6. Fuera de desarrollo se exige
+HTTPS. El lanzador mantiene la URL local y no modifica aplicaciones de Azure.
+Referencia: [URI de redirección de Microsoft](https://learn.microsoft.com/en-us/entra/identity-platform/reply-url).
+
+Una cuenta administradora existente debe vincularse a la identidad estable
+`tenant UUID:object UUID`, obtenida de una fuente autorizada del directorio:
+
+```powershell
+backend/.venv/Scripts/python.exe scripts/local.py admin-sso bind --provider entra --email admin@empresa.com --subject TENANT_UUID:OBJECT_UUID
+backend/.venv/Scripts/python.exe scripts/local.py admin-sso revoke --provider entra --email admin@empresa.com
+```
+
+No se crean usuarios, promueven roles ni vinculan por coincidencia de correo/UPN.
+Los vínculos Entra y Workspace tienen espacios independientes; cambiar o retirar
+un vínculo revoca las sesiones de esa cuenta. Estos comandos no se ejecutaron
+contra cuentas del usuario durante el desarrollo.
+
+Se validan firma RS256, clave de firma, emisor exacto, audiencia única, nonce,
+vigencia, versión 2.0, tenant y objeto firmados. Los correos mutables no autorizan
+el acceso. Se conservan PKCE, estado ligado al navegador, consumo único y MFA de
+TalentSync. Si aún no hay MFA, la sesión solo permite configurar Seguridad.
+Referencia: [afirmaciones del ID token de Microsoft](https://learn.microsoft.com/en-us/entra/identity-platform/id-token-claims-reference).
+
+La migración 0035 añade una huella del proveedor, tenant/dominio y aplicación a
+las sesiones corporativas. El callback y el segundo factor rechazan cambios de
+configuración durante el flujo. Una sesión corporativa presentada con otra
+configuración se revoca y no revive al restaurar la anterior. Las sesiones
+corporativas antiguas deben volver a autenticarse; las de contraseña se conservan.
+No se guardan tokens de Microsoft ni sus secretos en eventos.
+
+El lanzador ignora configuración corporativa heredada salvo valores explícitos
+del archivo local; las pruebas fuerzan nuevamente proveedores desactivados.
+Pasaron 290 pruebas backend, incluidas 39 de Entra, y 20 frontend; también lint
+Python/JavaScript, build Vite, migraciones de subida/bajada y SQL PostgreSQL offline.
+Se comprobó por HTTP local salud, opciones de SSO desactivadas, login de candidato,
+perfil, catálogo y logout. La migración local aplicada es 0035. Las pruebas usan
+firmas RSA y transporte en memoria; el login contra una organización real requiere
+registrar y configurar su aplicación y aún no se ha verificado externamente.

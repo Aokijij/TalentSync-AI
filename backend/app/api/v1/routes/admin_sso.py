@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 
 from app.api.deps import (
     get_account_security,
+    get_corporate_configuration,
     get_social_identity_provider,
     get_unit_of_work,
 )
@@ -19,7 +20,9 @@ router = APIRouter()
 
 @router.get("/auth/admin-sso/options")
 def options(gateway=Depends(get_social_identity_provider)):
-    return {"enabled": gateway.configured("workspace"), "required": settings.admin_sso_required, "provider": "Google Workspace"}
+    provider = settings.admin_sso_provider
+    return {"enabled": gateway.configured(provider), "required": settings.admin_sso_required,
+            "provider": "Microsoft Entra ID" if provider == "entra" else "Google Workspace"}
 
 
 @router.post("/auth/admin-sso/start")
@@ -27,7 +30,8 @@ def options(gateway=Depends(get_social_identity_provider)):
 def start(request: Request, response: Response, db=Depends(get_unit_of_work),
           gateway=Depends(get_social_identity_provider), security=Depends(get_account_security)):
     _origin(request)
-    result = cases.begin(db, gateway, security)
+    corporate = get_corporate_configuration()
+    result = cases.begin(db, gateway, security, provider=corporate["provider"], authority=corporate["authority"])
     _temporary_cookie(response, "talentsync_admin_sso_browser", result["browser"], 600)
     return {"url": result["url"]}
 
@@ -39,7 +43,7 @@ def callback(request: Request, state: str = Query(default="", max_length=256), c
     result = None
     try:
         result = cases.callback(db, state, request.cookies.get("talentsync_admin_sso_browser"), code, gateway, security,
-                                user_agent=request.headers.get("user-agent", ""), domain=settings.workspace_domain)
+                                user_agent=request.headers.get("user-agent", ""), **get_corporate_configuration())
         destination = "/acceso-corporativo?status=mfa" if result.get("mfa_required") else "/seguridad" if result["mfa_setup_required"] else "/admin"
     except UseCaseError as error:
         destination = "/acceso-corporativo?status=unavailable" if error.status_code == 503 else "/acceso-corporativo?status=failed"
@@ -63,10 +67,10 @@ def callback(request: Request, state: str = Query(default="", max_length=256), c
 def complete(request: Request, response: Response, payload: MfaCode, db=Depends(get_unit_of_work),
              gateway=Depends(get_social_identity_provider), security=Depends(get_account_security)):
     _origin(request)
-    if not gateway.configured("workspace"):
+    if not gateway.configured(settings.admin_sso_provider):
         raise UseCaseError(status_code=503, detail="El acceso corporativo no está configurado")
     result = cases.complete(db, request.cookies.get("talentsync_admin_sso_mfa"), payload.code, security,
-                            user_agent=request.headers.get("user-agent", ""), domain=settings.workspace_domain)
+                            user_agent=request.headers.get("user-agent", ""), **get_corporate_configuration())
     set_session_cookies(response, result)
     response.delete_cookie("talentsync_admin_sso_mfa", path="/")
     response.headers["Cache-Control"] = "no-store"

@@ -34,6 +34,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
             "social_identities", "oauth_attempts",
         }
         profile_columns = {column["name"] for column in schema.get_columns("profiles")}
+        assert "authentication_authority" in {column["name"] for column in schema.get_columns("user_sessions")}
         assert {"department", "photo_filename", "resume_style", "resume_color", "languages"} <= profile_columns
         assert {
             "languages",
@@ -57,7 +58,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0034_admin_sso"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0035_corporate_authority"
     finally:
         engine.dispose()
 
@@ -109,5 +110,27 @@ def test_oauth_linking_migration_preserves_pending_logins(monkeypatch, tmp_path)
         command.upgrade(migration_config(), "head")
         engine.dispose()  # Inspect through a fresh SQLite connection after external DDL.
         assert len(inspect(engine).get_foreign_keys("oauth_attempts")) == 2
+    finally:
+        engine.dispose()
+
+
+def test_corporate_authority_migration_preserves_existing_sessions(monkeypatch, tmp_path):
+    database_url = f"sqlite:///{(tmp_path / 'corporate-upgrade.sqlite3').as_posix()}"
+    monkeypatch.setattr(settings, "database_url", database_url)
+    command.upgrade(migration_config(), "0034_admin_sso")
+    engine = create_engine(database_url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO users (name,email,password_hash,role,created_at) VALUES ('Staff','staff@example.com','unchanged-hash','ADMIN',CURRENT_TIMESTAMP)"))
+            for token, method in [("password-token", "password"), ("workspace-token", "workspace")]:
+                connection.execute(text("INSERT INTO user_sessions (user_id,token_hash,csrf_hash,user_agent,created_at,last_seen_at,expires_at,mfa_verified,authentication_method) VALUES (1,:token,:token,'test',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'2030-01-01',false,:method)"), {"token": token, "method": method})
+        command.upgrade(migration_config(), "head")
+        with engine.connect() as connection:
+            rows = connection.execute(text("SELECT authentication_method,authentication_authority FROM user_sessions ORDER BY id")).all()
+            assert [tuple(row) for row in rows] == [("password", ""), ("workspace", "")]
+            assert connection.execute(text("SELECT password_hash FROM users")).scalar_one() == "unchanged-hash"
+        command.downgrade(migration_config(), "0034_admin_sso")
+        with engine.connect() as connection:
+            assert connection.execute(text("SELECT COUNT(*) FROM user_sessions")).scalar_one() == 2
     finally:
         engine.dispose()

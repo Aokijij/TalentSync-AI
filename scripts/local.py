@@ -42,6 +42,8 @@ def prepare_environment(*, testing=False):
                    "GITHUB_PROJECT_ANALYSIS_ENABLED": values.get("GITHUB_PROJECT_ANALYSIS_ENABLED", "false"),
                    "WORKSPACE_DOMAIN": values.get("WORKSPACE_DOMAIN", ""),
                    "ADMIN_SSO_REQUIRED": values.get("ADMIN_SSO_REQUIRED", "false"),
+                   "ADMIN_SSO_PROVIDER": values.get("ADMIN_SSO_PROVIDER", "workspace"),
+                   "ENTRA_TENANT_ID": values.get("ENTRA_TENANT_ID", ""),
                    "WEBRTC_STUN_URLS": values.get("WEBRTC_STUN_URLS", "[]"),
                    "WEBRTC_TURN_URLS": values.get("WEBRTC_TURN_URLS", "[]"),
                    "WEBRTC_TURN_SECRET": values.get("WEBRTC_TURN_SECRET", ""),
@@ -49,7 +51,8 @@ def prepare_environment(*, testing=False):
                    **{key: values.get(key, "") for key in ("OAUTH_GITHUB_CLIENT_ID", "OAUTH_GITHUB_CLIENT_SECRET",
                                                            "OAUTH_GOOGLE_CLIENT_ID", "OAUTH_GOOGLE_CLIENT_SECRET",
                                                            "OAUTH_LINKEDIN_CLIENT_ID", "OAUTH_LINKEDIN_CLIENT_SECRET",
-                                                           "OAUTH_WORKSPACE_CLIENT_ID", "OAUTH_WORKSPACE_CLIENT_SECRET")},
+                                                           "OAUTH_WORKSPACE_CLIENT_ID", "OAUTH_WORKSPACE_CLIENT_SECRET",
+                                                           "OAUTH_ENTRA_CLIENT_ID", "OAUTH_ENTRA_CLIENT_SECRET")},
                    "SESSION_COOKIE_SECURE": "false", "PUBLIC_APP_URL": "http://127.0.0.1:5173",
                    "AZURE_STORAGE_ACCOUNT_URL": "", "JSEARCH_API_KEY": "", "ADZUNA_APP_ID": "",
                    "ADZUNA_APP_KEY": "", "JOOBLE_API_KEY": "", "STATIC_DIR": ""})
@@ -59,7 +62,8 @@ def prepare_environment(*, testing=False):
                        "SESSION_AUTH_ENABLED": "false", "LOCAL_MAIL_ENABLED": "false",
                        "WORKFLOW_MAINTENANCE_ENABLED": "false", "MODEL_MAINTENANCE_ENABLED": "false",
                        "GITHUB_PROJECT_ANALYSIS_ENABLED": "false", "WORKSPACE_DOMAIN": "",
-                       "ADMIN_SSO_REQUIRED": "false", "WEBRTC_STUN_URLS": "[]", "WEBRTC_TURN_URLS": "[]",
+                       "ADMIN_SSO_REQUIRED": "false", "ADMIN_SSO_PROVIDER": "workspace", "ENTRA_TENANT_ID": "",
+                       "WEBRTC_STUN_URLS": "[]", "WEBRTC_TURN_URLS": "[]",
                        "WEBRTC_TURN_SECRET": "", "WEBRTC_RELAY_ONLY": "false",
                        **{key: "" for key in values if key.startswith("OAUTH_")}})
     return {**os.environ, **values}

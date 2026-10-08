@@ -1,5 +1,6 @@
 import os
 from functools import lru_cache
+from typing import Literal
 from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator, model_validator
@@ -28,6 +29,10 @@ class Settings(BaseSettings):
     oauth_workspace_client_secret: str = ""
     workspace_domain: str = ""
     admin_sso_required: bool = False
+    admin_sso_provider: Literal["workspace", "entra"] = "workspace"
+    entra_tenant_id: str = ""
+    oauth_entra_client_id: str = ""
+    oauth_entra_client_secret: str = ""
     webrtc_stun_urls: list[str] = Field(default_factory=list, max_length=4)
     webrtc_turn_urls: list[str] = Field(default_factory=list, max_length=4)
     webrtc_turn_secret: str = ""

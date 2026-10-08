@@ -123,6 +123,7 @@ class UserSession(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
     mfa_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
     authentication_method: Mapped[str] = mapped_column(String(20), default="password", server_default="password", nullable=False)
+    authentication_authority: Mapped[str] = mapped_column(String(64), default="", server_default="", nullable=False)
     oauth_link_attempts: Mapped[list["OAuthAttempt"]] = relationship(cascade="all, delete-orphan", foreign_keys="OAuthAttempt.link_session_id")
 
 

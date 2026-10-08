@@ -55,7 +55,7 @@ def create_session(db, payload, security, *, admin=False, user_agent=""):
     return issue_session(db, user, remember=payload.get("remember"), user_agent=user_agent)
 
 
-def issue_session(db, user, *, remember=False, user_agent="", authentication_method="password"):
+def issue_session(db, user, *, remember=False, user_agent="", authentication_method="password", authentication_authority=""):
     # Callers must authenticate the user and complete any configured MFA first.
     token, csrf = secrets.token_urlsafe(48), secrets.token_urlsafe(32)
     now = datetime.utcnow()
@@ -63,7 +63,8 @@ def issue_session(db, user, *, remember=False, user_agent="", authentication_met
     lifetime = timedelta(days=30) if remember else timedelta(hours=8)
     session = db.accounts.new_session(user_id=user.id, token_hash=token_digest(token),
         csrf_hash=token_digest(csrf), user_agent=user_agent[:255], created_at=now,
-          last_seen_at=now, expires_at=now + lifetime, mfa_verified=user.mfa_enabled, authentication_method=authentication_method)
+          last_seen_at=now, expires_at=now + lifetime, mfa_verified=user.mfa_enabled, authentication_method=authentication_method,
+          authentication_authority=authentication_authority)
     db.add(session)
     db.flush()
     record_event(db, "session.created", "user", user.id, actor_user_id=user.id, details={"session_id": session.id})

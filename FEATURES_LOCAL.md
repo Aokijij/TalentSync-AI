@@ -1,7 +1,7 @@
 # Funcionalidades de la versión local
 
 Proyecto compatible con su stack existente: FastAPI, React y SQLAlchemy.
-Rama `codex/desarrollo-funcionalidades-local`, bloques 1–20 y cierre de revisión.
+Rama `codex/desarrollo-funcionalidades-local`, bloques 1–22.
 No se realizó despliegue ni push. Los datos de demostración son ficticios y la
 base aislada vive en `.local/talentsync.sqlite3`.
 
@@ -47,7 +47,7 @@ base aislada vive en `.local/talentsync.sqlite3`.
 | Funcionalidad | Implementación y dónde usarla |
 | --- | --- |
 | Acceso restringido | Sin registro público de administradores. Portal `/acceso-administracion`, MFA y permisos comprobados en backend. |
-| SSO corporativo | Google Workspace con dominio firmado, sujeto aprovisionado, MFA y política obligatoria opcional; sin creación ni elevación automática por correo. |
+| SSO corporativo | Google Workspace o Microsoft Entra ID, identidad aprovisionada, MFA y política obligatoria opcional. Sesión vinculada al dominio/tenant y aplicación; sin creación ni elevación automática por correo. |
 | Verificación empresarial | Cola de revisión, decisión y motivos, con alcance manual local. `/admin/verificaciones`. |
 | Salud y reputación | Plazos incumplidos, comportamiento observable, incidencias revisadas y efecto de reputación en visibilidad. Las denuncias pendientes no penalizan. `/admin/ecosistema`. |
 | Auditoría de matching | Versión, componentes y revisión de resultados; métricas sobre datos disponibles. No certifica ausencia de sesgos demográficos. |
@@ -58,9 +58,9 @@ base aislada vive en `.local/talentsync.sqlite3`.
 
 ## Dependencias que no están activadas en local
 
-- Google, GitHub, LinkedIn y Workspace necesitan aplicaciones y credenciales reales.
+- Google, GitHub, LinkedIn, Workspace y Entra ID necesitan aplicaciones y credenciales reales.
   LinkedIn exige HTTPS. Sus pruebas usan proveedores en memoria; no se conectaron
-  cuentas reales. Microsoft Entra ID no está implementado.
+  cuentas reales. Entra requiere un tenant concreto y aprovisionamiento administrativo.
 - La lectura pública de GitHub está desactivada por defecto y exige consentimiento
   por consulta. No se analizaron repositorios reales.
 - Catálogos comerciales por API, compras, certificados oficiales y comisiones
@@ -80,8 +80,10 @@ base aislada vive en `.local/talentsync.sqlite3`.
 
 ## Validación de cierre
 
-El 7 de octubre de 2026 pasaron 249 pruebas backend y 20 frontend, lint completo
-de Python/JavaScript, compilación Vite y comprobación de dependencias Python.
+El 8 de octubre de 2026 pasaron 290 pruebas backend y 20 frontend, lint completo
+de Python/JavaScript y compilación Vite. La comprobación de dependencias Python
+también pasó en el bloque 21. Entra ID añade validación de firma, tenant, audiencia,
+caducidad, MFA y revocación; la migración 0035 conserva datos y sesiones previos.
 La suite usó bases temporales aisladas, y las migraciones comprobaron SQLite y
 generación SQL PostgreSQL sin conexión a la base anterior.
 

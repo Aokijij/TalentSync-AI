@@ -7,10 +7,11 @@ from app.application.ports.services import ProjectInspector as ProjectInspectorP
 from app.application.ports.services import ResumeReader as ResumeReaderPort
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
-from app.application.use_cases.account_security import resolve_session
+from app.application.use_cases.account_security import resolve_session, revoke_session
 from app.application.use_cases.organizations import authorize_request
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
+from app.domain.services.corporate_identity import PROVIDERS, authority_fingerprint
 from app.infrastructure.database.models import User
 from app.infrastructure.database.session import get_db
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
@@ -36,8 +37,14 @@ def get_current_user(
         user, session = resolve_session(SqlAlchemyUnitOfWork(db), browser_token,
             csrf=request.headers.get("X-CSRF-Token"), mutation=request.method not in {"GET", "HEAD", "OPTIONS"})
         request.state.account_session = session
-        if user.role == UserRole.ADMIN and settings.admin_sso_required and session.authentication_method != "workspace":
-            raise HTTPException(status_code=401, detail="Inicia una sesión mediante el proveedor corporativo")
+        if user.role == UserRole.ADMIN:
+            corporate = get_corporate_configuration()
+            if session.authentication_method in PROVIDERS:
+                if session.authentication_method != corporate["provider"] or session.authentication_authority != corporate["authority"]:
+                    revoke_session(SqlAlchemyUnitOfWork(db), user, session.id)
+                    raise HTTPException(status_code=401, detail="El proveedor corporativo cambió; inicia sesión de nuevo")
+            elif settings.admin_sso_required:
+                raise HTTPException(status_code=401, detail="Inicia una sesión mediante el proveedor corporativo")
         if user.role != UserRole.CANDIDATE and (not user.mfa_enabled or not session.mfa_verified):
             if not request.url.path.startswith(("/api/v1/auth/", "/api/v1/account/")):
                 raise HTTPException(status_code=403, detail="Configura la autenticación de dos factores en Seguridad para continuar")
@@ -83,6 +90,13 @@ def require_roles(*roles: UserRole):
 
 def get_unit_of_work(db: Session = Depends(get_db)) -> UnitOfWork:
     return SqlAlchemyUnitOfWork(db)
+
+
+def get_corporate_configuration():
+    provider = settings.admin_sso_provider
+    boundary = settings.entra_tenant_id if provider == "entra" else settings.workspace_domain
+    client_id = settings.oauth_entra_client_id if provider == "entra" else settings.oauth_workspace_client_id
+    return {"provider": provider, "domain": boundary, "authority": authority_fingerprint(provider, boundary, client_id)}
 
 
 def get_text_analysis() -> TextAnalysis:
