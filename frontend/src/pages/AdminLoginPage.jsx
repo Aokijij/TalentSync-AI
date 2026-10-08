@@ -1,17 +1,21 @@
 import { ArrowRight, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 
 import { BrandLogo } from "../components/brand/BrandLogo.jsx";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { api, getApiErrorMessage } from "../api/client.js";
 
 export function AdminLoginPage() {
   const { user, login, accessOptions } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [mfaRequired, setMfaRequired] = useState(false);
+  const [corporate, setCorporate] = useState(null);
+  const [corporateBusy, setCorporateBusy] = useState(false);
+  useEffect(() => { api.get("/auth/admin-sso/options", { __skipSessionEvent: true }).then(({ data }) => setCorporate(data)).catch(() => setError("No pudimos consultar los métodos de acceso administrativo.")); }, []);
   const {
     register,
     handleSubmit,
@@ -29,6 +33,11 @@ export function AdminLoginPage() {
     } catch {
       setError("No fue posible validar el acceso administrativo.");
     }
+  }
+  async function startCorporate() {
+    setCorporateBusy(true); setError("");
+    try { const { data } = await api.post("/auth/admin-sso/start"); window.location.assign(data.url); }
+    catch (failure) { setError(getApiErrorMessage(failure)); setCorporateBusy(false); }
   }
 
   return (
@@ -63,9 +72,12 @@ export function AdminLoginPage() {
             <p className="section-kicker">Administración</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Iniciar sesión</h2>
             <p className="mt-3 text-[var(--muted)]">
-              Ingresa las credenciales de una cuenta administradora.
+              {corporate?.required ? "Utiliza tu cuenta corporativa aprovisionada para administración." : "Ingresa las credenciales de una cuenta administradora."}
             </p>
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
+            {!corporate && !error && <p className="mt-5 text-sm">Consultando métodos de acceso…</p>}
+            {(corporate?.enabled || corporate?.required) && <div className="mt-6 space-y-3"><button className="button-primary w-full" type="button" disabled={!corporate.enabled || corporateBusy} onClick={startCorporate}>{corporateBusy ? "Abriendo proveedor…" : "Continuar con Google Workspace"}</button><p className="text-xs text-[var(--muted)]">{corporate.enabled ? "Solo admite cuentas corporativas vinculadas previamente a una cuenta administradora." : "El acceso corporativo obligatorio aún no está configurado. Contacta al responsable del entorno."}</p></div>}
+            {error && <p role="alert" className="mt-4 text-sm text-[var(--error)]">{error}</p>}
+            {corporate && !corporate.required && <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
               {mfaRequired && <label className="block text-sm font-semibold">Código de autenticación o recuperación<input className="field-control mt-2" autoComplete="one-time-code" {...register("code", { required: "Introduce tu código" })} /></label>}
               <label className="block text-sm font-semibold">
                 Correo administrativo
@@ -93,11 +105,10 @@ export function AdminLoginPage() {
                 </div>
                 {errors.password ? <span className="mt-1 block text-sm text-[var(--error)]">{errors.password.message}</span> : null}
               </label>
-              {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-[var(--error)]">{error}</p> : null}
               <button className="button-primary w-full" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Validando…" : <>Entrar al panel <ArrowRight size={17} /></>}
               </button>
-            </form>
+            </form>}
           </div>
         </div>
       </section>

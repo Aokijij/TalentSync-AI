@@ -71,8 +71,8 @@ def admin_login(
     *,
     security: AccountSecurity = Depends(get_account_security),
 ) -> TokenResponse:
-    if settings.session_auth_enabled:
-        raise UseCaseError(status_code=410, detail="Utiliza el acceso administrativo con sesión")
+    if settings.session_auth_enabled or settings.admin_sso_required:
+        raise UseCaseError(status_code=410, detail="Utiliza el acceso administrativo con sesión o el proveedor corporativo")
     return use_cases.login(
         payload=payload.model_dump(),
         db=db,

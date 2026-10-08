@@ -17,7 +17,7 @@ from app.domain.services.authentication import token_digest
 
 
 def begin(db, provider, gateway, security, *, user=None, session=None, credentials=None):
-    if not gateway.configured(provider):
+    if provider not in {"github", "google", "linkedin"} or not gateway.configured(provider):
         raise UseCaseError(status_code=503, detail="El acceso social no está configurado")
     if user is not None:
         _reauthenticate(db, user, session, credentials, security)

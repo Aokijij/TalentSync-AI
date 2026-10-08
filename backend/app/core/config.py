@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     oauth_linkedin_client_id: str = ""
     oauth_linkedin_client_secret: str = ""
     github_project_analysis_enabled: bool = False
+    oauth_workspace_client_id: str = ""
+    oauth_workspace_client_secret: str = ""
+    workspace_domain: str = ""
+    admin_sso_required: bool = False
     upload_dir: str = "uploads"
     cv_parser: str = "docling"
     cv_ocr_enabled: bool = True

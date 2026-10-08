@@ -103,6 +103,7 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/acceso-social" element={<SocialAccessPage />} />
       <Route path="/acceso-administracion" element={<AdminLoginPage />} />
+      <Route path="/acceso-corporativo" element={<SocialAccessPage administrative />} />
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/empresa/login" element={<LoginPage />} />
       <Route path="/empresa/registro" element={<RegisterPage />} />

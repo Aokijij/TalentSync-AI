@@ -32,6 +32,8 @@ def _origin(request):
 
 def _cookie_response(request, response, payload, db, security, admin):
     _origin(request)
+    if admin and settings.admin_sso_required:
+        raise UseCaseError(status_code=403, detail="Utiliza el acceso corporativo obligatorio")
     result = cases.create_session(db, payload.model_dump(), security, admin=admin,
                                   user_agent=request.headers.get("user-agent", ""))
     if result.get("mfa_required"):

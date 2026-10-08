@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1.routes import (
     account,
     admin,
+    admin_sso,
     applications,
     auth,
     companies,
@@ -22,6 +23,7 @@ from app.api.v1.routes import (
 )
 
 api_router = APIRouter()
+api_router.include_router(admin_sso.router, tags=["account"])
 api_router.include_router(account.router, tags=["account"])
 api_router.include_router(social_access.router, tags=["account"])
 api_router.include_router(organizations.router, tags=["organizations"])

@@ -36,6 +36,8 @@ def get_current_user(
         user, session = resolve_session(SqlAlchemyUnitOfWork(db), browser_token,
             csrf=request.headers.get("X-CSRF-Token"), mutation=request.method not in {"GET", "HEAD", "OPTIONS"})
         request.state.account_session = session
+        if user.role == UserRole.ADMIN and settings.admin_sso_required and session.authentication_method != "workspace":
+            raise HTTPException(status_code=401, detail="Inicia una sesión mediante el proveedor corporativo")
         if user.role != UserRole.CANDIDATE and (not user.mfa_enabled or not session.mfa_verified):
             if not request.url.path.startswith(("/api/v1/auth/", "/api/v1/account/")):
                 raise HTTPException(status_code=403, detail="Configura la autenticación de dos factores en Seguridad para continuar")
@@ -56,6 +58,8 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no existe"
         )
+    if user.role == UserRole.ADMIN and settings.admin_sso_required:
+        raise HTTPException(status_code=401, detail="Se requiere una sesión corporativa")
     authorize_request(SqlAlchemyUnitOfWork(db), user, request.url.path, request.method)
     return user
 

@@ -122,6 +122,7 @@ class UserSession(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
     mfa_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
+    authentication_method: Mapped[str] = mapped_column(String(20), default="password", server_default="password", nullable=False)
     oauth_link_attempts: Mapped[list["OAuthAttempt"]] = relationship(cascade="all, delete-orphan", foreign_keys="OAuthAttempt.link_session_id")
 
 
@@ -132,6 +133,7 @@ class AccountToken(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     purpose: Mapped[str] = mapped_column(String(40), nullable=False)
     target_email: Mapped[str | None] = mapped_column(String(255))
+    context: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime)
 

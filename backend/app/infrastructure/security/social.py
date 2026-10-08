@@ -1,5 +1,6 @@
 """Fixed-endpoint OAuth adapters. Tokens exist only for the duration of exchange."""
 import hmac
+import re
 from urllib.parse import urlencode, urlsplit
 
 import httpx
@@ -9,6 +10,9 @@ from email_validator import EmailNotValidError, validate_email
 from app.application.errors import UseCaseError
 
 OIDC = {
+    "workspace": {"authorize": "https://accounts.google.com/o/oauth2/v2/auth",
+                  "token": "https://oauth2.googleapis.com/token", "keys": "https://www.googleapis.com/oauth2/v3/certs",
+                  "issuers": ["accounts.google.com", "https://accounts.google.com"]},
     "google": {"authorize": "https://accounts.google.com/o/oauth2/v2/auth",
                "token": "https://oauth2.googleapis.com/token", "keys": "https://www.googleapis.com/oauth2/v3/certs",
                "issuers": ["accounts.google.com", "https://accounts.google.com"]},
@@ -33,6 +37,8 @@ class SocialIdentityProvider:
             _ = url.port
         except ValueError:
             return False
+        if provider == "workspace" and not re.fullmatch(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}", getattr(self.settings, "workspace_domain", "")):
+            return False
         secure_url = url.scheme == "https" or (
             self.settings.environment == "development" and url.scheme == "http"
             and url.hostname in {"localhost", "127.0.0.1", "::1"})
@@ -45,8 +51,9 @@ class SocialIdentityProvider:
     def _configuration(self, provider):
         if not self.configured(provider):
             raise UseCaseError(status_code=503, detail="El acceso social no está configurado")
+        callback = "/api/v1/auth/admin-sso/callback" if provider == "workspace" else f"/api/v1/auth/social/{provider}/callback"
         return {"client_id": getattr(self.settings, f"oauth_{provider}_client_id"),
-                "redirect_uri": f"{self.settings.public_app_url.rstrip('/')}/api/v1/auth/social/{provider}/callback"}
+                "redirect_uri": f"{self.settings.public_app_url.rstrip('/')}{callback}"}
 
     def authorization_url(self, provider, state, challenge, nonce):
         params = {**self._configuration(provider), "state": state,
@@ -57,8 +64,10 @@ class SocialIdentityProvider:
         else:
             endpoint = OIDC[provider]["authorize"]
             params.update(scope="openid email profile", nonce=nonce)
-            if provider == "google":
+            if provider in {"google", "workspace"}:
                 params.update(prompt="select_account")
+            if provider == "workspace":
+                params.update(hd=self.settings.workspace_domain)
         return f"{endpoint}?{urlencode(params)}"
 
     @staticmethod
@@ -112,6 +121,8 @@ class SocialIdentityProvider:
                         user = {**user, **{key: info.get(key) for key in ("email", "email_verified", "name")}}
                     if user.get("email_verified") is not True:
                         raise ValueError("Unverified email")
+                    if provider == "workspace" and user.get("hd") != self.settings.workspace_domain:
+                        raise ValueError("Unexpected hosted domain")
                     email, subject, name = user.get("email"), user["sub"], user.get("name")
                 if not isinstance(subject, str) or not subject or len(subject) > 255:
                     raise ValueError("Invalid subject")

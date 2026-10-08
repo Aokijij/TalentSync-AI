@@ -53,6 +53,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 14 | Catálogo educativo y transparencia comercial | Administración, importación JSON, brechas y planes integrados; sin compras ni certificados automáticos |
 | 15 | Acceso y vinculación LinkedIn | Adaptador OIDC implementado y probado en memoria; desactivado sin credenciales y HTTPS |
 | 16 | Lectura de repositorios públicos GitHub | Adaptador con consentimiento, revisión fija y límites; desactivado localmente por defecto |
+| 17 | SSO administrativo de Google Workspace | Aprovisionamiento local, validación de dominio y sujeto, MFA y política obligatoria opcional |
 
 ## Comprobaciones
 
@@ -559,3 +560,50 @@ URLs inseguras, cuota, repositorio privado, consentimiento, CSRF y guardado. No
 demuestran autoría ni sustituyen la comprobación con una conexión real habilitada.
 Referencia: [GitHub REST, árboles y blobs](https://docs.github.com/en/rest/git/trees)
 y [commits](https://docs.github.com/en/rest/commits/commits).
+
+## Bloque 17: acceso corporativo administrativo
+
+El portal administrativo incluye Google Workspace cuando se configuran
+`OAUTH_WORKSPACE_CLIENT_ID`, `OAUTH_WORKSPACE_CLIENT_SECRET` y `WORKSPACE_DOMAIN`
+en `.local/backend.env`. Es una aplicación OAuth independiente del acceso Google
+de candidatos. El dominio debe estar en minúsculas y ser exacto. Se valida la
+afirmación firmada `hd`, además de firma, emisor, audiencia, nonce, caducidad y
+correo verificado. No basta con que el correo termine en el dominio esperado.
+Callback exacto: `http://127.0.0.1:5173/api/v1/auth/admin-sso/callback` para el
+entorno local; una instalación externa debe usar HTTPS. No se configuraron claves
+ni conectaron cuentas reales.
+
+El sujeto estable de Google debe vincularse previamente a un administrador ya
+existente. No existe registro público, aprovisionamiento por correo coincidente
+ni elevación de roles. Desde la raíz, el operador local puede usar:
+
+```powershell
+backend/.venv/Scripts/python.exe scripts/local.py admin-sso bind --email admin@empresa.com --subject SUJETO_ESTABLE_DE_GOOGLE
+backend/.venv/Scripts/python.exe scripts/local.py admin-sso revoke --email admin@empresa.com
+```
+
+Estas acciones revocan las sesiones anteriores y registran eventos sin correo ni
+sujeto. No reemplazan vínculos existentes silenciosamente. El operador debe obtener
+el sujeto mediante una fuente autorizada del proveedor. No se ejecutaron estos
+comandos contra las cuentas del usuario durante el desarrollo.
+
+El flujo corporativo usa estados y cookies propios de diez minutos, PKCE y consumo
+atómico antes del intercambio. Su segundo factor tiene un token independiente de
+cinco minutos y un uso; vuelve a comprobar rol, sujeto aprovisionado y dominio
+configurado. No admite el desafío del acceso social de candidatos. Si el administrador
+aún no tiene MFA de TalentSync, solo puede entrar a Seguridad para configurarlo.
+Las operaciones administrativas siguen bloqueadas hasta completar esa configuración.
+
+`ADMIN_SSO_REQUIRED=true` activa la política obligatoria: rechaza nuevos accesos
+administrativos por contraseña, JWT anteriores y sesiones de contraseña ya abiertas.
+Las sesiones corporativas se identifican en servidor, sin depender del frontend.
+La opción queda en `false` localmente para conservar el acceso existente mientras
+no hay un proveedor configurado. La migración 0034 conserva sesiones anteriores
+como `password` y añade contexto a los desafíos de autenticación.
+
+Las pruebas cubren aprovisionamiento, ausencia de creación/elevación automática,
+aislamiento de flujos, vínculo al navegador, CSRF/origen, MFA, caducidad, revocación,
+cambio de dominio/rol y aplicación de la política a sesiones y JWT anteriores.
+Google Workspace es el proveedor implementado; Microsoft Entra ID no está integrado.
+VPN y restricciones de infraestructura no se han creado. Referencia:
+[validación del dominio Google Workspace](https://developers.google.com/identity/openid-connect/openid-connect).
