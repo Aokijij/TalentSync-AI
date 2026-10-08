@@ -17,6 +17,10 @@ class PasswordRequest(BaseModel):
     password: str = Field(min_length=1, max_length=72)
 
 
+class SocialAccountRequest(PasswordRequest):
+    code: str | None = Field(default=None, min_length=6, max_length=128)
+
+
 class MfaCode(BaseModel):
     code: str = Field(min_length=6, max_length=128)
 

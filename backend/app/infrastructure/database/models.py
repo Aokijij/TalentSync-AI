@@ -82,6 +82,7 @@ class User(Base):
     recommendation_feedback: Mapped[list["RecommendationFeedback"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     interview_participants: Mapped[list["InterviewParticipant"]] = relationship(cascade="all, delete-orphan")
     social_identities: Mapped[list["SocialIdentity"]] = relationship(cascade="all, delete-orphan")
+    oauth_link_attempts: Mapped[list["OAuthAttempt"]] = relationship(cascade="all, delete-orphan", foreign_keys="OAuthAttempt.link_user_id")
 
 
 class SocialIdentity(Base):
@@ -99,6 +100,9 @@ class OAuthAttempt(Base):
     __tablename__ = "oauth_attempts"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    purpose: Mapped[str] = mapped_column(String(10), default="login", server_default="login", nullable=False)
+    link_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    link_session_id: Mapped[int | None] = mapped_column(ForeignKey("user_sessions.id", ondelete="CASCADE"), index=True)
     state_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     browser_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     verifier_cipher: Mapped[str] = mapped_column(Text, nullable=False)
@@ -118,6 +122,7 @@ class UserSession(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
     mfa_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
+    oauth_link_attempts: Mapped[list["OAuthAttempt"]] = relationship(cascade="all, delete-orphan", foreign_keys="OAuthAttempt.link_session_id")
 
 
 class AccountToken(Base):

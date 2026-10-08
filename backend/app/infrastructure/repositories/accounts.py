@@ -25,6 +25,15 @@ class AccountRepository:
     def identity(self, provider, subject):
         return self.session.query(SocialIdentity).filter_by(provider=provider, subject=subject).first()
 
+    def identities_for_user(self, user_id):
+        return self.session.query(SocialIdentity).filter_by(user_id=user_id).order_by(SocialIdentity.provider).all()
+
+    def cancel_social_access(self, user_id):
+        self.session.query(OAuthAttempt).filter_by(link_user_id=user_id, used_at=None).update(
+            {OAuthAttempt.used_at: datetime.utcnow(), OAuthAttempt.verifier_cipher: ""}, synchronize_session="fetch")
+        self.session.query(AccountToken).filter_by(user_id=user_id, purpose="social_mfa", used_at=None).update(
+            {AccountToken.used_at: datetime.utcnow()}, synchronize_session="fetch")
+
     def new_oauth_attempt(self, **values):
         return OAuthAttempt(**values)
 
@@ -48,7 +57,7 @@ class AccountRepository:
         return MailMessage(**values)
 
     def session_by_hash(self, digest):
-        return self.session.query(UserSession).filter_by(token_hash=digest).first()
+        return self.session.query(UserSession).filter_by(token_hash=digest).populate_existing().first()
 
     def token_by_hash(self, digest, purpose):
         return self.session.query(AccountToken).filter_by(token_hash=digest, purpose=purpose).first()

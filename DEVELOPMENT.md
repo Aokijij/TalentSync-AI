@@ -317,8 +317,8 @@ callback antes de una futura exposición pública, pues contienen códigos tempo
 
 La identidad estable del proveedor permite volver a entrar sin sobrescribir el
 correo o nombre local. Si ese correo ya pertenece a otra cuenta, el acceso se
-detiene y solicita el método original: no vincula cuentas automáticamente. Vincular
-proveedores a una cuenta existente sigue pendiente de un flujo de reautenticación.
+detiene y solicita el método original: no vincula cuentas automáticamente. El bloque
+12 permite añadir proveedores desde Seguridad con reautenticación explícita.
 Las cuentas nuevas reciben una contraseña aleatoria no entregada; pueden definir
 una mediante Recuperar acceso y la bandeja local si necesitan funciones que exigen
 confirmación con contraseña, como activar MFA o cambiar el correo.
@@ -355,3 +355,33 @@ Quedan las comprobaciones externas y manuales ya indicadas: videollamada real en
 dos navegadores, inferencia con pesos neuronales reales, proveedores OAuth reales y
 migraciones en PostgreSQL. Las pruebas locales no acreditan precisión predictiva,
 ausencia de sesgos demográficos ni validación oficial de empresas o cursos.
+
+## Bloque 12: vincular proveedores a cuentas existentes
+
+Seguridad incluye Cuentas conectadas para candidatos en modo sesión. El usuario
+confirma su contraseña actual y, si está activado, un código MFA o de recuperación
+nuevo. Después autoriza Google o GitHub. Se conserva el perfil, correo y nombre de
+TalentSync aunque el correo social sea diferente. La API solo muestra proveedor y
+fecha de conexión; no entrega identificadores externos ni credenciales.
+
+El intento conserva propósito, candidato y sesión inicial, además del estado,
+cookie de navegador y PKCE del bloque 11. Se comprueba la vigencia de esa misma
+sesión antes y después del intercambio externo. Cerrar sesión, cambiar de cuenta,
+abrir otra sesión o revocar la original impide terminar. El callback no emite una
+nueva sesión al vincular. Las cuentas sociales ya usadas por otra cuenta no se
+transfieren; tampoco se reemplaza silenciosamente el proveedor existente.
+
+Desvincular vuelve a exigir contraseña y MFA si corresponde. Mantiene la sesión
+actual y el acceso por contraseña, cierra las demás sesiones y cancela vínculos y
+desafíos MFA sociales pendientes. Funciona incluso si se desconfigura el proveedor.
+No revoca autorizaciones en la página externa: estas se administran en Google o
+GitHub. Si la cuenta se creó mediante acceso social, antes debe definir contraseña
+con Recuperar acceso y el correo local. Las contraseñas no se guardan en el frontend
+ni en eventos; los campos de confirmación se vacían al enviar.
+
+La migración 0032 conserva los intentos anteriores como accesos de tipo `login`.
+Se probaron actualización, reversión y nueva actualización sobre SQLite con estados
+pendientes, y generación SQL PostgreSQL. Las pruebas cubren contraseña, MFA, CSRF,
+roles, propietario, intentos de unir cuentas, revocación durante el intercambio,
+desvinculación, cascadas y conservación del acceso por correo. No se conectaron
+cuentas externas reales; siguen siendo necesarias las credenciales del bloque 11.

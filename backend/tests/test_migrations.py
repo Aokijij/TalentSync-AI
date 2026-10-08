@@ -53,10 +53,11 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         company_columns = {column["name"] for column in schema.get_columns("companies")}
         assert {"website", "sector", "size", "location", "mission", "values", "benefits", "logo_filename", "cover_filename"} <= company_columns
         application_columns = {column["name"] for column in schema.get_columns("applications")}
+        assert {"purpose", "link_user_id", "link_session_id"} <= {column["name"] for column in schema.get_columns("oauth_attempts")}
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0031_social_identity"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0032_social_linking"
     finally:
         engine.dispose()
 
@@ -70,6 +71,7 @@ def test_postgresql_migration_sql_creates_enum_types_once(monkeypatch):
     assert sql.count("CREATE TYPE applicationstatus AS ENUM") == 1
     assert "CAST(status AS TEXT)" in sql
     assert "0017_languages" in sql
+    assert "fk_oauth_link_session" in sql
 
 
 def test_existing_language_requirements_are_preserved_on_upgrade(monkeypatch, tmp_path):
@@ -85,5 +87,27 @@ def test_existing_language_requirements_are_preserved_on_upgrade(monkeypatch, tm
             import json
             languages = connection.execute(text("SELECT languages FROM jobs")).scalar_one()
             assert json.loads(languages) == [{"name": "inglés", "level": "B1"}]
+    finally:
+        engine.dispose()
+
+
+def test_oauth_linking_migration_preserves_pending_logins(monkeypatch, tmp_path):
+    database_url = f"sqlite:///{(tmp_path / 'oauth-upgrade.sqlite3').as_posix()}"
+    monkeypatch.setattr(settings, "database_url", database_url)
+    command.upgrade(migration_config(), "0031_social_identity")
+    engine = create_engine(database_url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO oauth_attempts (provider,state_hash,browser_hash,verifier_cipher,expires_at) VALUES ('github','state-hash','browser-hash','encrypted-verifier','2030-01-01')"))
+        command.upgrade(migration_config(), "head")
+        with engine.connect() as connection:
+            row = connection.execute(text("SELECT purpose,link_user_id,link_session_id,verifier_cipher FROM oauth_attempts")).one()
+            assert tuple(row) == ("login", None, None, "encrypted-verifier")
+        command.downgrade(migration_config(), "0031_social_identity")
+        with engine.connect() as connection:
+            assert connection.execute(text("SELECT state_hash FROM oauth_attempts")).scalar_one() == "state-hash"
+        command.upgrade(migration_config(), "head")
+        engine.dispose()  # Inspect through a fresh SQLite connection after external DDL.
+        assert len(inspect(engine).get_foreign_keys("oauth_attempts")) == 2
     finally:
         engine.dispose()

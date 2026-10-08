@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { PageHeader } from "../components/PageHeader.jsx";
+import { SocialAccounts } from "../components/SocialAccounts.jsx";
 
 export function SecurityPage() {
   const [params] = useSearchParams();
@@ -26,6 +27,7 @@ export function SecurityPage() {
   }
   return <div className="space-y-5">
     <PageHeader kicker="Tu cuenta" title="Seguridad y privacidad" description="Controla el acceso, las sesiones y cómo se comparten tus evidencias." />
+    {user.role === "candidate" && accessOptions.mode === "session" && <SocialAccounts user={user} providers={accessOptions.providers} onSessionsChanged={load} />}
     {error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}
     {message && <p role="status" className="surface-card p-4">{message}</p>}
     {user.role !== "candidate" && !user.mfa_enabled && <p className="surface-card p-4">Para operar como empresa o administrador, configura primero una aplicación autenticadora.</p>}

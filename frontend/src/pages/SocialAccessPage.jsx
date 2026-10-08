@@ -19,7 +19,7 @@ export function SocialAccessPage() {
     finally { setBusy(false); }
   }
   const message = status === "existing"
-    ? "Ya existe una cuenta con ese correo. Usa su método original de acceso. Las cuentas no se unen automáticamente."
+    ? "El correo o la cuenta social ya pertenecen a una cuenta existente. Usa su método original de acceso. Para añadir un proveedor a tu cuenta, ingresa y abre Seguridad. Las cuentas no se unen automáticamente."
     : status === "unavailable" ? "Este proveedor aún no está configurado. Puedes ingresar con correo."
       : "El acceso no se completó: pudo cancelarse, vencer o iniciarse en otro navegador. Vuelve a intentarlo desde el login.";
   return <main className="grid min-h-screen place-items-center bg-[var(--canvas)] p-5">
