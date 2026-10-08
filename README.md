@@ -6,6 +6,12 @@
 
 TalentSync AI es una plataforma de selección laboral para candidatos, empresas y administradores. Centraliza la hoja de vida, las vacantes, las postulaciones y el seguimiento de cada proceso. También calcula una compatibilidad explicable entre el perfil y la vacante para ayudar a ordenar oportunidades y candidatos; el resultado sirve como apoyo y no reemplaza la evaluación de la empresa.
 
+Las funcionalidades nuevas de la rama `codex/desarrollo-funcionalidades-local`
+se desarrollaron y verificaron únicamente en local. Consulta el
+[cierre y transición a integraciones](LOCAL_HANDOFF.md), el
+[inventario por rol](FEATURES_LOCAL.md) y los [comandos de desarrollo](DEVELOPMENT.md).
+No se han publicado estos cambios en las direcciones indicadas abajo.
+
 ## Aplicación publicada
 
 - Frontend: [https://talentsync-ai.pages.dev](https://talentsync-ai.pages.dev)

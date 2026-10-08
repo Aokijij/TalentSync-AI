@@ -1,7 +1,7 @@
 # Funcionalidades de la versión local
 
 Proyecto compatible con su stack existente: FastAPI, React y SQLAlchemy.
-Rama `codex/desarrollo-funcionalidades-local`, bloques 1–23.
+Rama `codex/desarrollo-funcionalidades-local`, bloques 1–24.
 No se realizó despliegue ni push. Los datos de demostración son ficticios y la
 base aislada vive en `.local/talentsync.sqlite3`.
 
@@ -80,9 +80,9 @@ base aislada vive en `.local/talentsync.sqlite3`.
 
 ## Validación de cierre
 
-El 8 de octubre de 2026 pasaron 290 pruebas backend y 20 frontend, lint completo
-de Python/JavaScript y compilación Vite. La comprobación de dependencias Python
-también pasó en el bloque 21. Entra ID añade validación de firma, tenant, audiencia,
+El 8 de octubre de 2026 pasaron 304 pruebas backend y 20 frontend, lint completo
+de Python/JavaScript, compilación Vite y comprobación de dependencias Python.
+Entra ID añade validación de firma, tenant, audiencia,
 caducidad, MFA y revocación; la migración 0035 conserva datos y sesiones previos.
 La suite usó bases temporales aisladas, y las migraciones comprobaron SQLite y
 generación SQL PostgreSQL sin conexión a la base anterior.
@@ -98,3 +98,10 @@ Los comandos de arranque, configuración, límites y referencias técnicas está
 [DEVELOPMENT.md](DEVELOPMENT.md). Las claves, sesiones, credenciales de ejemplo y
 pesos no se incluyen en Git. El servidor local omite logs de acceso para no imprimir
 parámetros de callbacks OAuth; conserva los mensajes de errores y arranque.
+
+El flujo completo entre los tres roles pasó con sesiones y MFA en bases temporales.
+`scripts/local.py doctor` comprueba la instalación y `scripts/local.py verify`
+repite la validación y guarda un informe sin secretos en `.local/verification/`.
+La evidencia visual más reciente está en `cierre-local-aprendizaje.png` dentro de
+esa carpeta. El cierre local y lo necesario para conectar servicios reales están
+en [LOCAL_HANDOFF.md](LOCAL_HANDOFF.md).

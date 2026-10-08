@@ -83,3 +83,16 @@ def test_encoder_selection_follows_configuration_instead_of_stale_cache(monkeypa
     assert encoders.matching_encoder() is None
     assert calls == ["model-a"]
     encoders._configured_encoder.cache_clear()
+
+
+def test_model_check_uses_configured_path_without_downloading(monkeypatch):
+    from scripts import local_model
+    paths = []
+    class Encoder:
+        method = "only-test-model"
+        def __init__(self, path): paths.append(path)
+        def similarity(self, left, right): return 100 if left == right else 10 if "Cultivo" in right else 90
+    monkeypatch.setattr(encoders, "LocalMatchingEncoder", Encoder)
+    monkeypatch.setattr(encoders.settings, "match_model_path", "selected-local-folder")
+    local_model.check()
+    assert paths == ["selected-local-folder"]

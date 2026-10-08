@@ -60,11 +60,14 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 21 | Cierre de revisión e inventario | 249 pruebas backend, 20 frontend, lint completo, build y recorrido SQL en navegador |
 | 22 | SSO administrativo de Microsoft Entra ID | Tenant fijo, identidad aprovisionada, MFA y sesiones vinculadas a la aplicación; 290 pruebas backend y 20 frontend |
 | 23 | Aceptación completa entre roles y aprendizaje | Flujo integrado con sesiones, MFA, verificación, selección ciega, práctica SQL, entrevista, plazos, privacidad y auditoría |
+| 24 | Diagnóstico, verificación repetible y entrega local | Comandos doctor/verify, informe sin secretos, comprobación de pesos configurados y documento de transición |
 
 ## Comprobaciones
 
 ```powershell
 backend/.venv/Scripts/python.exe scripts/local.py test
+backend/.venv/Scripts/python.exe scripts/local.py doctor
+backend/.venv/Scripts/python.exe scripts/local.py verify
 # Desde frontend/: npm test; npm run lint; npm run build
 ```
 
@@ -850,3 +853,24 @@ Se corrigió la proyección de aprendizaje para excluir la vacante seleccionada
 del número de **otras vacantes** examinadas y beneficiadas. La interfaz aclara
 ese alcance; las ofertas pausadas no se cuentan. Cuatro pruebas focalizadas
 de aprendizaje y aceptación pasaron después del cambio.
+
+## Bloque 24: comprobación y transición de la versión local
+
+`doctor` comprueba la instalación, entorno aislado, integridad y cabecera de la
+SQLite local sin escribir filas. Descubre revisiones Alembic normales y anotadas;
+la ausencia de servidores en ejecución se informa como aviso. No lee `backend/.env`
+ni muestra credenciales. `verify` ejecuta pip check, Ruff, pytest aislado, pruebas
+Node, ESLint y Vite, y comprueba inferencia real si hay pesos configurados. El
+comando del modelo ahora usa `MATCH_MODEL_PATH`, evitando validar otra carpeta.
+
+La verificación falla ante errores y cambios de código durante su ejecución.
+Guarda resultado, duración de etapas y huella de archivos en
+`.local/verification/validation.json`; doctor escribe `doctor.json`. Ninguno
+contiene credenciales o perfiles. Las pruebas de estas herramientas usan carpetas
+y bases temporales, simulan los procesos de verificación y comprueban migración
+atrasada, base corrupta, configuración externa, pesos ausentes y parada ante fallos.
+
+El alcance terminado, comandos y dependencias para pasar a integración están en
+[LOCAL_HANDOFF.md](LOCAL_HANDOFF.md). El entorno local conserva las cuentas, la
+base aislada y la migración 0035. No se activaron proveedores, infraestructura,
+correo real, cámara o micrófono ni se ejecutó código arbitrario en el host.

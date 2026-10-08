@@ -76,10 +76,11 @@ def prepare():
 
 
 def check():
+    from app.core.config import settings
     from app.infrastructure.nlp.matching_encoder import LocalMatchingEncoder
 
     started = time.perf_counter()
-    encoder = LocalMatchingEncoder(str(FOLDER))
+    encoder = LocalMatchingEncoder(settings.match_model_path or str(FOLDER))
     examples = {
         "identical": ("Desarrollo de APIs con Python", "Desarrollo de APIs con Python"),
         "translated": ("Desarrollo de aplicaciones web", "Web application development"),

@@ -71,11 +71,15 @@ def prepare_environment(*, testing=False):
 
 def main():
     parser = argparse.ArgumentParser(description="TalentSync: entorno local aislado")
-    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "accounts", "admin-sso", "model-prepare", "model-check"))
+    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "accounts", "admin-sso", "model-prepare", "model-check", "doctor", "verify"))
     parser.add_argument("options", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.options and args.command != "admin-sso":
         parser.error("Solo admin-sso admite argumentos adicionales")
+    if args.command in {"doctor", "verify"}:
+        if not PYTHON.is_file():
+            raise SystemExit("Falta backend/.venv. Instala requirements-lite.txt y requirements-dev.txt.")
+        raise SystemExit(subprocess.call([str(PYTHON), str(ROOT / "scripts/local_checks.py"), args.command], cwd=ROOT))
     env = prepare_environment(testing=args.command == "test")
     commands = {
         "setup": ["-m", "alembic", "upgrade", "head"],
