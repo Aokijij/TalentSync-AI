@@ -866,3 +866,27 @@ html[data-theme="dark"] .auth-stage {
   cursor: grab;
   pointer-events: auto;
 }
+.business-auth .business-auth-stage {
+  display: grid;
+  max-width: 1080px;
+  min-height: 700px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  border-radius: 12px;
+}
+.business-auth .auth-form-panel { grid-column: 1; grid-row: 1; }
+.business-access-intro {
+  grid-column: 2;
+  grid-row: 1;
+  padding: 52px 40px;
+  background: #10263a;
+}
+.role-company .surface-card { border-radius: 12px; }
+.role-company .business-workspace-header { min-height: 80px; }
+.role-company .app-sidebar { overflow-y: auto; }
+@media (max-width: 767px) {
+  .business-auth .business-auth-stage { display: flex; flex-direction: column; min-height: auto; }
+  .business-access-intro { padding: 28px 24px; }
+  .business-access-intro ol, .business-access-intro > div:last-child { display: none; }
+  .business-access-intro .mt-12 { margin-top: 20px; }
+  .business-access-intro h1 { font-size: 26px; }
+}

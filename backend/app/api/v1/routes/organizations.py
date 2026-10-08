@@ -40,6 +40,16 @@ def invite(request: Request, payload: TeamInvitation, user=Depends(company_user)
                         mail_enabled=settings.mail_delivery_enabled, delivery_mode=settings.mail_delivery_mode)
 
 
+@router.get("/organization/invitations")
+def invitations(user=Depends(company_user), db=Depends(get_unit_of_work)):
+    return cases.invitations(db, user)
+
+
+@router.delete("/organization/invitations/{invitation_id}")
+def cancel_invitation(invitation_id: int, user=Depends(company_user), db=Depends(get_unit_of_work)):
+    return cases.cancel_invitation(db, user, invitation_id)
+
+
 @router.get("/organization/invitation")
 @limiter.limit("60/hour")
 def invitation(request: Request, token: str = Query(min_length=20, max_length=200), db=Depends(get_unit_of_work)):

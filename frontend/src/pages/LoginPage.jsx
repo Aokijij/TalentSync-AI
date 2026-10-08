@@ -74,7 +74,7 @@ export function LoginPage() {
       if (typeof destination === "string" && destination.startsWith("/") && !destination.startsWith("//")) { navigate(destination); return; }
       navigate(
         user.role === "company"
-          ? "/empresa/equipo"
+          ? "/empresa"
           : user.role === "admin"
             ? "/admin"
             : "/candidato",
@@ -87,9 +87,17 @@ export function LoginPage() {
   }
 
   return (
-    <main className="auth-shell relative">
+    <main className={`auth-shell relative ${isBusiness ? "business-auth" : ""}`}>
       <ThemeToggle compact className="fixed right-5 top-5 z-20" />
-      <section className="auth-stage">
+      <section className={`auth-stage ${isBusiness ? "business-auth-stage" : ""}`}>
+        {isBusiness ? (
+        <aside className="business-access-intro" aria-label="Espacio de empresas">
+          <BrandLogo size="lg" subtitle="EMPRESAS" tone="inverse" />
+          <div className="mt-12"><p className="text-xs font-bold uppercase tracking-widest text-sky-200">Centro de contratación</p><h1 className="mt-4 text-4xl font-bold text-white">Tu equipo. Tus vacantes. Un proceso claro.</h1><p className="mt-5 text-sm leading-7 text-slate-300">Un espacio de trabajo para publicar ofertas completas, revisar candidaturas y coordinar el equipo de selección.</p></div>
+          <ol className="mt-10 space-y-5 text-sm text-slate-200">{["Prepara y revisa tus ofertas", "Compara requisitos y candidaturas", "Comunica cada avance del proceso"].map((label, index) => <li className="flex items-center gap-3" key={label}><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/20 font-bold">0{index + 1}</span>{label}</li>)}</ol>
+          <div className="mt-12 border-t border-white/20 pt-5 text-xs text-slate-300">Acceso por invitación para el equipo · Autenticación de dos factores · Verificación de empresa</div>
+        </aside>
+        ) : (
         <aside
           className="auth-brand-panel"
           aria-label="Presentación de TalentSync"
@@ -143,9 +151,10 @@ export function LoginPage() {
             ))}
           </div>
         </aside>
+        )}
         <div className="auth-form-panel">
           <div className="auth-form">
-            <p className="section-kicker">Acceso seguro</p>
+            <p className="section-kicker">{isBusiness ? "Espacio de trabajo empresarial" : "Acceso seguro"}</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">
               {isBusiness ? "Ingresa a tu empresa" : "Bienvenido de nuevo"}
             </h2>
@@ -241,7 +250,7 @@ export function LoginPage() {
                 )}
               </button>
             </form>
-            <AccessProviders candidate={!isBusiness} />
+            {!isBusiness && <AccessProviders candidate />}
             <p className="mt-7 text-center text-sm text-[var(--muted)]">
               ¿Aún no tienes cuenta?{" "}
               <Link
@@ -251,6 +260,7 @@ export function LoginPage() {
                 Crear cuenta
               </Link>
             </p>
+            {isBusiness && <Link className="mt-3 block text-center text-sm text-[var(--muted)]" to="/login">Busco empleo · Acceso de candidato</Link>}
             {!isBusiness && <Link className="mt-3 block text-center text-sm text-[var(--accent)]" to="/empresa/login">Acceso para empresas</Link>}
           </div>
         </div>

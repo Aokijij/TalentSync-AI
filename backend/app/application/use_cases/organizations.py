@@ -41,7 +41,8 @@ def authorize_request(db, user, path, method):
             raise UseCaseError(status_code=403, detail="Tu acceso a la empresa fue retirado")
         if path.startswith("/api/v1/companies") and method not in {"GET", "HEAD"}:
             raise UseCaseError(status_code=403, detail="Esta acción requiere al propietario")
-        if member.role == "interviewer" and not path.startswith(("/api/v1/organization/", "/api/v1/notifications", "/api/v1/interviews")):
+        assigned_timeline = method == "GET" and path.startswith("/api/v1/workflow/applications/")
+        if member.role == "interviewer" and not (assigned_timeline or path.startswith(("/api/v1/organization/", "/api/v1/notifications"))):
             raise UseCaseError(status_code=403, detail="Tu acceso se limita a entrevistas asignadas")
     if company.verification_required and company.verification_status != "verified":
         if not path.startswith(("/api/v1/organization/", "/api/v1/companies", "/api/v1/jobs", "/api/v1/notifications", "/api/v1/hiring/quality/", "/api/v1/trust/")):
@@ -124,6 +125,23 @@ def invite(db, user, payload, *, app_url, mail_enabled, delivery_mode="local"):
     record_event(db, "company.member_invited", "company", company.id, actor_user_id=user.id, details={"role": payload["role"]})
     db.commit()
     return {"message": "Invitación preparada para enviar por correo"}
+
+
+def invitations(db, user):
+    company = context(db, user, owner=True)
+    now = datetime.utcnow()
+    return [{"id": row.id, "email": row.email, "role": row.role, "assigned_job_ids": row.assigned_job_ids,
+             "expires_at": row.expires_at, "status": "accepted" if row.used_at else "expired" if row.expires_at <= now else "pending"}
+            for row in db.organizations.invitations(company.id)]
+
+
+def cancel_invitation(db, user, invitation_id):
+    company = context(db, user, owner=True)
+    if not db.organizations.cancel_invitation(company.id, invitation_id):
+        raise UseCaseError(status_code=404, detail="Invitación pendiente no encontrada")
+    record_event(db, "company.invitation_cancelled", "company", company.id, actor_user_id=user.id)
+    db.commit()
+    return {"message": "Invitación cancelada; el enlace dejó de ser válido"}
 
 
 def invitation_info(db, token):

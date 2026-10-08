@@ -65,6 +65,11 @@ def public_stats(db: UnitOfWork) -> dict[str, int]:
     }
 
 
+def validate_retired_scenarios(questions: list[dict], previous: list[dict]) -> None:
+    if any(question.get("category") == "work_scenario" and question not in previous for question in questions):
+        raise UseCaseError(status_code=422, detail="Los escenarios de trabajo se retiraron. Usa preguntas de selección relacionadas con los requisitos del cargo.")
+
+
 def create_job(
     payload: dict[str, Any], current_user: User, db: UnitOfWork, *, nlp: TextAnalysis
 ) -> Job:
@@ -81,6 +86,7 @@ def create_job(
     if current_user.role != UserRole.ADMIN and (accessible is None or accessible.id != company.id):
         raise UseCaseError(status_code=403, detail="No puedes publicar en esta empresa")
     payload = dict(payload)
+    validate_retired_scenarios(payload.get("application_questions") or [], [])
     if company.verification_required and company.verification_status != "verified":
         payload["status"] = "draft"
     analysis = nlp.analyze_job(
@@ -144,6 +150,8 @@ def update_job(
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
     ensure_job_access(db, job, current_user)
     changes = dict(payload)
+    if "application_questions" in changes:
+        validate_retired_scenarios(changes["application_questions"] or [], job.application_questions or [])
     if "response_days" in changes and changes["response_days"] is None:
         raise UseCaseError(status_code=422, detail="Indica un plazo de 1 a 30 días")
     if changes.get("status") == "active" and job.company.verification_required and job.company.verification_status != "verified":
@@ -250,6 +258,7 @@ def reopen_job(job_id: int, mode: str, current_user: User, db: UnitOfWork, *, nl
     # A new vacancy keeps the previous selection process and notifications intact.
     payload = {key: getattr(job, key) for key in ["company_id", "title", "description", "requirements", "salary", "location", "department", "modality", "employment_type", "sector", "benefits", "languages", "application_questions", "required_education_level", "required_study_fields"]}
     payload.update({key: getattr(job, key) for key in ["blind_hiring", "skill_requirements", "response_days"]})
+    payload["application_questions"] = [question for question in payload["application_questions"] or [] if question.get("category") != "work_scenario"]
     payload["pipeline_stages"] = job.pipeline_stages
     return create_job(payload, current_user, db, nlp=nlp)
 

@@ -1041,3 +1041,11 @@ Validación: pruebas parametrizadas de cada banco y acreditación, filtros por p
 Evidencias en Mi perfil, con incorporación explícita de habilidades declaradas y recálculo del índice; nunca se marca verificación por aportar enlaces. Recomendaciones muestra formación ligada a brechas, respaldo por requisito y preferencias de búsqueda. Guardar u ocultar ofertas se integra en recomendaciones y exploración; búsqueda por varios términos, filtros de guardadas/ocultas, paginación y restauración reemplazan el selector masivo. Las rutas antiguas redirigen y se elimina el código frontend de análisis y salas.
 
 Validación: prueba de impacto real de evidencia, conservación de habilidades al retirar una referencia, autorización de privacidad por rol, búsqueda y recuperación entre 350 vacantes; 21 pruebas frontend y ESLint aprobados.
+
+### Bloque 35 — Espacio empresarial, equipo y calidad de ofertas
+
+Acceso empresarial con composición propia, centro de contratación persistente y navegación agrupada. Verificación, integrantes y procesos asignados se reúnen en Organización y equipo: permisos explicados, búsqueda de vacantes, asignaciones por título, estado de invitaciones y cancelación con caducidad del enlace. El entrevistador consulta únicamente procesos asignados, sin avanzar estados. Seguridad no muestra consentimientos de candidato.
+
+Calidad de ofertas incorpora ocho comprobaciones orientativas y edición de los campos que las resuelven, incluidos requisitos ponderados. Se retira la creación y modificación de escenarios de trabajo, conservando registros antiguos. Los selectores muestran títulos y estados, sin identificadores globales. No se renumeran ni eliminan vacantes existentes.
+
+Validación: ocho pruebas dirigidas de organización, calidad e impacto de evidencias; Ruff, ESLint y 21 pruebas frontend aprobados. Revisión visual con cuentas QA ficticias, incluyendo guardado y recálculo de una oferta comercial.

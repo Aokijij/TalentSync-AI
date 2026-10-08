@@ -239,7 +239,6 @@ export function JobsPage() {
 
   return (
     <div className="space-y-6">
-      {user?.role === "candidate" && <><InterestsSettings interests={interests} jobs={jobs} /><label className="my-4 block max-w-xs">Mis intereses<select className="field-control mt-1" value={interestMode} onChange={(event) => { setInterestMode(event.target.value); setPage(1); }}><option value="all">Vacantes disponibles</option><option value="saved">Guardadas</option><option value="hidden">Ocultas</option></select></label></>}
       <section className="surface-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -287,6 +286,8 @@ export function JobsPage() {
           </div>
         ) : activeFilterCount ? <button type="button" className="mt-4 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setShowFilters(true)}>{activeFilterCount} filtro{activeFilterCount === 1 ? " activo" : "s activos"} · Ver o cambiar</button> : null}
       </section>
+
+      {user?.role === "candidate" && <><InterestsSettings interests={interests} jobs={jobs} /><label className="my-4 block max-w-xs">Mis intereses<select className="field-control mt-1" value={interestMode} onChange={(event) => { setInterestMode(event.target.value); setPage(1); }}><option value="all">Vacantes disponibles</option><option value="saved">Guardadas</option><option value="hidden">Ocultas</option></select></label></>}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleJobs.map((job) => (

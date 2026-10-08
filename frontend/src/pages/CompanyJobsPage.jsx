@@ -775,6 +775,7 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           <Edit3 size={15} />
           Editar
         </button>
+        <Link className="button-secondary button-sm" to={`/empresa/calidad?vacante=${job.id}`}>Revisar calidad</Link>
         {(
           <button
             type="button"

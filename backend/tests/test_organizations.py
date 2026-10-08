@@ -62,6 +62,9 @@ def test_invitation_binding_one_use_roles_and_removed_access(client, monkeypatch
     endpoint = "/api/v1/organization/invitations"
     assert client.post(endpoint, headers=headers, json={"email": "member@example.com", "role": "interviewer", "assigned_job_ids": [other_job["id"]]}).status_code == 422
     assert client.post(endpoint, headers=headers, json={"email": "member@example.com", "role": "interviewer", "assigned_job_ids": [job["id"]]}).status_code == 200
+    listed = client.get(endpoint, headers=headers)
+    assert listed.status_code == 200 and listed.json()[0]["status"] == "pending"
+    assert "token" not in listed.text and "token_hash" not in listed.text
     mail = client.get("/api/v1/dev/mailbox").json()[0]
     token = parse_qs(urlparse(re.search(r"https?://\S+", mail["body"]).group()).query)["token"][0]
     wrong = client.post("/api/v1/auth/register", json={"name": "Wrong user", "email": "wrong@example.com", "password": "Test-password-2026!", "role": "company", "invitation_token": token})
@@ -74,7 +77,17 @@ def test_invitation_binding_one_use_roles_and_removed_access(client, monkeypatch
     assignments = client.get("/api/v1/organization/assignments", headers=member_headers).json()
     assert [row["job_id"] for row in assignments] == [job["id"]]
     assert client.get("/api/v1/jobs", headers=member_headers).status_code == 403
+    _, candidate_headers = register(client, "assigned-process-candidate")
+    application = client.post("/api/v1/applications", headers=candidate_headers, json={"job_id": job["id"]}).json()
+    own_second = create_job(client, headers)
+    other_application = client.post("/api/v1/applications", headers=candidate_headers, json={"job_id": own_second["id"]}).json()
+    timeline = client.get(f"/api/v1/workflow/applications/{application['id']}", headers=member_headers)
+    assert timeline.status_code == 200 and timeline.json()["can_manage"] is False
+    assert client.get(f"/api/v1/workflow/applications/{other_application['id']}", headers=member_headers).status_code == 403
+    assert client.put(f"/api/v1/applications/{application['id']}/status", headers=member_headers, json={"status": "hired"}).status_code == 403
     assert client.get("/api/v1/organization/team", headers=member_headers).status_code == 403
+    assert client.get(endpoint, headers=member_headers).status_code == 403
+    assert client.delete(endpoint + f"/{listed.json()[0]['id']}", headers=other_headers).status_code == 404
     membership = client.get("/api/v1/organization/team", headers=headers).json()[0]
     update = f"/api/v1/organization/team/{membership['id']}"
     assert client.patch(update, headers=headers, json={"role": "recruiter", "active": True, "assigned_job_ids": []}).status_code == 200
@@ -82,3 +95,20 @@ def test_invitation_binding_one_use_roles_and_removed_access(client, monkeypatch
     assert client.patch(f"/api/v1/jobs/{other_job['id']}", headers=member_headers, json={"title": "Hijacked"}).status_code == 403
     assert client.patch(update, headers=headers, json={"role": "recruiter", "active": False, "assigned_job_ids": []}).status_code == 200
     assert client.get("/api/v1/organization/me", headers=member_headers).status_code in {403, 404}
+
+
+def test_owner_can_cancel_pending_invitation_without_deleting_history(client, monkeypatch):
+    monkeypatch.setattr(settings, "local_mail_enabled", True)
+    monkeypatch.setattr(settings, "database_url", "sqlite://")
+    owner, headers = company_account(client)
+    verified_email(client, owner)
+    endpoint = "/api/v1/organization/invitations"
+    assert client.post(endpoint, headers=headers, json={"email": "pending@example.com", "role": "recruiter", "assigned_job_ids": []}).status_code == 200
+    row = client.get(endpoint, headers=headers).json()[0]
+    mail = client.get("/api/v1/dev/mailbox").json()[0]
+    token = parse_qs(urlparse(re.search(r"https?://\S+", mail["body"]).group()).query)["token"][0]
+    assert client.get("/api/v1/organization/invitation", params={"token": token}).status_code == 200
+    assert client.delete(endpoint + f"/{row['id']}", headers=headers).status_code == 200
+    assert client.get("/api/v1/organization/invitation", params={"token": token}).status_code == 404
+    assert client.get(endpoint, headers=headers).json()[0]["status"] == "expired"
+    assert client.delete(endpoint + f"/{row['id']}", headers=headers).status_code == 404

@@ -39,8 +39,8 @@ export function RecommendationsPage() {
     () => localStorage.getItem("talentsync_recommendation_source") || "all",
   );
   const [minCompatibility, setMinCompatibility] = useState(() => {
-    const saved = Number(localStorage.getItem("talentsync_recommendation_min"));
-    return [40, 50, 60, 70, 80, 90].includes(saved) ? saved : 40;
+    const saved = localStorage.getItem("talentsync_recommendation_min");
+    return saved !== null && [0, 40, 50, 60, 70, 80, 90].includes(Number(saved)) ? Number(saved) : 40;
   });
 
   const [expandedReasons, setExpandedReasons] = useState({});

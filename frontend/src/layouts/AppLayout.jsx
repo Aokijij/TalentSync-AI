@@ -12,7 +12,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { api } from "../api/client.js";
 import { BrandLogo } from "../components/brand/BrandLogo.jsx";
@@ -26,9 +26,9 @@ const links = [
   { to: "/admin/ecosistema", label: "Salud del ecosistema", icon: Sparkles, roles: ["admin"] },
   { to: "/empresa/calidad", label: "Calidad de ofertas", icon: ShieldCheck, roles: ["company"] },
   { to: "/aprendizaje", label: "Mi desarrollo", icon: FileCheck2, roles: ["candidate"] },
-  { to: "/empresa/equipo", label: "Verificación y equipo", icon: Building2, roles: ["company"] },
+  { to: "/empresa/equipo", label: "Organización y equipo", icon: Building2, roles: ["company"] },
   { to: "/admin/verificaciones", label: "Verificar empresas", icon: ShieldCheck, roles: ["admin"] },
-  { to: "/seguridad", label: "Seguridad y privacidad", icon: ShieldCheck, roles: ["candidate", "company", "admin"] },
+  { to: "/seguridad", label: "Seguridad de cuenta", icon: ShieldCheck, roles: ["candidate", "company", "admin"] },
   { to: "/admin", label: "Inicio", icon: LayoutDashboard, roles: ["admin"] },
   {
     to: "/administracion",
@@ -116,10 +116,13 @@ const roleCopy = {
 
 const navigationOrder = ["/candidato", "/empresa", "/admin", "/recomendaciones", "/vacantes", "/empresa/vacantes", "/postulaciones", "/empresa/postulaciones", "/empresa/talento", "/compatibilidad", "/aprendizaje", "/entrevistas", "/mis-intereses", "/empresa/calidad", "/confianza", "/admin/verificaciones", "/admin/ecosistema", "/admin/modelos", "/admin/aprendizaje", "/perfil", "/empresa/perfil", "/empresa/equipo", "/administracion", "/notificaciones", "/seguridad"];
 
-function Navigation({ linksForRole, unreadNotifications, onNavigate }) {
+function Navigation({ linksForRole, unreadNotifications, onNavigate, business = false }) {
   return (
     <nav className="space-y-1" aria-label="Navegación principal">
-      {linksForRole.map(({ to, label, icon: Icon }) => (
+      {business ? [
+        ["Contratación", linksForRole.filter((link) => ["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"].includes(link.to))],
+        ["Organización", linksForRole.filter((link) => !["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"].includes(link.to))],
+      ].map(([label, group]) => <div key={label} className="mb-5"><p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--sidebar-muted)]">{label}</p><Navigation linksForRole={group} unreadNotifications={unreadNotifications} onNavigate={onNavigate} /></div>) : linksForRole.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
@@ -158,12 +161,13 @@ function Navigation({ linksForRole, unreadNotifications, onNavigate }) {
 
 export function AppLayout() {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [organizationName, setOrganizationName] = useState("");
   const [organization, setOrganization] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const copy = roleCopy[user.role] ?? roleCopy.candidate;
-  const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones", "/entrevistas"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"))
+  const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"))
     .sort((left, right) => navigationOrder.indexOf(left.to) - navigationOrder.indexOf(right.to));
 
   useEffect(() => {
@@ -198,6 +202,7 @@ export function AppLayout() {
   }, [user.role]);
 
   const closeMenu = () => setMenuOpen(false);
+  if (organization?.role === "interviewer" && !["/empresa/equipo", "/notificaciones", "/seguridad"].includes(location.pathname) && !location.pathname.startsWith("/procesos/")) return <Navigate to="/empresa/equipo" replace />;
 
   return (
     <div
@@ -207,6 +212,7 @@ export function AppLayout() {
         <Brand copy={copy} user={user} displayName={organizationName} />
         <div className="mt-8">
           <Navigation
+            business={user.role === "company"}
             linksForRole={visibleLinks}
             unreadNotifications={unreadNotifications}
           />
@@ -242,7 +248,8 @@ export function AppLayout() {
             <Brand copy={copy} user={user} displayName={organizationName} />
             <div className="mt-8">
               <Navigation
-                linksForRole={visibleLinks}
+                business={user.role === "company"}
+            linksForRole={visibleLinks}
                 unreadNotifications={unreadNotifications}
                 onNavigate={closeMenu}
               />
@@ -253,6 +260,7 @@ export function AppLayout() {
       ) : null}
 
       <main className="lg:pl-72">
+        {user.role === "company" && <header className="business-workspace-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface)] px-6 py-4"><div><p className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Centro de contratación</p><p className="mt-1 font-bold">{organizationName || "Mi organización"}</p></div><div className="flex items-center gap-3 text-xs"><span className="rounded-full border border-[var(--line)] px-3 py-2">{organization?.verification_status === "verified" ? "Empresa verificada" : "Verificación pendiente"}</span><span>{organization?.role === "owner" ? "Propietario" : organization?.role === "interviewer" ? "Entrevistador" : "Reclutador"}</span></div></header>}
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
           <Outlet />
         </div>

@@ -32,7 +32,7 @@ const SecurityPage = lazyNamed(() => import("../pages/SecurityPage.jsx"), "Secur
 const AccountActionPage = lazyNamed(() => import("../pages/AccountActionPage.jsx"), "AccountActionPage");
 const LocalMailboxPage = lazyNamed(() => import("../pages/LocalMailboxPage.jsx"), "LocalMailboxPage");
 const OnboardingPage = lazyNamed(() => import("../pages/OnboardingPage.jsx"), "OnboardingPage");
-const OrganizationPage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "OrganizationPage");
+const OrganizationPage = lazyNamed(() => import("../pages/OrganizationWorkspace.jsx"), "OrganizationWorkspace");
 const VerificationQueuePage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "VerificationQueuePage");
 const InvitationPage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "InvitationPage");
 const ProcessPage = lazyNamed(() => import("../pages/ProcessPage.jsx"), "ProcessPage");

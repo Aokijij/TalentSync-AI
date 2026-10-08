@@ -24,6 +24,16 @@ class OrganizationRepository:
     def invitation(self, digest):
         return self.session.query(CompanyInvitation).filter_by(token_hash=digest).first()
 
+    def invitations(self, company_id):
+        return self.session.query(CompanyInvitation).filter_by(company_id=company_id).order_by(CompanyInvitation.id.desc()).limit(200).all()
+
+    def cancel_invitation(self, company_id, invitation_id):
+        result = self.session.execute(update(CompanyInvitation).where(
+            CompanyInvitation.id == invitation_id, CompanyInvitation.company_id == company_id,
+            CompanyInvitation.used_at.is_(None), CompanyInvitation.expires_at > datetime.utcnow(),
+        ).values(expires_at=datetime.utcnow()).execution_options(synchronize_session=False))
+        return result.rowcount == 1
+
     def consume_invitation(self, invitation_id):
         result = self.session.execute(update(CompanyInvitation).where(
             CompanyInvitation.id == invitation_id, CompanyInvitation.used_at.is_(None),
