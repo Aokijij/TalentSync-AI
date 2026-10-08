@@ -36,6 +36,7 @@ const VerificationQueuePage = lazyNamed(() => import("../pages/OrganizationPage.
 const InvitationPage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "InvitationPage");
 const CompatibilityPage = lazyNamed(() => import("../pages/CompatibilityPage.jsx"), "CompatibilityPage");
 const ProcessPage = lazyNamed(() => import("../pages/ProcessPage.jsx"), "ProcessPage");
+const LearningPage = lazyNamed(() => import("../pages/LearningPage.jsx"), "LearningPage");
 
 function RequireAuth({ children }) {
   const { user, loading, authError, retryAuth, logout, accessOptions } = useAuth();
@@ -109,6 +110,7 @@ export function AppRoutes() {
         }
       >
         <Route path="/seguridad" element={<SecurityPage />} />
+        <Route path="/aprendizaje" element={<RequireRole roles={["candidate"]}><LearningPage /></RequireRole>} />
         <Route path="/procesos/:applicationId" element={<ProcessPage />} />
         <Route path="/compatibilidad" element={<RequireRole roles={["candidate", "company"]}><CompatibilityPage /></RequireRole>} />
         <Route path="/empresa/equipo" element={<RequireRole roles={["company"]}><OrganizationPage /></RequireRole>} />

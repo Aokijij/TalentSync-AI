@@ -1,0 +1,59 @@
+from typing import Literal
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
+
+from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
+from app.application.use_cases import learning as cases
+from app.domain.entities.enums import UserRole
+
+router = APIRouter()
+candidate = require_roles(UserRole.CANDIDATE)
+
+
+class PlanUpdate(BaseModel):
+    status: Literal["in_progress", "completed"] = "in_progress"
+
+
+class Submission(BaseModel):
+    answers: dict[str, int] = Field(max_length=30)
+
+
+@router.get("/learning/catalog")
+def catalog(user=Depends(candidate)):
+    return cases.catalog()
+
+
+@router.get("/learning/jobs/{job_id}")
+def opportunities(job_id: int, user=Depends(candidate), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis)):
+    return cases.opportunities(db, user, job_id, nlp)
+
+
+@router.get("/learning/plans")
+def plans(user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.plans(db, user)
+
+
+@router.put("/learning/plans/{resource_id}")
+def update_plan(resource_id: str, payload: PlanUpdate, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.plans(db, user, resource_id, payload.status)
+
+
+@router.post("/learning/assessments/{assessment_id}/start")
+def start(assessment_id: str, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.start_assessment(db, user, assessment_id)
+
+
+@router.post("/learning/attempts/{attempt_id}/submit")
+def submit(attempt_id: str, payload: Submission, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.submit_assessment(db, user, attempt_id, payload.answers)
+
+
+@router.get("/learning/passport")
+def passport(user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.passport(db, user)
+
+
+@router.get("/learning/patterns")
+def patterns(user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.patterns(db, user)

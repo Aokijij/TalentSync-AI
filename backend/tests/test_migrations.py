@@ -27,6 +27,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
             "recommendations", "notifications", "company_followers", "alembic_version", "event_log",
             "user_sessions", "account_tokens", "mail_messages",
             "company_members", "company_invitations",
+            "learning_plans", "assessment_attempts",
         }
         profile_columns = {column["name"] for column in schema.get_columns("profiles")}
         assert {"department", "photo_filename", "resume_style", "resume_color", "languages"} <= profile_columns
@@ -51,7 +52,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0025_workflow_deadlines"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0026_learning"
     finally:
         engine.dispose()
 

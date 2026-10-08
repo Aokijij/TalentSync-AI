@@ -20,6 +20,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
+  { to: "/aprendizaje", label: "Aprendizaje y pasaporte", icon: FileCheck2, roles: ["candidate"] },
   { to: "/compatibilidad", label: "Compatibilidad y evidencia", icon: Sparkles, roles: ["candidate", "company"] },
   { to: "/empresa/equipo", label: "Verificación y equipo", icon: Building2, roles: ["company"] },
   { to: "/admin/verificaciones", label: "Verificar empresas", icon: ShieldCheck, roles: ["admin"] },

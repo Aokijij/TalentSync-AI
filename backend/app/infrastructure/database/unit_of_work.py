@@ -1,4 +1,5 @@
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 
@@ -19,6 +20,7 @@ from app.infrastructure.repositories.applications import ApplicationRepository
 from app.infrastructure.repositories.companies import CompanyRepository
 from app.infrastructure.repositories.events import EventRepository
 from app.infrastructure.repositories.jobs import JobRepository
+from app.infrastructure.repositories.learning import LearningRepository
 from app.infrastructure.repositories.notifications import NotificationRepository
 from app.infrastructure.repositories.organizations import OrganizationRepository
 from app.infrastructure.repositories.profiles import ProfileRepository
@@ -30,6 +32,7 @@ class SqlAlchemyUnitOfWork:
     def __init__(self, session: Session):
         self.session = session
         self.organizations = OrganizationRepository(session)
+        self.learning = LearningRepository(session)
         self.accounts = AccountRepository(session)
         self.events = EventRepository(session, EventLog)
         self.users = UserRepository(session, User)
@@ -55,6 +58,9 @@ class SqlAlchemyUnitOfWork:
         except StaleDataError:
             self.session.rollback()
             raise UseCaseError(status_code=409, detail="El proceso cambió mientras lo editabas; actualiza y vuelve a intentar") from None
+        except IntegrityError:
+            self.session.rollback()
+            raise UseCaseError(status_code=409, detail="La operación entra en conflicto con un registro existente; actualiza e intenta de nuevo") from None
 
     def refresh(self, entity: object) -> None:
         self.session.refresh(entity)

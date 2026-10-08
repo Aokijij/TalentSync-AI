@@ -42,7 +42,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 3 | Verificación empresarial, equipos y permisos | Implementado: revisión manual local, borradores, invitaciones y permisos en API |
 | 4 | Requisitos, evidencias, preferencias y matching avanzado | Base explicable implementada; embeddings neuronales y modelos de comportamiento en bloque 9 |
 | 5 | Historial de etapas, plazos, avisos y feedback | Implementado: plazos, worker local, cierre idempotente e historial |
-| 6 | Brechas, recursos, planes, evaluaciones, pasaporte y portafolio | Pendiente |
+| 6 | Brechas, recursos, planes, evaluaciones, pasaporte y portafolio | Implementado con catálogo de proyectos y evaluaciones locales de fundamentos |
 | 7 | Selección ciega, calidad de vacantes y contratación por potencial | Pendiente |
 | 8 | Reputación, incidencias, auditoría y tendencias | Pendiente |
 | 9 | Entrevistas, colaboración e integraciones avanzadas | Pendiente |
@@ -129,3 +129,19 @@ actualizaciones del proceso usan control de versión para evitar sobrescrituras.
 La revisión se ejecuta al volver a encender el backend; no funciona con el equipo
 apagado. También puede ejecutarse con POST /api/v1/admin/workflow/run.
 Las métricas de estos vencimientos alimentarán reputación en el bloque 8.
+
+## Bloque 6: aprendizaje dirigido
+
+`/aprendizaje` contiene brechas por oferta, proyectos locales, planes persistentes,
+escenarios de mejora del índice y pasaporte de fundamentos. La estimación examina
+hasta 200 vacantes activas y usa el mismo motor de compatibilidad; no promete
+contrataciones. Marcar un proyecto terminado no acredita conocimientos.
+
+Hay micropruebas originales de Python, SQL y microservicios (cinco preguntas, diez
+minutos, umbral del 80%, repetición tras 24 horas). El servidor controla el tiempo,
+oculta las respuestas y consume una sola vez cada intento. La aprobación añade la
+habilidad al perfil y conserva el alcance "fundamentos", la versión y vigencia de
+180 días. No equivale a una certificación profesional ni prueba código arbitrario.
+La finalización de recursos externos, títulos y compras no se simulan. Catálogos
+educativos y afiliación siguen desactivados hasta disponer de integraciones reales.
+Validación acumulada: 85 pruebas backend; lint y build frontend aprobados.

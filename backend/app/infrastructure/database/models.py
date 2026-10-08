@@ -487,6 +487,35 @@ class Recommendation(Base):
         return "source:external" in (self.reasons or [])
 
 
+class LearningPlan(Base):
+    __tablename__ = "learning_plans"
+    __table_args__ = (UniqueConstraint("user_id", "resource_id", name="uq_learning_plan_user_resource"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    resource_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="in_progress", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class AssessmentAttempt(Base):
+    __tablename__ = "assessment_attempts"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    assessment_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    skill: Mapped[str] = mapped_column(String(100), nullable=False)
+    version: Mapped[str] = mapped_column(String(30), nullable=False)
+    snapshot: Mapped[list[dict]] = mapped_column(JSON, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime)
+    status: Mapped[str] = mapped_column(String(30), default="active", nullable=False)
+    score: Mapped[float | None] = mapped_column(Float)
+    passed: Mapped[bool] = mapped_column(default=False, nullable=False)
+    feedback: Mapped[list[dict]] = mapped_column(JSON, default=list, nullable=False)
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime)
+
+
 class Notification(Base):
     __tablename__ = "notifications"
 
