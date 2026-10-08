@@ -10,12 +10,12 @@ from pydantic import EmailStr, TypeAdapter
 
 from app.application.use_cases.matching import upsert_recommendation
 from app.domain.entities.enums import ApplicationStatus, UserRole
+from app.domain.services.professions import infer_study_fields
 from app.infrastructure.database.models import Application, Company, Job, Profile, User
 from app.infrastructure.database.session import SessionLocal
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 from app.infrastructure.nlp.text_processor import text_processor
 from app.infrastructure.security.passwords import hash_password
-from app.domain.services.professions import infer_study_fields
 
 SHOWCASE_NIT = "TS-SHOWCASE-001"
 PIPELINE = [

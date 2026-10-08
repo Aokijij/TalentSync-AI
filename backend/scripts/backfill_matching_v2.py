@@ -2,7 +2,11 @@
 
 import json
 
-from app.domain.services.professions import infer_education_level, infer_study_fields, normalize
+from app.domain.services.professions import (
+    infer_education_level,
+    infer_study_fields,
+    normalize,
+)
 from app.infrastructure.database.models import Application, Job
 from app.infrastructure.database.session import SessionLocal
 

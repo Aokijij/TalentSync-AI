@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+from app.infrastructure.nlp import matching_encoder as encoders
 from app.infrastructure.nlp.matching_encoder import LocalMatchingEncoder
 from scripts.local_model import valid_file
 
@@ -64,3 +65,21 @@ def test_encoder_refuses_untrusted_modules(tmp_path):
     (tmp_path / "modules.json").write_text(json.dumps([{"type": "remote.custom.Model", "path": ""}]))
     with pytest.raises(ValueError, match="módulos no admitidos"):
         LocalMatchingEncoder(str(tmp_path))
+
+
+def test_encoder_selection_follows_configuration_instead_of_stale_cache(monkeypatch):
+    calls = []
+    def fake(folder):
+        calls.append(folder)
+        return SimpleNamespace(method=folder)
+    encoders._configured_encoder.cache_clear()
+    monkeypatch.setattr(encoders, "LocalMatchingEncoder", fake)
+    monkeypatch.setattr(encoders.settings, "match_model_path", "")
+    assert encoders.matching_encoder() is None
+    monkeypatch.setattr(encoders.settings, "match_model_path", "model-a")
+    assert encoders.matching_encoder().method == "model-a"
+    assert encoders.matching_encoder().method == "model-a"
+    monkeypatch.setattr(encoders.settings, "match_model_path", "")
+    assert encoders.matching_encoder() is None
+    assert calls == ["model-a"]
+    encoders._configured_encoder.cache_clear()

@@ -66,6 +66,10 @@ class LocalMatchingEncoder:
         return round(max(0, min(1, float(self._embedding(left) @ self._embedding(right)))) * 100, 2)
 
 
-@lru_cache
+@lru_cache(maxsize=1)
+def _configured_encoder(folder):
+    return LocalMatchingEncoder(folder) if folder else None
+
+
 def matching_encoder():
-    return LocalMatchingEncoder(settings.match_model_path) if settings.match_model_path else None
+    return _configured_encoder(settings.match_model_path)

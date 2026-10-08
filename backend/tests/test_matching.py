@@ -11,7 +11,11 @@ from app.domain.services.matching import (
     recommendation_reasons,
     required_skill_coverage,
 )
-from app.domain.services.professions import certification_match, education_match, fields_are_related
+from app.domain.services.professions import (
+    certification_match,
+    education_match,
+    fields_are_related,
+)
 
 
 def test_required_skills_are_normalized_and_duplicates_do_not_inflate_score():

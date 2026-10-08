@@ -12,7 +12,7 @@ PYTHON = ROOT / "backend/.venv/Scripts/python.exe"
 ENV_FILE = LOCAL / "backend.env"
 
 
-def prepare_environment():
+def prepare_environment(*, testing=False):
     LOCAL.mkdir(exist_ok=True)
     if not ENV_FILE.exists():
         values = {
@@ -53,6 +53,15 @@ def prepare_environment():
                    "SESSION_COOKIE_SECURE": "false", "PUBLIC_APP_URL": "http://127.0.0.1:5173",
                    "AZURE_STORAGE_ACCOUNT_URL": "", "JSEARCH_API_KEY": "", "ADZUNA_APP_ID": "",
                    "ADZUNA_APP_KEY": "", "JOOBLE_API_KEY": "", "STATIC_DIR": ""})
+    if testing:
+        # Tests must not depend on user integrations, weights or the demo database.
+        values.update({"DATABASE_URL": "sqlite://", "MATCH_MODEL_PATH": "",
+                       "SESSION_AUTH_ENABLED": "false", "LOCAL_MAIL_ENABLED": "false",
+                       "WORKFLOW_MAINTENANCE_ENABLED": "false", "MODEL_MAINTENANCE_ENABLED": "false",
+                       "GITHUB_PROJECT_ANALYSIS_ENABLED": "false", "WORKSPACE_DOMAIN": "",
+                       "ADMIN_SSO_REQUIRED": "false", "WEBRTC_STUN_URLS": "[]", "WEBRTC_TURN_URLS": "[]",
+                       "WEBRTC_TURN_SECRET": "", "WEBRTC_RELAY_ONLY": "false",
+                       **{key: "" for key in values if key.startswith("OAUTH_")}})
     return {**os.environ, **values}
 
 
@@ -63,16 +72,16 @@ def main():
     args = parser.parse_args()
     if args.options and args.command != "admin-sso":
         parser.error("Solo admin-sso admite argumentos adicionales")
-    env = prepare_environment()
+    env = prepare_environment(testing=args.command == "test")
     commands = {
         "setup": ["-m", "alembic", "upgrade", "head"],
-        "backend": ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "app",
+        "backend": ["-m", "uvicorn", "app.main:app", "--no-access-log", "--reload", "--reload-dir", "app",
                     "--reload-exclude", str(ROOT / "backend/tests"),
                     "--reload-exclude", str(ROOT / "backend/scripts"),
                     "--reload-exclude", str(ROOT / "backend/alembic"),
                     "--reload-exclude", str(ROOT / "backend/.venv"),
                     "--host", "127.0.0.1", "--port", "8000"],
-        "test": ["-m", "pytest", "-q", "-p", "no:cacheprovider"],
+        "test": ["-m", "pytest", "-q", "-p", "no:cacheprovider", "--disable-warnings", "-W", "error::sqlalchemy.exc.SAWarning"],
         "seed": ["-m", "scripts.seed_local"],
         "admin-sso": ["-m", "scripts.admin_sso", *args.options],
         "model-prepare": ["-m", "scripts.local_model", "prepare"],

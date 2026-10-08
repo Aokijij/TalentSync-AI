@@ -1,3 +1,4 @@
+# ruff: noqa: F811
 import re
 from urllib.parse import parse_qs, urlparse
 

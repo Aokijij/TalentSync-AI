@@ -57,6 +57,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 18 | Retos SQL con consultas reales | Dos retos, vista previa, ejecución restringida en memoria y pasaporte integrado |
 | 19 | Conectividad STUN/TURN de entrevistas | Configuración validada, credenciales temporales y autorización por sala; servidor externo no configurado |
 | 20 | Modelo semántico multilingüe en CPU | Pesos fijados y verificados, inferencia offline activa y caché acotada |
+| 21 | Cierre de revisión e inventario | 249 pruebas backend, 20 frontend, lint completo, build y recorrido SQL en navegador |
 
 ## Comprobaciones
 
@@ -68,6 +69,14 @@ backend/.venv/Scripts/python.exe scripts/local.py test
 El flujo de eventos acepta únicamente metadatos escalares permitidos. No contiene
 contraseñas, tokens, CV completos ni respuestas privadas de entrevistas. Cada evento
 se guarda en la misma transacción de la operación que describe.
+
+`scripts/local.py test` fuerza una base en memoria y desactiva pesos neuronales,
+OAuth, lectores externos, STUN/TURN y tareas de mantenimiento, aunque estén activos
+en el entorno de demostración. Las pruebas configuran sus propias dependencias y
+bases temporales. No modifica `.local/backend.env`. La inferencia real se comprueba
+por separado con `model-check` y mediante el servidor local. Las advertencias de
+SQLAlchemy se tratan como errores; las advertencias de deprecación existentes no
+se expanden en el resumen de ejecución.
 
 ## Bloque 2: acceso local
 
@@ -725,3 +734,27 @@ los requisitos explícitos, preferencias y explicaciones; el índice no es una
 probabilidad de éxito ni garantiza equidad. Tres pruebas nuevas cubren integridad
 de descarga, caché acotada, versiones y rechazo de módulos no admitidos.
 Referencia: [ficha original del modelo](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2).
+
+
+## Bloque 21: revisión y cierre local
+
+Se corrigió el selector del encoder para que la caché siga la ruta configurada,
+sin conservar un resultado anterior cuando cambia la configuración de una prueba.
+El comando `test` aísla también modelo, integraciones y mantenimiento. Dos pruebas
+nuevas comprueban esos casos sin descargar ni cargar pesos. La suite final pasó
+249 pruebas en 95,76 s, con avisos de deprecación existentes. Las siete pruebas
+focalizadas de modelo, lanzador y arquitectura pasaron con SAWarning como error.
+
+Se ordenaron imports existentes para dejar limpio el lint completo de backend,
+scripts y tests. En Aprendizaje se retiraron identificadores internos de las
+micropruebas y se permitió elegir otra evaluación cuando vence el intento actual.
+Lint JavaScript y compilación Vite pasaron después de estos ajustes; las veinte
+pruebas frontend también pasaron. `pip check` no detectó dependencias incompatibles.
+
+Se comprobó por HTTP local el método neuronal, aprendizaje, pasaporte, entrevistas,
+identidades vinculadas, denegación del panel administrativo a candidatos y logout.
+En navegador una cuenta ficticia independiente resolvió el reto SQL, probó la
+muestra, entregó y recibió la acreditación tras las tres comprobaciones. La captura
+queda en `.local/verification/retos-sql.jpg`. No se cambiaron credenciales del usuario
+ni se activaron permisos de cámara o micrófono. La migración local vigente es 0034.
+El inventario actual y sus dependencias externas están en [FEATURES_LOCAL.md](FEATURES_LOCAL.md).
