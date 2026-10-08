@@ -56,11 +56,14 @@ class SqlAlchemyUnitOfWork:
         self.session.delete(entity)
 
     def flush(self) -> None:
-        self.session.flush()
+        self._write(self.session.flush)
 
     def commit(self) -> None:
+        self._write(self.session.commit)
+
+    def _write(self, operation) -> None:
         try:
-            self.session.commit()
+            operation()
         except StaleDataError:
             self.session.rollback()
             raise UseCaseError(status_code=409, detail="El proceso cambió mientras lo editabas; actualiza y vuelve a intentar") from None
