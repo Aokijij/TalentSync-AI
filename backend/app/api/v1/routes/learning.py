@@ -4,11 +4,14 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
+from app.api.schemas.learning import ResourceContent, ResourceImport, ResourceUpdate
 from app.application.use_cases import learning as cases
+from app.application.use_cases import learning_resources
 from app.domain.entities.enums import UserRole
 
 router = APIRouter()
 candidate = require_roles(UserRole.CANDIDATE)
+admin = require_roles(UserRole.ADMIN)
 
 
 class PlanUpdate(BaseModel):
@@ -20,8 +23,28 @@ class Submission(BaseModel):
 
 
 @router.get("/learning/catalog")
-def catalog(user=Depends(candidate)):
-    return cases.catalog()
+def catalog(user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.catalog(db)
+
+
+@router.get("/admin/learning/resources")
+def admin_resources(user=Depends(admin), db=Depends(get_unit_of_work)):
+    return learning_resources.manage(db, user)
+
+
+@router.post("/admin/learning/resources", status_code=201)
+def create_resource(payload: ResourceContent, user=Depends(admin), db=Depends(get_unit_of_work)):
+    return learning_resources.manage(db, user, [payload.model_dump()])
+
+
+@router.post("/admin/learning/resources/import", status_code=201)
+def import_resources(payload: ResourceImport, user=Depends(admin), db=Depends(get_unit_of_work)):
+    return learning_resources.manage(db, user, [row.model_dump() for row in payload.resources])
+
+
+@router.put("/admin/learning/resources/{resource_id}")
+def edit_resource(resource_id: str, payload: ResourceUpdate, user=Depends(admin), db=Depends(get_unit_of_work)):
+    return learning_resources.manage(db, user, [payload.model_dump(exclude={"version"})], resource_id, payload.version)
 
 
 @router.get("/learning/jobs/{job_id}")

@@ -21,6 +21,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
+  { to: "/admin/aprendizaje", label: "Catálogo educativo", icon: FileCheck2, roles: ["admin"] },
   { to: "/mis-intereses", label: "Mis intereses", icon: Sparkles, roles: ["candidate"] },
   { to: "/admin/modelos", label: "Motor e integraciones", icon: Sparkles, roles: ["admin"] },
   { to: "/entrevistas", label: "Salas de entrevista", icon: UsersRound, roles: ["candidate", "company", "admin"] },
@@ -117,7 +118,7 @@ const roleCopy = {
   admin: { label: "Administrador", caption: "Operación y salud de plataforma" },
 };
 
-const navigationOrder = ["/candidato", "/empresa", "/admin", "/recomendaciones", "/vacantes", "/empresa/vacantes", "/postulaciones", "/empresa/postulaciones", "/empresa/talento", "/compatibilidad", "/aprendizaje", "/entrevistas", "/mis-intereses", "/empresa/calidad", "/confianza", "/admin/verificaciones", "/admin/ecosistema", "/admin/modelos", "/perfil", "/empresa/perfil", "/empresa/equipo", "/administracion", "/notificaciones", "/seguridad"];
+const navigationOrder = ["/candidato", "/empresa", "/admin", "/recomendaciones", "/vacantes", "/empresa/vacantes", "/postulaciones", "/empresa/postulaciones", "/empresa/talento", "/compatibilidad", "/aprendizaje", "/entrevistas", "/mis-intereses", "/empresa/calidad", "/confianza", "/admin/verificaciones", "/admin/ecosistema", "/admin/modelos", "/admin/aprendizaje", "/perfil", "/empresa/perfil", "/empresa/equipo", "/administracion", "/notificaciones", "/seguridad"];
 
 function Navigation({ linksForRole, unreadNotifications, onNavigate }) {
   return (

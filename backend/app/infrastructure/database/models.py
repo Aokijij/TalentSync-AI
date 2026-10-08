@@ -626,6 +626,17 @@ class ModelAuditRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class LearningResource(Base):
+    __tablename__ = "learning_resources"
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    content: Mapped[dict] = mapped_column(JSON, nullable=False)
+    active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    __mapper_args__ = {"version_id_col": version}
+
+
 class LearningPlan(Base):
     __tablename__ = "learning_plans"
     __table_args__ = (UniqueConstraint("user_id", "resource_id", name="uq_learning_plan_user_resource"),)

@@ -6,8 +6,9 @@ from uuid import NAMESPACE_URL, uuid5
 from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import get_job
+from app.application.use_cases.learning_resources import resources as catalog_resources
 from app.application.use_cases.matching import candidate_match
-from app.domain.services.learning_catalog import ASSESSMENTS, LOCAL_RESOURCES
+from app.domain.services.learning_catalog import ASSESSMENTS
 from app.domain.services.match_explanations import requirements_for
 from app.domain.services.skills import normalize_skills, skill_gap, skill_set
 
@@ -21,9 +22,9 @@ class ProjectedProfile:
         return getattr(self.profile, name)
 
 
-def catalog():
-    return {"resources": LOCAL_RESOURCES, "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "level": "fundamentals"} for key, row in ASSESSMENTS.items()],
-            "external_catalogs_enabled": False, "notice": "Proyectos originales locales. Las horas son estimaciones; no se confirman compras ni certificados externos."}
+def catalog(db):
+    return {"resources": catalog_resources(db), "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "level": "fundamentals"} for key, row in ASSESSMENTS.items()],
+            "external_catalogs_enabled": False, "notice": "Catálogo local y enlaces revisados por administración. Horas y costes orientativos; no se verifican compras ni certificados externos. La publicidad no mejora el orden de recomendación."}
 
 
 def opportunities(db, user, job_id, nlp):
@@ -33,26 +34,31 @@ def opportunities(db, user, job_id, nlp):
     baseline = candidate_match(user.profile, job, nlp=nlp)[0]
     active = db.jobs.active()[:200]
     resources = []
-    for resource in LOCAL_RESOURCES:
+    eligible = [resource for resource in catalog_resources(db) if missing & skill_set(resource["skills"])]
+    eligible.sort(key=lambda row: (-len(missing & skill_set(row["skills"])), row["hours"], row["id"]))
+    baselines = {other.id: candidate_match(user.profile, other, nlp=nlp)[0] for other in active}
+    for resource in eligible[:10]:
         targeted = missing & skill_set(resource["skills"])
         if not targeted:
             continue
         projected_profile = ProjectedProfile(user.profile, normalize_skills([*user.profile.skills, *resource["skills"]]))
         projected = candidate_match(projected_profile, job, nlp=nlp)[0]
-        affected = sum(candidate_match(projected_profile, other, nlp=nlp)[0] > candidate_match(user.profile, other, nlp=nlp)[0] for other in active)
+        affected = sum(candidate_match(projected_profile, other, nlp=nlp)[0] > baselines[other.id] for other in active)
         resources.append({**resource, "targeted_skills": sorted(targeted), "current_match": baseline, "projected_match": projected,
                           "estimated_gain": round(projected - baseline, 2), "other_jobs_impacted": affected,
                           "notice": "Escenario hipotético si acreditas la habilidad; completar el recurso no garantiza este resultado ni una entrevista."})
     return {"job_id": job.id, "gaps": gaps, "resources": sorted(resources, key=lambda row: (-row["estimated_gain"] / row["hours"], row["id"])),
-            "sampled_jobs": len(active), "current_match": baseline}
+            "sampled_jobs": len(active), "current_match": baseline, "eligible_resources": len(eligible), "resource_limit": 10}
 
 
 def plans(db, user, resource_id=None, status=None):
-    resources = {row["id"]: row for row in LOCAL_RESOURCES}
+    resources = {row["id"]: row for row in catalog_resources(db, include_inactive=True)}
     if resource_id is not None:
         if resource_id not in resources:
             raise UseCaseError(status_code=404, detail="Recurso no encontrado")
         row = db.learning.plan(user.id, resource_id)
+        if row is None and not resources[resource_id]["active"]:
+            raise UseCaseError(status_code=404, detail="El recurso ya no está disponible para planes nuevos")
         if row is None:
             row = db.learning.new_plan(user_id=user.id, resource_id=resource_id, status=status)
             db.add(row)

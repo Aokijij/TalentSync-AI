@@ -1,9 +1,22 @@
-from app.infrastructure.database.models import AssessmentAttempt, LearningPlan
+from app.infrastructure.database.models import (
+    AssessmentAttempt,
+    LearningPlan,
+    LearningResource,
+)
 
 
 class LearningRepository:
     def __init__(self, session):
         self.session = session
+
+    def resources(self):
+        return self.session.query(LearningResource).order_by(LearningResource.created_at.desc(), LearningResource.id).all()
+
+    def resource(self, resource_id):
+        return self.session.get(LearningResource, resource_id)
+
+    def new_resource(self, **values):
+        return LearningResource(**values)
 
     def plans(self, user_id):
         return self.session.query(LearningPlan).filter_by(user_id=user_id).order_by(LearningPlan.id.desc()).all()

@@ -50,6 +50,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | 11 | Acceso social de candidatos | Google y GitHub implementados con proveedores simulados en pruebas; requieren credenciales para uso real |
 | 12 | Vinculación de cuentas sociales existentes | Implementado con reautenticación, MFA y control de sesión; sin conexión externa real |
 | 13 | Análisis estático de proyectos | Implementado por ZIP local, vista previa y evidencia no verificada con incorporación opcional al perfil |
+| 14 | Catálogo educativo y transparencia comercial | Administración, importación JSON, brechas y planes integrados; sin compras ni certificados automáticos |
 
 ## Comprobaciones
 
@@ -462,3 +463,35 @@ esa evidencia temporal y cierre de la sesión de prueba. Se corrigió el arranqu
 local para excluir pruebas, utilidades, migraciones y entorno virtual de la
 recarga automática mediante rutas absolutas; el filtro se comprobó en Windows.
 No se hicieron push, despliegues ni conexiones a cuentas externas.
+
+## Bloque 14: catálogo educativo administrable
+
+`/admin/aprendizaje` permite crear, editar, archivar e importar cursos, talleres y
+documentación. Cada recurso incluye proveedor, enlace HTTPS, habilidades, duración
+estimada, coste declarado y explicación de patrocinio o afiliación cuando aplica.
+La API rechaza enlaces con credenciales, IP, HTTP o dominios locales. No consulta
+esas URL ni compra cursos. Administración debe revisar disponibilidad, permisos de
+uso y condiciones antes de publicarlos; el formulario no confirma acuerdos reales.
+
+`GET/POST /api/v1/admin/learning/resources`, `PUT .../{id}` y `POST .../import`
+requieren rol administrador y los controles de sesión/MFA/CSRF existentes. La
+importación acepta una lista `resources` de hasta cincuenta objetos y se valida
+antes de guardar; el catálogo admite hasta doscientos recursos administrables.
+La edición envía `version` y rechaza cambios concurrentes con 409. Los ejercicios
+originales permanecen disponibles y no se editan desde esta pantalla.
+
+Aprendizaje muestra el catálogo, enlaces externos, declaraciones comerciales y
+micropruebas de fundamentos disponibles para las habilidades de cada recurso.
+Recomienda únicamente recursos que cubren una brecha. Examina hasta diez recursos,
+preseleccionados por cobertura, horas e identificador, y doscientas vacantes; ordena
+por mejora hipotética de afinidad por hora. El patrocinio o afiliación no participa
+en ninguno de esos cálculos. Las horas y costes no se consultan en tiempo real.
+
+Los planes se conservan al archivar recursos, pero no admiten incorporaciones
+nuevas de esos recursos. Marcar un curso terminado no añade habilidades, aprueba
+evaluaciones ni confirma certificados. Los enlaces no añaden identificadores de
+candidato ni seguimiento de compras. La migración 0033 crea `learning_resources`.
+Las pruebas cubren brechas, planes históricos, ausencia de acreditación automática,
+edición concurrente, importaciones atómicas, publicidad y validación de enlaces.
+La importación JSON permite trabajar localmente sin APIs de terceros; adaptadores
+contractuales de proveedores y liquidación de comisiones requieren integración real.

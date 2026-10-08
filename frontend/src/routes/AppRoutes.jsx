@@ -40,6 +40,7 @@ const ProcessPage = lazyNamed(() => import("../pages/ProcessPage.jsx"), "Process
 const InterviewsPage = lazyNamed(() => import("../pages/InterviewPage.jsx"), "InterviewsPage");
 const InterviewRoomPage = lazyNamed(() => import("../pages/InterviewPage.jsx"), "InterviewRoomPage");
 const LearningPage = lazyNamed(() => import("../pages/LearningPage.jsx"), "LearningPage");
+const LearningCatalogPage = lazyNamed(() => import("../pages/LearningCatalogPage.jsx"), "LearningCatalogPage");
 const HiringQualityPage = lazyNamed(() => import("../pages/HiringQualityPage.jsx"), "HiringQualityPage");
 const TrustPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "TrustPage");
 const EcosystemPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "EcosystemPage");
@@ -122,6 +123,7 @@ export function AppRoutes() {
         <Route path="/confianza" element={<RequireRole roles={["candidate", "company"]}><TrustPage /></RequireRole>} />
         <Route path="/admin/ecosistema" element={<RequireRole roles={["admin"]}><EcosystemPage /></RequireRole>} />
         <Route path="/admin/modelos" element={<RequireRole roles={["admin"]}><ModelPage /></RequireRole>} />
+        <Route path="/admin/aprendizaje" element={<RequireRole roles={["admin"]}><LearningCatalogPage /></RequireRole>} />
         <Route path="/mis-intereses" element={<RequireRole roles={["candidate"]}><PersonalizationPage /></RequireRole>} />
         <Route path="/empresa/calidad" element={<RequireRole roles={["company"]}><HiringQualityPage /></RequireRole>} />
         <Route path="/aprendizaje" element={<RequireRole roles={["candidate"]}><LearningPage /></RequireRole>} />
