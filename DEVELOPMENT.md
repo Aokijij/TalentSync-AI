@@ -982,3 +982,16 @@ proceso, matching léxico y limitador desactivado, sin representar una capacidad
 de producción. La matriz `matching-regressions.json` comprueba orden por cobertura,
 invariancia ante identificadores, alias, duplicados, componentes y confianza de
 ofertas externas. No estima éxito de contratación ni equidad demográfica.
+# Bloque 30 — cierre y verificación visual
+
+Inventario actualizado a seis micropruebas y cuatro retos SQL. Documentación del
+ensayo unificado, límites de capacidad y dependencias externas que siguen
+desactivadas con presupuesto cero. Las pruebas del runner comprueban que se
+detenga ante un fallo y rechace informes correspondientes a otro código.
+
+Revisión de navegador con cuentas QA locales ficticias independientes: candidato,
+entrega del reto de totales/promedios y pasaporte, acceso empresarial y
+administrativo con MFA, paneles y catálogo educativo. Sin cambiar las cuentas
+de demostración previas ni activar permisos audiovisuales. Los informes actuales
+y su huella están en `.local/verification/` y `.local/staging/verification.json`;
+el inventario por rol está en `FEATURES_LOCAL.md`.

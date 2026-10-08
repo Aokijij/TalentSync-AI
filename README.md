@@ -328,7 +328,7 @@ npm run lint
 npm run build
 ```
 
-Las pruebas de integración usan SQLite aislado. La generación de SQL de PostgreSQL se valida sin conectarse a producción. El repositorio aún no incluye una suite de navegador con Cypress o Playwright ni una campaña documentada de carga.
+Las pruebas de integración usan SQLite aislado. `scripts/local.py rehearse` ejecuta la validación completa, conexiones SMTP TLS contra un sumidero local, concurrencia de ocho candidatos y un ensayo de migraciones, aceptación y restauración contra PostgreSQL 18 aislado en loopback. Los informes privados están en `.local/verification/` y `.local/staging/verification.json`. La concurrencia mide ASGI dentro del proceso con datos sintéticos; no representa una capacidad de producción. La revisión de navegador es manual asistida, sin suite persistente de Cypress/Playwright. No se conecta a producción ni se entrega correo externo.
 
 El workflow `.github/workflows/ci.yml` ejecuta pruebas, lint, auditorías, migraciones y una construcción Docker. CI valida el commit, pero no despliega automáticamente.
 

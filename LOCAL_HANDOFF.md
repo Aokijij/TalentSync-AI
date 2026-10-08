@@ -33,6 +33,7 @@ Desde la raíz del proyecto:
 ```powershell
 backend/.venv/Scripts/python.exe scripts/local.py doctor
 backend/.venv/Scripts/python.exe scripts/local.py verify
+backend/.venv/Scripts/python.exe scripts/local.py rehearse
 ```
 
 `doctor` comprueba runtimes, dependencias frontend, aislamiento de configuración,
@@ -60,8 +61,16 @@ Los comandos, límites y preparación externa están en
 [infra/staging/README.md](infra/staging/README.md).
 
 La migración local vigente es 0036. SMTP está preparado con cola/reintentos y
-pruebas simuladas, pero permanece desactivado. El presupuesto autorizado es cero:
+pruebas simuladas y conexiones SSL/STARTTLS reales a un sumidero local, pero
+permanece desactivado. El presupuesto autorizado es cero:
 no se crea infraestructura Azure ni se contratan proveedores.
+
+`rehearse` reúne la validación completa, el ensayo PostgreSQL y el diagnóstico,
+exige la misma huella de código y guarda `rehearsal.json`. También genera
+`capacity.json` (ocho candidatos simultáneos, 50 ofertas, sesiones/CSRF y escrituras
+aisladas) y `matching-regressions.json` (matriz sintética con 16 variantes de
+identidad). La capacidad mide ASGI en proceso y matching léxico con limitador
+desactivado; no certifica rendimiento en producción ni equidad demográfica.
 
 Para arrancar: `scripts/local.py backend` y, desde `frontend/`,
 `npm run dev -- --host 127.0.0.1`. La aplicación está en

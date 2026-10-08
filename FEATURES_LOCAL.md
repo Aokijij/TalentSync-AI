@@ -1,7 +1,7 @@
 # Funcionalidades de la versión local
 
 Proyecto compatible con su stack existente: FastAPI, React y SQLAlchemy.
-Rama `codex/desarrollo-funcionalidades-local`, bloques 1–24.
+Rama `codex/desarrollo-funcionalidades-local`, bloques 1–30.
 No se realizó despliegue ni push. Los datos de demostración son ficticios y la
 base aislada vive en `.local/talentsync.sqlite3`.
 
@@ -19,8 +19,8 @@ base aislada vive en `.local/talentsync.sqlite3`.
 | Aprendizaje dirigido | Brecha por vacante, recursos asociados, estimación hipotética de mejora por hora y otras vacantes examinadas, excluyendo la seleccionada. `/aprendizaje`. |
 | Plan de práctica | Guardar recursos, marcar progreso y conservar planes aunque se archive un recurso. Completar el plan no acredita la habilidad. |
 | Brechas recurrentes | Patrones de habilidades pendientes en procesos finalizados, sin atribuir automáticamente el rechazo a esa brecha. |
-| Micropruebas | Evaluaciones locales de fundamentos SQL, Python y microservicios; tiempo limitado, entrega única, repetición limitada y feedback. |
-| Retos SQL reales | Dos retos originales, vista previa y entrega contra tres conjuntos sintéticos, en SQLite aislada y restringida. |
+| Micropruebas | Seis evaluaciones locales: SQL, Python, microservicios, APIs REST, Git y seguridad de aplicaciones; tiempo limitado, entrega única, respuestas estrictas, repetición limitada y feedback. |
+| Retos SQL reales | Cuatro retos originales: totales pagados, clientes sin pagos, totales/promedios y último pedido; vista previa y entrega contra tres conjuntos sintéticos, en SQLite aislada y restringida. |
 | Pasaporte de habilidades | Resultados, versión, alcance y caducidad. Aprobaciones de fundamentos integradas con el perfil. |
 | Portafolio y análisis de proyectos | Evidencias manuales, análisis estático de ZIP local y adaptador optativo para repositorios públicos GitHub. Vista previa antes de guardar; sin ejecución ni verificación de autoría. |
 | Personalización consentida | Intereses, ofertas ocultas, recuperación de decisiones y señal colaborativa agregada con mínimo de vecinos. `/mis-intereses`. |
@@ -72,27 +72,34 @@ base aislada vive en `.local/talentsync.sqlite3`.
 - Los retos SQL sí ejecutan consultas restringidas. La ejecución arbitraria de
   Python, Java o JavaScript requiere un ejecutor aislado adicional; el editor de
   entrevistas no ejecuta código.
-- VPN, dominios separados, correo real, infraestructura y despliegue quedan fuera
-  de esta entrega local.
+- SMTP incluye cola duradera, reintentos, caducidad y TLS, con pruebas reales contra
+  un sumidero local. La entrega externa, VPN, dominios e infraestructura operativa
+  siguen pendientes. No se crean recursos facturables con presupuesto cero.
 - No existen datos reales suficientes para entrenar predicción de contratación,
   promover un modelo de interés al ranking o auditar equidad demográfica. Las
   cuentas ficticias se excluyen del entrenamiento; no se inventan observaciones.
 
 ## Validación de cierre
 
-El 8 de octubre de 2026 pasaron 304 pruebas backend y 20 frontend, lint completo
-de Python/JavaScript, compilación Vite y comprobación de dependencias Python.
-Entra ID añade validación de firma, tenant, audiencia,
-caducidad, MFA y revocación; la migración 0035 conserva datos y sesiones previos.
-La suite usó bases temporales aisladas, y las migraciones comprobaron SQLite y
-generación SQL PostgreSQL sin conexión a la base anterior.
+La validación del 8 de octubre de 2026 comprende dependencias Python, lint de
+Python/JavaScript, pruebas backend/frontend, compilación Vite y modelo neuronal
+offline. La migración vigente es 0036. Los resultados de la ejecución actual y su
+huella de código están en `.local/verification/validation.json` y `rehearsal.json`.
 
-La inferencia real offline pasó con textos sintéticos. Por HTTP local, tres
-recomendaciones devolvieron el método neuronal activo en 0,97 s; se comprobaron
-aprendizaje, pasaporte, entrevistas, identidades sociales, permisos y logout.
-En navegador, una cuenta ficticia independiente completó un reto SQL, superó las
-tres comprobaciones y recibió la acreditación de fundamentos en su pasaporte.
-La captura está en `.local/verification/retos-sql.jpg`, fuera de Git.
+La aceptación entre los tres roles utiliza sesiones reales y MFA, bases
+temporales y ningún proveedor externo. PostgreSQL 18 real comprueba migraciones,
+concurrencia de la cola de correo y restauración de todas las filas de 27 tablas
+en `.local/staging/verification.json`. No conecta a la base original.
+
+La capacidad local utiliza ocho candidatos concurrentes y 50 ofertas sintéticas.
+La matriz de regresión comprueba cobertura, identificadores, alias y explicaciones;
+SMTP valida certificados y hostname en conexiones SSL/STARTTLS reales, sin entregar
+correo externo. Los informes no incluyen credenciales ni datos personales.
+
+La revisión visual usa cuentas QA ficticias independientes: acceso del candidato,
+catálogo ampliado y entrega del nuevo reto de totales/promedios, con tres
+comprobaciones y acreditación en el pasaporte; acceso con MFA de empresa y
+administración y revisión de sus paneles. No activa cámara ni micrófono.
 
 Los comandos de arranque, configuración, límites y referencias técnicas están en
 [DEVELOPMENT.md](DEVELOPMENT.md). Las claves, sesiones, credenciales de ejemplo y
@@ -102,6 +109,6 @@ parámetros de callbacks OAuth; conserva los mensajes de errores y arranque.
 El flujo completo entre los tres roles pasó con sesiones y MFA en bases temporales.
 `scripts/local.py doctor` comprueba la instalación y `scripts/local.py verify`
 repite la validación y guarda un informe sin secretos en `.local/verification/`.
-La evidencia visual más reciente está en `cierre-local-aprendizaje.png` dentro de
-esa carpeta. El cierre local y lo necesario para conectar servicios reales están
+La evidencia visual se conserva dentro de esa carpeta. El cierre local y lo
+necesario para conectar servicios reales están
 en [LOCAL_HANDOFF.md](LOCAL_HANDOFF.md).
