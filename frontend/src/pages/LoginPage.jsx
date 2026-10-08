@@ -74,7 +74,7 @@ export function LoginPage() {
       if (typeof destination === "string" && destination.startsWith("/") && !destination.startsWith("//")) { navigate(destination); return; }
       navigate(
         user.role === "company"
-          ? "/empresa"
+          ? "/empresa/equipo"
           : user.role === "admin"
             ? "/admin"
             : "/candidato",

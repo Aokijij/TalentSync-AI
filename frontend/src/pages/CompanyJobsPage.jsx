@@ -716,7 +716,7 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           <span
             className={`rounded-full px-2.5 py-1 text-xs font-bold ${job.status === "active" ? "bg-[var(--success)]/10 text-[var(--success)]" : job.status === "filled" ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}
           >
-            {job.status === "active" ? "Activa" : job.status === "filled" ? "Cubierta" : "Pausada"}
+            {job.status === "active" ? "Activa" : job.status === "draft" ? "Borrador · requiere verificación" : job.status === "filled" ? "Cubierta" : "Pausada"}
           </span>
         </div>
         <Link

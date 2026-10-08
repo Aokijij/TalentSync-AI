@@ -15,6 +15,7 @@ class RegisterRequest(BaseModel):
     company_name: str | None = Field(default=None, min_length=2, max_length=180)
     nit: str | None = Field(default=None, min_length=3, max_length=80)
     company_description: str | None = None
+    invitation_token: str | None = Field(default=None, min_length=20, max_length=200)
 
     @field_validator("email")
     @classmethod

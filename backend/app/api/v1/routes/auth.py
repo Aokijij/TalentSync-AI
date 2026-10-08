@@ -39,7 +39,8 @@ def register(
     if settings.session_auth_enabled and len(payload.password) < 12:
         raise UseCaseError(status_code=422, detail="Usa una contraseña de al menos 12 caracteres")
     user = use_cases.register(
-        payload=payload.model_dump(), db=db, nlp=nlp, security=security
+        payload=payload.model_dump(), db=db, nlp=nlp, security=security,
+        require_verification=settings.session_auth_enabled,
     )
     if settings.local_mail_enabled:
         request_action(db, user.email, "verify", app_url=settings.public_app_url,

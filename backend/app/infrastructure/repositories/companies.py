@@ -1,7 +1,7 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.infrastructure.database.models import Company, CompanyFollower
+from app.infrastructure.database.models import Company, CompanyFollower, CompanyMember
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
@@ -9,7 +9,9 @@ class CompanyRepository(SqlAlchemyRepository[Company]):
     def find_by_owner(self, owner_id: int) -> Company | None:
         return (
             self.session.query(Company)
-            .filter(Company.owner_user_id == owner_id)
+            .filter(or_(Company.owner_user_id == owner_id, Company.id.in_(
+                self.session.query(CompanyMember.company_id).filter(CompanyMember.user_id == owner_id, CompanyMember.active.is_(True))
+            )))
             .first()
         )
 
@@ -68,7 +70,9 @@ class CompanyRepository(SqlAlchemyRepository[Company]):
     def list_owned(self, owner_id: int | None) -> list[Company]:
         query = self.session.query(Company)
         if owner_id is not None:
-            query = query.filter(Company.owner_user_id == owner_id)
+            query = query.filter(or_(Company.owner_user_id == owner_id, Company.id.in_(
+                self.session.query(CompanyMember.company_id).filter(CompanyMember.user_id == owner_id, CompanyMember.active.is_(True))
+            )))
         return query.all()
 
     def find_follow(

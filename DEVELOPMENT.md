@@ -39,7 +39,7 @@ simulan accesos sociales, certificados, probabilidades o llamadas externas.
 | --- | --- | --- |
 | 1 | Entorno aislado, semilla ficticia e historial de eventos | Completado: 71 pruebas backend, 20 frontend, lint y build |
 | 2 | Correo local, recuperación, verificación, sesiones, MFA y privacidad | Implementado y probado; SSO externo pendiente del bloque 9 |
-| 3 | Verificación empresarial, equipos y permisos | Pendiente |
+| 3 | Verificación empresarial, equipos y permisos | Implementado: revisión manual local, borradores, invitaciones y permisos en API |
 | 4 | Requisitos, evidencias, preferencias y matching avanzado | Pendiente |
 | 5 | Historial de etapas, plazos, avisos y feedback | Pendiente |
 | 6 | Brechas, recursos, planes, evaluaciones, pasaporte y portafolio | Pendiente |
@@ -81,3 +81,18 @@ arquitectura y migración repetidas tras endurecer el consumo de códigos MFA;
 lint y build frontend. Se comprobó en navegador el login del candidato,
 persistencia al navegar y pantalla de seguridad. La semilla utiliza direcciones
 ficticias bajo el dominio reservado example.com.
+
+## Bloque 3: organizaciones
+
+`/empresa/equipo` reúne verificación, invitaciones de tres días y asignaciones.
+`/admin/verificaciones` permite aprobar, pedir información, rechazar o suspender
+con un motivo. Las nuevas empresas locales requieren correo confirmado y revisión
+manual antes de publicar o consultar talento. Suspender pausa sus vacantes activas.
+Las empresas anteriores conservan su acceso para una migración gradual.
+
+Cada cuenta empresarial pertenece a una organización en esta versión. El propietario
+gestiona la identidad y el equipo; el reclutador gestiona selección; el entrevistador
+solo consulta las vacantes asignadas con alias de candidatos. Cambiar permisos revoca
+las sesiones anteriores. Los borradores solo son visibles a la empresa y al admin.
+Las invitaciones están ligadas al correo, almacenadas como hash y se consumen una vez.
+La revisión local no consulta registros oficiales ni equivale a una verificación legal.

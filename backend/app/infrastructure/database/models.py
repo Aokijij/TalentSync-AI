@@ -170,6 +170,10 @@ class Company(Base):
     cover_filename: Mapped[str | None] = mapped_column(String(255))
     is_external: Mapped[bool] = mapped_column(default=False, nullable=False)
     source_name: Mapped[str | None] = mapped_column(String(80), index=True)
+    verification_required: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    verification_status: Mapped[str] = mapped_column(String(30), default="pending", server_default="pending", nullable=False)
+    verification_submission: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    verification_feedback: Mapped[str | None] = mapped_column(Text)
 
     owner: Mapped[User] = relationship()
     jobs: Mapped[list["Job"]] = relationship(
@@ -186,6 +190,28 @@ class Company(Base):
     @property
     def cover_url(self) -> str | None:
         return f"/api/v1/companies/{self.id}/cover" if self.cover_filename else None
+
+
+class CompanyMember(Base):
+    __tablename__ = "company_members"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)
+    active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    assigned_job_ids: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
+
+
+class CompanyInvitation(Base):
+    __tablename__ = "company_invitations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    assigned_job_ids: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class CompanyFollower(Base):

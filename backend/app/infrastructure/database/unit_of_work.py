@@ -17,6 +17,7 @@ from app.infrastructure.repositories.companies import CompanyRepository
 from app.infrastructure.repositories.events import EventRepository
 from app.infrastructure.repositories.jobs import JobRepository
 from app.infrastructure.repositories.notifications import NotificationRepository
+from app.infrastructure.repositories.organizations import OrganizationRepository
 from app.infrastructure.repositories.profiles import ProfileRepository
 from app.infrastructure.repositories.recommendations import RecommendationRepository
 from app.infrastructure.repositories.users import UserRepository
@@ -25,6 +26,7 @@ from app.infrastructure.repositories.users import UserRepository
 class SqlAlchemyUnitOfWork:
     def __init__(self, session: Session):
         self.session = session
+        self.organizations = OrganizationRepository(session)
         self.accounts = AccountRepository(session)
         self.events = EventRepository(session, EventLog)
         self.users = UserRepository(session, User)

@@ -34,8 +34,9 @@ def list_jobs(
     created_after: datetime | None,
     sort: str,
     db: UnitOfWork,
+    current_user: User | None = None,
 ) -> list[Job]:
-    return db.jobs.search(
+    jobs = db.jobs.search(
         search,
         modality,
         location,
@@ -48,6 +49,9 @@ def list_jobs(
         created_after,
         sort,
     )
+    company = owned_company(db, current_user) if current_user and current_user.role == UserRole.COMPANY else None
+    return [job for job in jobs if job.status != "draft" or (current_user and current_user.role == UserRole.ADMIN)
+            or (company and company.id == job.company_id)]
 
 
 def public_stats(db: UnitOfWork) -> dict[str, int]:
@@ -71,8 +75,12 @@ def create_job(
         raise UseCaseError(
             status_code=404, detail="No hay empresa asociada para publicar la vacante"
         )
-    if current_user.role != UserRole.ADMIN and company.owner_user_id != current_user.id:
+    accessible = owned_company(db, current_user) if current_user.role == UserRole.COMPANY else None
+    if current_user.role != UserRole.ADMIN and (accessible is None or accessible.id != company.id):
         raise UseCaseError(status_code=403, detail="No puedes publicar en esta empresa")
+    payload = dict(payload)
+    if company.verification_required and company.verification_status != "verified":
+        payload["status"] = "draft"
     analysis = nlp.analyze_job(
         f"{payload['title']} {payload['description']} {payload['requirements']}"
     )
@@ -85,6 +93,8 @@ def create_job(
     db.add(job)
     db.commit()
     db.refresh(job)
+    if job.status == "draft":
+        return job
     for follow in db.companies.followers_for_company(company.id):
         candidate = follow.candidate
         if candidate.profile is None:
@@ -108,10 +118,14 @@ def create_job(
     return job
 
 
-def get_job(job_id: int, db: UnitOfWork) -> Job:
+def get_job(job_id: int, db: UnitOfWork, current_user: User | None = None) -> Job:
     job = db.jobs.get_with_company(job_id)
     if job is None:
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
+    if job.status == "draft":
+        if current_user is None:
+            raise UseCaseError(status_code=404, detail="Vacante no encontrada")
+        ensure_job_access(db, job, current_user)
     return job
 
 
@@ -128,6 +142,8 @@ def update_job(
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
     ensure_job_access(db, job, current_user)
     changes = dict(payload)
+    if changes.get("status") == "active" and job.company.verification_required and job.company.verification_status != "verified":
+        raise UseCaseError(status_code=403, detail="Verifica la empresa antes de publicar")
     previous_status = job.status
     if previous_status == "filled" and changes.get("status") in {"active", "paused", "closed"}:
         raise UseCaseError(status_code=422, detail="Para reabrir la vacante, elige si deseas continuar el proceso o crear uno nuevo")
@@ -203,10 +219,12 @@ def delete_job(job_id: int, current_user: User, db: UnitOfWork) -> None:
 
 
 def reopen_job(job_id: int, mode: str, current_user: User, db: UnitOfWork, *, nlp: TextAnalysis) -> Job:
-    job = get_job(job_id, db)
+    job = get_job(job_id, db, current_user)
     ensure_job_access(db, job, current_user)
     if job.status != "filled":
         raise UseCaseError(status_code=409, detail="Solo puedes reabrir una vacante cubierta")
+    if job.company.verification_required and job.company.verification_status != "verified":
+        raise UseCaseError(status_code=403, detail="Verifica la empresa antes de publicar")
     if mode == "continue":
         job.status = "active"
         db.commit()
@@ -221,7 +239,7 @@ def reopen_job(job_id: int, mode: str, current_user: User, db: UnitOfWork, *, nl
 def get_application_questions(
     job_id: int, current_user: User, db: UnitOfWork
 ) -> list[dict]:
-    job = get_job(job_id, db)
+    job = get_job(job_id, db, current_user)
     ensure_job_access(db, job, current_user)
     return job.application_questions or []
 
@@ -230,6 +248,6 @@ def match_current_candidate(
     job_id: int, current_user: User, db: UnitOfWork, *, nlp: TextAnalysis
 ):
     job = db.jobs.get(job_id)
-    if job is None:
+    if job is None or job.status == "draft":
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
     return upsert_recommendation(db, current_user, job, nlp=nlp)

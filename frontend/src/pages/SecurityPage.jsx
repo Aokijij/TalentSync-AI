@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 
 export function SecurityPage() {
+  const [params] = useSearchParams();
   const { user, refreshUser, accessOptions, logout } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [privacy, setPrivacy] = useState(null);
@@ -49,6 +50,6 @@ export function SecurityPage() {
     </section>
     <section className="surface-card p-5"><h2 className="font-bold">Privacidad</h2>{privacy && <div className="mt-4 space-y-3">{Object.entries({ share_evidence: "Compartir evidencias con empresas de mis procesos", notify_new_skills: "Avisar a empresas de mis procesos cuando acredite habilidades", personalize_recommendations: "Usar mis interacciones para personalizar recomendaciones" }).map(([key, label]) => <label className="flex items-center gap-3 text-sm" key={key}><input type="checkbox" checked={privacy[key]} onChange={(event) => setPrivacy({ ...privacy, [key]: event.target.checked })} />{label}</label>)}<button disabled={busy} className="button-primary" onClick={() => act(async () => { const { data } = await api.put("/account/privacy", privacy); setPrivacy(data); setMessage("Preferencias guardadas"); })}>Guardar preferencias</button></div>}</section>
     <section className="surface-card p-5"><h2 className="font-bold">Sesiones y dispositivos</h2><div className="mt-3 divide-y divide-[var(--line)]">{sessions.map((session) => <div key={session.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="text-sm font-semibold">{session.current ? "Este dispositivo" : "Otro dispositivo"}{session.revoked ? " · Cerrada" : ""}</p><p className="max-w-xl break-all text-xs text-[var(--muted)]">{session.device || "Dispositivo sin identificar"}</p><p className="text-xs text-[var(--muted)]">Último uso: {new Date(session.last_seen_at + "Z").toLocaleString("es-CO")}</p></div>{!session.revoked && <button disabled={busy} className="button-secondary" onClick={() => act(async () => { if (session.current) await logout(); else { await api.delete(`/account/sessions/${session.id}`); await load(); } })}>Cerrar sesión</button>}</div>)}</div></section>
-    <Link className="button-secondary inline-flex" to={user.role === "candidate" ? "/candidato" : user.role === "company" ? "/empresa" : "/admin"}>Continuar a mi espacio</Link>
+    <Link className="button-secondary inline-flex" to={params.get("invitation") ? `/equipo/invitacion?token=${encodeURIComponent(params.get("invitation"))}` : user.role === "candidate" ? "/candidato" : user.role === "company" ? "/empresa/equipo" : "/admin"}>Continuar a mi espacio</Link>
   </div>;
 }

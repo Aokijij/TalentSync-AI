@@ -66,6 +66,7 @@ def default_pipeline_stages() -> list[PipelineStage]:
 
 
 class JobCreate(PipelineStagesMixin):
+    status: Literal["active", "draft"] = "active"
     languages: list[LanguageLevel] = Field(default_factory=list, max_length=20)
     _unique_languages = field_validator("languages")(unique_languages)
     company_id: int | None = None
@@ -115,7 +116,7 @@ class JobUpdate(PipelineStagesMixin):
     modality: str | None = None
     employment_type: str | None = None
     sector: str | None = None
-    status: Literal["active", "paused", "filled", "closed"] | None = None
+    status: Literal["active", "draft", "paused", "filled", "closed"] | None = None
     benefits: list[str] | None = None
     pipeline_stages: list[PipelineStage] | None = Field(
         default=None, min_length=2, max_length=12

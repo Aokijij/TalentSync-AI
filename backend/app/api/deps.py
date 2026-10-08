@@ -7,6 +7,7 @@ from app.application.ports.services import ResumeReader as ResumeReaderPort
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases.account_security import resolve_session
+from app.application.use_cases.organizations import authorize_request
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
 from app.infrastructure.database.models import User
@@ -37,6 +38,7 @@ def get_current_user(
         if user.role != UserRole.CANDIDATE and (not user.mfa_enabled or not session.mfa_verified):
             if not request.url.path.startswith(("/api/v1/auth/", "/api/v1/account/")):
                 raise HTTPException(status_code=403, detail="Configura la autenticación de dos factores en Seguridad para continuar")
+        authorize_request(SqlAlchemyUnitOfWork(db), user, request.url.path, request.method)
         return user
     if not token or settings.session_auth_enabled:
         raise HTTPException(status_code=401, detail="Inicia sesión para continuar")
@@ -53,7 +55,14 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no existe"
         )
+    authorize_request(SqlAlchemyUnitOfWork(db), user, request.url.path, request.method)
     return user
+
+
+def get_optional_user(request: Request, token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    if token or request.cookies.get("talentsync_session"):
+        return get_current_user(request, token, db)
+    return None
 
 
 def require_roles(*roles: UserRole):

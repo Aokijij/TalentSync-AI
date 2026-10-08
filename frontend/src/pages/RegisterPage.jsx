@@ -8,7 +8,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 
 import { BrandLogo } from "../components/brand/BrandLogo.jsx";
@@ -18,6 +18,8 @@ import { AccessProviders } from "../components/AccessProviders.jsx";
 
 export function RegisterPage() {
   const location = useLocation();
+  const [params] = useSearchParams();
+  const invitation = params.get("invitation");
   const {
     control,
     register,
@@ -37,6 +39,7 @@ export function RegisterPage() {
     setError("");
     const payload = {
       ...values,
+      ...(invitation ? { invitation_token: invitation, role: "company" } : {}),
       skills: values.skills
         ? values.skills
             .split(",")
@@ -46,7 +49,7 @@ export function RegisterPage() {
     };
     try {
       const user = await createAccount(payload);
-      navigate(user.role === "company" ? (accessOptions.mode === "session" ? "/seguridad" : "/empresa") : "/bienvenida");
+      navigate(invitation ? `/seguridad?invitation=${encodeURIComponent(invitation)}` : user.role === "company" ? (accessOptions.mode === "session" ? "/seguridad" : "/empresa/equipo") : "/bienvenida");
     } catch (requestError) {
       const detail = requestError.response?.data?.detail;
       setError(
@@ -120,7 +123,7 @@ export function RegisterPage() {
               noValidate
             >
               <input type="hidden" {...register("role")} />
-              <div className="role-switch" aria-label="Tipo de cuenta">
+              <div hidden={Boolean(invitation)} className="role-switch" aria-label="Tipo de cuenta">
                 <button
                   type="button"
                   aria-pressed={role === "candidate"}
@@ -236,7 +239,7 @@ export function RegisterPage() {
                   </div>
                 </Field>
               </div>
-              {isCompany ? (
+              {invitation ? <p>Te incorporarás a la empresa que te invitó después de confirmar tu correo y configurar la seguridad.</p> : isCompany ? (
                 <section className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
                   <p className="text-sm font-bold text-[var(--ink-strong)]">
                     Información de la empresa

@@ -15,6 +15,7 @@ def register(
     *,
     nlp: TextAnalysis,
     security: AccountSecurity,
+    require_verification: bool = False,
 ) -> User:
     if payload["role"] == UserRole.ADMIN:
         raise UseCaseError(
@@ -23,7 +24,16 @@ def register(
         )
     if db.users.find_by_email(payload["email"]):
         raise UseCaseError(status_code=409, detail="El email ya esta registrado")
-    if payload["role"] == UserRole.COMPANY:
+    invitation = None
+    if payload.get("invitation_token"):
+        from datetime import datetime
+
+        from app.domain.services.authentication import token_digest
+        invitation = db.organizations.invitation(token_digest(payload["invitation_token"]))
+        if (invitation is None or invitation.used_at or invitation.expires_at <= datetime.utcnow()
+                or invitation.email != payload["email"].casefold() or payload["role"] != UserRole.COMPANY):
+            raise UseCaseError(status_code=422, detail="La invitación no corresponde a esta cuenta")
+    if payload["role"] == UserRole.COMPANY and invitation is None:
         if not payload["company_name"] or not payload["nit"]:
             raise UseCaseError(
                 status_code=422,
@@ -86,13 +96,14 @@ def register(
             embedding=nlp.embed(profile_text) if profile_text else None,
         )
     )
-    if payload["role"] == UserRole.COMPANY:
+    if payload["role"] == UserRole.COMPANY and invitation is None:
         db.add(
             db.companies.new(
                 owner_user_id=user.id,
                 name=payload["company_name"],
                 nit=payload["nit"],
                 description=payload["company_description"],
+                verification_required=require_verification,
             )
         )
     record_event(db, "account.created", "user", user.id,

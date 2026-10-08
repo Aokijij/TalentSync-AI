@@ -20,6 +20,8 @@ import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
+  { to: "/empresa/equipo", label: "Verificación y equipo", icon: Building2, roles: ["company"] },
+  { to: "/admin/verificaciones", label: "Verificar empresas", icon: ShieldCheck, roles: ["admin"] },
   { to: "/seguridad", label: "Seguridad y privacidad", icon: ShieldCheck, roles: ["candidate", "company", "admin"] },
   { to: "/admin", label: "Inicio", icon: LayoutDashboard, roles: ["admin"] },
   {
@@ -150,9 +152,10 @@ export function AppLayout() {
   const { user, logout } = useAuth();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [organizationName, setOrganizationName] = useState("");
+  const [organization, setOrganization] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const copy = roleCopy[user.role] ?? roleCopy.candidate;
-  const visibleLinks = links.filter((link) => link.roles.includes(user.role));
+  const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"));
 
   useEffect(() => {
     if (user.role !== "candidate" && user.role !== "company") return;
@@ -180,8 +183,8 @@ export function AppLayout() {
       return;
     }
     api
-      .get("/companies/me")
-      .then(({ data }) => setOrganizationName(data.name || ""))
+      .get("/organization/me")
+      .then(({ data }) => { setOrganizationName(data.name || ""); setOrganization(data); })
       .catch(() => setOrganizationName(""));
   }, [user.role]);
 

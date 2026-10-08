@@ -2,7 +2,12 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, status
 
-from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
+from app.api.deps import (
+    get_optional_user,
+    get_text_analysis,
+    get_unit_of_work,
+    require_roles,
+)
 from app.api.schemas.job import (
     JobCreate,
     JobReopen,
@@ -23,6 +28,7 @@ router = APIRouter()
 
 @router.get("", response_model=list[JobResponse])
 def list_jobs(
+    current_user=Depends(get_optional_user),
     search: str | None = None,
     modality: str | None = None,
     location: str | None = None,
@@ -49,6 +55,7 @@ def list_jobs(
         created_after=created_after,
         sort=sort,
         db=db,
+        current_user=current_user,
     )
 
 
@@ -73,8 +80,8 @@ def create_job(
 
 
 @router.get("/{job_id}", response_model=JobResponse)
-def get_job(job_id: int, db: UnitOfWork = Depends(get_unit_of_work)) -> Job:
-    return use_cases.get_job(job_id=job_id, db=db)
+def get_job(job_id: int, db: UnitOfWork = Depends(get_unit_of_work), current_user=Depends(get_optional_user)) -> Job:
+    return use_cases.get_job(job_id=job_id, db=db, current_user=current_user)
 
 
 @router.get(
