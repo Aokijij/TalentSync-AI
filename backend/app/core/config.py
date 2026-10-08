@@ -3,7 +3,7 @@ from functools import lru_cache
 from typing import Literal
 from urllib.parse import parse_qs, urlsplit
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import EmailStr, Field, TypeAdapter, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 120
     session_auth_enabled: bool = False
     local_mail_enabled: bool = False
+    smtp_enabled: bool = False
+    smtp_host: str = ""
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_security: Literal["starttls", "ssl"] = "starttls"
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
     session_cookie_secure: bool = True
     public_app_url: str = "http://127.0.0.1:5173"
     oauth_github_client_id: str = ""
@@ -126,6 +133,27 @@ class Settings(BaseSettings):
             raise ValueError("Staging requiere PostgreSQL con TLS")
         return self
 
+    @model_validator(mode="after")
+    def safe_smtp_configuration(self):
+        if self.smtp_enabled:
+            if self.local_mail_enabled:
+                raise ValueError("SMTP y el buzón local no pueden activarse simultáneamente")
+            if (not self.smtp_host or any(char.isspace() for char in self.smtp_host)
+                    or any(char in self.smtp_host for char in "/:@")):
+                raise ValueError("SMTP requiere un hostname válido, sin URL o credenciales")
+            if bool(self.smtp_username) != bool(self.smtp_password):
+                raise ValueError("Configura usuario y contraseña SMTP conjuntamente")
+            TypeAdapter(EmailStr).validate_python(self.smtp_from)
+        return self
+
+    @property
+    def mail_delivery_enabled(self):
+        return self.local_mail_enabled or self.smtp_enabled
+
+    @property
+    def mail_delivery_mode(self):
+        return "pending" if self.smtp_enabled else "local"
+
     @field_validator("catalog_max_age_days", "catalog_min_skills")
     @classmethod
     def positive_catalog_limits(cls, v):
@@ -133,7 +161,7 @@ class Settings(BaseSettings):
             raise ValueError("Los límites del catálogo deben ser mayores que cero")
         return v
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", hide_input_in_errors=True)
 
 
 @lru_cache

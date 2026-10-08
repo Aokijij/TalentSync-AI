@@ -35,6 +35,7 @@ def prepare_environment(*, testing=False):
         raise SystemExit("El entorno aislado requiere su propia base SQLite y ENVIRONMENT=development.")
     # Explicit values also override inherited shell variables and dotenv files.
     values.update({"TALENTSYNC_ENV_FILE": str(ENV_FILE), "PERIODIC_MAINTENANCE_ENABLED": "false",
+                   "SMTP_ENABLED": "false", "SMTP_HOST": "", "SMTP_USERNAME": "", "SMTP_PASSWORD": "", "SMTP_FROM": "",
                    "SESSION_AUTH_ENABLED": "true", "LOCAL_MAIL_ENABLED": "true",
                    "WORKFLOW_MAINTENANCE_ENABLED": "true",
                    "MODEL_MAINTENANCE_ENABLED": "true", "MATCH_MODEL_PATH": values.get("MATCH_MODEL_PATH", ""),

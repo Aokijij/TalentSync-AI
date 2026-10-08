@@ -42,9 +42,9 @@ def register(
         payload=payload.model_dump(), db=db, nlp=nlp, security=security,
         require_verification=settings.session_auth_enabled,
     )
-    if settings.local_mail_enabled:
+    if settings.mail_delivery_enabled:
         request_action(db, user.email, "verify", app_url=settings.public_app_url,
-                       mail_enabled=True, target_email=user.email)
+                       mail_enabled=True, target_email=user.email, delivery_mode=settings.mail_delivery_mode)
     return user
 
 

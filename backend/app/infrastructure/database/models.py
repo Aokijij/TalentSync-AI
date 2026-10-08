@@ -146,6 +146,14 @@ class MailMessage(Base):
     subject: Mapped[str] = mapped_column(String(180), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    delivery_state: Mapped[str] = mapped_column(String(16), default="local", server_default="local", nullable=False, index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime)
+    lease_token: Mapped[str] = mapped_column(String(64), default="", server_default="", nullable=False)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    failure_kind: Mapped[str] = mapped_column(String(32), default="", server_default="", nullable=False)
 
 
 class Profile(Base):

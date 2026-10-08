@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import update
+from sqlalchemy import and_, or_, update
 
 from app.infrastructure.database.models import (
     AccountToken,
@@ -90,3 +90,23 @@ class AccountRepository:
 
     def messages(self, limit=50):
         return self.session.query(MailMessage).order_by(MailMessage.created_at.desc(), MailMessage.id.desc()).limit(min(limit, 100)).all()
+
+    def claim_mail(self, now, lease, until):
+        eligible = or_(
+            and_(MailMessage.delivery_state == "pending", or_(MailMessage.next_attempt_at.is_(None), MailMessage.next_attempt_at <= now)),
+            and_(MailMessage.delivery_state == "sending", MailMessage.lease_until <= now),
+        )
+        ids = self.session.query(MailMessage.id).filter(eligible).order_by(MailMessage.id).limit(20).all()
+        for (message_id,) in ids:
+            claimed = self.session.execute(update(MailMessage).where(MailMessage.id == message_id, eligible).values(
+                delivery_state="sending", lease_token=lease, lease_until=until,
+                attempts=MailMessage.attempts + 1).execution_options(synchronize_session=False))
+            if claimed.rowcount == 1:
+                return self.session.query(MailMessage).filter_by(id=message_id).populate_existing().one()
+        return None
+
+    def finish_mail(self, message_id, lease, **values):
+        result = self.session.execute(update(MailMessage).where(
+            MailMessage.id == message_id, MailMessage.delivery_state == "sending", MailMessage.lease_token == lease,
+        ).values(**values, lease_token="", lease_until=None).execution_options(synchronize_session=False))
+        return result.rowcount == 1

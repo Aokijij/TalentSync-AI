@@ -58,7 +58,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0035_corporate_authority"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0036_mail_delivery"
     finally:
         engine.dispose()
 
@@ -132,5 +132,24 @@ def test_corporate_authority_migration_preserves_existing_sessions(monkeypatch, 
         command.downgrade(migration_config(), "0034_admin_sso")
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM user_sessions")).scalar_one() == 2
+    finally:
+        engine.dispose()
+
+
+def test_mail_migration_preserves_local_messages_without_sending_them(monkeypatch, tmp_path):
+    url = f"sqlite:///{(tmp_path / 'mail-upgrade.sqlite3').as_posix()}"
+    monkeypatch.setattr(settings, "database_url", url)
+    command.upgrade(migration_config(), "0035_corporate_authority")
+    engine = create_engine(url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO mail_messages (recipient,subject,body,created_at) VALUES ('synthetic@example.com','Local','unchanged',CURRENT_TIMESTAMP)"))
+        command.upgrade(migration_config(), "head")
+        with engine.connect() as connection:
+            assert tuple(connection.execute(text("SELECT body,delivery_state,attempts,lease_token FROM mail_messages")).one()) == ("unchanged", "local", 0, "")
+        command.downgrade(migration_config(), "0035_corporate_authority")
+        with engine.connect() as connection:
+            assert connection.execute(text("SELECT body FROM mail_messages")).scalar_one() == "unchanged"
+        command.upgrade(migration_config(), "head")
     finally:
         engine.dispose()

@@ -51,13 +51,17 @@ resultado si los archivos cambian durante las comprobaciones.
 
 Los informes se guardan en `.local/verification/doctor.json` y `validation.json`,
 sin credenciales, tokens ni contenido de perfiles. `.local/` está excluido de Git.
-Las pruebas de migración comprueban subida/bajada en SQLite y SQL de PostgreSQL
-offline; no equivalen a una ejecución contra un servidor PostgreSQL real.
+El runner habitual comprueba subida/bajada en SQLite y SQL de PostgreSQL
+offline; no equivale por sí mismo a una ejecución contra PostgreSQL real.
 En la siguiente etapa, el bloque 25 añade un ensayo independiente contra
 PostgreSQL 18 real con aceptación entre roles y restauración exacta de sus 27
 tablas: `scripts/staging_postgres.py check`. No reemplaza ni modifica esta SQLite.
 Los comandos, límites y preparación externa están en
 [infra/staging/README.md](infra/staging/README.md).
+
+La migración local vigente es 0036. SMTP está preparado con cola/reintentos y
+pruebas simuladas, pero permanece desactivado. El presupuesto autorizado es cero:
+no se crea infraestructura Azure ni se contratan proveedores.
 
 Para arrancar: `scripts/local.py backend` y, desde `frontend/`,
 `npm run dev -- --host 127.0.0.1`. La aplicación está en

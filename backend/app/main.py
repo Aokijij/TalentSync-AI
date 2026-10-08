@@ -21,10 +21,14 @@ async def lifespan(app: FastAPI):
     task = None
     workflow_task = None
     model_task = None
+    mail_task = None
     stop_event = asyncio.Event()
     if settings.match_model_path:
         from app.infrastructure.nlp.matching_encoder import matching_encoder
         await asyncio.to_thread(matching_encoder)
+    if settings.smtp_enabled:
+        from app.infrastructure.mail_scheduler import periodic_mail
+        mail_task = asyncio.create_task(periodic_mail(stop_event))
     if settings.model_maintenance_enabled:
         from app.infrastructure.model_scheduler import periodic_models
         model_task = asyncio.create_task(periodic_models(stop_event))
@@ -45,6 +49,8 @@ async def lifespan(app: FastAPI):
             await workflow_task
         if model_task:
             await model_task
+        if mail_task:
+            await mail_task
 
 
 def create_app() -> FastAPI:

@@ -919,3 +919,32 @@ correo externo con reintentos, rol PostgreSQL de aplicación y secretos, imagen 
 revisión HTTPS, pruebas reales de proveedores y restauración Azure. El buzón
 local no entrega correo; la plantilla de infraestructura no es un despliegue
 completo de la aplicación y no reutiliza los scripts antiguos de producción.
+
+## Bloque 27: correo SMTP y continuación con presupuesto cero
+
+El usuario indicó presupuesto cero. No se activan recursos facturables ni se
+publica la aplicación; la plantilla del bloque 26 se conserva para el futuro.
+Las siguientes comprobaciones usan los runtimes y PostgreSQL ya instalados.
+
+Se añadió un puerto de entrega de correo y adaptador SMTP con STARTTLS/TLS
+implícito, certificado/hostname verificados antes de autenticar y sin logs de
+contenido. Configuración incompleta, modo sin cifrar y mezcla SMTP/buzón local
+se rechazan. Los errores de Settings ocultan valores de entrada. El lanzador
+local fuerza SMTP desactivado y elimina credenciales SMTP heredadas.
+
+La migración 0036 amplía `mail_messages` con estado, intentos, lease, plazos y
+categoría de fallo. Conserva el histórico como local. Los flujos de confirmación,
+recuperación/cambio de correo e invitación encolan para el transporte elegido.
+El worker SMTP, desactivado por defecto, reclama con UPDATE condicional y confirma
+la transacción antes de la red; recupera leases abandonados y reintenta errores
+temporales con espera creciente, hasta cinco intentos. Descarta enlaces vencidos
+y elimina cuerpos al finalizar. No guarda texto privado de errores del proveedor.
+
+Las pruebas cubren TLS antes de AUTH, certificados, errores 4xx/5xx, recuperación
+tras caída, espera/reintentos agotados, leases y rechazo de un worker antiguo,
+expiración y registro sin envío síncrono. La aceptación PostgreSQL añade dos
+conexiones concurrentes que compiten por un mensaje y verifica recuperación del
+lease. Se prueban migraciones con correos existentes, subida/bajada y restauración.
+El envío externo permanece sin verificar: no se conectó ningún SMTP real ni se
+envió correo a personas. La entrega permite duplicados si el proceso cae después
+de la aceptación SMTP; Message-ID estable no garantiza entrega exactamente una vez.

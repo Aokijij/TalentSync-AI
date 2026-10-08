@@ -101,7 +101,7 @@ def revoke_session(db, user, session_id):
     db.commit()
 
 
-def request_action(db, email, purpose, *, app_url, mail_enabled, target_email=None):
+def request_action(db, email, purpose, *, app_url, mail_enabled, target_email=None, delivery_mode="local"):
     if not mail_enabled:
         raise UseCaseError(status_code=503, detail="El servicio de correo no está configurado")
     user = db.users.find_by_email(email)
@@ -112,6 +112,7 @@ def request_action(db, email, purpose, *, app_url, mail_enabled, target_email=No
         labels = {"verify": "Confirma tu correo", "reset": "Recupera tu acceso", "email": "Confirma tu nuevo correo"}
         link = f"{app_url.rstrip('/')}/cuenta/confirmar?purpose={purpose}&token={quote(token)}"
         db.add(db.accounts.new_message(recipient=target_email or user.email, subject=labels[purpose],
+            delivery_state=delivery_mode, expires_at=datetime.utcnow() + timedelta(minutes=30),
             body=f"{labels[purpose]} en TalentSync: {link}\nEste enlace vence en 30 minutos y solo puede usarse una vez. Si no lo solicitaste, ignora este mensaje."))
         db.commit()
     return {"message": "Si la cuenta corresponde, encontrarás las instrucciones en su correo."}

@@ -21,6 +21,17 @@ class AccountSecurity(Protocol):
     def decrypt_secret(self, value: str) -> str: ...
 
 
+class MailDelivery(Protocol):
+    def send(self, *, recipient: str, subject: str, body: str, message_id: int) -> None: ...
+
+
+class MailDeliveryError(Exception):
+    def __init__(self, *, retryable: bool, kind: str):
+        super().__init__("Mail delivery unavailable")
+        self.retryable = retryable
+        self.kind = kind if kind in {"temporary", "permanent", "configuration", "transport"} else "transport"
+
+
 class SocialIdentityProvider(Protocol):
     def configured(self, provider: str) -> bool: ...
     def authorization_url(self, provider: str, state: str, challenge: str, nonce: str) -> str: ...

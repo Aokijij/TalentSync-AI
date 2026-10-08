@@ -36,7 +36,8 @@ def team(user=Depends(company_user), db=Depends(get_unit_of_work)):
 @router.post("/organization/invitations")
 @limiter.limit("20/hour")
 def invite(request: Request, payload: TeamInvitation, user=Depends(company_user), db=Depends(get_unit_of_work)):
-    return cases.invite(db, user, payload.model_dump(), app_url=settings.public_app_url, mail_enabled=settings.local_mail_enabled)
+    return cases.invite(db, user, payload.model_dump(), app_url=settings.public_app_url,
+                        mail_enabled=settings.mail_delivery_enabled, delivery_mode=settings.mail_delivery_mode)
 
 
 @router.get("/organization/invitation")

@@ -2,6 +2,9 @@
 # ruff: noqa: F811
 import os
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
@@ -17,6 +20,7 @@ from app.core.limiter import limiter
 from app.infrastructure.database import session as database_session
 from app.infrastructure.database.models import MailMessage
 from app.infrastructure.database.session import get_db
+from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 from app.main import create_app
 
 
@@ -71,3 +75,37 @@ def browser(monkeypatch):
 
 def test_postgres_journey_uses_migrated_schema_and_real_sessions(browser):
     journey.test_local_journey_connects_all_roles_with_sessions_and_mfa(browser)
+    # Two real connections race for one outbox row. No SMTP transport is used.
+    with browser.session_factory() as session:
+        message = MailMessage(recipient="synthetic@example.com", subject="Concurrency", body="Synthetic", delivery_state="pending")
+        session.add(message)
+        session.commit()
+        message_id = message.id
+    now = datetime.utcnow()
+    barrier = threading.Barrier(2)
+
+    def claim(lease):
+        with browser.session_factory() as session:
+            worker = SqlAlchemyUnitOfWork(session)
+            barrier.wait(timeout=10)
+            selected = worker.accounts.claim_mail(now, lease, now + timedelta(minutes=2))
+            worker.commit()
+            return selected.id if selected else None
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        futures = [workers.submit(claim, lease) for lease in ["worker-one", "worker-two"]]
+        results = [future.result(timeout=20) for future in futures]
+    assert sorted(value for value in results if value is not None) == [message_id]
+    with browser.session_factory() as session:
+        row = session.get(MailMessage, message_id)
+        assert row.attempts == 1 and row.delivery_state == "sending"
+        old_lease = row.lease_token
+    with browser.session_factory() as session:
+        worker = SqlAlchemyUnitOfWork(session)
+        later = now + timedelta(minutes=3)
+        assert worker.accounts.claim_mail(later, "recovered-worker", later + timedelta(minutes=2)).id == message_id
+        worker.commit()
+        assert not worker.accounts.finish_mail(message_id, old_lease, delivery_state="sent")
+        worker.commit()
+        assert worker.accounts.finish_mail(message_id, "recovered-worker", delivery_state="sent", body="")
+        worker.commit()

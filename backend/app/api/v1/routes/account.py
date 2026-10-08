@@ -89,7 +89,8 @@ def logout(request: Request, response: Response, user=Depends(get_current_user),
 @limiter.limit("5/hour")
 def recover(request: Request, payload: EmailRequest, db=Depends(get_unit_of_work)):
     _origin(request)
-    return cases.request_action(db, str(payload.email).casefold(), "reset", app_url=settings.public_app_url, mail_enabled=settings.local_mail_enabled)
+    return cases.request_action(db, str(payload.email).casefold(), "reset", app_url=settings.public_app_url,
+                                mail_enabled=settings.mail_delivery_enabled, delivery_mode=settings.mail_delivery_mode)
 
 
 @router.post("/auth/action/confirm")
@@ -102,7 +103,8 @@ def action(request: Request, payload: ActionRequest, db=Depends(get_unit_of_work
 @router.post("/account/verify-email")
 @limiter.limit("5/hour")
 def verify_email(request: Request, user=Depends(get_current_user), db=Depends(get_unit_of_work)):
-    return cases.request_action(db, user.email, "verify", app_url=settings.public_app_url, mail_enabled=settings.local_mail_enabled, target_email=user.email)
+    return cases.request_action(db, user.email, "verify", app_url=settings.public_app_url, mail_enabled=settings.mail_delivery_enabled,
+                                target_email=user.email, delivery_mode=settings.mail_delivery_mode)
 
 
 @router.post("/account/change-email")
@@ -110,7 +112,8 @@ def verify_email(request: Request, user=Depends(get_current_user), db=Depends(ge
 def change_email(request: Request, payload: ChangeEmail, user=Depends(get_current_user),
                  db=Depends(get_unit_of_work), security=Depends(get_account_security)):
     cases._password(user, payload.password, security)
-    return cases.request_action(db, user.email, "email", target_email=str(payload.email).casefold(), app_url=settings.public_app_url, mail_enabled=settings.local_mail_enabled)
+    return cases.request_action(db, user.email, "email", target_email=str(payload.email).casefold(), app_url=settings.public_app_url,
+                                mail_enabled=settings.mail_delivery_enabled, delivery_mode=settings.mail_delivery_mode)
 
 
 @router.get("/account/sessions")

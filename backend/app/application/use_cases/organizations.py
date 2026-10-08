@@ -107,7 +107,7 @@ def _job_ids(db, company, ids):
     return sorted(set(ids))
 
 
-def invite(db, user, payload, *, app_url, mail_enabled):
+def invite(db, user, payload, *, app_url, mail_enabled, delivery_mode="local"):
     company = context(db, user, owner=True)
     if not user.email_verified:
         raise UseCaseError(status_code=403, detail="Confirma tu correo antes de invitar")
@@ -119,10 +119,11 @@ def invite(db, user, payload, *, app_url, mail_enabled):
         assigned_job_ids=ids, token_hash=token_digest(token), expires_at=datetime.utcnow() + timedelta(days=3)))
     link = f"{app_url.rstrip('/')}/equipo/invitacion?token={quote(token)}"
     db.add(db.accounts.new_message(recipient=payload["email"].casefold(), subject=f"Invitación a {company.name}",
+        delivery_state=delivery_mode, expires_at=datetime.utcnow() + timedelta(days=3),
         body=f"Te invitaron como {payload['role']} a {company.name}. Abre {link}\nVence en 3 días. Confirma tu correo antes de aceptar."))
     record_event(db, "company.member_invited", "company", company.id, actor_user_id=user.id, details={"role": payload["role"]})
     db.commit()
-    return {"message": "Invitación preparada en el correo local"}
+    return {"message": "Invitación preparada para enviar por correo"}
 
 
 def invitation_info(db, token):

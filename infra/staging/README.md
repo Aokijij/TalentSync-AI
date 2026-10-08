@@ -4,6 +4,10 @@ Este bloque prepara **la base de infraestructura**, separado de producción, en
 `rg-talentsync-staging`. No publica la aplicación ni envía correos. El lanzador
 solo compila y calcula `what-if`; no contiene comandos de creación de recursos.
 
+**Presupuesto actual: cero.** No activar esta infraestructura facturable.
+La aplicación y las integraciones simuladas continúan ejecutándose localmente.
+La plantilla queda guardada para una etapa futura con presupuesto autorizado.
+
 ```powershell
 ./scripts/staging-plan.ps1 -Mode Build
 ./scripts/staging-plan.ps1 -Mode Preview
@@ -50,8 +54,9 @@ host comodín, origen separado y PostgreSQL sin TLS; docs y buzón local quedan 
 
 Antes de publicar falta completar y comprobar:
 
-1. Envío real de correo con outbox y reintentos, proveedor, dominio remitente y
-   cuentas destinatarias de prueba autorizadas. El buzón local no envía correo.
+1. Activar y verificar el adaptador SMTP existente con un proveedor y dominio
+   remitente autorizados. Outbox/reintentos se prueban con transporte simulado;
+   todavía no se ha entregado correo real. El buzón local no envía correo.
 2. Aprovisionamiento del rol PostgreSQL de aplicación sin privilegios de admin,
    desde un trabajo dentro de la red privada; almacenamiento/rotación de secretos.
    No abrir temporalmente la base a Internet ni pasar el administrador a FastAPI.
@@ -90,3 +95,33 @@ El informe `verification.json` contiene etapas, versión, cabecera y huella de
 código, sin contraseñas ni contenido de las filas. Una prueba deliberadamente
 fallida no imprime errores SQL, que podrían incluir datos privados. Los checks
 no equivalen a pruebas de carga o de recuperación del servicio Azure.
+
+## Correo preparado sin contratar servicios
+
+El bloque 27 añade SMTP STARTTLS o TLS implícito con validación de certificado,
+outbox persistente, reintentos con espera creciente y máximo cinco intentos.
+Las confirmaciones, recuperaciones e invitaciones usan esa cola solo si
+`SMTP_ENABLED=true`. Configura `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`
+(`starttls` o `ssl`), `SMTP_FROM` y, conjuntamente, usuario/contraseña si procede.
+El worker solo arranca al activar SMTP; no existe modo de envío sin cifrado.
+El lanzador local fuerza SMTP desactivado, aunque haya variables heredadas.
+
+La migración 0036 conserva mensajes anteriores como `local`: activar SMTP en el
+futuro no enviará el histórico. Cada envío reclama un lease de dos minutos antes
+de contactar con el transporte; otro worker no puede finalizar un lease ajeno.
+Se recuperan leases abandonados, no se envían enlaces vencidos y se vacía el cuerpo
+al terminar, fallar definitivamente o caducar. Los errores almacenados son
+categorías, sin texto del proveedor, tokens o credenciales; no se registran
+excepciones SQL/SMTP completas. Los tests nunca se conectan a SMTP real.
+
+La entrega es al menos una vez: si el proveedor acepta un mensaje y el proceso
+falla antes de confirmar en la base, un reintento puede duplicarlo. Se conserva
+un Message-ID estable para ese mensaje, sin garantizar deduplicación del proveedor.
+Los leases coordinan workers; no existe una transacción distribuida con SMTP.
+Downgradear 0036 elimina los metadatos de entrega; hacerlo solo con la cola
+drenada, workers detenidos y backup, para no perder mensajes pendientes.
+
+La implementación usa [smtplib](https://docs.python.org/3/library/smtplib.html)
+y [ssl.create_default_context](https://docs.python.org/3/library/ssl.html#ssl.create_default_context)
+de Python. No se instaló ni contrató un servidor SMTP. Se mantienen los correos
+sintéticos en la bandeja de desarrollo para usar toda la aplicación local.
