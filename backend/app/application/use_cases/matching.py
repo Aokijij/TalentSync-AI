@@ -19,10 +19,12 @@ from app.domain.services.matching import (
 )
 from app.domain.services.professions import certification_match, education_match
 from app.domain.services.skills import skill_set
+from app.domain.services.matching_text import professional_text
+from app.domain.services.reputation import company_health
 
 
 def candidate_match(profile, job, *, nlp):
-    raw_semantic = nlp.similarity_percentage(profile.embedding, job.embedding)
+    raw_semantic = nlp.similarity_percentage(nlp.embed(professional_text(profile)), job.embedding)
     context_score = professional_context_alignment(profile, job, raw_semantic)
     skill_score = required_skill_coverage(profile.skills, job.skills)
     if getattr(job, "skill_requirements", None):
@@ -137,7 +139,7 @@ def refresh_user_recommendations(
         # main latency reduction for candidate dashboards with a large catalog.
         db.commit()
     if include_all:
-        return recommendations
+        return sorted(recommendations, key=lambda item: (company_health(db.jobs.get(item.job_id).company)["visibility_reduced"], -item.match_percentage))
     recommendations = sorted(
         (
             item
@@ -149,6 +151,7 @@ def refresh_user_recommendations(
         key=lambda item: item.match_percentage,
         reverse=True,
     )
+    recommendations.sort(key=lambda item: (company_health(db.jobs.get(item.job_id).company)["visibility_reduced"], -item.match_percentage))
     diverse_recommendations: list[Recommendation] = []
     used_skill_tokens: set[str] = set()
     for recommendation in recommendations:

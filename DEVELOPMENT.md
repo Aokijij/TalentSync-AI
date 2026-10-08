@@ -164,3 +164,21 @@ diagnóstico de personalidad ni puntuación psicológica.
 El buscador de talento distingue bases relacionadas de habilidades acreditadas
 y muestra evaluaciones de fundamentos solo si el candidato comparte evidencias.
 Validación acumulada: 87 pruebas backend; lint y build frontend aprobados.
+
+## Bloque 8: confianza y salud del ecosistema
+
+`/confianza` permite reportar incidencias sobre procesos propios. El relato original
+solo lo ven su autor y administración; la empresa recibe un resumen revisado y puede
+apelar. Las denuncias pendientes no penalizan. El índice considera respuestas y
+vencimientos observados durante 90 días, suaviza muestras pequeñas y reduce la
+visibilidad con cinco observaciones y puntuación menor de 60, o dos incidencias
+confirmadas. Apelar conserva la incidencia hasta resolverla. No certifica empresas.
+
+`/admin/ecosistema` compara oferta de habilidades y perfiles de esta base, registra
+auditorías por versión, comprueba invariancia ante metadatos de identidad y compara
+distribuciones con PSI cuando hay al menos veinte pares. Estas pruebas no demuestran
+ausencia de sesgos; los grupos demográficos no se evalúan sin datos consentidos.
+El cálculo textual utiliza evidencia profesional y elimina identificadores conocidos;
+los textos libres pueden conservar información personal no identificada. No usa el
+embedding antiguo del CV completo para calcular afinidad. Los datos ficticios locales
+no se presentan como estadísticas del mercado ni capacidad predictiva validada.

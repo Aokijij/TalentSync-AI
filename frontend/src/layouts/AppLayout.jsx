@@ -20,6 +20,8 @@ import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
+  { to: "/confianza", label: "Confianza e incidencias", icon: ShieldCheck, roles: ["candidate", "company"] },
+  { to: "/admin/ecosistema", label: "Salud del ecosistema", icon: Sparkles, roles: ["admin"] },
   { to: "/empresa/calidad", label: "Calidad de ofertas", icon: ShieldCheck, roles: ["company"] },
   { to: "/aprendizaje", label: "Aprendizaje y pasaporte", icon: FileCheck2, roles: ["candidate"] },
   { to: "/compatibilidad", label: "Compatibilidad y evidencia", icon: Sparkles, roles: ["candidate", "company"] },

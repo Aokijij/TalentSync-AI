@@ -154,6 +154,7 @@ class JobUpdate(PipelineStagesMixin):
 
 
 class JobResponse(BaseModel):
+    employer_trust: dict = Field(default_factory=dict)
     blind_hiring: bool = False
     response_days: int = 7
     skill_requirements: list[SkillRequirement] = Field(default_factory=list)

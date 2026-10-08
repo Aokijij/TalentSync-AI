@@ -34,7 +34,7 @@ def authorize_request(db, user, path, method):
     company = context(db, user)
     member = db.organizations.member_for_user(user.id)
     owner = company.owner_user_id == user.id
-    if company.verification_status == "suspended" and not path.startswith("/api/v1/organization/"):
+    if company.verification_status == "suspended" and not path.startswith(("/api/v1/organization/", "/api/v1/trust/")):
         raise UseCaseError(status_code=403, detail="La empresa está suspendida; consulta el estado de verificación")
     if not owner:
         if member is None or not member.active:
@@ -44,7 +44,7 @@ def authorize_request(db, user, path, method):
         if member.role == "interviewer" and not path.startswith(("/api/v1/organization/", "/api/v1/notifications", "/api/v1/interviews")):
             raise UseCaseError(status_code=403, detail="Tu acceso se limita a entrevistas asignadas")
     if company.verification_required and company.verification_status != "verified":
-        if not path.startswith(("/api/v1/organization/", "/api/v1/companies", "/api/v1/jobs", "/api/v1/notifications", "/api/v1/hiring/quality/")):
+        if not path.startswith(("/api/v1/organization/", "/api/v1/companies", "/api/v1/jobs", "/api/v1/notifications", "/api/v1/hiring/quality/", "/api/v1/trust/")):
             raise UseCaseError(status_code=403, detail="La empresa debe verificarse antes de consultar talento")
 
 

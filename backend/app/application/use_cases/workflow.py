@@ -10,6 +10,8 @@ FINAL = {ApplicationStatus.REJECTED, ApplicationStatus.HIRED, ApplicationStatus.
 
 def transition(db, row, actor_id, *, previous_status=None, previous_stage=None, source="company", now=None):
     now = now or datetime.utcnow()
+    if source == "company" and row.first_response_at is None:
+        row.first_response_at = now
     row.response_due_at = None if row.status in FINAL or row.released_at else now + timedelta(days=row.job.response_days)
     row.reminder_sent_at = None
     record_event(db, "application.transition", "application", row.id, actor_user_id=actor_id, details={

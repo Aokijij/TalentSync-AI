@@ -15,6 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.reputation import company_health
 from app.domain.services.external_sources import external_portal
 from app.infrastructure.database.session import Base
 
@@ -182,6 +183,7 @@ class Company(Base):
     jobs: Mapped[list["Job"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"
     )
+    incidents: Mapped[list["TrustIncident"]] = relationship(back_populates="company", cascade="all, delete-orphan")
     followers: Mapped[list["CompanyFollower"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"
     )
@@ -301,6 +303,10 @@ class Job(Base):
         return self.company.name if self.company else None
 
     @property
+    def employer_trust(self) -> dict:
+        return company_health(self.company) if self.company else {}
+
+    @property
     def applications_count(self) -> int:
         return len(self.applications or [])
 
@@ -344,6 +350,7 @@ class Application(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
     identity_revealed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    first_response_at: Mapped[datetime | None] = mapped_column(DateTime)
     response_due_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
     released_at: Mapped[datetime | None] = mapped_column(DateTime)
@@ -488,6 +495,31 @@ class Recommendation(Base):
     @property
     def is_estimated(self) -> bool:
         return "source:external" in (self.reasons or [])
+
+
+class TrustIncident(Base):
+    __tablename__ = "trust_incidents"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    reporter_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False)
+    application_id: Mapped[int | None] = mapped_column(ForeignKey("applications.id", ondelete="SET NULL"))
+    category: Mapped[str] = mapped_column(String(40), nullable=False)
+    details: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="open", nullable=False)
+    shared_summary: Mapped[str | None] = mapped_column(Text)
+    appeal: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    company: Mapped[Company] = relationship(back_populates="incidents")
+
+
+class ModelAuditRun(Base):
+    __tablename__ = "model_audit_runs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    actor_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    version: Mapped[str] = mapped_column(String(80), nullable=False)
+    metrics: Mapped[dict] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class LearningPlan(Base):

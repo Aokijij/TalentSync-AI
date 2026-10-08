@@ -7,6 +7,7 @@ from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases.matching import upsert_recommendation
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Company, Job, User
+from app.domain.services.reputation import company_health
 
 
 def owned_company(db: UnitOfWork, user: User) -> Company | None:
@@ -50,8 +51,9 @@ def list_jobs(
         sort,
     )
     company = owned_company(db, current_user) if current_user and current_user.role == UserRole.COMPANY else None
-    return [job for job in jobs if job.status != "draft" or (current_user and current_user.role == UserRole.ADMIN)
+    visible = [job for job in jobs if job.status != "draft" or (current_user and current_user.role == UserRole.ADMIN)
             or (company and company.id == job.company_id)]
+    return sorted(visible, key=lambda job: company_health(job.company)["visibility_reduced"]) if sort == "newest" else visible
 
 
 def public_stats(db: UnitOfWork) -> dict[str, int]:

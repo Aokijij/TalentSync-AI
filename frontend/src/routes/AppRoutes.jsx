@@ -38,6 +38,8 @@ const CompatibilityPage = lazyNamed(() => import("../pages/CompatibilityPage.jsx
 const ProcessPage = lazyNamed(() => import("../pages/ProcessPage.jsx"), "ProcessPage");
 const LearningPage = lazyNamed(() => import("../pages/LearningPage.jsx"), "LearningPage");
 const HiringQualityPage = lazyNamed(() => import("../pages/HiringQualityPage.jsx"), "HiringQualityPage");
+const TrustPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "TrustPage");
+const EcosystemPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "EcosystemPage");
 
 function RequireAuth({ children }) {
   const { user, loading, authError, retryAuth, logout, accessOptions } = useAuth();
@@ -111,6 +113,8 @@ export function AppRoutes() {
         }
       >
         <Route path="/seguridad" element={<SecurityPage />} />
+        <Route path="/confianza" element={<RequireRole roles={["candidate", "company"]}><TrustPage /></RequireRole>} />
+        <Route path="/admin/ecosistema" element={<RequireRole roles={["admin"]}><EcosystemPage /></RequireRole>} />
         <Route path="/empresa/calidad" element={<RequireRole roles={["company"]}><HiringQualityPage /></RequireRole>} />
         <Route path="/aprendizaje" element={<RequireRole roles={["candidate"]}><LearningPage /></RequireRole>} />
         <Route path="/procesos/:applicationId" element={<ProcessPage />} />

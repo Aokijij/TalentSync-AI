@@ -6,6 +6,7 @@ from app.api.v1.routes import (
     applications,
     auth,
     companies,
+    ecosystem,
     hiring,
     jobs,
     learning,
@@ -24,6 +25,7 @@ api_router.include_router(match_settings.router, tags=["matching"])
 api_router.include_router(workflow.router, tags=["workflow"])
 api_router.include_router(learning.router, tags=["learning"])
 api_router.include_router(hiring.router, tags=["hiring"])
+api_router.include_router(ecosystem.router, tags=["ecosystem"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(profiles.router, prefix="/profiles", tags=["profiles"])
 api_router.include_router(companies.router, prefix="/companies", tags=["companies"])

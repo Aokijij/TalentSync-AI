@@ -258,6 +258,7 @@ export function JobDetailPage() {
               <div className="min-w-0 flex-1">
                 <p className="section-kicker">Conoce a la empresa</p>
                 <h2 className="mt-1 text-lg font-bold">{job.company_name}</h2>
+                {job.source_kind !== "external" && job.employer_trust ? <p className="mt-2 text-sm text-[var(--muted)]">Confianza en la plataforma: {job.employer_trust.score == null ? "sin observaciones suficientes" : `${job.employer_trust.score}/100 · ${job.employer_trust.measured_processes} procesos medidos`}. {job.employer_trust.visibility_reduced ? "Visibilidad reducida por incidencias o plazos incumplidos." : ""}</p> : null}
                 <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
                   {job.source_kind === "external"
                     ? `Empresa con una oportunidad publicada en ${externalPortal(job)}.`
