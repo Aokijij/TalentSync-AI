@@ -44,6 +44,7 @@ class CandidatePreferences(BaseModel):
 
 
 class EvidenceSubmission(BaseModel):
+    add_to_profile: bool = False
     title: str = Field(min_length=3, max_length=160)
     kind: Literal["project", "repository", "portfolio", "experience"]
     url: HttpUrl | None = None

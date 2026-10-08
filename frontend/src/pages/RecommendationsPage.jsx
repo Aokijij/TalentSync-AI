@@ -1,3 +1,4 @@
+import { SearchPreferences } from "../components/SearchPreferences.jsx";
 import { useRecommendations } from "../hooks/useRecommendations.js";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -14,7 +15,10 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
-import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
+import { VacancyLearningPanel } from "../components/VacancyLearningPanel.jsx";
+import { JobInterestButtons, InterestsSettings } from "../components/JobInterests.jsx";
+import { useJobInterests } from "../hooks/useJobInterests.js";
+import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { externalPortal } from "../utils/externalPortal.js";
@@ -24,7 +28,9 @@ export function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState([]);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
-  const [profile, setProfile] = useState(null);
+  const interests = useJobInterests(true, () => load(false));
+  const [query, setQuery] = useState("");
+  const [interestMode, setInterestMode] = useState("all");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -41,25 +47,22 @@ export function RecommendationsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
-  async function load() {
-    setLoading(true);
+  async function load(showLoading = true) {
+    if (showLoading) setLoading(true);
     setError("");
     try {
       const [
         recommendationsResponse,
         applicationsResponse,
         jobsResponse,
-        profileResponse,
       ] = await Promise.all([
         api.get("/recommendations/me/jobs", { params: { include_all: true } }),
         api.get("/applications/me"),
         api.get("/jobs"),
-        api.get("/profiles/me"),
       ]);
       setRecommendations(recommendationsResponse.data);
       setApplications(applicationsResponse.data);
       setJobs(jobsResponse.data);
-      setProfile(profileResponse.data);
     } catch (err) {
       setError("No fue posible cargar las recomendaciones");
       console.error("Failed to load recommendations:", err);
@@ -81,10 +84,10 @@ export function RecommendationsPage() {
   const filteredRecommendations = useMemo(
     () =>
       enriched.filter((item) => {
-        if (sourceFilter === "all") return true;
-        return jobsById.get(item.job_id)?.source_kind === sourceFilter;
+        const job = jobsById.get(item.job_id);
+        return job && searchJob(job, query) && visibleInterest(job, interests.byId, interestMode) && (sourceFilter === "all" || job.source_kind === sourceFilter);
       }),
-    [enriched, jobsById, sourceFilter],
+    [enriched, jobsById, sourceFilter, query, interestMode, interests.byId],
   );
   const pages = totalPages(filteredRecommendations, pageSize);
   const visibleRecommendations = pageItems(filteredRecommendations, page, pageSize);
@@ -139,6 +142,9 @@ export function RecommendationsPage() {
         description="Cada vacante muestra compatibilidad, habilidades coincidentes y una guía para mejorar."
       />
 
+      <SearchPreferences onSaved={() => load(false)} />
+      <InterestsSettings interests={interests} jobs={jobs} />
+      <div className="grid gap-3 sm:grid-cols-2"><label>Buscar recomendaciones<input className="field-control mt-1" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Cargo, empresa, ubicación o habilidad" /></label><label>Mostrar<select className="field-control mt-1" value={interestMode} onChange={(event) => { setInterestMode(event.target.value); setPage(1); }}><option value="all">Todas las sugeridas</option><option value="saved">Solo guardadas</option></select></label></div>
       {error && (
         <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)]">
           {error}
@@ -192,7 +198,7 @@ export function RecommendationsPage() {
               <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">
                 Recomendar desde
                 <select className="field-control input-sm w-24" value={minCompatibility} onChange={(event) => changeMinimum(event.target.value)}>
-                  {[40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}
+                  {[0, 40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}
                 </select>
               </label>
             </div>
@@ -209,7 +215,7 @@ export function RecommendationsPage() {
 
               const categoryLabel =
                 item.category === "alta"
-                  ? "Alta probabilidad"
+                  ? "Alta compatibilidad"
                   : item.category === "buenas"
                     ? "Buena compatibilidad"
                     : "Con brechas";
@@ -228,7 +234,7 @@ export function RecommendationsPage() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-[var(--ink)]">
-                        {job?.title ?? `Vacante #${item.job_id}`}
+                        {job?.title ?? "Vacante"}
                       </p>
                       <span
                         className={`rounded-[var(--radius-md)] border px-2 py-1 text-xs font-semibold text-[var(--ink)] ${categoryTone}`}
@@ -257,7 +263,7 @@ export function RecommendationsPage() {
                       >
                         {(isExpanded ? reasonsFull : reasonsShort).join(". ")}
                       </p>
-                      {reasonsFull.length > 2 ? (
+                      {(
                         <button
                           type="button"
                           onClick={() =>
@@ -272,13 +278,13 @@ export function RecommendationsPage() {
                             size={14}
                             className="text-[var(--success)]"
                           />
-                          {isExpanded ? "Ver menos" : "Cómo mejorar"}
+                          {isExpanded ? "Ver menos" : "Compatibilidad y formación"}
                         </button>
-                      ) : null}
+                      )}
                     </div>
 
+                    <JobInterestButtons job={job} interests={interests} />
                     <div className="mt-3">
-                      {item.personalization?.enabled && <p className="mb-2 text-xs text-[var(--muted)]">{item.personalization.score == null ? "Interés colaborativo: todavía no hay una muestra suficiente." : `Interés agregado de perfiles similares: ${item.personalization.score}/100.`} <Link className="text-[var(--accent)]" to="/mis-intereses">Ajustar mis intereses</Link></p>}
                       <Link
                         to={`/vacantes/${item.job_id}`}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline hover-lift"
@@ -317,11 +323,8 @@ export function RecommendationsPage() {
                         semanticMatch={item.professional_context_percentage ?? item.semantic_match_percentage}
                         languageMatch={item.language_match_percentage}
                       />
-                      <SkillRadarChart
-                        candidateSkills={profile?.skills ?? []}
-                        requiredSkills={job?.skills ?? []}
-                        matchPercentage={item.match_percentage}
-                      />
+                      <div className="space-y-3"><h3 className="font-bold">Respaldo de tus habilidades</h3>{item.match_details?.requirements?.map((row) => <div key={row.key} className="text-sm"><p>{row.skill} · {row.covered ? "Declarada en el perfil" : "Por acreditar"}</p>{row.evidence?.map((evidence, index) => <p key={index} className="text-xs text-[var(--muted)]">↳ {evidence.title} · Evidencia aportada</p>)}</div>)}<Link className="text-sm text-[var(--accent)]" to="/perfil#evidencias">Gestionar evidencias en mi perfil</Link></div>
+                      <div className="lg:col-span-2"><VacancyLearningPanel jobId={item.job_id} /></div>
                     </div>
                   ) : null}
                 </article>

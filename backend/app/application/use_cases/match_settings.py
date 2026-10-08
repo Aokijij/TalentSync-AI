@@ -5,6 +5,7 @@ from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import get_job
 from app.application.use_cases.matching import upsert_recommendation
+from app.domain.services.skills import normalize_skills
 
 
 def preferences(db, user, payload=None):
@@ -24,6 +25,11 @@ def evidence(db, user, payload=None, *, analysis=None):
         item = {**payload, "id": uuid4().hex, "created_at": datetime.utcnow().isoformat(), "verified": False}
         if analysis is not None:
             item["analysis"] = analysis
+        if payload.get("add_to_profile"):
+            skills = normalize_skills([*(user.profile.skills or []), *payload["skills"]])
+            if len(skills) > 100:
+                raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cien habilidades")
+            user.profile.skills = skills
         user.profile.evidence = [*items, item]
         user.profile.updated_at = datetime.utcnow()
         record_event(db, "profile.evidence_added", "profile", user.profile.id, actor_user_id=user.id, details={"source": payload["kind"]})

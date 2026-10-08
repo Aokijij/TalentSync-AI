@@ -1,3 +1,6 @@
+import { JobInterestButtons, InterestsSettings } from "../components/JobInterests.jsx";
+import { useJobInterests } from "../hooks/useJobInterests.js";
+import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
 import { useEffect, useMemo, useState } from "react";
 import {
   BriefcaseBusiness,
@@ -55,6 +58,8 @@ const defaultFilters = {
 
 export function JobsPage() {
   const { user } = useAuth();
+  const interests = useJobInterests(user?.role === "candidate");
+  const [interestMode, setInterestMode] = useState("all");
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
@@ -176,16 +181,12 @@ export function JobsPage() {
     );
     return jobs
       .filter((job) => {
-        const matchesTerm =
-          !term ||
-          `${job.title} ${job.company_name} ${job.description} ${job.requirements} ${(job.skills || []).join(" ")}`
-            .toLowerCase()
-            .includes(term);
+        const matchesTerm = searchJob(job, term);
         const hasCandidateSkill = (job.skills || []).some((skill) =>
           candidateSkills.has(skill.toLowerCase().trim()),
         );
         return (
-          matchesTerm &&
+          matchesTerm && visibleInterest(job, interests.byId, interestMode) &&
           (!filters.modality || job.modality === filters.modality) &&
           (!filters.employment_type ||
             job.employment_type === filters.employment_type) &&
@@ -208,6 +209,7 @@ export function JobsPage() {
         return (matches[second.id] ?? -1) - (matches[first.id] ?? -1);
       });
   }, [
+    interests.byId, interestMode,
     jobs,
     query,
     filters,
@@ -237,6 +239,7 @@ export function JobsPage() {
 
   return (
     <div className="space-y-6">
+      {user?.role === "candidate" && <><InterestsSettings interests={interests} jobs={jobs} /><label className="my-4 block max-w-xs">Mis intereses<select className="field-control mt-1" value={interestMode} onChange={(event) => { setInterestMode(event.target.value); setPage(1); }}><option value="all">Vacantes disponibles</option><option value="saved">Guardadas</option><option value="hidden">Ocultas</option></select></label></>}
       <section className="surface-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -288,6 +291,7 @@ export function JobsPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleJobs.map((job) => (
           <JobCard
+              interests={user?.role === "candidate" ? interests : null}
             key={job.id}
             job={job}
             match={matches[job.id]}
@@ -303,6 +307,7 @@ export function JobsPage() {
           </p>
         ) : null}
       </div>
+
 
       {filteredJobs.length ? (
         <nav
@@ -358,7 +363,7 @@ export function JobsPage() {
   );
 }
 
-function JobCard({ job, match, confidence, applied, showMatch, returnTo }) {
+function JobCard({ interests, job, match, confidence, applied, showMatch, returnTo }) {
   const score = Number(match ?? 0);
   return (
     <article className="surface-card flex flex-col p-5 transition-colors hover:border-[var(--accent)]">
@@ -446,6 +451,7 @@ function JobCard({ job, match, confidence, applied, showMatch, returnTo }) {
               ? "Salario no informado"
               : "A convenir"}
         </strong>
+        {interests && <JobInterestButtons job={job} interests={interests} />}
         <Link to={`/vacantes/${job.id}`} state={{ returnTo }} className="button-primary button-sm">
           {job.source_kind === "external"
             ? "Ver oferta"

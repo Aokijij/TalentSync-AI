@@ -1,3 +1,4 @@
+import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
 import { useEffect, useState } from "react";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import { languageLevelLabel } from "../constants/languages.js";
@@ -571,9 +572,10 @@ export function ProfilePage() {
               )}
             </Section>
             </aside>
-          </div>
+      </div>
         </article>
       )}
+      {!editing && <ProfileEvidence onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} />}
     </div>
   );
 }

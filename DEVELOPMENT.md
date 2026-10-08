@@ -1036,3 +1036,8 @@ Catálogo por profesión, sector y habilidades, con diez áreas y exploración m
 Los planes y resultados se reúnen en Mi desarrollo. Administración puede categorizar nuevos recursos. Se añaden enlaces directos revisados a HubSpot Academy y Microsoft Learn, sin compras, afiliación ni descargas automáticas.
 
 Validación: pruebas parametrizadas de cada banco y acreditación, filtros por perfiles de varias profesiones, catálogo administrable, límites y respuestas estrictas. Frontend: ESLint y compilación aprobados.
+### Bloque 34 — Evidencias, formación e intereses dentro del flujo existente
+
+Evidencias en Mi perfil, con incorporación explícita de habilidades declaradas y recálculo del índice; nunca se marca verificación por aportar enlaces. Recomendaciones muestra formación ligada a brechas, respaldo por requisito y preferencias de búsqueda. Guardar u ocultar ofertas se integra en recomendaciones y exploración; búsqueda por varios términos, filtros de guardadas/ocultas, paginación y restauración reemplazan el selector masivo. Las rutas antiguas redirigen y se elimina el código frontend de análisis y salas.
+
+Validación: prueba de impacto real de evidencia, conservación de habilidades al retirar una referencia, autorización de privacidad por rol, búsqueda y recuperación entre 350 vacantes; 21 pruebas frontend y ESLint aprobados.
