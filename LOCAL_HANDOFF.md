@@ -168,3 +168,11 @@ Verificación está paginada de cinco en cinco; el directorio del ecosistema, de
 en seis, muestra métricas completas al abrir una empresa. La búsqueda abarca todos
 los resultados recibidos. Las capturas y el escenario ficticio de comprobación
 usan el prefijo refinement en .local/verification. No se cambiaron contraseñas.
+
+## Escenarios funcionales por rol
+
+La carga `scripts/local.py seed-scenarios` añade 26 cuentas independientes para
+recorrer candidato, empresa, equipo y administración. La matriz pública está
+en `ESCENARIOS_FUNCIONALES.md`; los accesos privados y pasos concretos están en
+`.local/escenarios/GUIA_ESCENARIOS.md`. Es aditiva, idempotente y solo admite la
+SQLite aislada. No restablece contraseñas ni los recorridos ya probados.
