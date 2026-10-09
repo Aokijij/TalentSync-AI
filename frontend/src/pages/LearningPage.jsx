@@ -27,6 +27,7 @@ export function LearningPage() {
   useEffect(() => { let current = true; api.get("/learning/catalog", { params: { area } }).then(({ data }) => { if (current) setCatalog(data); }).catch((failure) => { if (current) setError(getApiErrorMessage(failure)); }); return () => { current = false; }; }, [area]);
   useEffect(() => { if (attempt?.status !== "active") return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [attempt]);
   useEffect(() => { if (attempt?.id) challenge.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [attempt?.id]);
+  useEffect(() => { if (location.hash === "#mi-plan") { setTab("plan"); setMessage(""); } }, [location.hash]);
   useEffect(() => { if (!message) return; const timer = setTimeout(() => setMessage(""), 6000); return () => clearTimeout(timer); }, [message]);
   async function addPlan(id) { setPlans((await api.put(`/learning/plans/${id}`, { status: "in_progress" })).data); setMessage("Añadido a Mi plan. Ya puedes comenzar el laboratorio."); }
   async function act(action) { setBusy(true); setError(""); setMessage(""); try { await action(); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }
