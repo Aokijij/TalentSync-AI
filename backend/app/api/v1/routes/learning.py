@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, StrictFloat, StrictInt, StrictStr
 
 from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
-from app.api.schemas.learning import ResourceContent, ResourceImport, ResourceUpdate
+from app.api.schemas.learning import (
+    ExternalCertificate,
+    ResourceContent,
+    ResourceImport,
+    ResourceUpdate,
+)
 from app.application.use_cases import learning as cases
 from app.application.use_cases import learning_resources
 from app.domain.entities.enums import UserRole
@@ -101,3 +106,8 @@ def patterns(user=Depends(candidate), db=Depends(get_unit_of_work)):
 @router.delete("/learning/plans/{resource_id}")
 def leave_plan(resource_id: str, version: int, user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.leave_plan(db, user, resource_id, version)
+
+
+@router.post("/learning/plans/{resource_id}/certificate")
+def certificate(resource_id: str, payload: ExternalCertificate, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.register_external_certificate(db, user, resource_id, payload.model_dump())

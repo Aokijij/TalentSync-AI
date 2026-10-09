@@ -46,8 +46,13 @@ def get_current_user(
                     raise HTTPException(status_code=401, detail="El proveedor corporativo cambió; inicia sesión de nuevo")
             elif settings.admin_sso_required:
                 raise HTTPException(status_code=401, detail="Inicia una sesión mediante el proveedor corporativo")
-        if (requires_mfa_setup(user.role, settings.company_mfa_required) and not user.mfa_enabled) or (user.mfa_enabled and not session.mfa_verified):
-            if not request.url.path.startswith(("/api/v1/auth/", "/api/v1/account/")):
+        admin_review = user.role == UserRole.ADMIN and not settings.admin_mfa_required
+        access_notice = user.role == UserRole.COMPANY and (
+            (request.method == "GET" and request.url.path == "/api/v1/organization/access")
+            or (request.method == "POST" and request.url.path == "/api/v1/organization/access-review")
+        )
+        if not admin_review and ((requires_mfa_setup(user.role, settings.company_mfa_required) and not user.mfa_enabled) or (user.mfa_enabled and not session.mfa_verified)):
+            if not access_notice and not request.url.path.startswith(("/api/v1/auth/", "/api/v1/account/")):
                 raise HTTPException(status_code=403, detail="Configura la autenticación de dos factores en Seguridad para continuar")
         authorize_request(SqlAlchemyUnitOfWork(db), user, request.url.path, request.method)
         return user

@@ -30,7 +30,7 @@ export function AdminLoginPage() {
     try {
       const result = await login(values.email, values.password, { admin: true, code: values.code });
       if (result.mfa_required) { setCredentials(values); setMfaRequired(true); return; }
-      navigate(accessOptions.mode !== "session" || result.mfa_enabled ? "/admin" : "/seguridad", { replace: true });
+      navigate(accessOptions.mode !== "session" || accessOptions.admin_mfa_required === false || result.mfa_enabled ? "/admin" : "/seguridad", { replace: true });
     } catch {
       setError("No fue posible validar el acceso administrativo.");
     }

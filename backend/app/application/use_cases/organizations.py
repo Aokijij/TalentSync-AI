@@ -6,6 +6,8 @@ from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
 from app.domain.entities.enums import UserRole
 from app.domain.services.authentication import token_digest
+from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.pipeline import stages_for
 
 
 def context(db, user, *, owner=False):
@@ -20,16 +22,18 @@ def context(db, user, *, owner=False):
 def company_summary(db, user):
     company = context(db, user)
     member = db.organizations.member_for_user(user.id)
-    return {"id": company.id, "name": company.name, "role": "owner" if company.owner_user_id == user.id else member.role,
+    return {"id": company.id, "name": company.name, "nit": company.nit, "role": "owner" if company.owner_user_id == user.id else member.role,
             "verification_status": company.verification_status, "verification_required": company.verification_required,
             "submission": company.verification_submission if company.owner_user_id == user.id else {},
-            "feedback": company.verification_feedback}
+            "feedback": company.verification_feedback, "verification_missing": verification_missing(company.verification_submission)}
 
 
 def authorize_request(db, user, path, method):
     if user.role != UserRole.COMPANY or path.startswith(("/api/v1/auth/", "/api/v1/account/")):
         return
     if path in {"/api/v1/organization/invitations/accept", "/api/v1/organization/invitation"}:
+        return
+    if path in {"/api/v1/organization/access", "/api/v1/organization/access-review"}:
         return
     company = context(db, user)
     member = db.organizations.member_for_user(user.id)
@@ -41,7 +45,7 @@ def authorize_request(db, user, path, method):
             raise UseCaseError(status_code=403, detail="Tu acceso a la empresa fue retirado")
         if path.startswith("/api/v1/companies") and method not in {"GET", "HEAD"}:
             raise UseCaseError(status_code=403, detail="Esta acción requiere al propietario")
-        assigned_timeline = method == "GET" and path.startswith("/api/v1/workflow/applications/")
+        assigned_timeline = path.startswith("/api/v1/workflow/applications/") and (method == "GET" or method == "POST" and path.endswith("/evaluation"))
         if member.role == "interviewer" and not (assigned_timeline or path.startswith(("/api/v1/organization/", "/api/v1/notifications"))):
             raise UseCaseError(status_code=403, detail="Tu acceso se limita a entrevistas asignadas")
     if company.verification_required and company.verification_status != "verified":
@@ -53,12 +57,18 @@ def submit_verification(db, user, payload):
     company = context(db, user, owner=True)
     if not user.email_verified:
         raise UseCaseError(status_code=403, detail="Confirma primero tu correo en Seguridad")
-    if company.verification_status in {"verified", "suspended"}:
+    if company.verification_status == "verified":
         raise UseCaseError(status_code=409, detail="Este estado requiere revisión administrativa")
     company.verification_required = True
     company.verification_submission = {**payload, "submitted_at": datetime.utcnow().isoformat()}
-    company.verification_status = "reviewing"
-    company.verification_feedback = None
+    suspended = company.verification_status == "suspended"
+    if not suspended:
+        company.verification_status = "reviewing"
+        company.verification_feedback = None
+    else:
+        admin = db.users.first_admin()
+        if admin:
+            db.add(db.notifications.new(user_id=admin.id, type="company_verification", title="Empresa suspendida solicita revisión", body=f"{company.name} actualizó sus datos y soportes para revisión.", action_url="/admin/verificaciones"))
     record_event(db, "company.verification_submitted", "company", company.id, actor_user_id=user.id)
     db.commit()
     return company_summary(db, user)
@@ -70,8 +80,8 @@ def review_verification(db, admin, company_id, payload):
     company = db.companies.get(company_id)
     if company is None or company.is_external:
         raise UseCaseError(status_code=404, detail="Empresa interna no encontrada")
-    if payload["status"] == "verified" and (not company.verification_submission or not company.owner.email_verified):
-        raise UseCaseError(status_code=422, detail="La empresa requiere una solicitud y correo confirmado")
+    if payload["status"] == "verified" and (verification_missing(company.verification_submission) or not company.owner.email_verified):
+        raise UseCaseError(status_code=422, detail="Completa los datos y soportes de la solicitud y confirma el correo antes de aprobar")
     previous = company.verification_status
     company.verification_required = True
     company.verification_status = payload["status"]
@@ -199,13 +209,49 @@ def assignments(db, user):
         raise UseCaseError(status_code=403, detail="La empresa debe estar verificada para consultar postulaciones")
     member = db.organizations.member_for_user(user.id)
     allowed = set(member.assigned_job_ids) if member and member.role == "interviewer" else {job.id for job in company.jobs}
-    return [{"job_id": job.id, "title": job.title,
-             "applications": [{"id": row.id, "candidate_alias": f"Candidato {row.id}", "interview_at": row.interview_at,
-                               "stage": row.pipeline_stage} for row in job.applications]}
+    return [{"job_id": job.id, "title": job.title, "modality": job.modality, "status": job.status,
+             "applications": [{"id": row.id, "candidate_alias": candidate_alias(job.id, row.user_id) if identity_hidden(job, row) else row.user.name, "interview_at": row.interview_at,
+                               "stage": row.pipeline_stage, "stage_title": next((stage["title"] for stage in stages_for(job) if stage["id"] == row.pipeline_stage), row.pipeline_stage), "status": row.status.value, "released_at": row.released_at} for row in job.applications]}
             for job in company.jobs if job.id in allowed]
 
 
 def verification_queue(db):
     return [{"id": row.id, "name": row.name, "nit": row.nit, "status": row.verification_status,
-             "submission": row.verification_submission, "feedback": row.verification_feedback, "email_verified": row.owner.email_verified}
+             "submission": row.verification_submission, "feedback": row.verification_feedback, "email_verified": row.owner.email_verified, "verification_missing": verification_missing(row.verification_submission)}
             for row in db.organizations.verification_queue()]
+
+
+VERIFICATION_FIELDS = {"legal_name": "Razón social", "tax_id": "Identificación tributaria", "business_activity": "Actividad de la empresa",
+    "address": "Dirección", "city": "Ciudad", "contact_email": "Correo de contacto", "contact_phone": "Teléfono",
+    "representative_name": "Nombre del representante", "representative_role": "Cargo del representante",
+    "registry_authority": "Entidad de registro", "registry_reference": "Referencia del registro",
+    "registry_document_url": "Soporte del registro", "accuracy_confirmed": "Declaración de veracidad"}
+
+
+def verification_missing(submission):
+    return [label for key, label in VERIFICATION_FIELDS.items() if not (submission or {}).get(key)]
+
+
+def access_status(db, user):
+    member = db.organizations.member_for_user(user.id)
+    company = db.companies.get(member.company_id) if member else db.companies.find_by_owner(user.id)
+    if company is None:
+        return {"active": True, "role": "owner", "company_name": None, "verification_status": "pending", "feedback": None}
+    return {"active": member.active if member else True, "role": member.role if member else "owner",
+            "company_name": company.name, "verification_status": company.verification_status,
+            "feedback": company.verification_feedback}
+
+
+def request_access_review(db, user, message):
+    member = db.organizations.member_for_user(user.id)
+    if member is None or member.active:
+        raise UseCaseError(status_code=409, detail="Esta solicitud corresponde a un acceso retirado")
+    company = db.companies.get(member.company_id)
+    previous = [row for row in db.events.for_entity("company_access", member.id) if row.event_type == "company.access_review_requested"]
+    if previous and previous[0].created_at > datetime.utcnow() - timedelta(hours=24):
+        raise UseCaseError(status_code=409, detail="Tu aviso ya fue enviado. Puedes enviar otro después de 24 horas")
+    db.add(db.notifications.new(user_id=company.owner_user_id, type="team_access", title="Solicitud de revisión de acceso",
+        body=f"{user.name} solicita revisar su acceso retirado: {message}", action_url="/empresa/equipo#equipo"))
+    record_event(db, "company.access_review_requested", "company_access", member.id, actor_user_id=user.id)
+    db.commit()
+    return {"message": "Aviso enviado al propietario. Tu acceso seguirá retirado hasta que lo reactive."}

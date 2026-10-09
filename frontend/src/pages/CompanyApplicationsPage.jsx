@@ -558,7 +558,7 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
       ) : null}
       <div className="candidate-card-actions">
         <button type="button" className="button-secondary button-sm w-full" onClick={onOpen}><Edit3 size={14} />Gestionar proceso</button>
-        <div><Link to={`/procesos/${item.id}`}>Historial</Link><Link to={`/empresa/candidatos/${item.user_id}?job=${item.job_id}`}><UserRound size={14} />{item.identity_hidden ? "Perfil anónimo" : "Ver perfil"}</Link></div>
+        <div><Link to={`/procesos/${item.id}`}>Historial</Link><Link state={{ returnTo: `/empresa/postulaciones?job=${item.job_id}` }} to={`/empresa/candidatos/${item.user_id}?job=${item.job_id}`}><UserRound size={14} />{item.identity_hidden ? "Perfil anónimo" : "Ver perfil"}</Link></div>
       </div>
       <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">
         Mover a

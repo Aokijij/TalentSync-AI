@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.api.deps import get_unit_of_work, require_roles
 from app.api.schemas.organization import (
     AcceptInvitation,
+    AccessReviewRequest,
     TeamInvitation,
     TeamUpdate,
     VerificationReview,
@@ -16,6 +17,17 @@ from app.domain.entities.enums import UserRole
 router = APIRouter()
 company_user = require_roles(UserRole.COMPANY)
 admin_user = require_roles(UserRole.ADMIN)
+
+
+@router.get("/organization/access")
+def access(user=Depends(company_user), db=Depends(get_unit_of_work)):
+    return cases.access_status(db, user)
+
+
+@router.post("/organization/access-review")
+@limiter.limit("5/hour")
+def access_review(request: Request, payload: AccessReviewRequest, user=Depends(company_user), db=Depends(get_unit_of_work)):
+    return cases.request_access_review(db, user, payload.message)
 
 
 @router.get("/organization/me")

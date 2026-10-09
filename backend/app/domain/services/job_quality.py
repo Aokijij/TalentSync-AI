@@ -6,7 +6,7 @@ def assess_quality(job, comparable_jobs):
     text = f"{job.title} {job.requirements}"
     lowered = text.lower()
     issues = []
-    if job.salary is None:
+    if not job.salary or job.salary <= 0:
         issues.append({"code": "salary_missing", "message": "Publica un salario para que las personas puedan decidir con información."})
     if len(getattr(job, "skill_requirements", []) or job.skills or []) > 10:
         issues.append({"code": "many_requirements", "message": "Separa las habilidades esenciales de las que pueden aprenderse; hay más de diez requisitos."})
@@ -22,16 +22,28 @@ def assess_quality(job, comparable_jobs):
     if job.salary and len(peers) >= 5 and job.salary < median(peers) * .65:
         issues.append({"code": "salary_below_local_reference", "message": "El salario queda por debajo del 65% de la mediana de ofertas comparables de esta base. Revisa experiencia, jornada y alcance antes de modificarlo."})
     requirements = getattr(job, "skill_requirements", []) or []
+    description = (job.description or "").strip().lower()
+    requirement_text = (job.requirements or "").strip().lower()
+    action = bool(re.search(r"\b(?:desarroll|constru|registr|analiz|revis|gestion|coordin|atend|prepar|diseñ|implement|manten|verific|concil|organiz|control|document|program|supervis|apoy|resolv|oper|realiz|crea)\w*", description))
+    context = bool(re.search(r"\b(?:equipo|resultado|entrega|cliente|reporte|informe|proyecto|proceso|venta|soporte|servicio|producto|registro|sistema)\w*", description))
+    explains_experience = bool(re.search(r"\b(?:experiencia|formaci[oó]n|conocimiento|fundamento|t[eé]cnic|tecn[oó]log|profesional|demostr|ejemplo|año|aprend|junior|senior|manejo|habilidad)\w*", requirement_text))
+    weights = {"title": 10, "description": 20, "requirements": 15, "salary": 20, "location": 10, "skill_requirements": 10, "response_days": 5, "inclusive": 10}
     checks = [
-        {"key": "title", "label": "Cargo concreto", "passed": 5 <= len(job.title.strip()) <= 100, "action": "Usa un nombre de cargo específico, sin listas de funciones."},
-        {"key": "description", "label": "Responsabilidades claras", "passed": len((job.description or "").strip()) >= 100, "action": "Describe responsabilidades, equipo y resultados esperados en al menos 100 caracteres."},
-        {"key": "requirements", "label": "Requisitos explicados", "passed": len((job.requirements or "").strip()) >= 60, "action": "Explica experiencia y conocimientos necesarios en al menos 60 caracteres."},
+        {"key": "title", "label": "Cargo concreto", "passed": 5 <= len(job.title.strip()) <= 100 and len(set(re.findall(r"\w+", job.title.lower()))) >= 2 and not re.search(r"\b(?:urgente|gana dinero|oportunidad [uú]nica)\b", job.title.lower()), "action": "Usa un nombre de cargo específico, sin listas de funciones."},
+        {"key": "description", "label": "Responsabilidades claras", "passed": len(description) >= 100 and action and context, "action": "Explica qué hará la persona y para qué: acciones concretas, entregables, clientes o equipo. Ejemplo: revisará facturas y conciliará diferencias para preparar el cierre mensual."},
+        {"key": "requirements", "label": "Requisitos explicados", "passed": len(requirement_text) >= 60 and explains_experience, "action": "Explica conocimientos y experiencia demostrables, distinguiendo requisitos de lo que puede aprenderse. Ejemplo: fundamentos de SQL; se aceptan proyectos de formación como evidencia."},
         {"key": "salary", "label": "Salario informado", "passed": bool(job.salary and job.salary > 0), "action": "Indica un salario mensual positivo en COP y aclara sus condiciones."},
         {"key": "location", "label": "Lugar y modalidad", "passed": job.modality in {"remote", "hybrid", "onsite"} and (job.modality == "remote" or bool(job.location)), "action": "Indica modalidad y ciudad cuando se requiere asistencia presencial."},
-        {"key": "skill_requirements", "label": "Habilidades priorizadas", "passed": bool(requirements) and any(row.get("essential") for row in requirements) and len(requirements) <= 10, "action": "Define hasta diez habilidades y marca cuáles son esenciales. Ajusta su peso de 1 a 5."},
+        {"key": "skill_requirements", "label": "Habilidades priorizadas", "passed": bool(requirements) and any(row.get("essential") for row in requirements) and len(requirements) <= 10 and all(1 <= row.get("weight", 0) <= 5 for row in requirements), "action": "Define hasta diez habilidades y marca cuáles son esenciales. Ajusta su peso de 1 a 5."},
         {"key": "response_days", "label": "Compromiso de respuesta", "passed": 1 <= (getattr(job, "response_days", 0) or 0) <= 14, "action": "Acuerda un plazo de respuesta de hasta catorce días por avance del proceso."},
         {"key": "inclusive", "label": "Requisitos coherentes e inclusivos", "passed": not any(row["code"] in {"level_conflict", "personal_restrictions"} for row in issues), "action": "Retira restricciones personales y alinea experiencia con el nivel del cargo."},
     ]
-    return {"issues": issues, "checks": checks, "completeness": round(100 * sum(row["passed"] for row in checks) / len(checks)),
+    for check in checks:
+        check["weight"] = weights[check["key"]]
+        check["priority"] = "Alta" if check["weight"] >= 15 or check["key"] == "inclusive" else "Media"
+    completeness = sum(row["weight"] for row in checks if row["passed"])
+    pending = sorted((row for row in checks if not row["passed"]), key=lambda row: (-row["weight"], row["key"]))
+    return {"issues": issues, "checks": checks, "completeness": completeness,
+            "next_actions": pending, "readiness": "Revisión completa" if not pending else "Información clave pendiente" if any(row["priority"] == "Alta" for row in pending) else "Detalles por mejorar",
             "salary_reference": salary_reference, "blind_hiring": job.blind_hiring,
             "notice": "Orientación basada en reglas y datos locales; requiere revisión humana."}

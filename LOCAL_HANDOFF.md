@@ -176,3 +176,19 @@ recorrer candidato, empresa, equipo y administración. La matriz pública está
 en `ESCENARIOS_FUNCIONALES.md`; los accesos privados y pasos concretos están en
 `.local/escenarios/GUIA_ESCENARIOS.md`. Es aditiva, idempotente y solo admite la
 SQLite aislada. No restablece contraseñas ni los recorridos ya probados.
+
+
+## Revisión por roles y uso local (9 de octubre de 2026)
+
+- Resultados con tarjetas de puntuación, vigencia, tipo de evaluación y siguientes pasos; detalle de cada curso/práctica con temario y aporte al perfil.
+- Certificado externo: finalizar el plan habilita un formulario que exige declaración de posesión y enlace HTTPS público al certificado/verificación. Se guarda en Certificaciones y Evidencias como aportado, sin marcar verificado ni añadir habilidades automáticamente.
+- Condiciones imprescindibles al inicio de Recomendaciones, basadas en el perfil; formación sin brechas con estado informativo y acciones a Plan y Resultados.
+- Incidencias con empresa, vacante, respuesta compartida y seguimiento. El reporte original sigue reservado al reportante y al administrador.
+- Verificación con identidad tributaria, actividad, sede, representación, contacto, registro, soporte y declaración; revisión administrativa manual. Las solicitudes incompletas no pueden aprobarse. Una empresa suspendida puede actualizar soportes sin recuperar permisos automáticamente.
+- Entrevistador: búsqueda de asignaciones, alias de selección ciega, contexto de la entrevista y evaluación privada. No cambia decisiones de contratación. Las notas viven en el proceso, fuera del registro de auditoría.
+- Acceso retirado: aviso claro y solicitud de revisión al propietario, una cada 24 horas. El aviso no restablece permisos.
+- Regreso desde perfil a la vacante seleccionada del tablero. Calidad de ofertas con criterios ponderados, prioridades y ejemplos de corrección.
+- MFA de administración: `LOCAL_ADMIN_REVIEW_ENABLED=true` solo funciona con desarrollo y SQLite. Se conserva el autenticador existente. En producción, staging o PostgreSQL la política permanece activa. Las pruebas restablecen la opción a false.
+- Migración `0038_interview_evaluations`: agrega la columna de notas de entrevista, sin modificar las postulaciones existentes.
+
+El entorno local guarda archivos, correo de demostración y base SQLite en `.local/`; las llamadas de Azure, correo SMTP y portales de pago permanecen deshabilitadas por `scripts/local.py`. Para arrancar: `backend/.venv/Scripts/python.exe -X utf8 scripts/local.py backend` y el servidor Vite de `frontend`. Cuentas y recorridos: `.local/escenarios/GUIA_ESCENARIOS.md` (privado, no versionado). La revisión de gastos y el alcance propuesto para retirar Azure están en `.local/AZURE_USO_LOCAL.md`.

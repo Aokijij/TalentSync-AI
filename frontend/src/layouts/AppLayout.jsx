@@ -1,3 +1,4 @@
+import { CompanyAccessNotice } from "../components/CompanyAccessNotice.jsx";
 import { useEffect, useState } from "react";
 import {
   Bell,
@@ -168,7 +169,8 @@ export function AppLayout() {
   const [organization, setOrganization] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const copy = roleCopy[user.role] ?? roleCopy.candidate;
-  const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"))
+  const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.active !== false || ["/empresa/equipo", "/seguridad"].includes(link.to)) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"))
+    .map((link) => organization?.role === "interviewer" && link.to === "/empresa/equipo" ? { ...link, label: "Mis entrevistas" } : link)
     .sort((left, right) => navigationOrder.indexOf(left.to) - navigationOrder.indexOf(right.to));
 
   useEffect(() => {
@@ -196,11 +198,13 @@ export function AppLayout() {
       setOrganizationName("");
       return;
     }
-    api
-      .get("/organization/me")
-      .then(({ data }) => { setOrganizationName(data.name || ""); setOrganization(data); })
-      .catch(() => setOrganizationName(""));
-  }, [user.role]);
+    let current = true;
+    api.get("/organization/access").then(async ({ data: access }) => {
+      const data = access.active === false ? access : { ...access, ...(await api.get("/organization/me")).data };
+      if (current) { setOrganizationName(data.company_name || data.name || ""); setOrganization(data); }
+    }).catch(() => { if (current) setOrganizationName(""); });
+    return () => { current = false; };
+  }, [user.id, user.role, location.pathname]);
 
   const closeMenu = () => setMenuOpen(false);
   if (organization?.role === "interviewer" && !["/empresa/equipo", "/notificaciones", "/seguridad"].includes(location.pathname) && !location.pathname.startsWith("/procesos/")) return <Navigate to="/empresa/equipo" replace />;
@@ -261,9 +265,9 @@ export function AppLayout() {
       ) : null}
 
       <main className="lg:pl-72">
-        {user.role === "company" && <header className="business-workspace-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface)] px-6 py-4"><div><p className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Centro de contratación</p><p className="mt-1 font-bold">{organizationName || "Mi organización"}</p></div><div className="flex items-center gap-3 text-xs"><span className="rounded-full border border-[var(--line)] px-3 py-2">{organization?.verification_status === "verified" ? "Empresa verificada" : "Verificación pendiente"}</span><span>{organization?.role === "owner" ? "Propietario" : organization?.role === "interviewer" ? "Entrevistador" : "Reclutador"}</span></div></header>}
+        {user.role === "company" && <header className="business-workspace-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface)] px-6 py-4"><div><p className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Centro de contratación</p><p className="mt-1 font-bold">{organizationName || "Mi organización"}</p></div><div className="flex items-center gap-3 text-xs"><span className="rounded-full border border-[var(--line)] px-3 py-2">{organization?.active === false ? "Acceso retirado" : organization?.verification_status === "suspended" ? "Empresa suspendida" : organization?.verification_status === "verified" ? "Empresa verificada" : "Verificación pendiente"}</span><span>{organization?.role === "owner" ? "Propietario" : organization?.role === "interviewer" ? "Entrevistador" : "Reclutador"}</span></div></header>}
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-          <Outlet />
+          {organization?.active === false && location.pathname !== "/seguridad" ? <CompanyAccessNotice access={organization} /> : <>{organization?.verification_status === "suspended" && <div className="mb-5"><CompanyAccessNotice access={organization} /></div>}<Outlet /></>}
         </div>
       </main>
     </div>

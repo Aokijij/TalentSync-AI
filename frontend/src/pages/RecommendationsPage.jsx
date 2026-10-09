@@ -147,6 +147,7 @@ export function RecommendationsPage() {
       />
 
       <RecommendationControls interests={interests} jobs={jobs} onSaved={() => { setPage(1); return load(false); }} respectPreferences={respectPreferences} onRespectChange={(value) => { setRespectPreferences(value); setPage(1); }} excludedCount={enriched.filter((item) => !meetsRequiredPreferences(item)).length} />
+      <SearchPreferences data={preferences} onSaved={() => load(false)} />
       <label className="block"><span className="sr-only">Buscar recomendaciones</span><input className="field-control" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por cargo, empresa, ciudad o habilidad" /></label>
       {error && (
         <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)]">
@@ -327,7 +328,7 @@ export function RecommendationsPage() {
                         languageMatch={item.language_match_percentage}
                       />
                       <div className="skill-evidence-panel"><SkillRadarChart requirements={item.match_details?.requirements || []} matchPercentage={item.match_percentage} /><details className="mt-4 text-xs text-[var(--muted)]"><summary className="cursor-pointer">Ver respaldo y requisitos completos</summary>{item.match_details?.requirements?.map((row) => <div className="mt-3" key={row.key}><strong>{row.skill}</strong>{row.evidence?.length ? row.evidence.map((evidence, index) => <p key={index}>{evidence.title} · Evidencia aportada</p>) : <p>Sin evidencia registrada para esta habilidad.</p>}</div>)}</details><Link className="mt-4 inline-block text-xs text-[var(--accent)]" to="/perfil#evidencias">Gestionar mis evidencias →</Link></div>
-                      <SearchPreferences data={preferences} alignment={item.match_details?.preferences} onSaved={() => load(false)} />
+
                       <div className="lg:col-span-2"><VacancyLearningPanel jobId={item.job_id} /></div>
                     </div>
                   ) : null}

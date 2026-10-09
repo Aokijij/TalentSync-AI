@@ -19,6 +19,7 @@ from app.domain.services.learning_activities import (
 from app.domain.services.learning_catalog import ASSESSMENTS
 from app.domain.services.match_explanations import requirements_for
 from app.domain.services.skills import normalize_skills, skill_gap, skill_set
+from app.domain.services.sql_challenges import CHALLENGES
 
 
 def _evaluate(item, value):
@@ -175,7 +176,7 @@ def save_journey(db, user, resource_id, payload):
 
 
 def public_attempt(row):
-    result = {"id": row.id, "assessment_id": row.assessment_id, "skill": row.skill, "version": row.version, "started_at": row.started_at,
+    result = {"id": row.id, "assessment_id": row.assessment_id, "title": (ASSESSMENTS.get(row.assessment_id) or CHALLENGES.get(row.assessment_id) or {}).get("title", row.skill), "skill": row.skill, "version": row.version, "started_at": row.started_at,
               "expires_at": row.expires_at, "status": row.status, "score": row.score, "passed": row.passed, "feedback": row.feedback,
               "valid_until": row.valid_until, "level": "fundamentals"}
     if row.status == "active":
@@ -265,3 +266,26 @@ def patterns(db, user):
             communicated.update([feedback["reason_code"]])
     return {"repeated_gaps": [{"skill": skill, "processes": count} for skill, count in observed.most_common(10) if count >= 2],
             "communicated_reasons": dict(communicated), "notice": "Brechas observadas en ofertas finalizadas; no se infiere que hayan causado el rechazo."}
+
+
+def register_external_certificate(db, user, resource_id, payload):
+    plan = db.learning.plan(user.id, resource_id)
+    resource = next((row for row in catalog_resources(db, include_inactive=True) if row["id"] == resource_id), None)
+    if plan is None or resource is None or not resource.get("url"):
+        raise UseCaseError(status_code=404, detail="Plan de formación externa no encontrado")
+    if plan.status != "completed":
+        raise UseCaseError(status_code=409, detail="Finaliza el plan antes de registrar el certificado externo")
+    if payload["year"] > datetime.utcnow().year:
+        raise UseCaseError(status_code=422, detail="La fecha de expedición no puede estar en el futuro")
+    identifier = uuid5(NAMESPACE_URL, f"talentsync:external-certificate:{user.id}:{resource_id}").hex
+    certificate = {"id": identifier, "name": payload["name"], "issuer": resource["provider"], "year": str(payload["year"]),
+        "url": payload["credential_url"], "certificate_id": payload["certificate_id"], "source": "external_certificate",
+        "resource_id": resource_id, "verified": False}
+    user.profile.certifications = [item for item in user.profile.certifications or [] if item.get("id") != identifier] + [certificate]
+    user.profile.evidence = [item for item in user.profile.evidence or [] if item.get("id") != identifier] + [{
+        "id": identifier, "title": payload["name"], "kind": "certificate", "url": payload["credential_url"], "skills": resource["skills"],
+        "description": f"Certificado externo aportado por el candidato. Emisor: {resource['provider']}. Su autenticidad debe revisarse en el enlace del proveedor.",
+        "verified": False, "source": "external_certificate", "created_at": datetime.utcnow().isoformat()}]
+    record_event(db, "learning.external_certificate_added", "user", user.id, actor_user_id=user.id, details={"source": "external_certificate"})
+    db.commit()
+    return {"message": "Certificado añadido a Certificaciones y Evidencias como documento aportado. No está verificado automáticamente."}

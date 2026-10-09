@@ -1,3 +1,4 @@
+import { LearningResults } from "../components/LearningResults.jsx";
 import { Target, BookOpen, Route, BadgeCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -19,7 +20,7 @@ export function LearningPage() {
   const [filters, setFilters] = useState({});
   const location = useLocation();
   const challenge = useRef(null);
-  const [area, setArea] = useState("recommended"), [tab, setTab] = useState(location.hash === "#mi-plan" ? "plan" : "challenges");
+  const [area, setArea] = useState("recommended"), [tab, setTab] = useState(location.hash === "#mi-plan" ? "plan" : location.hash === "#resultados" ? "passport" : location.hash === "#cursos" ? "courses" : "challenges");
   const [catalog, setCatalog] = useState(null), [plans, setPlans] = useState([]), [passport, setPassport] = useState(null);
   const [attempt, setAttempt] = useState(null), [answers, setAnswers] = useState({}), [step, setStep] = useState(0);
   const [error, setError] = useState(""), [message, setMessage] = useState(""), [busy, setBusy] = useState(false), [now, setNow] = useState(Date.now());
@@ -28,7 +29,7 @@ export function LearningPage() {
   useEffect(() => { let current = true; api.get("/learning/catalog", { params: { area } }).then(({ data }) => { if (current) setCatalog(data); }).catch((failure) => { if (current) setError(getApiErrorMessage(failure)); }); return () => { current = false; }; }, [area]);
   useEffect(() => { if (attempt?.status !== "active") return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [attempt]);
   useEffect(() => { if (attempt?.id) challenge.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [attempt?.id]);
-  useEffect(() => { if (location.hash === "#mi-plan") { setTab("plan"); setMessage(""); } }, [location.hash]);
+  useEffect(() => { if (["#mi-plan", "#resultados", "#cursos"].includes(location.hash)) { setTab({ "#mi-plan": "plan", "#resultados": "passport", "#cursos": "courses" }[location.hash]); setMessage(""); } }, [location.hash]);
   useEffect(() => { if (!message) return; const timer = setTimeout(() => setMessage(""), 6000); return () => clearTimeout(timer); }, [message]);
   async function addPlan(id) { setPlans((await api.put(`/learning/plans/${id}`, { status: "in_progress" })).data); setMessage("Añadido a Mi plan. Ya puedes comenzar el laboratorio."); }
   async function act(action) { setBusy(true); setError(""); setMessage(""); try { await action(); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }
@@ -56,6 +57,6 @@ export function LearningPage() {
     {tab === "challenges" && sqlVisible && <details className="surface-card p-5" open={location.hash === "#retos-sql" ? true : undefined}><summary className="cursor-pointer font-bold">Práctica especializada de SQL · opcional</summary><div className="mt-4"><SQLPractice onCompleted={refresh} /></div></details>}
     {tab === "courses" && catalog && <section className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Prácticas y formación para avanzar</h2><span className="text-sm text-[var(--muted)]">{visibleResources.length} recursos encontrados</span></div><LearningFilters value={filters} onChange={setFilters} /><p className="text-sm text-[var(--muted)]">{plans.filter((row) => row.status !== "completed").length}/3 recursos activos · finaliza o abandona uno para liberar espacio.</p><div className="grid gap-4 lg:grid-cols-2">{visibleResources.map((resource) => <LearningResourceCard key={resource.id} resource={resource} busy={busy || plans.filter((row) => row.status !== "completed").length >= 3} onPlan={(id) => act(() => addPlan(id))} />)}</div>{visibleResources.length === 0 && <p role="status" className="learning-empty">No hay recursos con estos filtros. Cambia el origen, el coste o el área para explorar otras opciones.</p>}{catalog.resources.length > 0 && catalog.resources.every((resource) => plans.some((plan) => plan.resource?.id === resource.id)) && <div className="learning-empty"><h3 className="font-bold">Ya tienes estas prácticas en tu plan</h3><button className="button-primary" onClick={() => setTab("plan")}>Continuar en Mi plan →</button></div>}</section>}
     {tab === "plan" && <LearningPlanBoard plans={plans} onSaved={async (data, published) => { setPlans(data); setMessage(""); if (published) await refresh(); }} onReload={refresh} onExplore={() => setTab("courses")} />}
-    {tab === "passport" && passport && <section className="surface-card space-y-4 p-5"><h2 className="text-xl font-bold">Tus resultados y trabajos</h2><div className="learning-published"><p>{passport.practice_evidence?.length || 0} prácticas publicadas como evidencia en tu perfil.</p><Link className="button-secondary" to="/perfil#evidencias">Ver mis evidencias →</Link></div><p className="text-sm text-[var(--muted)]">{passport.notice}</p>{!passport.assessments.length && <p>Tus resultados aparecerán al entregar el primer reto.</p>}{passport.assessments.map((row) => <article className="rounded-xl border border-[var(--line)] p-4" key={row.id}><h3 className="font-semibold">{row.skill}</h3><p>{row.score}% · {row.valid ? "Fundamentos acreditados" : row.passed ? "Resultado vencido" : "Por reforzar"}{row.valid_until && ` · hasta ${new Date(row.valid_until + "Z").toLocaleDateString("es-CO")}`}</p><button className="button-secondary mt-3" onClick={() => setAttempt(row)}>Ver correcciones y formación</button></article>)}</section>}
+    {tab === "passport" && passport && <LearningResults passport={passport} onReview={(row) => { setAttempt(row); requestAnimationFrame(() => challenge.current?.scrollIntoView({ behavior: "smooth", block: "start" })); }} />}
   </div>;
 }

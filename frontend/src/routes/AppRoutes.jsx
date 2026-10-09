@@ -75,7 +75,7 @@ function RequireAuth({ children }) {
     );
     return <Navigate to={adminArea ? "/acceso-administracion" : location.pathname.startsWith("/empresa") ? "/empresa/login" : "/login"} state={{ from: location.pathname + location.search }} replace />;
   }
-  if (accessOptions.mode === "session" && (user.role === "admin" || user.role === "company" && accessOptions.company_mfa_required !== false) && !user.mfa_enabled && location.pathname !== "/seguridad") return <Navigate to="/seguridad" replace />;
+  if (accessOptions.mode === "session" && (user.role === "admin" && accessOptions.admin_mfa_required !== false || user.role === "company" && accessOptions.company_mfa_required !== false) && !user.mfa_enabled && location.pathname !== "/seguridad") return <Navigate to="/seguridad" replace />;
   return children;
 }
 

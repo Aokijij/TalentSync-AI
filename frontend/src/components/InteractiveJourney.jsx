@@ -1,3 +1,4 @@
+import { ExternalCertificateForm } from "./ExternalCertificateForm.jsx";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck, FlaskConical, Save } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -27,6 +28,7 @@ export function InteractiveJourney({ plan, onSaved, onClose }) {
       <div className="flex flex-wrap gap-3"><button className="button-primary" disabled={busy || !activityComplete(current, values[current.id])} onClick={() => save()}>Comprobar mi respuesta</button><button className="button-secondary" disabled={busy || !result?.correct} onClick={() => setStep(step + 1)}>Continuar<ArrowRight size={16} /></button></div></div>
       : <div className="space-y-4"><h3 className="text-xl font-bold">Tu hoja de resultados</h3>{activities.map((item) => <article className="rounded-xl border border-[var(--line)] p-4" key={item.id}><h4 className="font-semibold">{item.prompt}</h4><p className="mt-2 text-sm">{describeAnswer(item, values[item.id])}</p><p className="mt-2 text-sm text-[var(--muted)]">{feedback.find((row) => row.question_id === item.id)?.correct ? "✓ Comprobado" : "Pendiente de revisar"}</p></article>)}<button className="button-primary" disabled={busy || feedback.length !== 3 || !feedback.every((row) => row.correct)} onClick={() => save(true)}><BadgeCheck size={18} />{plan.progress?.published ? "Actualizar mi evidencia" : "Finalizar y publicar evidencia"}</button><p className="text-xs text-[var(--muted)]">Práctica asistida con correcciones. Los retos evaluados por separado acreditan fundamentos.</p></div>}
     {error && <p role="alert" className="text-[var(--error)]">{error}</p>}<button disabled={busy} className="button-secondary" onClick={() => save()}><Save size={16} />Guardar borrador</button>
+    <ExternalCertificateForm plan={plan} />
     {plan.progress?.published && <Link className="learning-published" to="/perfil#evidencias">Tu práctica ya está en el perfil. Ver evidencia →</Link>}
   </section>;
 }

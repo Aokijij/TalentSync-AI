@@ -666,6 +666,8 @@ function Items({ type, profile, editing, update, updateItem }) {
                   {item.start_year || item.year || ""}
                   {item.end_year && ` - ${item.end_year}`}
                 </p>
+                {type === "certifications" && item.url?.startsWith("https://") && <a className="inline-flex text-xs font-semibold text-[var(--accent)]" href={item.url} target="_blank" rel="noopener noreferrer">Ver certificado del proveedor ↗</a>}
+                {type === "certifications" && item.source === "external_certificate" && <p className="text-xs text-[var(--muted)]">Certificado aportado · autenticidad pendiente de comprobación</p>}
                 {item.description && (
                   <p className="text-sm text-[var(--muted)]">
                     {item.description}

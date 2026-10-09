@@ -19,9 +19,15 @@ def trust(db, company_id):
     return {"company_id": company.id, "company_name": company.name, **company_health(company)}
 
 
-def incident_view(row, *, private=False):
+def incident_view(row, *, private=False, db=None):
     result = {"id": row.id, "company_id": row.company_id, "category": row.category, "status": row.status,
               "shared_summary": row.shared_summary, "appeal": row.appeal, "created_at": row.created_at, "updated_at": row.updated_at}
+    result["company_name"] = row.company.name
+    if db:
+        application = db.applications.get(row.application_id) if row.application_id else None
+        result["job_title"] = application.job.title if application else "Proceso no disponible"
+        result["history"] = [{"at": item.created_at, "type": item.event_type, "status": item.details.get("status")}
+            for item in reversed(db.events.for_entity("incident", row.id))]
     if private:
         result.update({"reporter_user_id": row.reporter_user_id, "application_id": row.application_id, "details": row.details})
     return result
@@ -40,16 +46,16 @@ def report_incident(db, user, payload):
     db.flush()
     record_event(db, "trust.incident_reported", "incident", incident.id, actor_user_id=user.id, details={"company_id": incident.company_id, "reason_code": incident.category})
     db.commit()
-    return incident_view(incident, private=True)
+    return incident_view(incident, private=True, db=db)
 
 
 def incidents(db, user, scope):
     if scope == "admin":
-        return [incident_view(row, private=True) for row in db.ecosystem.incidents()]
+        return [incident_view(row, private=True, db=db) for row in db.ecosystem.incidents()]
     if scope == "organization":
         company = context(db, user, owner=True)
-        return [incident_view(row) for row in db.ecosystem.incidents(company_id=company.id)]
-    return [incident_view(row, private=True) for row in db.ecosystem.incidents(reporter_id=user.id)]
+        return [incident_view(row, db=db) for row in db.ecosystem.incidents(company_id=company.id)]
+    return [incident_view(row, private=True, db=db) for row in db.ecosystem.incidents(reporter_id=user.id)]
 
 
 def review(db, user, incident_id, payload):
@@ -64,7 +70,7 @@ def review(db, user, incident_id, payload):
     for recipient in [row.reporter_user_id, row.company.owner_user_id]:
         db.add(db.notifications.new(user_id=recipient, type="trust_incident", title="Incidencia actualizada", body=f"La incidencia #{row.id} está en estado {row.status}.", action_url="/confianza"))
     db.commit()
-    return incident_view(row, private=True)
+    return incident_view(row, private=True, db=db)
 
 
 def appeal(db, user, incident_id, message):
@@ -78,7 +84,7 @@ def appeal(db, user, incident_id, message):
     row.status = "appealed"
     record_event(db, "trust.incident_appealed", "incident", row.id, actor_user_id=user.id, details={"company_id": company.id})
     db.commit()
-    return incident_view(row)
+    return incident_view(row, db=db)
 
 
 def dashboard(db):

@@ -10,6 +10,12 @@ from app.infrastructure.database.models import Company, User
 from app.infrastructure.security.jwt import create_access_token
 
 
+def verification_payload():
+    return {"legal_name": "Empresa laboratorio", "registry_reference": "Registro local 1234", "representative_role": "Director",
+            "tax_id": "LOCAL-12345", "business_activity": "Desarrollo de software para empresas", "address": "Calle 10 número 20-30", "city": "Bogotá",
+            "contact_email": "contacto@example.com", "contact_phone": "3001234567", "representative_name": "Ana Representante",
+            "registry_authority": "Cámara de comercio de prueba", "registry_document_url": "https://example.com/registro", "accuracy_confirmed": True}
+
 def verified_email(client, user):
     with client.session_factory() as db:
         db.get(User, user["id"]).email_verified = True
@@ -39,7 +45,7 @@ def test_drafts_require_review_before_publication(client):
     assert client.post(f"/api/v1/jobs/{job['id']}/match", headers=candidate).status_code == 404
     assert client.patch(f"/api/v1/jobs/{job['id']}", headers=headers, json={"status": "active"}).status_code == 403
     assert client.get("/api/v1/organization/assignments", headers=headers).status_code == 403
-    assert client.post("/api/v1/organization/verification", headers=headers, json={"legal_name": "Empresa laboratorio", "registry_reference": "Registro local 1234", "representative_role": "Director"}).status_code == 200
+    assert client.post("/api/v1/organization/verification", headers=headers, json=verification_payload()).status_code == 200
     admin = admin_account(client)
     queue = client.get("/api/v1/admin/verifications", headers=admin).json()
     assert queue[0]["status"] == "reviewing"
@@ -85,6 +91,15 @@ def test_invitation_binding_one_use_roles_and_removed_access(client, monkeypatch
     assert timeline.status_code == 200 and timeline.json()["can_manage"] is False
     assert client.get(f"/api/v1/workflow/applications/{other_application['id']}", headers=member_headers).status_code == 403
     assert client.put(f"/api/v1/applications/{application['id']}/status", headers=member_headers, json={"status": "hired"}).status_code == 403
+    evaluation = {"rating": 4, "recommendation": "continue", "summary": "PRIVATE-INTERVIEW: resolvió el caso con ejemplos concretos."}
+    note = client.post(f"/api/v1/workflow/applications/{application['id']}/evaluation", headers=member_headers, json=evaluation)
+    assert note.status_code == 200, note.text
+    assert note.json()["interview_evaluations"][0]["rating"] == 4
+    assert client.post(f"/api/v1/workflow/applications/{other_application['id']}/evaluation", headers=member_headers, json=evaluation).status_code == 403
+    candidate_timeline = client.get(f"/api/v1/workflow/applications/{application['id']}", headers=candidate_headers).json()
+    assert "PRIVATE-INTERVIEW" not in str(candidate_timeline)
+    assert candidate_timeline["interview_evaluations"] == []
+    assert candidate_timeline["status"] == "submitted"
     assert client.get("/api/v1/organization/team", headers=member_headers).status_code == 403
     assert client.get(endpoint, headers=member_headers).status_code == 403
     assert client.delete(endpoint + f"/{listed.json()[0]['id']}", headers=other_headers).status_code == 404
@@ -95,6 +110,14 @@ def test_invitation_binding_one_use_roles_and_removed_access(client, monkeypatch
     assert client.patch(f"/api/v1/jobs/{other_job['id']}", headers=member_headers, json={"title": "Hijacked"}).status_code == 403
     assert client.patch(update, headers=headers, json={"role": "recruiter", "active": False, "assigned_job_ids": []}).status_code == 200
     assert client.get("/api/v1/organization/me", headers=member_headers).status_code in {403, 404}
+    access = client.get("/api/v1/organization/access", headers=member_headers)
+    assert access.status_code == 200 and access.json()["active"] is False
+    assert "applications" not in access.json()
+    notice = {"message": "Solicito revisar mi acceso para continuar las entrevistas asignadas."}
+    assert client.post("/api/v1/organization/access-review", headers=member_headers, json=notice).status_code == 200
+    assert client.post("/api/v1/organization/access-review", headers=member_headers, json=notice).status_code == 409
+    assert client.get("/api/v1/organization/access", headers=member_headers).json()["active"] is False
+    assert any(row["type"] == "team_access" for row in client.get("/api/v1/notifications", headers=headers).json())
 
 
 def test_owner_can_cancel_pending_invitation_without_deleting_history(client, monkeypatch):
@@ -112,3 +135,27 @@ def test_owner_can_cancel_pending_invitation_without_deleting_history(client, mo
     assert client.get("/api/v1/organization/invitation", params={"token": token}).status_code == 404
     assert client.get(endpoint, headers=headers).json()[0]["status"] == "expired"
     assert client.delete(endpoint + f"/{row['id']}", headers=headers).status_code == 404
+
+
+def test_complete_verification_and_suspension_resubmission(client):
+    owner, headers = company_account(client)
+    verified_email(client, owner)
+    endpoint = "/api/v1/organization/verification"
+    assert client.post(endpoint, headers=headers, json={"legal_name": "Incomplete"}).status_code == 422
+    payload = verification_payload()
+    assert client.post(endpoint, headers=headers, json={**payload, "accuracy_confirmed": False}).status_code == 422
+    with client.session_factory() as db:
+        company = db.query(Company).one()
+        company.verification_required = True
+        company.verification_status = "suspended"
+        company.verification_feedback = "Faltan los soportes del registro actualizados."
+        company_id = company.id
+        db.commit()
+    result = client.post(endpoint, headers=headers, json=payload)
+    assert result.status_code == 200, result.text
+    organization = client.get("/api/v1/organization/me", headers=headers).json()
+    assert organization["verification_status"] == "suspended"
+    assert organization["feedback"] == "Faltan los soportes del registro actualizados."
+    assert organization["verification_missing"] == []
+    admin = admin_account(client)
+    assert client.post(f"/api/v1/admin/verifications/{company_id}", headers=admin, json={"status": "verified", "feedback": "Soportes sintéticos de prueba revisados."}).status_code == 200

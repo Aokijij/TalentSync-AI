@@ -61,7 +61,7 @@ def prepare_environment(*, testing=False):
     if testing:
         # Tests must not depend on user integrations, weights or the demo database.
         values.update({"DATABASE_URL": "sqlite://", "MATCH_MODEL_PATH": "",
-                       "SESSION_AUTH_ENABLED": "false", "LOCAL_MAIL_ENABLED": "false", "COMPANY_MFA_REQUIRED": "true",
+                       "SESSION_AUTH_ENABLED": "false", "LOCAL_MAIL_ENABLED": "false", "LOCAL_ADMIN_REVIEW_ENABLED": "false", "COMPANY_MFA_REQUIRED": "true",
                        "WORKFLOW_MAINTENANCE_ENABLED": "false", "MODEL_MAINTENANCE_ENABLED": "false",
                        "GITHUB_PROJECT_ANALYSIS_ENABLED": "false", "WORKSPACE_DOMAIN": "",
                        "ADMIN_SSO_REQUIRED": "false", "ADMIN_SSO_PROVIDER": "workspace", "ENTRA_TENANT_ID": "",

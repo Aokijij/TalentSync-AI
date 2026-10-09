@@ -74,3 +74,16 @@ class ResourceUpdate(ResourceContent):
 
 class ResourceImport(BaseModel):
     resources: list[ResourceContent] = Field(min_length=1, max_length=50)
+
+
+class ExternalCertificate(BaseModel):
+    name: str = Field(min_length=3, max_length=160)
+    credential_url: str = Field(min_length=10, max_length=1000)
+    year: int = Field(ge=1970, le=2100)
+    certificate_id: str = Field(default="", max_length=120)
+    has_certificate: Literal[True]
+
+    @field_validator("credential_url")
+    @classmethod
+    def credential_link(cls, value):
+        return ResourceContent.public_https(value)

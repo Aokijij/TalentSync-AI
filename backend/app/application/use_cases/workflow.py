@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta
+from uuid import uuid4
 
 from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import ensure_job_access
 from app.domain.entities.enums import ApplicationStatus, UserRole
+from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.pipeline import stages_for
 
 FINAL = {ApplicationStatus.REJECTED, ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED}
 
@@ -42,8 +45,13 @@ def timeline(db, user, application_id):
                for item in reversed(db.events.for_entity("application", row.id, 500))
                if item.event_type in {"application.transition", "application.deadline_released", "application.withdrawn", "application.feedback_shared"}]
     return {"job_title": row.job.title, "company_name": row.job.company.name, "job_id": row.job_id, "application_id": row.id, "can_manage": user.role != UserRole.CANDIDATE and (member is None or member.role != "interviewer"), "version": row.version, "status": row.status.value, "stage": row.pipeline_stage,
+            "stage_title": next((stage["title"] for stage in stages_for(row.job) if stage["id"] == row.pipeline_stage), "En seguimiento"),
+            "interview_at": row.interview_at, "job_description": row.job.description, "job_requirements": row.job.requirements,
             "response_due_at": row.response_due_at, "released_at": row.released_at, "feedback": row.candidate_feedback,
-            "events": history, "created_at": row.created_at, "response_days": row.job.response_days}
+            "events": history, "created_at": row.created_at, "response_days": row.job.response_days,
+            "candidate_name": (candidate_alias(row.job_id, row.user_id) if identity_hidden(row.job, row) else row.user.name) if user.role != UserRole.CANDIDATE else None,
+            "can_evaluate": user.role == UserRole.COMPANY and not row.released_at and row.status not in FINAL,
+            "interview_evaluations": list(reversed(row.interview_evaluations or [])) if user.role != UserRole.CANDIDATE else []}
 
 
 def withdraw(db, user, application_id):
@@ -84,3 +92,17 @@ def deadline_cycle(db, *, now=None):
     if released or reminders:
         db.commit()
     return {"released": released, "reminders": reminders}
+
+
+def evaluate_interview(db, user, application_id, payload):
+    row = accessible_application(db, user, application_id)
+    if user.role != UserRole.COMPANY or row.released_at or row.status in FINAL:
+        raise UseCaseError(status_code=409, detail="Este proceso no admite nuevas evaluaciones de entrevista")
+    row.interview_evaluations = [*(row.interview_evaluations or []), {"id": uuid4().hex, "at": datetime.utcnow().isoformat(), **payload, "author": user.name, "author_id": user.id}]
+    record_event(db, "interview.evaluation_added", "application", row.id, actor_user_id=user.id, details={"job_id": row.job_id})
+    company = row.job.company
+    if company.owner_user_id != user.id:
+        db.add(db.notifications.new(user_id=company.owner_user_id, type="interview_evaluation", title="Nueva evaluación de entrevista",
+            body=f"{user.name} añadió una evaluación interna al proceso de {row.job.title}.", action_url=f"/procesos/{row.id}"))
+    db.commit()
+    return timeline(db, user, application_id)

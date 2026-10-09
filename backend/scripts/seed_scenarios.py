@@ -125,7 +125,10 @@ def seed(db, registry, *, nlp, now=None):
                           mission="Entregar soluciones con trazabilidad y aprendizaje continuo.", values=["Colaboración", "Transparencia"], benefits=["Formación", "Horario flexible"],
                           verification_required=True, verification_status=state,
                           verification_submission={} if state == "pending" else {"legal_name": name + " (ficticia)", "registry_reference": "SIMULACION-" + key,
-                              "representative_role": "Representante del escenario", "notes": "Soporte sintético; no constituye verificación legal.", "submitted_at": (now - timedelta(days=5)).isoformat()},
+                              "representative_role": "Representante del escenario", "tax_id": "LOCAL-SCENARIO-" + key,
+                              "business_activity": "Desarrollo y soporte de soluciones ficticias para pruebas locales", "address": "Calle de demostración 10-20", "city": "Bogotá",
+                              "contact_email": owner.email, "contact_phone": "0000000000", "representative_name": "Representante ficticio del escenario",
+                              "registry_authority": "Entidad ficticia de demostración", "registry_document_url": "https://example.com/soporte-sintetico", "accuracy_confirmed": True, "notes": "Soporte sintético; no constituye verificación legal.", "submitted_at": (now - timedelta(days=5)).isoformat()},
                           verification_feedback={"information_required": "Completa el alcance de la actividad y la referencia de registro ficticia.", "rejected": "La referencia presentada no corresponde a la organización de este escenario.", "suspended": "Suspensión simulada para comprobar restricciones y revisión administrativa.", "verified": "Aprobación manual de demostración; sin validación legal oficial."}.get(state))
         db.add(company)
         db.flush()
@@ -317,7 +320,7 @@ def write_guide(folder, report):
              f"Cuentas nuevas: {report['counts']['users']}; empresas: {report['counts']['companies']}; vacantes: {report['counts']['jobs']}; postulaciones: {report['counts']['applications']}; incidencias: 5.", "",
              "2. Candidato: `senior` para el perfil completo; `aprendizaje` para resultados; `historial` para todos los procesos.",
              "3. Empresa: `empresa` para gestión completa; `riesgo` para incidencias; el resto para verificación y permisos.",
-             "4. Administrador: `admin`; configura tu autenticador en Seguridad en el primer ingreso y conserva los códigos de recuperación.",
+             "4. Administrador: `admin`; el entorno local permite revisión sin MFA con `LOCAL_ADMIN_REVIEW_ENABLED=true`. Fuera de desarrollo con SQLite, el segundo factor sigue siendo obligatorio. Puedes configurar el autenticador desde Seguridad.",
              "5. Los correos y contraseñas de esta guía pertenecen a cuentas nuevas. Las anteriores se conservan.", "",
              "## Accesos privados", "", "Este archivo contiene claves locales. No compartir ni incorporar a Git.", ""]
     for role, title, portal in [("candidate", "Candidato", "/login"), ("company", "Empresa y equipo", "/empresa/login"), ("admin", "Administrador", "/acceso-administracion")]:

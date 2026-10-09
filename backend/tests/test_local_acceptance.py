@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, urlsplit
 from fastapi.testclient import TestClient
 from test_account_security import browser  # noqa: F401
 from test_api_flows import client, register  # noqa: F401
+from test_organizations import verification_payload
 
 from app.domain.entities.enums import UserRole
 from app.domain.services.authentication import totp
@@ -69,7 +70,7 @@ def test_local_journey_connects_all_roles_with_sessions_and_mfa(browser):
         job = request(company, "POST", "/jobs", expected=201, json={"title": "Desarrollador Python", "description": "Construye APIs con Python y consultas SQL", "requirements": "Fundamentos de Python y SQL", "sector": "Tecnologia y software"})
         assert job["status"] == "draft" and job["blind_hiring"]
         assert request(browser, "GET", "/jobs") == []
-        request(company, "POST", "/organization/verification", json={"legal_name": "Laboratorio ficticio", "registry_reference": "Registro sintético LOCAL-001", "representative_role": "Directora"})
+        request(company, "POST", "/organization/verification", json=verification_payload())
         queue = request(admin, "GET", "/admin/verifications")
         assert queue[0]["status"] == "reviewing"
         request(admin, "POST", f"/admin/verifications/{job['company_id']}", json={"status": "verified", "feedback": "Revisión ficticia para la prueba local."})

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 120
     session_auth_enabled: bool = False
     company_mfa_required: bool = True
+    local_admin_review_enabled: bool = False
     local_mail_enabled: bool = False
     smtp_enabled: bool = False
     smtp_host: str = ""
@@ -146,6 +147,11 @@ class Settings(BaseSettings):
                 raise ValueError("Configura usuario y contraseña SMTP conjuntamente")
             TypeAdapter(EmailStr).validate_python(self.smtp_from)
         return self
+
+    @property
+    def admin_mfa_required(self):
+        return not (self.local_admin_review_enabled and self.environment == "development"
+                    and self.database_url.startswith("sqlite:"))
 
     @property
     def mail_delivery_enabled(self):

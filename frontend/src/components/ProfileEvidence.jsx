@@ -35,7 +35,7 @@ export function ProfileEvidence({ onChanged }) {
         });
       }}>
         <label>Logro o muestra de trabajo<input className="field-control mt-1" name="title" required minLength={3} maxLength={160} placeholder="Ej.: Mejora del inventario mensual" /></label>
-        <label>Tipo<select className="field-control mt-1" name="kind"><option value="experience">Logro laboral</option><option value="portfolio">Portafolio o certificación</option><option value="project">Proyecto</option><option value="repository">Repositorio</option></select></label>
+        <label>Tipo<select className="field-control mt-1" name="kind"><option value="experience">Logro laboral</option><option value="portfolio">Portafolio</option><option value="certificate">Certificado externo</option><option value="project">Proyecto</option><option value="repository">Repositorio</option></select></label>
         <label>Enlace (opcional)<input className="field-control mt-1" name="url" type="url" /></label>
         <label>Habilidades demostradas, separadas por comas<input className="field-control mt-1" name="skills" required placeholder="Inventarios, atención al cliente…" /></label>
         <label className="sm:col-span-2">Tu aporte, resultado y cómo comprobarlo<textarea className="field-control mt-1" name="description" required minLength={10} maxLength={2000} placeholder="Describe qué hiciste, el resultado y una referencia que pueda revisarse." /></label>

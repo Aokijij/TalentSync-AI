@@ -415,6 +415,7 @@ class Application(Base):
         DateTime, default=datetime.utcnow, nullable=False
     )
     recruiter_notes: Mapped[str | None] = mapped_column(Text)
+    interview_evaluations: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     interview_at: Mapped[datetime | None] = mapped_column(DateTime)
     pipeline_stage: Mapped[str | None] = mapped_column(String(80), nullable=True)
     resolution_reason: Mapped[str | None] = mapped_column(String(80), nullable=True)
