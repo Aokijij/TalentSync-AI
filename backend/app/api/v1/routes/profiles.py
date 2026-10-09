@@ -32,11 +32,12 @@ def get_my_profile(current_user: User = Depends(get_current_user)) -> Profile:
 @router.get("/candidates/{user_id}", response_model=CandidateProfileResponse)
 def get_candidate_profile(
     user_id: int,
+    job_id: int | None = None,
     current_user: User = Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)),
     db: UnitOfWork = Depends(get_unit_of_work),
 ) -> dict:
     return use_cases.get_candidate_profile(
-        user_id=user_id, current_user=current_user, db=db
+        user_id=user_id, current_user=current_user, db=db, job_id=job_id
     )
 
 

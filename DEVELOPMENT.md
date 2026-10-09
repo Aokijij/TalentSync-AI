@@ -1129,3 +1129,26 @@ SQL mantiene tablas sintéticas, lectura exclusiva, funciones permitidas y lími
 de resultados/VM. El presupuesto distingue 0,2 segundos de CPU del hilo y un
 máximo de un segundo de reloj; una pausa del planificador no consume CPU. Una
 regresión comprueba tanto las consultas válidas bajo pausa como el corte de reloj.
+
+
+### Bloques 44 y 45 — Diseño por rol, perfiles y demostración
+
+GET /profiles/candidates/{id}?job_id={job_id} permite a la empresa propietaria
+revisar una ficha anónima de su postulación. La respuesta usa una lista explícita
+de campos profesionales y omite contacto, CV, foto, texto libre y organizaciones.
+El contexto de otra vacante visible no revela la identidad en un proceso anónimo.
+Las rutas sin contexto conservan sus permisos anteriores. test_hiring cubre la
+omisión de identificadores y el acceso por propietario y etapa.
+
+El feedback distingue escrituras de lecturas y del POST de cálculo de match.
+Administración organiza motor, integraciones y experimentos por pestañas; el
+catálogo conserva los campos entre sus tres pasos y exige publicación explícita.
+Recomendaciones enlaza a preferencias en perfil y despliega detalles de respaldo;
+la formación usa tarjetas compactas. Retos y cursos tienen vistas separadas.
+
+Para ampliar los ejemplos: backend/.venv/Scripts/python.exe scripts/local.py seed-demo.
+El comando solo admite .local/talentsync.sqlite3 en development, crea una copia
+SQLite anterior a la primera carga, preserva claves existentes y no duplica las
+seis empresas, dieciocho candidatos, veinticuatro vacantes ni treinta y seis
+postulaciones. Las cuentas y claves permanecen en .local/review-accounts.json y
+.local/ACCESOS_REVISION.md, fuera de Git. Los ejemplos no entrenan el modelo.

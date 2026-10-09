@@ -127,3 +127,25 @@ confirmaciones y avisos flotantes. Las capturas privadas usan el prefijo usabili
 El CV debe volver a cargarse para aplicar el extractor corregido. Si una extensión
 del navegador superpone su panel sobre el lado derecho, debe cerrarse ese panel;
 la aplicación no altera la extensión ni intenta cubrirla con otro z-index.
+
+
+## Segunda revisión visual
+
+Los accesos originales de revisión siguen vigentes. La ampliación añade seis
+empresas de tecnología, finanzas, logística, atención administrativa en salud,
+educación y diseño; cada una tiene cuatro ofertas ficticias y tres candidatos
+con perfiles desarrollados. Hay 24 accesos nuevos y 36 postulaciones adicionales.
+Consulta .local/ACCESOS_REVISION.md para elegir un rol. seed-demo puede repetirse
+sin duplicar registros ni cambiar contraseñas; vacancy ID 4 se conserva.
+
+En selección anónima se puede abrir Ver perfil anónimo; la ficha omite identidad
+hasta la etapa de entrevista. Las ofertas nuevas incluyen procesos con y sin
+selección anónima para revisar ambas variantes.
+
+Motor e integraciones tiene tres pestañas y color ámbar de administración. El
+catálogo guía la creación de recursos externos con validación, vista previa y
+confirmación final. Los ejercicios internos ya pertenecen a la biblioteca.
+En candidato, Guardadas y Ocultas están en Explorar vacantes; las preferencias
+están en Mi perfil y Mi desarrollo separa retos de cursos. Los avisos de guardado
+se muestran únicamente tras escrituras reales y se limpian al cambiar de vista.
+Las capturas privadas de esta revisión usan el prefijo design en .local/verification.

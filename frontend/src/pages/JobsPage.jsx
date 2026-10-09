@@ -29,7 +29,6 @@ import {
   COLOMBIA_LOCATIONS,
   COLOMBIAN_DEPARTMENTS,
 } from "../constants/colombianCities.js";
-import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { formatRelativeTime, isWithinDays } from "../utils/dates.js";
 import { cleanExternalLocation, externalPortal } from "../utils/externalPortal.js";
 
@@ -59,7 +58,8 @@ const defaultFilters = {
 export function JobsPage() {
   const { user } = useAuth();
   const interests = useJobInterests(user?.role === "candidate");
-  const [interestMode, setInterestMode] = useState("all");
+  const [interestMode, setInterestMode] = useState(() => ["saved", "hidden"].includes(new URLSearchParams(window.location.search).get("interes")) ? new URLSearchParams(window.location.search).get("interes") : "all");
+  const [showInterests, setShowInterests] = useState(false);
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
@@ -80,6 +80,7 @@ export function JobsPage() {
   useEffect(() => {
     const next = new URLSearchParams();
     if (query) next.set("q", query);
+    if (interestMode !== "all") next.set("interes", interestMode);
     Object.entries(filters).forEach(([key, value]) => {
       if (value && value !== defaultFilters[key]) next.set(key, value);
     });
@@ -92,7 +93,7 @@ export function JobsPage() {
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
-  }, [filters, minCompatibility, onlyMySkills, page, pageSize, query, searchParams, setSearchParams, showFilters]);
+  }, [filters, interestMode, minCompatibility, onlyMySkills, page, pageSize, query, searchParams, setSearchParams, showFilters]);
 
   useEffect(() => {
     const requests = [
@@ -150,7 +151,7 @@ export function JobsPage() {
   );
   const availableSectors = useMemo(
     () =>
-      JOB_SECTORS.filter((sector) => jobs.some((job) => job.sector === sector)),
+      [...new Set(jobs.map((job) => job.sector).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es")),
     [jobs],
   );
   const availableCities = filters.department
@@ -287,7 +288,7 @@ export function JobsPage() {
         ) : activeFilterCount ? <button type="button" className="mt-4 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setShowFilters(true)}>{activeFilterCount} filtro{activeFilterCount === 1 ? " activo" : "s activos"} · Ver o cambiar</button> : null}
       </section>
 
-      {user?.role === "candidate" && <><InterestsSettings interests={interests} jobs={jobs} /><label className="my-4 block max-w-xs">Mis intereses<select className="field-control mt-1" value={interestMode} onChange={(event) => { setInterestMode(event.target.value); setPage(1); }}><option value="all">Vacantes disponibles</option><option value="saved">Guardadas</option><option value="hidden">Ocultas</option></select></label></>}
+      {user?.role === "candidate" && <><div className="discovery-navigation"><nav className="workspace-tabs" aria-label="Colecciones de vacantes">{[["all", "Todas"], ["saved", "Guardadas"], ["hidden", "Ocultas"]].map(([key, label]) => <button key={key} aria-pressed={interestMode === key} onClick={() => { setInterestMode(key); setPage(1); }}>{label}</button>)}</nav><button className="text-sm text-[var(--muted)]" aria-expanded={showInterests} onClick={() => setShowInterests(!showInterests)}>Personalización</button></div>{showInterests && <InterestsSettings embedded interests={interests} jobs={jobs} />}{!interests.enabled && interestMode !== "all" && <p className="text-sm text-[var(--muted)]">Activa el uso de tus decisiones desde Personalización para guardar y recuperar vacantes.</p>}</>}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleJobs.map((job) => (

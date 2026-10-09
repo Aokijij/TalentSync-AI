@@ -1,3 +1,5 @@
+import { useLocation } from "react-router-dom";
+import { SearchPreferences } from "../components/SearchPreferences.jsx";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
 import { useEffect, useState } from "react";
@@ -75,6 +77,7 @@ const normalize = (data) => ({
 
 export function ProfilePage() {
   const { refreshUser } = useAuth();
+  const location = useLocation();
   const { confirm } = useFeedback();
   const [profile, setProfile] = useState(null);
   const [email, setEmail] = useState("");
@@ -94,6 +97,7 @@ export function ProfilePage() {
       })
       .catch(() => setError("No fue posible cargar el perfil"));
   }, []);
+  useEffect(() => { if (profile && location.hash === "#preferencias") document.getElementById("preferencias")?.scrollIntoView({ block: "start" }); }, [Boolean(profile), location.hash]);
   const update = (key, value) => setProfile((p) => ({ ...p, [key]: value }));
   const updateItem = (key, index, field, value) =>
     update(
@@ -582,6 +586,7 @@ export function ProfilePage() {
       </div>
         </article>
       )}
+      <div id="preferencias" className="scroll-mt-44"><SearchPreferences open={location.hash === "#preferencias" ? true : undefined} /></div>
       {!editing && <ProfileEvidence onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} />}
     </div>
   );

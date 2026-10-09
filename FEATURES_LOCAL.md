@@ -135,8 +135,8 @@ etapa de entrevista del proceso continúa disponible. No se renumeran IDs:
 el antiguo `#4` era la clave global de la base; los selectores muestran ahora
 el nombre y estado de la vacante.
 
-Mi perfil reúne las evidencias; Recomendaciones reúne compatibilidad,
-preferencias, intereses y formación por vacante; Mi desarrollo reúne catálogo,
+Mi perfil reúne evidencias y preferencias; Recomendaciones reúne compatibilidad
+y formación por vacante; Explorar vacantes reúne guardadas y ocultas. Mi desarrollo reúne catálogo,
 plan y pasaporte. Empresa reúne requisitos en Calidad de ofertas y verificación,
 accesos y asignaciones en Organización y equipo. No muestra controles de
 privacidad o aprendizaje propios del candidato.
@@ -180,3 +180,31 @@ Los trabajos de texto publicados antes de este cambio siguen disponibles.
 Administración tiene acceso renovado, verificación con filtros y requisitos
 visibles, catálogo integrado y un mapa de habilidades con búsqueda, orden y
 paginación. La muestra de oferta/demanda sigue siendo de la plataforma local.
+
+
+## Segunda revisión de diseño por rol
+
+Confianza e incidencias presenta valoración, procesos, plazos e incidencias en
+indicadores separados, con explicación desplegable y un estado vacío orientado
+a revisar los procesos. Las vacantes con selección anónima permiten abrir una
+ficha profesional sin contacto, foto, CV ni nombres de empresas/instituciones.
+La identidad se muestra al alcanzar la etapa de entrevista o en vacantes sin
+selección anónima; los permisos se comprueban por empresa y postulación.
+
+Administración usa una paleta ámbar propia. Motor e integraciones separa
+Funcionamiento, Integraciones y Laboratorio, con pasos de comparación y progreso
+hacia la muestra mínima. El catálogo explica qué se puede añadir y guía la
+creación en tres pasos: identificación, utilidad y revisión antes de publicar.
+La importación JSON queda como opción avanzada al final.
+
+Explorar vacantes reúne Todas, Guardadas y Ocultas en una barra; Personalización
+se abre solo al solicitarla. Mi desarrollo separa Retos de Cursos y prácticas.
+Recomendaciones resume sus motivos, muestra habilidades en fichas pequeñas y
+hasta dos recursos de formación antes de desplegar más. Las preferencias se
+ajustan desde Mi perfil. Las consultas y el cálculo automático de compatibilidad
+ya no producen avisos de cambios guardados; los avisos se limpian al navegar.
+
+La carga adicional de demostración incorpora seis empresas, veinticuatro
+vacantes y dieciocho candidatos con trayectoria, formación, idiomas y habilidades
+por sector, además de treinta y seis postulaciones. Son datos ficticios para
+revisión; las contraseñas y los perfiles previamente editados se conservan.

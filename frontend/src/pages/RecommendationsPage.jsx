@@ -33,7 +33,6 @@ export function RecommendationsPage() {
   const [jobs, setJobs] = useState([]);
   const interests = useJobInterests(true, () => load(false));
   const [query, setQuery] = useState("");
-  const [interestMode, setInterestMode] = useState("all");
   const [respectPreferences, setRespectPreferences] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -84,9 +83,9 @@ export function RecommendationsPage() {
     () =>
       enriched.filter((item) => {
         const job = jobsById.get(item.job_id);
-        return job && meetsRequiredPreferences(item, respectPreferences) && searchJob(job, query) && visibleInterest(job, interests.byId, interestMode) && (sourceFilter === "all" || job.source_kind === sourceFilter);
+        return job && meetsRequiredPreferences(item, respectPreferences) && searchJob(job, query) && visibleInterest(job, interests.byId, "all") && (sourceFilter === "all" || job.source_kind === sourceFilter);
       }),
-    [enriched, jobsById, sourceFilter, query, interestMode, interests.byId, respectPreferences],
+    [enriched, jobsById, sourceFilter, query, interests.byId, respectPreferences],
   );
   const pages = totalPages(filteredRecommendations, pageSize);
   const visibleRecommendations = pageItems(filteredRecommendations, page, pageSize);
@@ -142,7 +141,7 @@ export function RecommendationsPage() {
       />
 
       <RecommendationControls interests={interests} jobs={jobs} onSaved={() => { setPage(1); return load(false); }} respectPreferences={respectPreferences} onRespectChange={(value) => { setRespectPreferences(value); setPage(1); }} excludedCount={enriched.filter((item) => !meetsRequiredPreferences(item)).length} />
-      <div className="grid gap-3 sm:grid-cols-2"><label>Buscar recomendaciones<input className="field-control mt-1" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Cargo, empresa, ubicación o habilidad" /></label><label>Mostrar<select className="field-control mt-1" value={interestMode} onChange={(event) => { setInterestMode(event.target.value); setPage(1); }}><option value="all">Todas las sugeridas</option><option value="saved">Solo guardadas</option></select></label></div>
+      <label className="block"><span className="sr-only">Buscar recomendaciones</span><input className="field-control" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por cargo, empresa, ciudad o habilidad" /></label>
       {error && (
         <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)]">
           {error}
@@ -209,7 +208,7 @@ export function RecommendationsPage() {
               const isExpanded = expandedReasons[item.id] ?? false;
 
               const reasonsShort = (item.reasons ?? []).slice(0, 2);
-              const reasonsFull = item.reasons ?? [];
+
 
               const categoryLabel =
                 item.category === "alta"
@@ -257,9 +256,9 @@ export function RecommendationsPage() {
 
                     <div className="mt-2 space-y-2">
                       <p
-                        className={`text-xs text-[var(--muted)] ${isExpanded ? "" : "line-clamp-2"}`}
+                        className="line-clamp-2 text-xs text-[var(--muted)]"
                       >
-                        {(isExpanded ? reasonsFull : reasonsShort).join(". ")}
+                        {reasonsShort[0] || "Compara los requisitos con las habilidades de tu perfil."}
                       </p>
                       {(
                         <button
@@ -321,7 +320,7 @@ export function RecommendationsPage() {
                         semanticMatch={item.professional_context_percentage ?? item.semantic_match_percentage}
                         languageMatch={item.language_match_percentage}
                       />
-                      <div className="space-y-3"><h3 className="font-bold">Respaldo de tus habilidades</h3>{item.match_details?.requirements?.map((row) => <div key={row.key} className="text-sm"><p>{row.skill} · {row.covered ? "Declarada en el perfil" : "Por acreditar"}</p>{row.evidence?.map((evidence, index) => <p key={index} className="text-xs text-[var(--muted)]">↳ {evidence.title} · Evidencia aportada</p>)}</div>)}<Link className="text-sm text-[var(--accent)]" to="/perfil#evidencias">Gestionar evidencias en mi perfil</Link></div>
+                      <div className="skill-evidence-panel"><h3 className="font-bold">Tus habilidades frente al cargo</h3><div className="mt-3 flex flex-wrap gap-2">{item.match_details?.requirements?.slice(0, 6).map((row) => <span key={row.key} className={`skill-evidence-chip ${row.covered ? "covered" : ""}`}>{row.covered ? "✓" : "+"} {row.skill}<small>{row.covered ? "Declarada" : "Por reforzar"}{row.evidence?.length ? ` · ${row.evidence.length} evidencias` : ""}</small></span>)}</div><details className="mt-4 text-xs text-[var(--muted)]"><summary className="cursor-pointer">Ver respaldo y requisitos completos</summary>{item.match_details?.requirements?.map((row) => <div className="mt-3" key={row.key}><strong>{row.skill}</strong>{row.evidence?.length ? row.evidence.map((evidence, index) => <p key={index}>{evidence.title} · Evidencia aportada</p>) : <p>Sin evidencia registrada para esta habilidad.</p>}</div>)}</details><Link className="mt-4 inline-block text-xs text-[var(--accent)]" to="/perfil#evidencias">Gestionar mis evidencias →</Link></div>
                       <div className="lg:col-span-2"><VacancyLearningPanel jobId={item.job_id} /></div>
                     </div>
                   ) : null}
@@ -336,7 +335,7 @@ export function RecommendationsPage() {
                   className="mx-auto mb-3 text-[var(--accent)]"
                 />
                 No hay recomendaciones con estos filtros. Puedes cambiar la
-                búsqueda, mostrar todas en lugar de solo guardadas, cambiar el
+                búsqueda, cambiar el
                 origen o reducir el mínimo de {minCompatibility}%.
               </div>
             ) : null}

@@ -66,3 +66,39 @@ def test_quality_checklist_changes_after_saving_actionable_corrections(client):
     assert match.status_code == 200
     assert match.json()["skill_match_percentage"] == 100
     assert "Cumples todas las habilidades requeridas" in match.json()["reasons"]
+
+
+def test_anonymous_profile_is_scoped_to_owned_application_and_omits_identity(client):
+    from app.infrastructure.database.models import User
+
+    _, company = company_account(client, "anonymous-owner")
+    _, other_company = company_account(client, "anonymous-outsider")
+    job = client.post("/api/v1/jobs", headers=company, json={"title": "Analista de inventarios", "description": "Revisa inventarios y controla movimientos", "requirements": "Excel y control de inventarios", "sector": "Logistica y transporte"}).json()
+    candidate, headers = register(client, "PRIVATE-PERSON", profession="Analista de inventarios", skills=["excel", "inventarios"])
+    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"]}).json()
+    with client.session_factory() as db:
+        profile = db.get(User, candidate["id"]).profile
+        profile.phone = "PRIVATE-PHONE"
+        profile.cv_text = "PRIVATE-CV"
+        profile.cv_filename = "PRIVATE-FILENAME"
+        profile.photo_filename = "PRIVATE-PHOTO"
+        profile.experience = "PRIVATE-SUMMARY"
+        profile.experiences = [{"role": "Analista", "company": "PRIVATE-EMPLOYER", "description": "PRIVATE-DESCRIPTION", "start_year": "2022", "end_year": "2026"}]
+        profile.educations = [{"degree": "Tecnología logística", "institution": "PRIVATE-SCHOOL", "start_year": "2018", "end_year": "2021"}]
+        db.commit()
+    endpoint = f"/api/v1/profiles/candidates/{candidate['id']}?job_id={job['id']}"
+    response = client.get(endpoint, headers=company)
+    assert response.status_code == 200, response.text
+    assert response.json()["identity_hidden"] is True
+    assert response.json()["skills"] == ["excel", "inventarios"]
+    assert response.json()["experiences"][0]["role"] == "Analista"
+    assert "PRIVATE-" not in response.text
+    assert client.get(endpoint, headers=other_company).status_code == 403
+    assert client.get(endpoint.replace(f"job_id={job['id']}", "job_id=99999"), headers=company).status_code == 403
+    assert client.get(f"/api/v1/profiles/candidates/{candidate['id']}", headers=company).status_code == 403
+    # A visible second application does not unmask a still-blind process.
+    visible_job = client.post("/api/v1/jobs", headers=company, json={"title": "Analista visible", "description": "Revisa inventarios y controla movimientos", "requirements": "Excel y control de inventarios", "sector": "Logistica y transporte", "blind_hiring": False}).json()
+    client.post("/api/v1/applications", headers=headers, json={"job_id": visible_job["id"]})
+    assert client.get(endpoint, headers=company).json()["identity_hidden"] is True
+    assert client.put(f"/api/v1/applications/{application['id']}/status", headers=company, json={"status": "technical_interview"}).status_code == 200
+    assert client.get(endpoint, headers=company).json()["name"] == candidate["name"]

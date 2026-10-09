@@ -59,4 +59,5 @@ class ProfileResponse(ProfileBase):
 
 class CandidateProfileResponse(ProfileResponse):
     name: str
-    email: str
+    email: str | None = None
+    identity_hidden: bool = False

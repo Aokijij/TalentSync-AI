@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { CheckCircle2, AlertCircle, X } from "lucide-react";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
@@ -6,7 +7,9 @@ const FeedbackContext = createContext(null);
 export const useFeedback = () => useContext(FeedbackContext);
 
 export function FeedbackProvider({ children }) {
+  const location = useLocation();
   const [notice, setNotice] = useState(null), [dialog, setDialog] = useState(null);
+  useEffect(() => { setNotice(null); }, [location.pathname]);
   const pending = useRef(null);
   const notify = useCallback((message, error = false) => setNotice({ message, error, at: Date.now() }), []);
   const confirm = useCallback((options) => new Promise((resolve) => {

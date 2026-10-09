@@ -121,7 +121,7 @@ export function AppRoutes() {
         <Route path="/admin/ecosistema" element={<RequireRole roles={["admin"]}><EcosystemPage /></RequireRole>} />
         <Route path="/admin/modelos" element={<RequireRole roles={["admin"]}><ModelPage /></RequireRole>} />
         <Route path="/admin/aprendizaje" element={<RequireRole roles={["admin"]}><LearningCatalogPage /></RequireRole>} />
-        <Route path="/mis-intereses" element={<RequireRole roles={["candidate"]}><Navigate to="/recomendaciones?intereses=1" replace /></RequireRole>} />
+        <Route path="/mis-intereses" element={<RequireRole roles={["candidate"]}><Navigate to="/vacantes?interes=saved" replace /></RequireRole>} />
         <Route path="/empresa/calidad" element={<RequireRole roles={["company"]}><HiringQualityPage /></RequireRole>} />
         <Route path="/aprendizaje" element={<RequireRole roles={["candidate"]}><LearningPage /></RequireRole>} />
         <Route path="/procesos/:applicationId" element={<ProcessPage />} />

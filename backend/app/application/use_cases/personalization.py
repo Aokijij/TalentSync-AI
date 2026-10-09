@@ -92,7 +92,6 @@ def model_status(db, nlp):
             {"name": "Catálogos de cursos y afiliación", "status": "Catálogo local administrable e importación JSON disponibles; patrocinios visibles sin alterar ranking. APIs, compras y acuerdos externos pendientes."},
             {"name": "SSO corporativo del administrador", "status": "Google Workspace y Microsoft Entra ID disponibles con identidades aprovisionadas y MFA; requieren credenciales y selección del proveedor."},
             {"name": "Verificación oficial de empresas", "status": "Revisión manual local; falta proveedor de registros"},
-            {"name": "Videollamada por Internet", "status": "Adaptador STUN/TURN disponible; requiere servidor de retransmisión configurado"},
             {"name": "Retos con ejecución", "status": "SQL restringido en memoria disponible en Aprendizaje. Otros lenguajes requieren un ejecutor aislado adicional."},
         ],
         "observed_processes": len(applications), "processes_advanced_to_interview": sum(row.status == "technical_interview" or any(event.details.get("status") == "technical_interview" for event in db.events.for_entity("application", row.id)) for row in applications),

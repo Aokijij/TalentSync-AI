@@ -1,6 +1,7 @@
 import axios from "axios";
 import { validationMessage } from "./errors.js";
 import { resolveApiBase } from "./config.js";
+import { shouldNotifyMutation } from "./feedback.js";
 
 export const api = axios.create({
   baseURL: resolveApiBase(import.meta.env.VITE_API_URL, window.location),
@@ -22,7 +23,7 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
-    if (!["get", "head", "options"].includes(response.config.method) && !/^\/auth\//.test(response.config.url) && !response.config.__quiet) {
+    if (shouldNotifyMutation(response.config)) {
       window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { message: response.data?.message || (response.config.method === "delete" ? "Acción completada. La información se ha actualizado." : "Cambios guardados correctamente.") } }));
     }
     return response;

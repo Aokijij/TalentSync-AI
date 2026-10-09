@@ -13,7 +13,7 @@ from app.application.ports.services import (
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
-from app.domain.services.blind_hiring import identity_hidden
+from app.domain.services.blind_hiring import candidate_alias, identity_hidden
 from app.domain.services.skills import normalize_skills
 
 
@@ -73,7 +73,7 @@ def build_professional_summary(profile: Profile, fallback: str | None = None) ->
     return summary[:600].rstrip()
 
 
-def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork) -> dict:
+def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_id: int | None = None) -> dict:
     candidate = db.users.get(user_id)
     if (
         candidate is None
@@ -81,6 +81,25 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork) -> d
         or candidate.profile is None
     ):
         raise UseCaseError(status_code=404, detail="Perfil de candidato no encontrado")
+    if current_user.role == UserRole.COMPANY and job_id is not None:
+        company = db.companies.find_by_owner(current_user.id)
+        job = db.jobs.get(job_id)
+        application = next((row for row in job.applications if row.user_id == user_id), None) if job else None
+        if not company or not job or job.company_id != company.id or application is None:
+            raise UseCaseError(status_code=403, detail="El perfil debe pertenecer a una postulación de esta vacante")
+        if identity_hidden(job, application):
+            profile = candidate.profile
+            # Do not include CV text, names of employers/schools, descriptions or contact data.
+            # Identity visibility is scoped to this process, even if another job revealed it.
+            return {
+                "id": profile.id, "user_id": user_id, "name": candidate_alias(job_id, user_id),
+                "identity_hidden": True, "profession": profile.profession,
+                "skills": profile.skills or [], "languages": profile.languages or [],
+                "availability": profile.availability, "preferred_modality": profile.preferred_modality,
+                "desired_salary": profile.desired_salary,
+                "experiences": [{key: row.get(key) for key in ("role", "start_year", "end_year")} for row in profile.experiences or []],
+                "educations": [{key: row.get(key) for key in ("degree", "start_year", "end_year")} for row in profile.educations or []],
+            }
     if current_user.role == UserRole.COMPANY and (
         not company_can_view_candidate(db, current_user, user_id)
     ):

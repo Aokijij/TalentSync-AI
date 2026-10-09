@@ -9,9 +9,10 @@ import {
   MapPin,
   Phone,
   Sparkles,
+  ShieldCheck,
   UserRound,
 } from "lucide-react";
-import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { api, getApiErrorMessage } from "../api/client.js";
 import { AuthenticatedImage } from "../components/AuthenticatedImage.jsx";
@@ -46,7 +47,7 @@ export function CandidateDetailPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const profileRequest = api.get(`/profiles/candidates/${userId}`);
+    const profileRequest = api.get(`/profiles/candidates/${userId}`, { params: jobId ? { job_id: jobId } : {} });
     const matchRequest = jobId
       ? api
           .get(`/recommendations/jobs/${jobId}/candidates`)
@@ -102,6 +103,7 @@ export function CandidateDetailPage() {
         <ArrowLeft size={16} />
         Volver a candidatos recomendados
       </button>
+      {candidate.identity_hidden && <aside className="identity-note"><ShieldCheck size={22} /><div><h2 className="font-bold">Perfil profesional en selección ciega</h2><p>La vacante oculta nombre, contacto y organizaciones de origen. La identidad se revela al avanzar a entrevista; puedes revisar habilidades, formación y trayectoria desde ahora.</p><Link to={`/procesos/${application?.id || ""}`} className="text-[var(--accent)]">Consultar el proceso →</Link></div></aside>}
       <section className="surface-card overflow-hidden !p-0">
         <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] via-cyan-300 to-[var(--success)]" />
         <div className="p-6 sm:p-8">
@@ -118,10 +120,7 @@ export function CandidateDetailPage() {
               </p>
               {candidate.experience ? <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">{candidate.experience}</p> : null}
               <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
-                <span className="inline-flex items-center gap-1.5">
-                  <Mail size={15} />
-                  {candidate.email}
-                </span>
+                {candidate.email && <span className="inline-flex items-center gap-1.5"><Mail size={15} />{candidate.email}</span>}
                 {candidate.phone && (
                   <span className="inline-flex items-center gap-1.5">
                     <Phone size={15} />
@@ -170,7 +169,7 @@ export function CandidateDetailPage() {
                   {item.role}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[var(--accent)]">
-                  {item.company} · {item.start_year}
+                  {item.company ? `${item.company} · ` : ""}{item.start_year}
                   {item.end_year ? ` - ${item.end_year}` : ""}
                 </p>
                 {item.description && (
@@ -192,13 +191,13 @@ export function CandidateDetailPage() {
                   {item.degree}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[var(--accent)]">
-                  {item.institution} · {item.start_year}
+                  {item.institution ? `${item.institution} · ` : ""}{item.start_year}
                   {item.end_year ? ` - ${item.end_year}` : ""}
                 </p>
               </>
             )}
           />
-          <Timeline
+          {!candidate.identity_hidden && <Timeline
             title="Cursos y certificaciones"
             icon={CheckCircle2}
             items={candidate.certifications}
@@ -214,13 +213,13 @@ export function CandidateDetailPage() {
                 </p>
               </>
             )}
-          />
+          />}
         </div>
         <aside className="space-y-5">
           <section className="surface-card p-5"><h2 className="mb-3 font-bold">Idiomas</h2><LanguagesEditor value={candidate.languages || []} editing={false} /></section>
           <section className="surface-card p-5">
             <h2 className="font-bold text-[var(--ink-strong)]">
-              Habilidades verificadas
+              Habilidades declaradas
             </h2>
             <div className="mt-4 flex flex-wrap gap-2">
               {(candidate.skills || []).map((skill) => (
