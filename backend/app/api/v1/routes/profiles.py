@@ -4,6 +4,7 @@ from fastapi.responses import Response
 from app.api.deps import (
     get_current_user,
     get_image_storage,
+    get_resume_exporter,
     get_resume_reader,
     get_text_analysis,
     get_unit_of_work,
@@ -89,3 +90,10 @@ def get_profile_photo(
         user_id=user_id, current_user=current_user, db=db, storage=storage
     )
     return Response(content, media_type=media_type, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@router.get("/me/export", response_class=Response)
+def export_resume(current_user: User = Depends(require_roles(UserRole.CANDIDATE)), exporter=Depends(get_resume_exporter)):
+    return Response(exporter(current_user), media_type="application/pdf", headers={
+        "Content-Disposition": 'attachment; filename="hoja-de-vida-talentsync.pdf"',
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})

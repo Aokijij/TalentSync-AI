@@ -20,7 +20,7 @@ export function LoginPage() {
       const user = await login(values.email, values.password, { code, remember: values.remember, portal });
       if (user.mfa_required) { setCredentials({ ...values }); resetField("password"); return; }
       setCredentials(null);
-      if (accessOptions.mode === "session" && company && !user.mfa_enabled) { navigate("/seguridad"); return; }
+      if (accessOptions.mode === "session" && company && accessOptions.company_mfa_required !== false && !user.mfa_enabled) { navigate("/seguridad"); return; }
       const from = location.state?.from;
       const allowed = typeof from === "string" && from.startsWith("/") && !from.startsWith("//") && (company ? from.startsWith("/empresa") : !/^\/(empresa|admin|administracion)/.test(from));
       navigate(allowed ? from : company ? "/empresa" : "/candidato", { replace: true });

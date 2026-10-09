@@ -13,6 +13,7 @@ from app.infrastructure.database.models import AccountToken, User, UserSession
 @pytest.fixture
 def browser(client, monkeypatch):  # noqa: F811
     monkeypatch.setattr(settings, "session_auth_enabled", True)
+    monkeypatch.setattr(settings, "company_mfa_required", True)
     monkeypatch.setattr(settings, "session_cookie_secure", False)
     monkeypatch.setattr(settings, "local_mail_enabled", True)
     monkeypatch.setattr(settings, "database_url", "sqlite://")

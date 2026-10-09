@@ -986,3 +986,32 @@ html[data-theme="dark"] .auth-stage {
 }
 
 .company-profile-cover { background: linear-gradient(120deg, #281b39, #62407c 65%, #9262b1); }
+
+/* Interaction and review workspaces */
+.feedback-toast { position: fixed; z-index: 95; bottom: 1.25rem; right: 1.25rem; width: min(460px, calc(100vw - 2.5rem)); display: flex; align-items: center; gap: .9rem; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; color: var(--ink); background: var(--surface); box-shadow: 0 12px 45px #0004; animation: fade-in .2s ease-out; }
+.autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 45; margin-top: .4rem; padding: .4rem; max-height: 260px; overflow: auto; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; box-shadow: 0 14px 35px #0003; }
+.autocomplete-list li { padding: .7rem; border-radius: 8px; cursor: pointer; font-size: .85rem; }
+.autocomplete-list li:hover, .autocomplete-list li.selected { background: var(--surface-subtle); color: var(--accent); }
+.security-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.security-jump { display: flex; flex-wrap: wrap; gap: .5rem; position: sticky; top: .5rem; z-index: 25; padding: .75rem; border: 1px solid var(--line); background: var(--canvas); border-radius: 16px; }
+.security-section { scroll-margin-top: 6rem; border-left: 3px solid color-mix(in srgb, var(--accent) 45%, var(--line)); padding: clamp(1.25rem, 3vw, 2rem); }
+.privacy-choice { display: flex; gap: 1rem; align-items: center; border: 1px solid var(--line); padding: 1rem; border-radius: 12px; font-size: .875rem; }
+.privacy-choice input { accent-color: var(--accent); width: 18px; height: 18px; flex-shrink: 0; }
+.activity-order { display: flex; align-items: center; gap: .6rem; padding: .8rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.activity-number { display: grid; place-items: center; width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: var(--surface-subtle); color: var(--accent); font-weight: 700; }
+.activity-choice { display: flex; align-items: flex-start; gap: .8rem; padding: 1rem; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+.activity-choice.selected { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-color: var(--accent); }
+.activity-match { display: grid; grid-template-columns: minmax(100px, .8fr) minmax(0, 1.5fr); align-items: center; gap: 1rem; padding: 1rem; background: var(--surface-subtle); border-radius: 12px; font-size: .875rem; }
+.activity-feedback { padding: 1rem; border-left: 3px solid var(--warning); border-radius: 10px; background: var(--surface-subtle); }
+.activity-feedback.correct { border-color: var(--success); }
+.skill-market-row { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(0, 1.5fr); gap: 1rem; align-items: center; padding: .9rem 0; border-top: 1px solid var(--line); font-size: .85rem; }
+.verification-status { padding: .4rem .75rem; border: 1px solid var(--line); border-radius: 30px; font-size: .75rem; }
+.verification-status.verified { color: var(--success); background: color-mix(in srgb, var(--success) 10%, var(--surface)); }
+.job-interest-actions { display: flex; flex-wrap: wrap; gap: .5rem; flex-basis: 100%; margin-top: .6rem; }
+.job-interest-actions button { display: flex; align-items: center; gap: .4rem; padding: .5rem .7rem; border-radius: 9px; border: 1px solid var(--line); color: var(--muted); font-size: .75rem; white-space: nowrap; }
+.job-interest-actions button:hover, .job-interest-actions button.saved { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-color: var(--accent); }
+.role-admin .access-story { background: radial-gradient(ellipse at 100% 0%, #7365c255, transparent 65%), linear-gradient(145deg, #29194b, #131629); }
+@media (max-width: 640px) { .security-overview { grid-template-columns: 1fr; gap: .65rem; } .activity-match, .skill-market-row { grid-template-columns: 1fr; gap: .6rem; } .security-jump { position: static; } .activity-order { gap: .4rem; padding: .6rem; } }
+
+.process-page ol li { position: relative; padding: .75rem 1rem; margin-left: .25rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-subtle); }
+.process-page ol li::before { content: ""; position: absolute; left: -2rem; top: 1.1rem; width: 12px; height: 12px; border: 3px solid var(--surface); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--accent); }

@@ -11,6 +11,7 @@ from app.application.use_cases.account_security import resolve_session, revoke_s
 from app.application.use_cases.organizations import authorize_request
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
+from app.domain.services.access_policy import requires_mfa_setup
 from app.domain.services.corporate_identity import PROVIDERS, authority_fingerprint
 from app.infrastructure.database.models import User
 from app.infrastructure.database.session import get_db
@@ -45,7 +46,7 @@ def get_current_user(
                     raise HTTPException(status_code=401, detail="El proveedor corporativo cambió; inicia sesión de nuevo")
             elif settings.admin_sso_required:
                 raise HTTPException(status_code=401, detail="Inicia una sesión mediante el proveedor corporativo")
-        if user.role != UserRole.CANDIDATE and (not user.mfa_enabled or not session.mfa_verified):
+        if (requires_mfa_setup(user.role, settings.company_mfa_required) and not user.mfa_enabled) or (user.mfa_enabled and not session.mfa_verified):
             if not request.url.path.startswith(("/api/v1/auth/", "/api/v1/account/")):
                 raise HTTPException(status_code=403, detail="Configura la autenticación de dos factores en Seguridad para continuar")
         authorize_request(SqlAlchemyUnitOfWork(db), user, request.url.path, request.method)
@@ -175,3 +176,8 @@ def get_jsearch_job_catalog():
 
 # Backwards-compatible dependency name used by the existing Jooble routes/tests.
 get_job_catalog = get_jooble_job_catalog
+
+
+def get_resume_exporter():
+    from app.infrastructure.resume_pdf import resume_pdf
+    return resume_pdf

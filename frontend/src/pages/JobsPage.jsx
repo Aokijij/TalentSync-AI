@@ -444,7 +444,7 @@ function JobCard({ interests, job, match, confidence, applied, showMatch, return
           </span>
         ))}
       </div>
-      <div className="mt-auto flex items-center justify-between border-t border-[var(--line)] pt-4">
+      <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-[var(--line)] pt-4">
         <strong>
           {job.salary
             ? `$${job.salary.toLocaleString("es-CO")} COP`
@@ -452,7 +452,6 @@ function JobCard({ interests, job, match, confidence, applied, showMatch, return
               ? "Salario no informado"
               : "A convenir"}
         </strong>
-        {interests && <JobInterestButtons job={job} interests={interests} />}
         <Link to={`/vacantes/${job.id}`} state={{ returnTo }} className="button-primary button-sm">
           {job.source_kind === "external"
             ? "Ver oferta"
@@ -460,6 +459,7 @@ function JobCard({ interests, job, match, confidence, applied, showMatch, return
               ? "Ver postulación"
               : "Ver detalle"}
         </Link>
+        {interests && <div className="col-span-2"><JobInterestButtons job={job} interests={interests} /></div>}
       </div>
     </article>
   );

@@ -41,7 +41,7 @@ def timeline(db, user, application_id):
     history = [{"id": item.id, "at": item.created_at, "type": item.event_type, **item.details}
                for item in reversed(db.events.for_entity("application", row.id, 500))
                if item.event_type in {"application.transition", "application.deadline_released", "application.withdrawn", "application.feedback_shared"}]
-    return {"application_id": row.id, "can_manage": user.role != UserRole.CANDIDATE and (member is None or member.role != "interviewer"), "version": row.version, "status": row.status.value, "stage": row.pipeline_stage,
+    return {"job_title": row.job.title, "company_name": row.job.company.name, "job_id": row.job_id, "application_id": row.id, "can_manage": user.role != UserRole.CANDIDATE and (member is None or member.role != "interviewer"), "version": row.version, "status": row.status.value, "stage": row.pipeline_stage,
             "response_due_at": row.response_due_at, "released_at": row.released_at, "feedback": row.candidate_feedback,
             "events": history, "created_at": row.created_at, "response_days": row.job.response_days}
 

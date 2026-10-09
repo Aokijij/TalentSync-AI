@@ -21,7 +21,12 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (!["get", "head", "options"].includes(response.config.method) && !/^\/auth\//.test(response.config.url) && !response.config.__quiet) {
+      window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { message: response.data?.message || (response.config.method === "delete" ? "Acción completada. La información se ha actualizado." : "Cambios guardados correctamente.") } }));
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config ?? {};
     const status = error.response?.status;
@@ -37,11 +42,12 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    const isLogin = /\/auth\/(?:session\/)?(?:admin\/)?login$/.test(config.url ?? "");
+    const isLogin = /\/auth\/(?:session\/)?(?:(?:admin|company|candidate)\/)?login$/.test(config.url ?? "");
     if (status === 401 && !isLogin && !config.__skipSessionEvent) {
       localStorage.removeItem("talentsync_token");
       window.dispatchEvent(new CustomEvent("talentsync:session-expired"));
     }
+    if (!["get", "head", "options"].includes(method) && !config.__quiet) window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { error: true, message: getApiErrorMessage(error, "No se pudo guardar el cambio. Intenta de nuevo.") } }));
     return Promise.reject(error);
   },
 );

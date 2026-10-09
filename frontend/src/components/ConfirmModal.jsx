@@ -1,3 +1,4 @@
+import { useEffect, useRef, useId } from "react";
 import { AlertTriangle, Trash2, X } from "lucide-react";
 
 export function ConfirmModal({
@@ -11,6 +12,23 @@ export function ConfirmModal({
   onConfirm,
   onClose,
 }) {
+  const root = useRef(null), id = useId();
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement;
+    root.current?.querySelector("button")?.focus();
+    const handle = (event) => {
+      if (event.key === "Escape" && !loading) { event.preventDefault(); onClose(); }
+      if (event.key === "Tab") {
+        const buttons = [...root.current.querySelectorAll("button:not(:disabled)")];
+        const first = buttons[0], last = buttons.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener("keydown", handle);
+    return () => { document.removeEventListener("keydown", handle); previous?.focus(); };
+  }, [open, loading, onClose]);
   if (!open) return null;
   return (
     <div
@@ -22,10 +40,11 @@ export function ConfirmModal({
     >
       <section
         className="w-full max-w-md rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl"
+        ref={root}
         role="alertdialog"
         aria-modal="true"
-        aria-labelledby="confirm-title"
-        aria-describedby="confirm-description"
+        aria-labelledby={`${id}-title`}
+        aria-describedby={`${id}-description`}
       >
         <div className="flex items-start justify-between gap-4">
           <div
@@ -44,13 +63,13 @@ export function ConfirmModal({
           </button>
         </div>
         <h2
-          id="confirm-title"
+          id={`${id}-title`}
           className="mt-5 text-xl font-bold text-[var(--ink-strong)]"
         >
           {title}
         </h2>
         <p
-          id="confirm-description"
+          id={`${id}-description`}
           className="mt-2 text-sm leading-6 text-[var(--muted)]"
         >
           {description}

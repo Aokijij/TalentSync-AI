@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
+import { useFeedback } from "../contexts/FeedbackContext.jsx";
 
 export function ProfileEvidence({ onChanged }) {
+  const { confirm } = useFeedback();
   const location = useLocation();
   useEffect(() => { if (location.hash === "#evidencias") document.getElementById("evidencias")?.scrollIntoView({ block: "start" }); }, [location.hash]);
   const [rows, setRows] = useState([]);
@@ -45,7 +47,7 @@ export function ProfileEvidence({ onChanged }) {
         <h3 className="font-semibold">{row.title}</h3><p className="text-sm">{row.description}</p>
         <p className="mt-1 text-xs text-[var(--muted)]">{row.skills.join(", ")} · Evidencia declarada{row.add_to_profile ? " · Incorporada al perfil" : ""}</p>
         <div className="mt-2 flex gap-3">{row.url && <a className="text-sm text-[var(--accent)]" href={row.url} target="_blank" rel="noopener noreferrer">Abrir referencia</a>}
-          <button className="text-sm text-[var(--muted)]" disabled={busy} onClick={() => act(async () => { await api.delete(`/matching/evidence/${row.id}`); setRows(rows.filter((item) => item.id !== row.id)); setMessage("Referencia retirada; tus habilidades del perfil se conservan."); })}>Retirar</button>
+          <button className="text-sm text-[var(--muted)]" disabled={busy} onClick={async () => { if (await confirm({ title: "Retirar esta evidencia", description: "La referencia dejará de aparecer en tu perfil. Tus habilidades declaradas se conservan.", confirmLabel: "Retirar evidencia" })) act(async () => { await api.delete(`/matching/evidence/${row.id}`); setRows(rows.filter((item) => item.id !== row.id)); setMessage("Referencia retirada; tus habilidades del perfil se conservan."); }); }}>Retirar</button>
         </div>
       </article>)}
     </div>

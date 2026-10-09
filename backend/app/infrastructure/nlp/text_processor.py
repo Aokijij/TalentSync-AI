@@ -1285,12 +1285,44 @@ class TextProcessor:
             )
         return self._dedupe(experiences, "company"), self._dedupe(educations, "degree")
 
+    def _merge_resume_experiences(self, items):
+        merged = {}
+        for item in items:
+            key = (re.sub(r"[^a-z0-9]", "", self.fold_text(item["company"])), item.get("start_year"), item.get("end_year"))
+            previous = merged.get(key)
+            quality = lambda row: (row.get("role") != "Cargo no identificado", len(row.get("description", "")))
+            if previous is None or quality(item) > quality(previous):
+                merged[key] = item
+        return list(merged.values())
+
+    @staticmethod
+    def _resume_reading_order(text: str) -> str:
+        """Unweave native PDF layout columns before interpreting section boundaries."""
+        lines = text.splitlines()
+        gaps = []
+        for line in lines:
+            for match in re.finditer(r"\S( {8,})\S", line):
+                gaps.append((match.start(1), match.end(1)))
+        if len(gaps) < 5:
+            return text
+        # A genuine gutter is shared by many rows, unlike date alignment.
+        candidates = [int((left + right) / 2) for left, right in gaps]
+        boundary = max(candidates, key=lambda pos: sum(left < pos < right for left, right in gaps))
+        support = sum(left < boundary < right for left, right in gaps)
+        if support < 5:
+            return text
+        left = "\n".join(line[:boundary].strip() for line in lines)
+        right = "\n".join(line[boundary:].strip() for line in lines)
+        if not re.search(r"(?:perfil|formaci[oó]n|educaci[oó]n|habilidades|experiencia)", left, re.I) or not re.search(r"(?:perfil|formaci[oó]n|educaci[oó]n|habilidades|experiencia)", right, re.I):
+            return text
+        return left + "\n\n" + right
+
     def extract_resume_items(
         self, text: str
     ) -> tuple[list[dict], list[dict], list[dict]]:
         sources = [
             source.strip()
-            for source in re.split(r"\n\s*PYPDF FALLBACK\s*\n", text)
+            for source in re.split(r"\n\s*(?:PYPDF FALLBACK|COORDINATE EXPERIENCE LAYOUT)\s*\n", text)
             if source.strip()
         ]
         semantic_experiences: list[dict] = []
@@ -1301,6 +1333,7 @@ class TextProcessor:
         visual_experiences: list[dict] = []
         visual_educations: list[dict] = []
         for source in sources:
+            source = self._resume_reading_order(source)
             semantic_experiences.extend(self._extract_semantic_experiences(source))
             semantic_educations.extend(self._extract_semantic_educations(source))
             experiences.extend(self._extract_structured_experiences(source))
@@ -1333,10 +1366,15 @@ class TextProcessor:
                 ("jefe inmediato", "funciones")
             )
         ]
+        for item in merged_experiences:
+            description = item.get("description", "")
+            item["description"] = re.split(r"\b(?:PERFIL\s+PROFESIONAL|FORMACI[ÓO]N\s+ACAD[ÉE]MICA|EDUCACI[ÓO]N|TECNOLOG[IÍ]AS|REFERENCIAS\s+(?:PERSONALES|LABORALES))\b", description, maxsplit=1, flags=re.I)[0].strip()
+        merged_educations = [item for item in [*semantic_educations, *visual_educations, *educations]
+                             if not re.search(r"\b(?:tecnolog[ií]as|proyectos|experiencia laboral|perfil profesional)\b", item.get("degree", ""), re.I)]
         return (
-            self._dedupe(merged_experiences, "company"),
+            self._merge_resume_experiences(merged_experiences),
             self._dedupe(
-                [*semantic_educations, *visual_educations, *educations], "degree"
+                merged_educations, "degree"
             ),
             self._dedupe(certifications + self._extract_certifications(text), "name"),
         )

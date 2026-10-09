@@ -35,6 +35,18 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function retryAuth() {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/auth/options", { __skipSessionEvent: true });
+      setAccessOptions(data);
+      await loadUser();
+    } catch {
+      setAuthError("El servicio de acceso no está disponible. Intenta de nuevo.");
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
     async function initialize() {
@@ -109,7 +121,7 @@ export function AuthProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ user, loading, authError, accessOptions, login, register, logout, refreshUser, retryAuth: loadUser }),
+    () => ({ user, loading, authError, accessOptions, login, register, logout, refreshUser, retryAuth }),
     [user, loading, authError, accessOptions],
   );
 

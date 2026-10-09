@@ -1,10 +1,9 @@
-import { ArrowRight, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 
-import { BrandLogo } from "../components/brand/BrandLogo.jsx";
-import { ThemeToggle } from "../components/ThemeToggle.jsx";
+import { AuthFrame } from "../components/AuthFrame.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { MfaChallenge } from "../components/MfaChallenge.jsx";
@@ -43,33 +42,7 @@ export function AdminLoginPage() {
   }
 
   return (
-    <main className="auth-shell role-admin relative">
-      <ThemeToggle compact className="fixed right-5 top-5 z-20" />
-      <section className="auth-stage">
-        <aside className="auth-brand-panel" aria-label="Acceso administrativo">
-          <div>
-            <BrandLogo size="lg" subtitle="Administración segura" tone="inverse" />
-            <p className="mt-16 text-sm font-bold uppercase tracking-[0.16em] text-violet-200">
-              Acceso restringido
-            </p>
-            <h1 className="mt-4 max-w-md text-balance text-4xl font-bold text-white">
-              Control de la plataforma en un espacio independiente.
-            </h1>
-            <p className="mt-5 max-w-md text-base leading-7 text-violet-100">
-              Esta dirección está reservada para cuentas administradoras autorizadas.
-            </p>
-          </div>
-          <div className="auth-signal-card flex gap-3">
-            <ShieldCheck className="mt-0.5 shrink-0 text-violet-300" size={21} />
-            <div>
-              <p className="font-bold text-white">Sesión administrativa</p>
-              <p className="mt-1 text-sm text-violet-100">
-                Las cuentas de candidatos y empresas no pueden ingresar por este acceso.
-              </p>
-            </div>
-          </div>
-        </aside>
-        <div className="auth-form-panel">
+    <AuthFrame admin>
           <div className="auth-form">
             {mfaRequired ? <MfaChallenge email={credentials.email} error={error} busy={verifying} onBack={() => { setCredentials(null); setMfaRequired(false); setError(""); }} onVerify={async (code) => { setVerifying(true); await onSubmit({ ...credentials, code }); setVerifying(false); }} /> : <>
             <p className="section-kicker">Administración</p>
@@ -113,8 +86,6 @@ export function AdminLoginPage() {
             </form>}
             </>}
           </div>
-        </div>
-      </section>
-    </main>
+    </AuthFrame>
   );
 }

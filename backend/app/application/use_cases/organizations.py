@@ -207,5 +207,5 @@ def assignments(db, user):
 
 def verification_queue(db):
     return [{"id": row.id, "name": row.name, "nit": row.nit, "status": row.verification_status,
-             "submission": row.verification_submission, "feedback": row.verification_feedback}
+             "submission": row.verification_submission, "feedback": row.verification_feedback, "email_verified": row.owner.email_verified}
             for row in db.organizations.verification_queue()]

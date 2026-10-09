@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 120
     session_auth_enabled: bool = False
+    company_mfa_required: bool = True
     local_mail_enabled: bool = False
     smtp_enabled: bool = False
     smtp_host: str = ""

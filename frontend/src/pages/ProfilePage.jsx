@@ -1,3 +1,4 @@
+import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
 import { useEffect, useState } from "react";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
@@ -74,6 +75,7 @@ const normalize = (data) => ({
 
 export function ProfilePage() {
   const { refreshUser } = useAuth();
+  const { confirm } = useFeedback();
   const [profile, setProfile] = useState(null);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -132,7 +134,7 @@ export function ProfilePage() {
       setProfile(normalize(data));
       setEditing(true);
       setMessage(
-        `CV analizado: ${data.experiences?.length ?? 0} experiencias, ${data.educations?.length ?? 0} estudios y ${data.skills?.length ?? 0} habilidades. Revisa la información antes de guardar.`,
+        `CV analizado: ${data.experiences?.length ?? 0} experiencias, ${data.educations?.length ?? 0} estudios y ${data.skills?.length ?? 0} habilidades. La extracción se ha guardado. Revisa y corrige los campos detectados.`,
       );
     } catch (e) {
       setError(e.response?.data?.detail || "No fue posible procesar el PDF");
@@ -154,18 +156,23 @@ export function ProfilePage() {
       setError(requestError.response?.data?.detail || "No fue posible guardar la foto");
     }
   }
-  function exportPdf() {
-    setPreviewMode(true);
-    setEditing(false);
-    const previousTitle = document.title;
-    const safeName = String(name || "Candidato").replace(/[\\/:*?"<>|]/g, " ").trim();
-    document.title = `${safeName} - HV - TalentSync`;
-    const restoreTitle = () => {
-      document.title = previousTitle;
-      window.removeEventListener("afterprint", restoreTitle);
-    };
-    window.addEventListener("afterprint", restoreTitle);
-    window.setTimeout(() => window.print(), 180);
+  async function exportPdf() {
+    setError("");
+    try {
+      // Export the visible draft, including the selected style and palette.
+      if (editing) {
+        if (!await confirm({ title: "Guardar y exportar", description: "Se guardarán los cambios que ves, incluidos el estilo y el color, antes de generar el PDF.", confirmLabel: "Guardar y descargar" })) return;
+        const { data } = await api.put("/profiles/me", { ...profile, name });
+        setProfile(normalize(data)); setEditing(false); await refreshUser();
+      }
+      const { data } = await api.get("/profiles/me/export", { responseType: "blob" });
+      const url = URL.createObjectURL(data), anchor = document.createElement("a");
+      anchor.href = url; anchor.download = `${String(name || "Candidato").replace(/[\\/:*?"<>|]/g, " ")} - HV.pdf`;
+      document.body.append(anchor); anchor.click(); anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      setMessage("PDF generado. Revisa las descargas de tu navegador.");
+      window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { message: "PDF generado. Revisa las descargas de tu navegador." } }));
+    } catch (failure) { setError(getApiErrorMessage(failure, "No se pudo generar el PDF")); }
   }
   if (!profile)
     return (
@@ -286,7 +293,7 @@ export function ProfilePage() {
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-[var(--muted)]">{getResumePalette(profile.resume_style, profile.resume_color).label} · Guarda para conservar tu elección.</p>
+            <p className="mt-2 text-xs text-[var(--muted)]">{getResumePalette(profile.resume_style, profile.resume_color).label} · Vista actualizada · guarda para conservar tu elección.</p>
           </fieldset>
           </div>
           </div>
