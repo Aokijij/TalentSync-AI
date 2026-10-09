@@ -1078,3 +1078,54 @@ backend/scripts/seed_review.py solo admite la SQLite aislada, preserva cuentas y
 Se añaden pruebas de rechazo cruzado antes de MFA, registro manipulado, publicación y borradores en las diez áreas, propiedad del plan, conflictos de versión, evidencia idempotente y ausencia de acreditación automática. La aceptación de tres empresas usa sesiones independientes, MFA real, vacantes de distintos sectores y deniega editar vacantes ajenas. La interfaz se revisa en escritorio/móvil, temas claro/oscuro, registro, MFA, catálogo, plan y evidencia. Los informes privados contienen resultados sin contraseñas.
 
 La revisión de varias cuentas también separa los filtros de recomendaciones por usuario en el navegador. Inicio y recomendaciones comparten la lectura del porcentaje mínimo, incluido 0%, sin heredar la selección de otra cuenta.
+
+
+### Bloque 41 — Perfil, extracción y descarga de CV
+
+Bienvenida se distribuye en formulario y vista previa, con autocompletado accesible
+por teclado para cargo y ciudad y separadores de miles en COP. El extractor fusiona
+fuentes nativas y por coordenadas, recupera responsabilidades por experiencia y
+filtra secciones contaminadas. GET /profiles/me/export descarga un PDF privado,
+paginado y generado localmente con pypdf, conservando acentos, texto y paleta.
+La vista previa permite seleccionar diseño y color antes de guardar. No incluye
+fotografía en la descarga ni pretende reproducir exactamente el HTML.
+
+### Bloque 42 — Acceso, seguridad y administración
+
+COMPANY_MFA_REQUIRED conserva true por defecto. Solo .local/backend.env usa false
+para la revisión solicitada; tests y ensayo PostgreSQL fuerzan true y verifican
+además el modo opcional. Administración sigue requiriendo MFA. Un autenticador
+empresarial ya activado nunca se omite. Para restaurar la obligatoriedad local,
+cambiar la variable a true y reiniciar el backend; recargar la aplicación.
+
+Seguridad tiene indicadores, anclas y secciones por rol. El acceso administrativo
+comparte la composición de marca con contenido propio. Verificación muestra
+correo/solicitud, filtros y decisiones confirmadas. Oferta/demanda elimina el
+recorte a cuarenta habilidades y pagina la presentación, con búsqueda y orden.
+El catálogo educativo integra filtros y tarjetas. Un proveedor de feedback global
+muestra resultados temporales al pie de la ventana y ofrece confirmaciones con
+foco, Escape y retorno al control. El historial muestra cargo/empresa, no IDs.
+
+### Bloque 43 — Laboratorios y planes acotados
+
+Hasta tres planes activos por usuario, protegido en servidor con bloqueo del
+propietario. El abandono usa versión y permisos; conserva evidencias y pruebas.
+Los planes históricos que superan el límite se conservan y no aceptan más altas
+hasta liberar espacio. Los laboratorios nuevos usan casos específicos en diez
+áreas y seis proyectos de tecnología; orden, cálculo y relaciones se evalúan
+contra respuestas del servidor. Borradores con versión, explicaciones por paso y
+publicación asistida sin agregar habilidades automáticamente. Los trabajos de
+texto antiguos publicados mantienen su editor.
+
+Diez bancos nuevos mezclan cinco actividades de distintos formatos. Se validan
+tipos, finitud y permutaciones antes de consumir el intento. Los errores ofrecen
+explicaciones y recursos por habilidad, incluso al aprobar con 80%. Mis resultados
+permite volver a leerlos. Salir conserva respuestas en sessionStorage y no detiene
+el tiempo; el intento sigue recuperable durante su vigencia. SQL restringido
+continúa disponible como práctica especializada.
+
+
+SQL mantiene tablas sintéticas, lectura exclusiva, funciones permitidas y límites
+de resultados/VM. El presupuesto distingue 0,2 segundos de CPU del hilo y un
+máximo de un segundo de reloj; una pausa del planificador no consume CPU. Una
+regresión comprueba tanto las consultas válidas bajo pausa como el corte de reloj.

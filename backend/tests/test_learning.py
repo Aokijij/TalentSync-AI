@@ -16,7 +16,7 @@ def test_each_assessment_has_public_questions_and_scoped_credential(client, asse
     assert any(row["id"] == assessment_id for row in catalog["assessments"])
     attempt = client.post(f"/api/v1/learning/assessments/{assessment_id}/start", headers=headers).json()
     assert len(attempt["questions"]) == 5
-    assert all(set(question) == {"id", "prompt", "choices"} for question in attempt["questions"])
+    assert all({"id", "prompt", "choices"} <= set(question) <= {"id", "prompt", "choices", "type", "terms"} for question in attempt["questions"])
     answers = {question["id"]: question["answer"] for question in bank["questions"]}
     result = client.post(f"/api/v1/learning/attempts/{attempt['id']}/submit", headers=headers, json={"answers": answers})
     assert result.status_code == 200 and result.json()["passed"] and result.json()["score"] == 100

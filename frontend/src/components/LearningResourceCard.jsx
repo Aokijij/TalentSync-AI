@@ -6,7 +6,7 @@ export function LearningResourceCard({ resource, busy, onPlan, inPlan = false })
   return <article className="learning-resource">
     <div className="flex items-center justify-between gap-3"><span className="learning-area-icon"><AreaIcon area={resource.category} /></span><span className="learning-tag">{resource.url ? "Formación externa" : "Práctica guiada"}</span></div>
     <h3 className="text-lg font-bold">{resource.title}</h3>
-    <p className="text-sm text-[var(--muted)]">{resource.journey?.outcome || resource.instructions}</p>
+    <p className="text-sm text-[var(--muted)]">{resource.journey?.activities ? `Laboratorio inicial: ${resource.journey.lab_title}. Ordena, calcula y relaciona conceptos con correcciones.` : resource.journey?.outcome || resource.instructions}</p>
     <div className="flex flex-wrap gap-2 text-xs">{(resource.targeted_skills || resource.skills).map((skill) => <span className="learning-skill" key={skill}>{skill}</span>)}</div>
     <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]"><span className="inline-flex items-center gap-1"><Clock3 size={14} />{resource.hours} h estimadas</span><span>{resource.cost === "paid" ? "De pago" : resource.cost === "unknown" ? "Coste por confirmar" : "Gratuito"}</span><span>{resource.provider}</span></div>
     {resource.url && <details className="text-xs text-[var(--muted)]"><summary className="cursor-pointer">Temario y condiciones del recurso</summary><p className="mt-2">{resource.instructions}</p></details>}

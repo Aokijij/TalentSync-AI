@@ -1,7 +1,7 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field, StrictInt
+from pydantic import BaseModel, Field, StrictFloat, StrictInt, StrictStr
 
 from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
 from app.api.schemas.learning import ResourceContent, ResourceImport, ResourceUpdate
@@ -18,13 +18,17 @@ class PlanUpdate(BaseModel):
     status: Literal["in_progress", "completed"] = "in_progress"
 
 
+Answer = StrictInt | StrictFloat | Annotated[StrictStr, Field(max_length=100)] | Annotated[list[StrictInt], Field(max_length=10)]
+
+
 class Submission(BaseModel):
-    answers: dict[str, StrictInt] = Field(max_length=30)
+    answers: dict[str, Answer] = Field(max_length=30)
 
 
 class JourneyUpdate(BaseModel):
     version: StrictInt = Field(ge=1)
-    answers: dict[str, Annotated[str, Field(max_length=550)]] = Field(max_length=3)
+    answers: dict[str, Annotated[str, Field(max_length=550)]] = Field(default_factory=dict, max_length=3)
+    activity_answers: dict[str, Answer] | None = Field(default=None, max_length=3)
     finish: bool = False
     add_to_profile: bool = False
 
@@ -92,3 +96,8 @@ def passport(user=Depends(candidate), db=Depends(get_unit_of_work)):
 @router.get("/learning/patterns")
 def patterns(user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.patterns(db, user)
+
+
+@router.delete("/learning/plans/{resource_id}")
+def leave_plan(resource_id: str, version: int, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.leave_plan(db, user, resource_id, version)

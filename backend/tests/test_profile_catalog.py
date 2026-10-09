@@ -28,7 +28,7 @@ def test_empty_profile_gets_general_practice_not_software_assumptions(client):
     _, headers = register(client, "empty-catalog", profession="", skills=[])
     data = client.get("/api/v1/learning/catalog", headers=headers).json()
     assert data["recommended_areas"] == ["general"]
-    assert {row["id"] for row in data["assessments"]} == {"general-foundations-v1"}
+    assert {row["id"] for row in data["assessments"]} == {"general-foundations-v1", "general-simulation-v1"}
 
 
 def test_transferable_communication_does_not_route_sales_profile_to_design(client):

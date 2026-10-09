@@ -33,6 +33,19 @@ def test_sql_work_and_result_budgets_interrupt_expensive_queries():
     assert sandbox.run("SELECT '" + "x" * 4001 + "'", DATASETS[0])["ok"] is False
 
 
+def test_scheduler_pause_does_not_reject_small_query_but_wall_deadline_is_kept(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.infrastructure import sql_sandbox
+
+    wall = iter([0, 0.3])
+    monkeypatch.setattr(sql_sandbox, "time", SimpleNamespace(monotonic=lambda: next(wall, 0.3), thread_time=lambda: 0))
+    assert SQLSandbox().run(COUNTS, DATASETS[0])["ok"] is True
+    wall = iter([0, 2])
+    monkeypatch.setattr(sql_sandbox, "time", SimpleNamespace(monotonic=lambda: next(wall, 2), thread_time=lambda: 0))
+    assert SQLSandbox().run(COUNTS, DATASETS[0])["ok"] is False
+
+
 @pytest.mark.parametrize("challenge,query", [("sql-paid-totals-v1", TOTALS), ("sql-paid-counts-v1", COUNTS),
                                            ("sql-paid-average-v1", AVERAGE), ("sql-latest-order-v1", LATEST)])
 def test_real_queries_are_evaluated_once_and_enter_existing_passport(client, challenge, query):

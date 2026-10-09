@@ -21,7 +21,7 @@ def test_curated_courses_target_gaps_preserve_plans_and_never_grant_credit(clien
     response = client.post(endpoint, headers=admin, json=content())
     assert response.status_code == 201, response.text
     course = next(row for row in response.json() if row["provider"] == "Catálogo revisado")
-    assert course["skills"] == ["python"] and course["assessment_ids"] == ["python-foundations-v1"]
+    assert course["skills"] == ["python"] and set(course["assessment_ids"]) == {"python-foundations-v1", "technology-simulation-v1"}
     recommendations = client.get(f"/api/v1/learning/jobs/{job['id']}", headers=candidate).json()["resources"]
     assert course["id"] in {row["id"] for row in recommendations}
     client.put(f"/api/v1/learning/plans/{course['id']}", headers=candidate, json={"status": "completed"}).raise_for_status()

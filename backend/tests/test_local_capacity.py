@@ -79,7 +79,8 @@ def test_concurrent_candidates_keep_sessions_and_writes_isolated(tmp_path, monke
                 profile = call("GET", "/api/v1/profiles/me").json()
                 assert profile["profession"] == "Python developer"
                 call("GET", "/api/v1/jobs")
-                assert len(call("GET", "/api/v1/learning/catalog").json()["assessments"]) == 7
+                assessment_ids = {row["id"] for row in call("GET", "/api/v1/learning/catalog").json()["assessments"]}
+                assert len(assessment_ids) == 9 and {"technology-simulation-v1", "general-simulation-v1"} <= assessment_ids
                 call("GET", f"/api/v1/matching/jobs/{job_id}")
                 call("GET", "/api/v1/admin/stats", 403)
                 call("GET", "/api/v1/dev/mailbox", 404)

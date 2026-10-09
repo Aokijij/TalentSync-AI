@@ -9,9 +9,23 @@ from app.application.use_cases.jobs import get_job
 from app.application.use_cases.learning_resources import resources as catalog_resources
 from app.application.use_cases.matching import candidate_match
 from app.domain.services.career_learning import AREAS, profile_areas
+from app.domain.services.learning_activities import (
+    InvalidActivity,
+    activities_for,
+    activity_key,
+    evaluate,
+    public_activity,
+)
 from app.domain.services.learning_catalog import ASSESSMENTS
 from app.domain.services.match_explanations import requirements_for
 from app.domain.services.skills import normalize_skills, skill_gap, skill_set
+
+
+def _evaluate(item, value):
+    try:
+        return evaluate(item, value)
+    except InvalidActivity as failure:
+        raise UseCaseError(status_code=422, detail=str(failure)) from None
 
 
 class ProjectedProfile:
@@ -30,11 +44,11 @@ def catalog(db, user, area="recommended"):
     selected = {*recommended, "general"} if area == "recommended" else set(AREAS) if area == "all" else {area}
     available = catalog_resources(db)
     return {"resources": [row for row in available if row.get("category", "general") in selected],
-            "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "level": "fundamentals", "category": row["category"], "context": row.get("context", "Resuelve cinco decisiones sobre esta habilidad y revisa la explicación al entregar.")}
+            "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "level": "fundamentals", "category": row["category"], "formats": sorted({q.get("type", "choice") for q in row["questions"]}), "context": row.get("context", "Resuelve cinco decisiones sobre esta habilidad y revisa la explicación al entregar.")}
                             for key, row in ASSESSMENTS.items() if row["category"] in selected],
             "areas": [{"id": key, "label": row["label"]} for key, row in AREAS.items()],
             "recommended_areas": recommended, "selected_area": area,
-            "external_catalogs_enabled": False, "notice": "Sugerencias por profesión, sector y habilidades. Puedes explorar otra área. Las prácticas locales no son certificaciones profesionales; los cursos externos requieren revisión y validación independientes."}
+            "plan_limit": 3, "external_catalogs_enabled": False, "notice": "Sugerencias por profesión, sector y habilidades. Puedes explorar otra área. Las prácticas locales no son certificaciones profesionales; los cursos externos requieren revisión y validación independientes."}
 
 
 def opportunities(db, user, job_id, nlp):
@@ -66,7 +80,10 @@ def plans(db, user, resource_id=None, status=None):
     if resource_id is not None:
         if resource_id not in resources:
             raise UseCaseError(status_code=404, detail="Recurso no encontrado")
+        db.learning.lock_owner(user.id)
         row = db.learning.plan(user.id, resource_id)
+        if status == "in_progress" and (row is None or row.status == "completed") and sum(item.status != "completed" for item in db.learning.plans(user.id)) >= 3:
+            raise UseCaseError(status_code=409, detail="Tu plan admite tres recursos activos. Finaliza o abandona uno antes de añadir otro.")
         if row is None and not resources[resource_id]["active"]:
             raise UseCaseError(status_code=404, detail="El recurso ya no está disponible para planes nuevos")
         if row is None:
@@ -81,16 +98,51 @@ def plans(db, user, resource_id=None, status=None):
              "version": row.version, "progress": {**(row.progress or {}), "published": bool((row.progress or {}).get("published")) and any(item.get("id") == (row.progress or {}).get("evidence_id") for item in user.profile.evidence or [])}} for row in db.learning.plans(user.id)]
 
 
+def leave_plan(db, user, resource_id, version):
+    row = db.learning.plan(user.id, resource_id)
+    if row is None:
+        raise UseCaseError(status_code=404, detail="El recurso no está en tu plan")
+    if not db.learning.claim_progress(row.id, user.id, version):
+        raise UseCaseError(status_code=409, detail="El plan cambió; actualiza antes de abandonarlo")
+    db.delete(row)
+    record_event(db, "learning.plan_left", "profile", user.profile.id, actor_user_id=user.id, details={"status": "left"})
+    db.commit()
+    return plans(db, user)
+
+
 def save_journey(db, user, resource_id, payload):
     resource = next((row for row in catalog_resources(db, include_inactive=True) if row["id"] == resource_id), None)
     row = db.learning.plan(user.id, resource_id)
     if resource is None or row is None:
         raise UseCaseError(status_code=404, detail="Añade primero esta práctica a tu plan")
+    if row.status == "completed" and not payload.get("finish"):
+        db.learning.lock_owner(user.id)
+        if sum(item.status != "completed" for item in db.learning.plans(user.id)) >= 3:
+            raise UseCaseError(status_code=409, detail="Finaliza o abandona un recurso antes de reabrir esta práctica")
     steps = resource["journey"]["steps"]
     answers = {key: value.strip() for key, value in payload["answers"].items()}
     if set(answers) - {step["id"] for step in steps}:
         raise UseCaseError(status_code=422, detail="La práctica contiene un paso desconocido")
+    activity_answers = payload.get("activity_answers")
+    activity_feedback = []
+    if activity_answers is not None:
+        activities = activities_for(activity_key(resource))
+        if set(activity_answers) - {item["id"] for item in activities}:
+            raise UseCaseError(status_code=422, detail="Actividad desconocida")
+        for index, item in enumerate(activities):
+            if item["id"] not in activity_answers:
+                continue
+            correct = _evaluate(item, activity_answers[item["id"]])
+            activity_feedback.append({"question_id": item["id"], "correct": correct, "message": item["feedback"]})
+            value = activity_answers[item["id"]]
+            if item["type"] in {"order", "matching"}:
+                detail = " → ".join(item["choices"][key] for key in value)
+            else:
+                detail = str(value)
+            answers[steps[index]["id"]] = f"{item['prompt']} Mi respuesta: {detail}."[:550]
     finish = payload.get("finish", False)
+    if finish and activity_answers is not None and (len(activity_feedback) != 3 or not all(item["correct"] for item in activity_feedback)):
+        raise UseCaseError(status_code=422, detail="Revisa las tres actividades con la retroalimentación antes de publicar")
     if finish and any(len(answers.get(step["id"], "")) < 40 for step in steps):
         raise UseCaseError(status_code=422, detail="Desarrolla cada paso con al menos 40 caracteres antes de publicar")
     evidence_id = uuid5(NAMESPACE_URL, f"talentsync:learning-evidence:{user.id}:{resource_id}").hex
@@ -104,13 +156,13 @@ def save_journey(db, user, resource_id, payload):
         raise UseCaseError(status_code=409, detail="El plan cambió en otra pestaña. Actualiza para conservar el avance más reciente")
     now = datetime.utcnow()
     previous = row.progress or {}
-    row.progress = {"answers": answers, "published": finish or bool(previous.get("published")),
+    row.progress = {"activity_answers": activity_answers if activity_answers is not None else previous.get("activity_answers"), "activity_feedback": activity_feedback, "answers": answers, "published": finish or bool(previous.get("published")),
                     "has_unpublished_changes": not finish and (bool(previous.get("has_unpublished_changes")) or answers != previous.get("answers", {})),
                     "evidence_id": evidence_id if finish else previous.get("evidence_id")}
     row.status = "completed" if finish else "in_progress"
     row.completed_at = now if finish else None
     if finish:
-        user.profile.evidence = [*existing, {"id": evidence_id, "title": resource["journey"]["title"], "kind": "project", "url": None,
+        user.profile.evidence = [*existing, {"id": evidence_id, "title": resource["journey"]["lab_title"] if activity_answers is not None else resource["journey"]["title"], "kind": "project", "url": None,
             "skills": resource["skills"], "description": "\n\n".join(f"{step['title']}: {answers[step['id']]}" for step in steps),
             "verified": False, "add_to_profile": bool(payload.get("add_to_profile")), "source": "learning_practice", "created_at": now.isoformat()}]
         if payload.get("add_to_profile"):
@@ -127,7 +179,7 @@ def public_attempt(row):
               "expires_at": row.expires_at, "status": row.status, "score": row.score, "passed": row.passed, "feedback": row.feedback,
               "valid_until": row.valid_until, "level": "fundamentals"}
     if row.status == "active":
-        result["questions"] = [{"id": item["id"], "prompt": item["prompt"], "choices": item["choices"]} for item in row.snapshot]
+        result["questions"] = [public_activity(item) for item in row.snapshot]
     return result
 
 
@@ -164,20 +216,21 @@ def submit_assessment(db, user, attempt_id, answers):
     expected = {question["id"] for question in row.snapshot}
     if set(answers) != expected:
         raise UseCaseError(status_code=422, detail="Responde exactamente las preguntas del intento")
-    if any(type(answers[item["id"]]) is not int or not 0 <= answers[item["id"]] < len(item["choices"]) for item in row.snapshot):
-        raise UseCaseError(status_code=422, detail="Selecciona una opción válida para cada pregunta")
+    grades = {item["id"]: _evaluate(item, answers[item["id"]]) for item in row.snapshot}
     if not db.learning.claim_submission(row.id, user.id, now):
         raise UseCaseError(status_code=409, detail="El intento ya se entregó o venció")
-    correct = sum(answers[item["id"]] == item["answer"] for item in row.snapshot)
+    correct = sum(grades.values())
     row.score = round(correct / len(row.snapshot) * 100, 2)
     row.passed = row.score >= 80
-    row.feedback = [{"question_id": item["id"], "correct": answers[item["id"]] == item["answer"], "message": item["feedback"]} for item in row.snapshot]
+    row.feedback = [{"question_id": item["id"], "correct": grades[item["id"]], "prompt": item["prompt"], "submitted": answers[item["id"]], "message": item["feedback"]} for item in row.snapshot]
     row.valid_until = now + timedelta(days=180) if row.passed else None
     if row.passed:
         grant_fundamentals(db, user, row, now)
     record_event(db, "assessment.completed", "profile", user.profile.id, actor_user_id=user.id, details={"assessment_id": row.assessment_id, "result": "passed" if row.passed else "not_passed", "version": row.version})
     db.commit()
-    return public_attempt(row)
+    result = public_attempt(row)
+    result["improvement_resources"] = [resource for resource in catalog_resources(db) if skill_set([row.skill]) & skill_set(resource["skills"])][:4] if correct < len(row.snapshot) else []
+    return result
 
 
 def grant_fundamentals(db, user, row, now):
@@ -192,8 +245,11 @@ def grant_fundamentals(db, user, row, now):
 
 def passport(db, user):
     now = datetime.utcnow()
+    resources = catalog_resources(db)
     return {"practice_evidence": [{"id": item["id"], "title": item["title"], "skills": item["skills"]} for item in user.profile.evidence or [] if item.get("source") == "learning_practice"],
-            "assessments": [{**public_attempt(row), "valid": bool(row.passed and row.valid_until and row.valid_until >= now)} for row in db.learning.attempts(user.id) if row.status == "completed"],
+            "assessments": [{**public_attempt(row), "valid": bool(row.passed and row.valid_until and row.valid_until >= now),
+                             "improvement_resources": [resource for resource in resources if skill_set([row.skill]) & skill_set(resource["skills"])][:4] if any(not item["correct"] for item in row.feedback) else []}
+                            for row in db.learning.attempts(user.id) if row.status == "completed"],
             "notice": "Las micropruebas acreditan únicamente fundamentos evaluados por TalentSync; no equivalen a certificaciones profesionales ni experiencia laboral."}
 
 

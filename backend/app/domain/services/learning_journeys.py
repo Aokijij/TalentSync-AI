@@ -27,7 +27,15 @@ def journey_for(resource):
     title, scenario, outcome, prompts = RESOURCE_BRIEFS.get(resource.get("id")) or BRIEFS.get(resource.get("category", "general"), BRIEFS["general"])
     if resource.get("url"):
         scenario = f"Revisa el temario de «{resource['title']}» y trabaja un caso de tu área: {scenario}"
-    return {"title": title, "scenario": scenario, "outcome": outcome,
+    from app.domain.services.learning_activities import (
+        CASES,
+        activities_for,
+        activity_key,
+        public_activity,
+    )
+    area = activity_key(resource)
+    lab = CASES.get(area, CASES["general"])
+    return {"activities": [public_activity(item) for item in activities_for(area)], "lab_title": lab[0], "lab_scenario": lab[1], "title": title, "scenario": scenario, "outcome": outcome,
             "steps": [{"id": key, "title": label, "prompt": prompt} for key, label, prompt in zip(
                 ["understand", "apply", "demonstrate"], ["Comprende el caso", "Toma decisiones", "Muestra tu resultado"], prompts, strict=True)],
             "criteria": ["Responde al problema planteado", "Justifica decisiones con hechos del caso", "Presenta un resultado que otra persona pueda revisar"],

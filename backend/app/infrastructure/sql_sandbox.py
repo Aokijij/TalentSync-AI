@@ -32,11 +32,13 @@ class SQLSandbox:
                 if action == sqlite3.SQLITE_FUNCTION and (second or "").casefold() in FUNCTIONS:
                     return sqlite3.SQLITE_OK
                 return sqlite3.SQLITE_DENY
-            deadline, ticks = time.monotonic() + 0.2, 0
+            # Bound CPU work separately so a scheduler pause does not reject a
+            # tiny valid query. A wall deadline and VM budget remain enforced.
+            deadline, cpu_deadline, ticks = time.monotonic() + 1, time.thread_time() + 0.2, 0
             def progress():
                 nonlocal ticks
                 ticks += 1
-                return ticks >= 1000 or time.monotonic() >= deadline
+                return ticks >= 1000 or time.thread_time() >= cpu_deadline or time.monotonic() >= deadline
             connection.set_authorizer(authorize)
             connection.set_progress_handler(progress, 100)
             try:

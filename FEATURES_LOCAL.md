@@ -120,13 +120,13 @@ entre diez áreas profesionales, con competencias transversales para perfiles
 sin un área especializada. El borrador se guarda en servidor y detecta conflictos
 entre pestañas. Publicar crea una muestra de trabajo declarada en las evidencias
 del perfil; incorporar sus habilidades al matching requiere una elección explícita.
-Las quince evaluaciones independientes siguen acreditando solo sus fundamentos.
+Las evaluaciones independientes siguen acreditando solo sus fundamentos; incluyen diez laboratorios con formatos mixtos.
 Los planes antiguos se conservan y no reciben acreditaciones retroactivas.
 
 La preparación adicional crea cuatro candidatos de distintos sectores, tres
 organizaciones ficticias, seis vacantes y un administrador, sin reemplazar
 cuentas existentes. Las claves quedan únicamente en `.local/review-accounts.json`.
-Empresa y administración configuran su MFA con QR en el primer ingreso.
+Administración configura su MFA con QR en el primer ingreso. En la revisión local actual, el alta de MFA para empresas es opcional; los autenticadores ya activados siguen protegiendo sus cuentas.
 
 Se retiraron análisis de ZIP/repositorios, salas de entrevista, videollamada,
 pizarra y creación de escenarios de trabajo. Los datos históricos permanecen;
@@ -152,3 +152,31 @@ repite la validación y guarda un informe sin secretos en `.local/verification/`
 La evidencia visual se conserva dentro de esa carpeta. El cierre local y lo
 necesario para conectar servicios reales están
 en [LOCAL_HANDOFF.md](LOCAL_HANDOFF.md).
+
+
+## Revisión de usabilidad de octubre
+
+Bienvenida incluye sugerencias de cargo y municipio y formato automático de COP.
+El extractor del CV separa columnas y fuentes del PDF, recupera responsabilidades
+y evita confundir perfil, tecnologías y proyectos con educación. La corrección
+se aplica al volver a cargar el documento; no sobrescribe perfiles ya editados.
+Editar, elegir estilo/color y descargar PDF se han revisado con cuentas ficticias.
+La descarga genera un documento paginado con el texto del perfil y su paleta;
+no es una captura idéntica de la vista previa ni incorpora la fotografía.
+
+Seguridad organiza correo, autenticador y dispositivos por secciones. El historial
+usa el cargo y la empresa, sin mostrar el ID global como número de proceso.
+Guardar/ocultar vacantes tiene controles propios; las acciones muestran avisos
+flotantes temporales y las decisiones relevantes piden confirmación.
+
+Aprendizaje incluye filtros por origen, coste y formato, hasta tres recursos
+activos por usuario y salida del plan con confirmación. Abandonar conserva las
+evidencias publicadas y los resultados de evaluaciones. Los nuevos laboratorios
+combinan secuencias, cálculos y relaciones, con explicación y corrección antes de
+publicar una práctica asistida. Los retos evaluados añaden selección múltiple;
+el resultado y los recursos de refuerzo se pueden revisar desde Mis resultados.
+Los trabajos de texto publicados antes de este cambio siguen disponibles.
+
+Administración tiene acceso renovado, verificación con filtros y requisitos
+visibles, catálogo integrado y un mapa de habilidades con búsqueda, orden y
+paginación. La muestra de oferta/demanda sigue siendo de la plataforma local.

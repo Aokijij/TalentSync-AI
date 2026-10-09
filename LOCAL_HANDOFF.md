@@ -113,9 +113,17 @@ son Comercio Aurora, Ruta Clara y Bienestar Horizonte, todas ficticias. Cada una
 tiene dos vacantes de prueba y hay un administrador adicional.
 
 Los candidatos entran en `/login`, las empresas en `/empresa/login` y el
-administrador en `/acceso-administracion`. Empresa/admin configuran MFA en su
-primer ingreso desde Seguridad, escaneando el QR. No se entrega un código TOTP
+administrador en `/acceso-administracion`. Administración configura MFA en su
+primer ingreso desde Seguridad, escaneando el QR. Para esta revisión local el alta
+de MFA empresarial es opcional; los autenticadores existentes siguen activos. No se entrega un código TOTP
 fijo porque cambia con el tiempo. Guarda los códigos de recuperación al activar
 el autenticador. Los accesos sociales continúan desactivados sin proveedor real.
 
 Para preparar o comprobar estas fixtures sin duplicarlas: `backend/.venv/Scripts/python.exe scripts/local.py seed-review`. Este comando no restablece contraseñas ni reinicia avances.
+
+
+La revisión de usabilidad añade laboratorios guiados, límite de tres planes activos,
+confirmaciones y avisos flotantes. Las capturas privadas usan el prefijo usability.
+El CV debe volver a cargarse para aplicar el extractor corregido. Si una extensión
+del navegador superpone su panel sobre el lado derecho, debe cerrarse ese panel;
+la aplicación no altera la extensión ni intenta cubrirla con otro z-index.

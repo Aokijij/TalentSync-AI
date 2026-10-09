@@ -18,6 +18,10 @@ class LearningRepository:
     def new_resource(self, **values):
         return LearningResource(**values)
 
+    def lock_owner(self, user_id):
+        from app.infrastructure.database.models import User
+        self.session.query(User).filter_by(id=user_id).update({User.id: User.id}, synchronize_session=False)
+
     def plans(self, user_id):
         return self.session.query(LearningPlan).filter_by(user_id=user_id).order_by(LearningPlan.id.desc()).all()
 

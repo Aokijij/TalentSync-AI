@@ -88,3 +88,8 @@ LOCAL_RESOURCES.extend([
      "provider": "Microsoft Learn", "kind": "course", "sponsored": False, "url": "https://learn.microsoft.com/es-es/training/paths/data-analytics-microsoft/",
      "instructions": "Ruta de cuatro módulos sobre análisis de datos y Power BI. Tiempo de estudio orientativo. La formación es independiente de los exámenes de certificación y puede requerir herramientas del proveedor para la práctica."},
 ])
+
+from app.domain.services.career_learning import EXERCISES
+from app.domain.services.learning_activities import mixed_banks
+
+ASSESSMENTS.update(mixed_banks(EXERCISES))
