@@ -1,3 +1,5 @@
+import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
+import { SearchPreferences } from "../components/SearchPreferences.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { readRecommendationSettings, saveRecommendationSetting } from "../utils/recommendationSettings.js";
 import { RecommendationControls } from "../components/RecommendationControls.jsx";
@@ -31,6 +33,7 @@ export function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState([]);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [preferences, setPreferences] = useState(null);
   const interests = useJobInterests(true, () => load(false));
   const [query, setQuery] = useState("");
   const [respectPreferences, setRespectPreferences] = useState(true);
@@ -53,14 +56,17 @@ export function RecommendationsPage() {
         recommendationsResponse,
         applicationsResponse,
         jobsResponse,
+        preferencesResponse,
       ] = await Promise.all([
         api.get("/recommendations/me/jobs", { params: { include_all: true } }),
         api.get("/applications/me"),
         api.get("/jobs"),
+        api.get("/matching/preferences"),
       ]);
       setRecommendations(recommendationsResponse.data);
       setApplications(applicationsResponse.data);
       setJobs(jobsResponse.data);
+      setPreferences(preferencesResponse.data);
     } catch (err) {
       setError("No fue posible cargar las recomendaciones");
       console.error("Failed to load recommendations:", err);
@@ -320,7 +326,8 @@ export function RecommendationsPage() {
                         semanticMatch={item.professional_context_percentage ?? item.semantic_match_percentage}
                         languageMatch={item.language_match_percentage}
                       />
-                      <div className="skill-evidence-panel"><h3 className="font-bold">Tus habilidades frente al cargo</h3><div className="mt-3 flex flex-wrap gap-2">{item.match_details?.requirements?.slice(0, 6).map((row) => <span key={row.key} className={`skill-evidence-chip ${row.covered ? "covered" : ""}`}>{row.covered ? "✓" : "+"} {row.skill}<small>{row.covered ? "Declarada" : "Por reforzar"}{row.evidence?.length ? ` · ${row.evidence.length} evidencias` : ""}</small></span>)}</div><details className="mt-4 text-xs text-[var(--muted)]"><summary className="cursor-pointer">Ver respaldo y requisitos completos</summary>{item.match_details?.requirements?.map((row) => <div className="mt-3" key={row.key}><strong>{row.skill}</strong>{row.evidence?.length ? row.evidence.map((evidence, index) => <p key={index}>{evidence.title} · Evidencia aportada</p>) : <p>Sin evidencia registrada para esta habilidad.</p>}</div>)}</details><Link className="mt-4 inline-block text-xs text-[var(--accent)]" to="/perfil#evidencias">Gestionar mis evidencias →</Link></div>
+                      <div className="skill-evidence-panel"><SkillRadarChart requirements={item.match_details?.requirements || []} matchPercentage={item.match_percentage} /><details className="mt-4 text-xs text-[var(--muted)]"><summary className="cursor-pointer">Ver respaldo y requisitos completos</summary>{item.match_details?.requirements?.map((row) => <div className="mt-3" key={row.key}><strong>{row.skill}</strong>{row.evidence?.length ? row.evidence.map((evidence, index) => <p key={index}>{evidence.title} · Evidencia aportada</p>) : <p>Sin evidencia registrada para esta habilidad.</p>}</div>)}</details><Link className="mt-4 inline-block text-xs text-[var(--accent)]" to="/perfil#evidencias">Gestionar mis evidencias →</Link></div>
+                      <SearchPreferences data={preferences} alignment={item.match_details?.preferences} onSaved={() => load(false)} />
                       <div className="lg:col-span-2"><VacancyLearningPanel jobId={item.job_id} /></div>
                     </div>
                   ) : null}

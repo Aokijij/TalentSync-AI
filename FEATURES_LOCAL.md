@@ -197,9 +197,10 @@ hacia la muestra mínima. El catálogo explica qué se puede añadir y guía la
 creación en tres pasos: identificación, utilidad y revisión antes de publicar.
 La importación JSON queda como opción avanzada al final.
 
-Explorar vacantes reúne Todas, Guardadas y Ocultas en una barra; Personalización
-se abre solo al solicitarla. Mi desarrollo separa Retos de Cursos y prácticas.
-Recomendaciones resume sus motivos, muestra habilidades en fichas pequeñas y
+Explorar vacantes reúne Todas, Guardadas y Ocultas en una barra y un interruptor
+para personalizar con decisiones explícitas. Mi desarrollo separa Retos de Cursos
+y prácticas mediante una navegación con iconos. Recomendaciones recupera el mapa
+de habilidades y muestra
 hasta dos recursos de formación antes de desplegar más. Las preferencias se
 ajustan desde Mi perfil. Las consultas y el cálculo automático de compatibilidad
 ya no producen avisos de cambios guardados; los avisos se limpian al navegar.
@@ -208,3 +209,32 @@ La carga adicional de demostración incorpora seis empresas, veinticuatro
 vacantes y dieciocho candidatos con trayectoria, formación, idiomas y habilidades
 por sector, además de treinta y seis postulaciones. Son datos ficticios para
 revisión; las contraseñas y los perfiles previamente editados se conservan.
+
+## Mapa, condiciones del perfil y listas de empresas
+
+El mapa de compatibilidad compara requisitos con las habilidades declaradas del
+perfil usando la cobertura que calcula el servidor. No inventa niveles de dominio.
+Con menos de tres requisitos se muestran coincidencias y pendientes; las vacantes
+con más de seis se dividen en grupos navegables sin ocultar habilidades.
+
+La aspiración salarial, modalidad y ciudad del perfil son la fuente única de
+condiciones laborales. En el detalle de compatibilidad se puede marcar cada una
+como imprescindible, ver si la vacante cumple y volver al perfil para editar sus
+valores. Estas condiciones filtran las sugerencias cuando se activa el filtro;
+no cambian el índice de habilidades. Los cambios de perfil invalidan la caché.
+El endpoint antiguo conserva compatibilidad escribiendo sus valores en el perfil,
+y el cliente actual envía únicamente las marcas de imprescindible.
+
+Las vacantes antiguas sin etapas configuradas usan el mismo proceso predeterminado
+al mostrar y guardar movimientos. Las etapas personalizadas siguen validándose
+por vacante. El tablero impide aplicar una carga atrasada de otra vacante, envía
+la versión de la postulación y conserva solo los cambios fallidos al guardar un
+lote parcialmente. Las tarjetas separan Gestionar proceso, Historial y Ver perfil.
+La revisión de calidad usa el mismo campo monetario con separadores de miles que
+la creación de ofertas.
+
+Verificación muestra cinco organizaciones por página. El ecosistema usa un
+directorio compacto de seis empresas por página con búsqueda, filtros y detalle
+desplegable individual. La búsqueda se aplica a la lista completa recibida, antes
+de paginar; cambiar filtros vuelve a la primera página. La paginación es visual
+en el cliente y no modifica los contratos de listado de la API.

@@ -459,7 +459,9 @@ class Application(Base):
                 "psychometric_test": "interview",
                 "accepted": "hired",
             }.get(value, value)
-        for stage in self.job.pipeline_stages or []:
+        from app.domain.services.pipeline import stages_for
+
+        for stage in stages_for(self.job):
             if stage.get("id") == stage_id:
                 return stage.get("title")
         return stage_id.replace("_", " ").capitalize()

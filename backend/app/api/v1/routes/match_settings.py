@@ -23,7 +23,7 @@ def preferences(user=Depends(candidate), db=Depends(get_unit_of_work)):
 
 @router.put("/matching/preferences")
 def save_preferences(payload: CandidatePreferences, user=Depends(candidate), db=Depends(get_unit_of_work)):
-    return cases.preferences(db, user, payload.model_dump())
+    return cases.preferences(db, user, payload.model_dump(exclude_unset=True))
 
 
 @router.get("/matching/evidence")

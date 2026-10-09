@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from app.api.schemas.language import LanguageLevel, unique_languages
 from app.api.schemas.matching import SkillRequirement, unique_requirements
 from app.domain.entities.job_sectors import JOB_SECTORS
+from app.domain.services.pipeline import default_stages
 
 
 class PipelineStage(BaseModel):
@@ -58,13 +59,7 @@ class PipelineStagesMixin(BaseModel):
 
 
 def default_pipeline_stages() -> list[PipelineStage]:
-    return [
-        PipelineStage(id="submitted", title="Recibidas"),
-        PipelineStage(id="reviewing", title="En revisión"),
-        PipelineStage(id="interview", title="Entrevista"),
-        PipelineStage(id="hired", title="Contratados"),
-        PipelineStage(id="rejected", title="No seleccionados"),
-    ]
+    return [PipelineStage(**stage) for stage in default_stages()]
 
 
 class JobCreate(PipelineStagesMixin):

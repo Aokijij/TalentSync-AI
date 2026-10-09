@@ -1,4 +1,4 @@
-import { JobInterestButtons, InterestsSettings } from "../components/JobInterests.jsx";
+import { JobInterestButtons, InterestsToggle } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
 import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
 import { useEffect, useMemo, useState } from "react";
@@ -59,7 +59,6 @@ export function JobsPage() {
   const { user } = useAuth();
   const interests = useJobInterests(user?.role === "candidate");
   const [interestMode, setInterestMode] = useState(() => ["saved", "hidden"].includes(new URLSearchParams(window.location.search).get("interes")) ? new URLSearchParams(window.location.search).get("interes") : "all");
-  const [showInterests, setShowInterests] = useState(false);
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
@@ -288,7 +287,7 @@ export function JobsPage() {
         ) : activeFilterCount ? <button type="button" className="mt-4 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setShowFilters(true)}>{activeFilterCount} filtro{activeFilterCount === 1 ? " activo" : "s activos"} · Ver o cambiar</button> : null}
       </section>
 
-      {user?.role === "candidate" && <><div className="discovery-navigation"><nav className="workspace-tabs" aria-label="Colecciones de vacantes">{[["all", "Todas"], ["saved", "Guardadas"], ["hidden", "Ocultas"]].map(([key, label]) => <button key={key} aria-pressed={interestMode === key} onClick={() => { setInterestMode(key); setPage(1); }}>{label}</button>)}</nav><button className="text-sm text-[var(--muted)]" aria-expanded={showInterests} onClick={() => setShowInterests(!showInterests)}>Personalización</button></div>{showInterests && <InterestsSettings embedded interests={interests} jobs={jobs} />}{!interests.enabled && interestMode !== "all" && <p className="text-sm text-[var(--muted)]">Activa el uso de tus decisiones desde Personalización para guardar y recuperar vacantes.</p>}</>}
+      {user?.role === "candidate" && <><div className="discovery-navigation"><nav className="workspace-tabs" aria-label="Colecciones de vacantes">{[["all", "Todas"], ["saved", "Guardadas"], ["hidden", "Ocultas"]].map(([key, label]) => <button key={key} aria-pressed={interestMode === key} onClick={() => { setInterestMode(key); setPage(1); }}>{label}</button>)}</nav><InterestsToggle interests={interests} /></div>{!interests.enabled && interestMode !== "all" && <p className="text-sm text-[var(--muted)]">Activa el uso de tus decisiones con el interruptor para guardar y recuperar vacantes.</p>}</>}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleJobs.map((job) => (

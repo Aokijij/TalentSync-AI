@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -44,15 +44,16 @@ const defaultStages = [
 
 function columnsFor(job) {
   const stages =
-    job?.pipeline_stages?.length >= 2 ? job.pipeline_stages : defaultStages;
+    job?.pipeline_stages?.length > 0 ? job.pipeline_stages : defaultStages;
   return stages.map((stage, index) => ({
     ...stage,
     accent: stageAccents[index % stageAccents.length],
   }));
 }
 
-function applicationStage(item) {
+function applicationStage(item, columns = []) {
   const stage = item.pipeline_stage || item.status;
+  if (columns.some((column) => column.id === stage)) return stage;
   return (
     {
       seen: "submitted",
@@ -81,6 +82,9 @@ export function CompanyApplicationsPage() {
   const [showReopen, setShowReopen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const loadId = useRef(0);
+  const activeJob = useRef(jobId);
+  activeJob.current = jobId;
 
   useEffect(() => {
     api
@@ -111,6 +115,7 @@ export function CompanyApplicationsPage() {
 
   async function loadApplications() {
     if (!jobId) return;
+    const requestId = ++loadId.current;
     try {
       const [applicationsResponse, candidatesResponse] = await Promise.all([
         api.get(`/applications/jobs/${jobId}`),
@@ -118,6 +123,7 @@ export function CompanyApplicationsPage() {
           .get(`/recommendations/jobs/${jobId}/candidates`)
           .catch(() => ({ data: [] })),
       ]);
+      if (requestId !== loadId.current || activeJob.current !== jobId) return;
       const hasUnseen = applicationsResponse.data.some(
         (item) => item.status === "submitted",
       );
@@ -129,19 +135,9 @@ export function CompanyApplicationsPage() {
         );
         if (focusedApplication) setSelected(focusedApplication);
       }
-      if (hasUnseen)
-        api
-          .put(`/applications/jobs/${jobId}/mark-seen`)
-          .then(() =>
-            setApplications((current) =>
-              current.map((item) =>
-                item.status === "submitted"
-                  ? { ...item, status: "seen" }
-                  : item,
-              ),
-            ),
-          )
-          .catch(() => {});
+      if (hasUnseen) api.put(`/applications/jobs/${jobId}/mark-seen`, null, { __quiet: true }).then(() => {
+        if (requestId === loadId.current && activeJob.current === jobId) setApplications((current) => current.map((item) => item.status === "submitted" ? { ...item, status: "seen" } : item));
+      }).catch(() => {});
       setScores(
         {
           ...Object.fromEntries(
@@ -158,6 +154,7 @@ export function CompanyApplicationsPage() {
         },
       );
     } catch (requestError) {
+      if (requestId !== loadId.current || activeJob.current !== jobId) return;
       setError(
         getApiErrorMessage(
           requestError,
@@ -172,6 +169,10 @@ export function CompanyApplicationsPage() {
   }, [jobId]);
 
   function selectJob(job) {
+    if (saving) return;
+    loadId.current += 1;
+    activeJob.current = String(job.id);
+    setApplications([]); setScores({}); setSelected(null); setError("");
     setJobId(String(job.id));
     setSearchParams({ job: String(job.id) });
     setShowJobPicker(false);
@@ -180,6 +181,8 @@ export function CompanyApplicationsPage() {
   }
 
   function queueUpdate(applicationId, changes) {
+    const original = applications.find((item) => item.id === applicationId && String(item.job_id) === jobId);
+    if (!original || saving) return false;
     setApplications((current) =>
       current.map((item) =>
         item.id === applicationId ? { ...item, ...changes } : item,
@@ -187,7 +190,7 @@ export function CompanyApplicationsPage() {
     );
     setPendingChanges((current) => ({
       ...current,
-      [applicationId]: { ...(current[applicationId] || {}), ...changes },
+      [applicationId]: { expected_version: original.version, ...(current[applicationId] || {}), ...changes },
     }));
     setMessage("");
     return true;
@@ -199,12 +202,18 @@ export function CompanyApplicationsPage() {
     setSaving(true);
     setError("");
     try {
-      await Promise.all(
-        entries.map(([applicationId, changes]) =>
-          api.put(`/applications/${applicationId}/status`, changes),
-        ),
-      );
-      setPendingChanges({});
+      const results = await Promise.allSettled(entries.map(([applicationId, changes]) => api.put(`/applications/${applicationId}/status`, changes)));
+      const failed = entries.filter((_, index) => results[index].status === "rejected");
+      setPendingChanges(Object.fromEntries(failed));
+      setApplications((current) => current.map((item) => {
+        const index = entries.findIndex(([id]) => Number(id) === item.id);
+        return index >= 0 && results[index].status === "fulfilled" ? results[index].value.data : item;
+      }));
+      if (failed.length) {
+        const failure = results.find((result) => result.status === "rejected").reason;
+        setError(`${entries.length - failed.length} de ${entries.length} cambios guardados. ${getApiErrorMessage(failure, "Revisa los cambios pendientes e intenta de nuevo.")}`);
+        return;
+      }
       await loadApplications();
       setMessage(
         `${entries.length} cambio${entries.length === 1 ? "" : "s"} guardado${entries.length === 1 ? "" : "s"}. Las notificaciones ya fueron enviadas.`,
@@ -285,7 +294,7 @@ export function CompanyApplicationsPage() {
       Object.fromEntries(
         columns.map((column) => [
           column.id,
-          applications.filter((item) => applicationStage(item) === column.id),
+          applications.filter((item) => applicationStage(item, columns) === column.id),
         ]),
       ),
     [applications, columns],
@@ -294,7 +303,7 @@ export function CompanyApplicationsPage() {
   function drop(columnId) {
     if (draggedId == null) return;
     const application = applications.find((item) => item.id === draggedId);
-    if (application && applicationStage(application) !== columnId)
+    if (application && applicationStage(application, columns) !== columnId)
       queueUpdate(draggedId, { pipeline_stage: columnId });
     setDraggedId(null);
     setOverColumn(null);
@@ -308,9 +317,9 @@ export function CompanyApplicationsPage() {
         description="Organiza cada vacante por etapas y revisa fácilmente el avance de cada persona."
       />
       {error ? (
-        <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-[var(--error)]">
-          {error}
-        </p>
+        <div role="alert" className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-[var(--error)]">
+          <p>{error}</p><button className="button-secondary button-sm mt-3" onClick={() => window.location.reload()}>Actualizar tablero y descartar pendientes</button>
+        </div>
       ) : null}
       {message ? (
         <p className="rounded-[var(--radius-lg)] border border-[var(--success)] bg-[var(--success)]/10 px-4 py-3 text-[var(--success)]">
@@ -505,7 +514,7 @@ export function CompanyApplicationsPage() {
 }
 
 function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
-  const selectedStage = applicationStage(item);
+  const selectedStage = applicationStage(item, columns);
   return (
     <article
       draggable
@@ -521,7 +530,7 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
           className="mt-0.5 shrink-0 text-[var(--muted)]"
         />
         <div className="min-w-0 flex-1">
-          <button type="button" className="truncate text-left font-bold text-[var(--ink-strong)] hover:text-[var(--accent)] hover:underline" onClick={onOpen}>
+          <button type="button" className="block w-full truncate text-left font-bold text-[var(--ink-strong)] hover:text-[var(--accent)] hover:underline" onClick={onOpen}>
             {item.candidate_name || `Candidato #${item.user_id}`}
           </button>
           <p className="mt-1 text-xs text-[var(--muted)]">
@@ -547,24 +556,9 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
           </div>
         </div>
       ) : null}
-      <div className="mt-4 flex items-center gap-2">
-        <Link className="button-ghost button-sm" to={`/procesos/${item.id}`}>Historial y feedback</Link>
-        <button
-          type="button"
-          className="button-secondary button-sm flex-1"
-          onClick={onOpen}
-        >
-          <Edit3 size={14} />
-          Editar proceso
-        </button>
-        <Link
-          hidden={item.identity_hidden}
-          className="button-ghost button-sm !px-2"
-          to={`/empresa/candidatos/${item.user_id}?job=${item.job_id}`}
-          aria-label="Ver perfil"
-        >
-          <UserRound size={16} />
-        </Link>
+      <div className="candidate-card-actions">
+        <button type="button" className="button-secondary button-sm w-full" onClick={onOpen}><Edit3 size={14} />Gestionar proceso</button>
+        <div><Link to={`/procesos/${item.id}`}>Historial</Link><Link to={`/empresa/candidatos/${item.user_id}?job=${item.job_id}`}><UserRound size={14} />{item.identity_hidden ? "Perfil anónimo" : "Ver perfil"}</Link></div>
       </div>
       <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">
         Mover a

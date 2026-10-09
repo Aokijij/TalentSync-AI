@@ -1,5 +1,5 @@
 import { CheckCircle2, CircleDashed, Info } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 function normalize(value) {
   return String(value ?? "")
@@ -9,47 +9,37 @@ function normalize(value) {
 }
 
 function candidateScore(skill, candidateSkills) {
-  const target = normalize(skill);
-  if (candidateSkills.some((item) => normalize(item) === target)) return 100;
-  if (
-    candidateSkills.some(
-      (item) =>
-        normalize(item).includes(target) || target.includes(normalize(item)),
-    )
-  )
-    return 72;
-  return 18;
+  return candidateSkills.some((item) => normalize(item) === normalize(skill)) ? 100 : 0;
 }
 
 function labelLines(value) {
-  const words = String(value).split(/\s+/);
+  const words = String(value).split(/\s+/).flatMap((word) => word.match(/.{1,14}/g) || []);
   const lines = [];
   for (const word of words) {
     const last = lines.at(-1);
-    if (last && `${last} ${word}`.length <= 17) lines[lines.length - 1] = `${last} ${word}`;
+    if (last && `${last} ${word}`.length <= 14) lines[lines.length - 1] = `${last} ${word}`;
     else lines.push(word);
   }
   return lines.slice(0, 3);
 }
 
 export function SkillRadarChart({
+  requirements,
   candidateSkills = [],
   requiredSkills = [],
   matchPercentage,
   title = "Mapa de compatibilidad",
 }) {
-  const axes = useMemo(() => {
-    const unique = [...new Set(requiredSkills.filter(Boolean))].slice(0, 6);
-    return unique.map((skill) => ({
-      label: skill,
-      candidate: candidateScore(skill, candidateSkills),
-      required: 100,
-    }));
-  }, [candidateSkills, requiredSkills]);
+  const [page, setPage] = useState(1);
+  const allAxes = useMemo(() => requirements ? requirements.map((row) => ({ label: row.skill, candidate: row.covered ? 100 : 0, required: 100 })) : [...new Set(requiredSkills.filter(Boolean))].map((skill) => ({ label: skill, candidate: candidateScore(skill, candidateSkills), required: 100 })), [requirements, candidateSkills, requiredSkills]);
+  const pages = Math.max(1, Math.ceil(allAxes.length / 6));
+  const safePage = Math.min(page, pages);
+  // Balanced groups avoid a one-axis final page for seven requirements.
+  const axes = allAxes.slice(Math.floor((safePage - 1) * allAxes.length / pages), Math.floor(safePage * allAxes.length / pages));
 
   if (axes.length < 3) {
-    const matched = axes.filter((item) => item.candidate >= 72);
-    const missing = axes.filter((item) => item.candidate < 72);
+    const matched = axes.filter((item) => item.candidate > 0);
+    const missing = axes.filter((item) => item.candidate === 0);
     return (
       <section className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-5">
         <div className="flex items-start gap-3">
@@ -58,12 +48,10 @@ export function SkillRadarChart({
           </span>
           <div>
             <h3 className="font-bold text-[var(--ink-strong)]">
-              Comparación simplificada
+              Mapa de habilidades
             </h3>
             <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-              Esta vacante solo especifica {axes.length === 1 ? "una habilidad" : `${axes.length} habilidades`}.
-              No hay suficientes datos para dibujar un radar confiable, así que te
-              mostramos directamente qué cumples y qué puedes fortalecer.
+              Requisitos declarados frente a las habilidades de tu perfil.
             </p>
           </div>
         </div>
@@ -115,7 +103,7 @@ export function SkillRadarChart({
         <div>
           <h3 className="font-bold text-[var(--ink-strong)]">{title}</h3>
           <p className="mt-1 text-xs text-[var(--muted)]">
-            Tu dominio frente al nivel solicitado
+            Habilidades declaradas frente a los requisitos
           </p>
         </div>
         {matchPercentage != null ? (
@@ -125,8 +113,8 @@ export function SkillRadarChart({
         ) : null}
       </div>
       <svg
-        className="mx-auto mt-2 block h-auto w-full max-w-[360px]"
-        viewBox="0 0 340 320"
+        className="mx-auto mt-2 block h-auto w-full max-w-[400px]"
+        viewBox="-40 0 420 320"
         role="img"
       >
         <title>{title}</title>
@@ -166,12 +154,12 @@ export function SkillRadarChart({
                 }
                 dominantBaseline="middle"
                 fill="var(--muted)"
-                fontSize="9"
+                fontSize="12"
                 fontWeight="600"
               >
                 <title>{item.label}</title>
                 {lines.map((line, lineIndex) => (
-                  <tspan key={line} x={labelX} dy={lineIndex ? 11 : -(lines.length - 1) * 5.5}>
+                  <tspan key={line} x={labelX} dy={lineIndex ? 13 : -(lines.length - 1) * 6.5}>
                     {line}
                   </tspan>
                 ))}
@@ -210,13 +198,15 @@ export function SkillRadarChart({
       <figcaption className="flex flex-wrap justify-center gap-4 text-xs font-semibold text-[var(--muted)]">
         <span className="flex items-center gap-2">
           <i className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
-          Tu perfil
+          En tu perfil
         </span>
         <span className="flex items-center gap-2">
           <i className="h-2.5 w-2.5 rounded-full bg-[var(--warning)]" />
           Vacante
         </span>
       </figcaption>
+      <p className="mt-3 text-center text-xs text-[var(--muted)]">Presencia de habilidades; no mide tu nivel de dominio.</p>
+      {pages > 1 && <nav className="mt-3 flex items-center justify-center gap-3 text-xs" aria-label="Grupos del mapa de habilidades"><button className="button-ghost button-sm" disabled={safePage === 1} onClick={() => setPage(safePage - 1)}>Anterior</button><span>Grupo {safePage} de {pages} · {allAxes.length} habilidades</span><button className="button-ghost button-sm" disabled={safePage === pages} onClick={() => setPage(safePage + 1)}>Siguiente</button></nav>}
     </figure>
   );
 }

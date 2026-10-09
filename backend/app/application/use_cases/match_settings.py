@@ -6,15 +6,29 @@ from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import get_job
 from app.application.use_cases.matching import upsert_recommendation
 from app.domain.services.skills import normalize_skills
+from app.domain.services.work_preferences import effective_preferences
 
 
 def preferences(db, user, payload=None):
     if payload is not None:
-        user.profile.preferences = payload
+        # Keep older API clients working by writing their values to the profile.
+        # Current clients send only the three requirement flags.
+        if "minimum_salary" in payload:
+            user.profile.desired_salary = payload["minimum_salary"]
+        if "modalities" in payload:
+            user.profile.preferred_modality = next(iter(payload["modalities"]), None)
+        if "locations" in payload:
+            user.profile.location = next(iter(payload["locations"]), None)
+        user.profile.preferences = {
+            **{key: bool((user.profile.preferences or {}).get(key, False)) for key in (
+                "salary_required", "modality_required", "location_required"
+            )},
+            **{key: value for key, value in payload.items() if key.endswith("_required")},
+        }
         user.profile.updated_at = datetime.utcnow()
         record_event(db, "profile.preferences_changed", "profile", user.profile.id, actor_user_id=user.id)
         db.commit()
-    return user.profile.preferences or {}
+    return effective_preferences(user.profile)
 
 
 def evidence(db, user, payload=None, *, analysis=None):

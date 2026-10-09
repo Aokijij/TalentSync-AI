@@ -2,6 +2,7 @@ import hashlib
 import json
 
 from app.domain.services.skills import skill_gap
+from app.domain.services.work_preferences import effective_preferences
 
 MATCH_VERSION = "transparent-match-v4"
 
@@ -17,7 +18,7 @@ def weighted_coverage(profile, job):
 
 
 def input_version(profile, job, text_method="lexical-hashing-v1"):
-    payload = [MATCH_VERSION, text_method, profile.skills, profile.embedding, getattr(profile, "preferences", {}),
+    payload = [MATCH_VERSION, text_method, profile.skills, profile.embedding, effective_preferences(profile),
                profile.profession, profile.experience, profile.education, getattr(profile, "experiences", []),
                getattr(profile, "educations", []), getattr(profile, "certifications", []), getattr(profile, "languages", []),
                getattr(profile, "evidence", []), job.skills, job.embedding, job.title, job.description, job.requirements,
@@ -27,7 +28,7 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
 
 
 def preference_alignment(profile, job):
-    prefs = getattr(profile, "preferences", None) or {}
+    prefs = effective_preferences(profile)
     checks = []
     if prefs.get("minimum_salary") is not None:
         checks.append({"label": "Salario mínimo", "matches": None if job.salary is None else job.salary >= prefs["minimum_salary"], "required": prefs.get("salary_required", False)})

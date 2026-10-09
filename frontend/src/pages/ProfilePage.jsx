@@ -1,5 +1,4 @@
 import { useLocation } from "react-router-dom";
-import { SearchPreferences } from "../components/SearchPreferences.jsx";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
 import { useEffect, useState } from "react";
@@ -485,7 +484,7 @@ export function ProfilePage() {
                 </div>
               )}
             </Section>
-            <Section icon={BriefcaseBusiness} title="Preferencias laborales">
+            <div id="preferencias" className="scroll-mt-44"><Section icon={BriefcaseBusiness} title="Preferencias laborales">
               {editing ? (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm font-semibold text-[var(--muted)]">
@@ -581,12 +580,11 @@ export function ProfilePage() {
                   </p>
                 </div>
               )}
-            </Section>
+            </Section></div>
             </aside>
       </div>
         </article>
       )}
-      <div id="preferencias" className="scroll-mt-44"><SearchPreferences open={location.hash === "#preferencias" ? true : undefined} /></div>
       {!editing && <ProfileEvidence onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} />}
     </div>
   );

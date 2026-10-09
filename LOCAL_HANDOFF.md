@@ -149,3 +149,22 @@ En candidato, Guardadas y Ocultas están en Explorar vacantes; las preferencias
 están en Mi perfil y Mi desarrollo separa retos de cursos. Los avisos de guardado
 se muestran únicamente tras escrituras reales y se limpian al cambiar de vista.
 Las capturas privadas de esta revisión usan el prefijo design en .local/verification.
+
+## Revisión de mapa, preferencias y escalado visual
+
+Se recuperó el radar de habilidades en Recomendaciones. Las condiciones provienen
+de los campos existentes de Mi perfil; las marcas de imprescindible se gestionan
+en Compatibilidad y formación. El formulario duplicado fue retirado.
+Explorar vacantes conserva un solo interruptor de personalización y las colecciones
+Todas, Guardadas y Ocultas. Mi desarrollo usa una barra de navegación con iconos.
+
+El error de etapas provenía de vacantes antiguas sin pipeline_stages: el cliente
+mostraba etapas predeterminadas y el servidor rechazaba guardarlas. El dominio
+ahora aplica el mismo proceso estándar al validar y titular esas etapas, sin
+modificar procesos personalizados ni datos originales. La regresión prueba el
+movimiento, el acceso a identidad después de entrevista y la protección de versión.
+
+Verificación está paginada de cinco en cinco; el directorio del ecosistema, de seis
+en seis, muestra métricas completas al abrir una empresa. La búsqueda abarca todos
+los resultados recibidos. Las capturas y el escenario ficticio de comprobación
+usan el prefijo refinement en .local/verification. No se cambiaron contraseñas.

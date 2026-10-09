@@ -2,6 +2,33 @@
 from test_api_flows import client, company_account, register  # noqa: F401
 
 
+def test_legacy_pipeline_uses_default_stages_but_custom_pipeline_stays_scoped(client):
+    from app.infrastructure.database.models import Job
+
+    _, company = company_account(client, "legacy-pipeline")
+    job = client.post("/api/v1/jobs", headers=company, json={"title": "Analista", "description": "Revisa datos de inventarios", "requirements": "Excel e inventarios", "sector": "Logistica y transporte"}).json()
+    _, candidate = register(client, "legacy-pipeline-candidate")
+    application = client.post("/api/v1/applications", headers=candidate, json={"job_id": job["id"]}).json()
+    with client.session_factory() as db:
+        db.get(Job, job["id"]).pipeline_stages = None
+        db.commit()
+    endpoint = f"/api/v1/applications/{application['id']}/status"
+    response = client.put(endpoint, headers=company, json={"pipeline_stage": "interview", "expected_version": application["version"]})
+    assert response.status_code == 200, response.text
+    assert response.json()["pipeline_stage_title"] == "Entrevista"
+    assert response.json()["identity_hidden"] is False
+    assert response.json()["version"] > application["version"]
+    assert client.put(endpoint, headers=company, json={"pipeline_stage": "reviewing", "expected_version": application["version"]}).status_code == 409
+    assert client.get(f"/api/v1/applications/jobs/{job['id']}", headers=company).json()[0]["pipeline_stage"] == "interview"
+    custom = [{"id": "initial", "title": "Inicial"}, {"id": "assessment", "title": "Evaluación"}]
+    custom_job = client.post("/api/v1/jobs", headers=company, json={"title": "Analista especializado", "description": "Revisa datos de inventarios", "requirements": "Excel e inventarios", "sector": "Logistica y transporte", "pipeline_stages": custom}).json()
+    custom_application = client.post("/api/v1/applications", headers=candidate, json={"job_id": custom_job["id"]}).json()
+    endpoint = f"/api/v1/applications/{custom_application['id']}/status"
+    assert client.put(endpoint, headers=company, json={"pipeline_stage": "interview"}).status_code == 422
+    assert client.put(endpoint, headers=company, json={"pipeline_stage": "assessment"}).status_code == 200
+
+
+
 def test_blind_hiring_hides_identity_and_text_until_interview(client):
     _, company = company_account(client)
     job = client.post("/api/v1/jobs", headers=company, json={"title": "Desarrollador Python", "description": "Desarrolla APIs con Python y SQL", "requirements": "Conocimiento de Python y SQL", "sector": "Tecnologia y software", "application_questions": [{"id": "intro", "prompt": "Cuéntanos un proyecto", "type": "open"}]}).json()

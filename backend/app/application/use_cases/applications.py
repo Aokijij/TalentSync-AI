@@ -8,6 +8,7 @@ from app.application.use_cases.workflow import transition
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Application, User
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.pipeline import stages_for
 
 
 def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
@@ -213,7 +214,7 @@ def update_status(
     requested_stage = changes.pop("pipeline_stage", None)
     if requested_stage is not None:
         configured = {
-            stage["id"]: stage for stage in application.job.pipeline_stages or []
+            stage["id"]: stage for stage in stages_for(application.job)
         }
         if requested_stage not in configured:
             raise UseCaseError(
@@ -242,7 +243,7 @@ def update_status(
         application.resolution_reason = None
         if any(
             stage.get("id") == "hired"
-            for stage in application.job.pipeline_stages or []
+            for stage in stages_for(application.job)
         ):
             application.pipeline_stage = "hired"
         selected_company = application.job.company.name
