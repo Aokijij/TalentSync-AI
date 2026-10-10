@@ -67,7 +67,10 @@ def test_resend_fixed_origin_plain_text_and_stable_private_idempotency():
     assert all(str(row.url) == "https://api.resend.com/emails" for row in requests)
     assert requests[0].headers["Idempotency-Key"] == requests[1].headers["Idempotency-Key"]
     assert requests[0].headers["Idempotency-Key"] != requests[2].headers["Idempotency-Key"]
-    assert json.loads(requests[0].content) == {"from": "access@example.com", "to": ["recipient@example.com"], "subject": "Acceso", "text": "PRIVATE-LINK"}
+    payload = json.loads(requests[0].content)
+    assert payload["from"] == "TalentSync <access@example.com>" and payload["to"] == ["recipient@example.com"]
+    assert payload["subject"] == "Acceso" and payload["text"] == "PRIVATE-LINK"
+    assert "<html lang=\"es\">" in payload["html"] and "PRIVATE-LINK" in payload["html"]
     assert requests[0].headers["Authorization"] == "Bearer PRIVATE-KEY"
     gateway.settings.resend_enabled = False
     with pytest.raises(MailDeliveryError): send(gateway)

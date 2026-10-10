@@ -220,3 +220,11 @@ Azure. Para otros destinatarios falta un dominio/remitente propio verificado.
 Activación, límites y estado real en
 [docs/INTEGRACIONES_PRIMERA_ETAPA.md](docs/INTEGRACIONES_PRIMERA_ETAPA.md).
 Plantilla sin secretos: `backend/integrations.env.example`.
+
+Correo: Resend y SMTP usan una plantilla HTML compartida con alternativa de
+texto. Botones solo para enlaces de cuenta/invitación del `PUBLIC_APP_URL`
+configurado; contenido escapado y preencabezado sin tokens. Vistas previas sin
+credenciales ni envío: `scripts/resend_test.py --preview`. Se conservó el estado
+del único correo real aceptado; el nuevo diseño no se reenvió. Pasaron 65 pruebas
+de correo/integraciones y lint de los archivos modificados. Propuesta de dominio
+pendiente de disponibilidad/compra: `talentsyncempleo.com`; no se configuró DNS.

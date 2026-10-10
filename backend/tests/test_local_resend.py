@@ -78,3 +78,12 @@ def test_changed_destination_and_concurrent_run_blocked(config, tmp_path):
     state.with_suffix(".lock").touch()
     with pytest.raises(ValueError):
         smoke.run_test(config, state, transport=transport)
+
+
+def test_preview_requires_no_credentials_and_does_not_send(tmp_path, monkeypatch):
+    monkeypatch.setattr(smoke, "load_config", lambda *args: pytest.fail("Preview must not read credentials"))
+    monkeypatch.setattr(smoke.ResendDelivery, "send", lambda *args, **kwargs: pytest.fail("Preview must not send"))
+    for path in smoke.write_previews(tmp_path):
+        html = path.read_text(encoding="utf-8")
+        assert "<html lang=\"es\">" in html and "Talent<span" in html
+        assert "re_PRIVATE" not in html

@@ -1,4 +1,5 @@
 """One authorized Resend smoke test. Never imports the database or drains mail."""
+import argparse
 import json
 import secrets
 import sys
@@ -12,15 +13,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from app.application.ports.services import MailDeliveryError
+from app.infrastructure.security.email_template import render_email
 from app.infrastructure.security.resend import ResendDelivery
 
 SUBJECT = "TalentSync — prueba de conexión de correo"
 BODY = (
     "Hola, José.\n\n"
-    "Esta es la prueba de conexión de TalentSync con Resend que solicitaste.\n"
-    "El envío de prueba está limitado a esta dirección. Las cuentas ficticias "
-    "de la demostración siguen utilizando la bandeja local.\n\n"
-    "No necesitas realizar ninguna acción ni compartir contraseñas.\n\nTalentSync"
+    "La conexión de correo de TalentSync está lista.\n\n"
+    "Ya podemos probar el envío de mensajes a esta dirección. Este correo "
+    "confirma la conexión con nuestro servicio de envío.\n\n"
+    "No necesitas realizar ninguna acción.\n\nEl equipo de TalentSync"
 )
 
 
@@ -94,7 +96,26 @@ def run_test(config_path, state_path, *, transport=None, now=None):
         lock.unlink(missing_ok=True)
 
 
+def write_previews(directory):
+    directory.mkdir(parents=True, exist_ok=True)
+    test = directory / "email-preview.html"
+    test.write_text(render_email(SUBJECT, BODY), encoding="utf-8")
+    confirmation = directory / "email-confirmation-preview.html"
+    confirmation.write_text(render_email("Confirma tu correo", "Hola, Ana.\n\nConfirma tu correo para continuar en TalentSync: "
+        "https://example.invalid/cuenta/confirmar?purpose=verify&token=demostracion\n\n"
+        "Este enlace vence en 30 minutos y solo puede usarse una vez. Si no lo solicitaste, ignora este mensaje.",
+        public_app_url="https://example.invalid"), encoding="utf-8")
+    return test, confirmation
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Prueba aislada de correo TalentSync")
+    parser.add_argument("--preview", action="store_true", help="Crear vistas previas HTML sin leer claves ni enviar correo")
+    args = parser.parse_args()
+    if args.preview:
+        for path in write_previews(ROOT / ".local/verification"):
+            print(path)
+        return
     try:
         result = run_test(ROOT / ".local/resend.env", ROOT / ".local/verification/resend-test.json")
     except MailDeliveryError as error:

@@ -136,9 +136,46 @@ de gasto en la cuenta del proveedor. Mantener el plan gratuito y sus límites al
 activarlo. La idempotencia del proveedor dura 24 horas; una recuperación manual
 fuera de ese plazo requiere revisar el estado antes de reenviar.
 
-Validación adicional: 59 pruebas de correo e integraciones aprobadas, incluidas
-ocho para la prueba aislada (destinatario único, configuración inválida,
-reintentos, caducidad, concurrencia y prevención de duplicados).
+### Diseño de los mensajes y dominio propuesto
+
+Resend y SMTP comparten una plantilla HTML con cabecera TalentSync, acento cian,
+tipografía legible, contenido de hasta 600 px y adaptación móvil. Se conserva el
+texto original como alternativa para clientes que no muestran HTML. No carga
+imágenes externas, fuentes, scripts ni píxeles de seguimiento.
+
+Los enlaces de confirmación, recuperación e invitación tienen botón y enlace
+alternativo. Solo se convierten en botones las rutas conocidas del origen
+configurado en `PUBLIC_APP_URL`. El contenido y los atributos se escapan. El
+preencabezado no incluye enlaces ni tokens del cuerpo. Resend muestra el nombre
+del remitente como **TalentSync**, manteniendo su dirección configurada.
+
+Crear vistas previas sin leer claves ni enviar mensajes:
+
+```powershell
+& backend/.venv/Scripts/python.exe -X utf8 scripts/resend_test.py --preview
+```
+
+Archivos: `.local/verification/email-preview.html` y
+`.local/verification/email-confirmation-preview.html`. El segundo usa un enlace
+de demostración `example.invalid`, sin tokens reales. El mensaje aceptado antes
+de este cambio no se reenvió ni se eliminó su estado de idempotencia. La
+apariencia en cada cliente de correo deberá comprobarse con un nuevo envío
+autorizado; las pruebas automáticas validan la estructura y el transporte.
+
+Actualmente el dominio de prueba es **resend.dev**. Propuesta para una futura
+compra: **talentsyncempleo.com**, con el subdominio **correo.talentsyncempleo.com**
+y remitente **TalentSync <notificaciones@correo.talentsyncempleo.com>**. Es una
+propuesta pendiente de comprobar disponibilidad y registro, no un dominio
+comprado ni configurado. No se cambió la dirección del remitente real. Después
+de adquirir el dominio, verificar el subdominio en Resend con los registros DNS
+que muestre su panel; no inventar valores DKIM/SPF ni modificar registros MX de
+una bandeja existente sin revisar el propósito.
+
+Validación adicional actualizada: 65 pruebas de correo e integraciones aprobadas,
+incluidas nueve para la prueba aislada y cinco para la plantilla. Cubren
+destinatario único, configuración inválida, reintentos, caducidad, concurrencia,
+prevención de duplicados, vistas previas sin envío, escape de HTML, enlaces del
+origen autorizado y versiones HTML/texto.
 
 ## Validación y siguientes conexiones
 

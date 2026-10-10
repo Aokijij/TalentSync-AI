@@ -166,6 +166,9 @@ def test_smtp_encrypts_and_validates_certificate_before_authentication(smtp, mod
     assert context.check_hostname and context.verify_mode == ssl.CERT_REQUIRED
     assert messages[0]["Message-ID"] == messages[1]["Message-ID"]
     assert "PRIVATE" not in str(messages[0])
+    assert messages[0].is_multipart()
+    assert messages[0].get_body(preferencelist=("plain",)).get_content().strip() == "Synthetic"
+    assert "Talent<span" in messages[0].get_body(preferencelist=("html",)).get_content()
 
 
 @pytest.mark.parametrize("error,retryable,kind", [

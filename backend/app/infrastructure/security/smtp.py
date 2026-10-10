@@ -5,6 +5,7 @@ from email.message import EmailMessage
 from email.utils import formatdate
 
 from app.application.ports.services import MailDeliveryError
+from app.infrastructure.security.email_template import render_email
 
 
 class SmtpDelivery:
@@ -22,6 +23,7 @@ class SmtpDelivery:
             namespace = hashlib.sha256(("mail:" + config.secret_key).encode()).hexdigest()[:16]
             message["Message-ID"] = f"<talentsync-{namespace}-{message_id}@{config.smtp_from.rsplit('@', 1)[1]}>"
             message.set_content(body)
+            message.add_alternative(render_email(subject, body, public_app_url=getattr(config, "public_app_url", "")), subtype="html")
             context = ssl.create_default_context()
             transport = smtplib.SMTP_SSL if config.smtp_security == "ssl" else smtplib.SMTP
             options = {"context": context} if config.smtp_security == "ssl" else {}

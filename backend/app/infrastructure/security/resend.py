@@ -5,6 +5,7 @@ import hmac
 import httpx
 
 from app.application.ports.services import MailDeliveryError
+from app.infrastructure.security.email_template import render_email
 
 
 class ResendDelivery:
@@ -21,7 +22,8 @@ class ResendDelivery:
             with httpx.Client(transport=self.transport, timeout=15, follow_redirects=False, trust_env=False) as client:
                 with client.stream("POST", "https://api.resend.com/emails", headers={
                     "Authorization": f"Bearer {self.settings.resend_api_key}", "Idempotency-Key": key,
-                }, json={"from": self.settings.resend_from, "to": [recipient], "subject": subject, "text": body}) as response:
+                }, json={"from": f"TalentSync <{self.settings.resend_from}>", "to": [recipient], "subject": subject, "text": body,
+                         "html": render_email(subject, body, public_app_url=getattr(self.settings, "public_app_url", ""))}) as response:
                     status = response.status_code
                     if 200 <= status < 300:
                         return
