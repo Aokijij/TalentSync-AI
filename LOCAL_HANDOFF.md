@@ -250,3 +250,17 @@ Validación: 556 pruebas backend aprobadas, una omitida de PostgreSQL staging,
 mediante API y compilación; revisión visual pendiente por el bloqueo del
 navegador descrito en la guía de integraciones. Backend actualizado: Uvicorn
 en 127.0.0.1:8000, sesión 33439, PID 19960.
+
+## Evidencias adaptadas a cada profesión
+
+El perfil prioriza el formulario de logros, trabajos y certificados. GitHub y
+Codewars están agrupados en una sección opcional, plegada por defecto. Solo se
+montan al abrirla por primera vez; plegarla después conserva lo introducido.
+El título menciona los proveedores cuando hay profesión/habilidades explícitas
+de programación o referencias técnicas guardadas. Para otros perfiles aparece
+«Otras fuentes de evidencia». El sector preferido no determina esta selección.
+Todo candidato conserva acceso voluntario y todas sus evidencias guardadas;
+esta adaptación solo afecta la presentación. Sin cambios de backend, permisos
+ni puntuaciones. Validación: 32 pruebas frontend, eslint y build correctos.
+La revisión visual continúa pendiente por el bloqueo del navegador indicado
+en la guía de integraciones.

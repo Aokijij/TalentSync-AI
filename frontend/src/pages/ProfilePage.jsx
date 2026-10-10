@@ -585,7 +585,7 @@ export function ProfilePage() {
       </div>
         </article>
       )}
-      {!editing && <ProfileEvidence onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} />}
+      {!editing && <ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} />}
     </div>
   );
 }
