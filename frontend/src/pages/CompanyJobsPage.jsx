@@ -714,7 +714,7 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           <span
             className={`rounded-full px-2.5 py-1 text-xs font-bold ${job.status === "active" ? "bg-[var(--success)]/10 text-[var(--success)]" : job.status === "filled" ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}
           >
-            {job.status === "active" ? "Activa" : job.status === "draft" ? "Borrador · requiere verificación" : job.status === "filled" ? "Cubierta" : "Pausada"}
+            {job.status === "active" ? "Activa" : job.status === "draft" ? "Borrador" : job.status === "filled" ? "Cubierta" : "Pausada"}
           </span>
         </div>
         <Link
@@ -726,6 +726,21 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--muted)]">
           {job.description}
         </p>
+        <Link
+          className={`company-job-quality ${job.quality_summary?.level === "A" ? "is-complete" : job.quality_summary?.can_publish ? "is-ready" : "is-pending"}`}
+          to={`/empresa/calidad?vacante=${job.id}`}
+          aria-label={`Calidad de la oferta ${job.title}: ${job.quality_summary?.score ?? "sin evaluar"}${job.quality_summary ? "%" : ""}. Revisar calidad`}
+        >
+          <div className="company-job-quality-heading">
+            <span>Calidad de la oferta</span>
+            <strong>{job.quality_summary ? `${job.quality_summary.score}%` : "Sin evaluar"}</strong>
+          </div>
+          {job.quality_summary && <progress aria-label={`Calidad de ${job.title}`} value={job.quality_summary.score} max={100} />}
+          <div className="company-job-quality-caption">
+            <span>{job.quality_summary?.level === "A" ? "Nivel A · Condiciones completas" : job.quality_summary?.can_publish ? "Lista · Puedes seguir mejorándola" : "Por completar · Revisa qué falta"}</span>
+            <ChevronRight size={15} aria-hidden="true" />
+          </div>
+        </Link>
         <div className="mt-4 grid gap-2 text-xs text-[var(--muted)] sm:grid-cols-2">
           <span className="inline-flex items-center gap-1.5">
             <MapPin size={14} />

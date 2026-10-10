@@ -353,9 +353,7 @@ class Job(Base):
     )
 
     @property
-    def quality_summary(self) -> dict | None:
-        if not self.quality_details:
-            return None
+    def quality_summary(self) -> dict:
         from app.domain.services.offer_review import review_offer
         review = review_offer(self)
         return {key: review[key] for key in ("score", "level", "can_publish")}

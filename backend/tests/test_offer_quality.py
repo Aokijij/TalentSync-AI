@@ -55,6 +55,23 @@ def test_publication_requires_conditions_even_with_a_high_score(client):
     assert client.get(f"/api/v1/jobs/{job_id}").json()["quality_details"]["missions"][0]["days"] == 60
 
 
+def test_job_list_quality_matches_review_for_guided_and_legacy_offers(client):
+    _, owner = company_account(client, "quality-list")
+    complete = client.post("/api/v1/jobs", headers=owner, json=complete_offer()).json()
+    legacy_payload = complete_offer()
+    del legacy_payload["quality_details"]
+    legacy = client.post("/api/v1/jobs", headers=owner, json=legacy_payload).json()
+    offers = {row["id"]: row for row in client.get("/api/v1/jobs", headers=owner).json()}
+    for job in (complete, legacy):
+        report = client.get(f"/api/v1/hiring/quality/{job['id']}", headers=owner).json()
+        assert offers[job["id"]]["quality_summary"] == {
+            key: report[key] for key in ("score", "level", "can_publish")
+        }
+    assert offers[complete["id"]]["quality_summary"]["score"] == 100
+    assert offers[legacy["id"]]["quality_summary"]["score"] < 100
+    assert offers[legacy["id"]]["quality_summary"]["can_publish"] is False
+
+
 def test_structured_conflicts_and_wording_have_actionable_explanations(client):
     _, owner = company_account(client, "quality-conflicts")
     payload = complete_offer()
