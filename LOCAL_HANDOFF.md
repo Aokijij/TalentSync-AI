@@ -210,9 +210,12 @@ GitHub público ya tiene recorrido de candidato con consentimiento, vista previa
 y guardado como evidencia declarada. El entorno local habilita ese lector.
 Microsoft Learn incorpora vista previa administrativa e importación de
 borradores, pendiente de credenciales de Microsoft Entra. Resend está preparado
-como transporte de la bandeja de salida; permanece desactivado hasta disponer
-de dominio/remitente verificado. El lanzador local sigue impidiendo correo
-externo y acceso a almacenamiento de Azure.
+como transporte de la bandeja de salida. Se autorizó y Resend aceptó un único
+correo de prueba al titular, ejecutado mediante `scripts/resend_test.py`, con
+configuración privada en `.local/resend.env`. Repetir el comando no duplica un
+envío aceptado. La prueba no procesa la bandeja de salida. El lanzador local
+sigue impidiendo correo externo de la aplicación y acceso a almacenamiento de
+Azure. Para otros destinatarios falta un dominio/remitente propio verificado.
 
 Activación, límites y estado real en
 [docs/INTEGRACIONES_PRIMERA_ETAPA.md](docs/INTEGRACIONES_PRIMERA_ETAPA.md).

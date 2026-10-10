@@ -1,7 +1,8 @@
 # Primera etapa de integraciones
 
 Implementación local del 10 de octubre de 2026. Sin crear cuentas externas,
-aprovisionar recursos de Azure ni contratar planes. No se han enviado correos.
+aprovisionar recursos de Azure ni contratar planes. Posteriormente se autorizó
+y realizó un único envío de prueba de Resend a la dirección del titular.
 
 ## GitHub: proyectos públicos
 
@@ -77,16 +78,46 @@ que una persona completó la formación y no verifica certificados.
 La conexión real queda pendiente de credenciales y comprobación con la cuenta
 autorizada. Se probaron respuestas simuladas basadas en el contrato oficial.
 
-## Resend: transporte de correo preparado
+## Resend: transporte preparado y prueba real aceptada
 
 Implementado como alternativa a SMTP sobre la bandeja de salida existente:
 reservas por trabajador, reintentos limitados, caducidad de enlaces y limpieza
 del cuerpo después de enviar. Los errores no exponen la respuesta del proveedor
 ni las credenciales. Cada mensaje utiliza una clave de idempotencia estable.
 
-El usuario todavía no tiene dominio propio. Por ello no se activó Resend y
-`scripts/local.py` fuerza **correo local**, sin usar claves externas heredadas.
-No se envían los mensajes de las cuentas ficticias a Internet.
+El usuario todavía no tiene dominio propio. `scripts/local.py` sigue forzando
+**correo local**, sin usar claves externas heredadas. No se envían los mensajes
+de las cuentas ficticias a Internet.
+
+Se configuró una prueba independiente con la clave privada en `.local/resend.env`,
+ignorado por Git, y un único destinatario autorizado: el correo de la cuenta de
+Resend. El remitente de pruebas es `onboarding@resend.dev`. Resend confirmó la
+aceptación del envío real; eso no confirma entrega a la bandeja del destinatario.
+
+Comando desde la raíz del proyecto:
+
+```powershell
+& backend/.venv/Scripts/python.exe -X utf8 scripts/resend_test.py
+```
+
+El comando no lee la base de datos ni procesa la bandeja de salida. No acepta
+destinatarios ni contenido por argumentos. Lee únicamente `.local/resend.env`:
+
+```dotenv
+RESEND_TEST_ENABLED=true
+RESEND_API_KEY=<clave privada>
+RESEND_FROM=onboarding@resend.dev
+RESEND_TEST_RECIPIENT=<correo de la cuenta Resend>
+```
+
+El estado privado está en `.local/verification/resend-test.json`. Si ya fue
+aceptado, repetir el comando no genera otro correo. Ante un fallo o respuesta
+incierta, los intentos manuales conservan la clave de idempotencia; después de
+23 horas se exige revisar el panel antes de repetir. Un bloqueo impide ejecutar
+dos comandos simultáneamente. No borrar el estado para forzar reenvíos.
+
+Para enviar a personas distintas del titular se necesita un dominio propio
+verificado. La prueba no habilita automáticamente el correo de la aplicación.
 
 Para una activación futura fuera del lanzador aislado se necesitarán una cuenta
 de Resend, dominio/remitente verificado y una prueba a un destinatario autorizado:
@@ -104,6 +135,10 @@ Resend aplica sus propias cuotas y condiciones; el conector no impone un límite
 de gasto en la cuenta del proveedor. Mantener el plan gratuito y sus límites al
 activarlo. La idempotencia del proveedor dura 24 horas; una recuperación manual
 fuera de ese plazo requiere revisar el estado antes de reenviar.
+
+Validación adicional: 59 pruebas de correo e integraciones aprobadas, incluidas
+ocho para la prueba aislada (destinatario único, configuración inválida,
+reintentos, caducidad, concurrencia y prevención de duplicados).
 
 ## Validación y siguientes conexiones
 
@@ -136,4 +171,5 @@ Referencias oficiales:
 - [Preguntas frecuentes y coste de Learn](https://learn.microsoft.com/en-us/training/support/integrations-learn-platform-api-faq)
 - [Envío de correo con Resend](https://resend.com/docs/api-reference/emails/send-email)
 - [Idempotencia de Resend](https://resend.com/docs/dashboard/emails/idempotency-keys)
+- [Restricción del remitente de pruebas](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain)
 - [Límites de GitHub REST](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)
