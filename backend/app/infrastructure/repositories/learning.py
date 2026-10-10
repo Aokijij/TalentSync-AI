@@ -2,6 +2,7 @@ from app.infrastructure.database.models import (
     AssessmentAttempt,
     LearningPlan,
     LearningResource,
+    LearningSourceSnapshot,
 )
 
 
@@ -17,6 +18,18 @@ class LearningRepository:
 
     def new_resource(self, **values):
         return LearningResource(**values)
+
+    def source_snapshot(self, key):
+        return self.session.get(LearningSourceSnapshot, key)
+
+    def new_source_snapshot(self, **values):
+        return LearningSourceSnapshot(**values)
+
+    def trim_source_snapshots(self):
+        # Keep at most 40 cached searches; persistent provider snapshots are separate.
+        rows = self.session.query(LearningSourceSnapshot).filter(LearningSourceSnapshot.id.like("sena-search:%")).order_by(LearningSourceSnapshot.fetched_at.desc()).offset(39).all()
+        for row in rows:
+            self.session.delete(row)
 
     def lock_owner(self, user_id):
         from app.infrastructure.database.models import User

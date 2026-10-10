@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, StrictFloat, StrictInt, StrictStr
 from app.api.deps import (
     get_curated_catalog,
     get_learn_catalog,
+    get_public_learning_catalog,
     get_text_analysis,
     get_unit_of_work,
     require_roles,
@@ -17,7 +18,7 @@ from app.api.schemas.learning import (
     ResourceUpdate,
 )
 from app.application.use_cases import learning as cases
-from app.application.use_cases import learning_resources
+from app.application.use_cases import learning_resources, learning_sources
 from app.domain.entities.enums import UserRole
 
 router = APIRouter()
@@ -42,6 +43,48 @@ class CuratedImport(BaseModel):
     publish: bool = False
 
 
+class PublicPreview(BaseModel):
+    query: str = Field(min_length=3, max_length=80)
+    refresh: bool = False
+
+
+class PublicImport(LearnImport):
+    ids: list[Annotated[str, Field(min_length=1, max_length=160)]] = Field(min_length=1, max_length=20)
+    publish: bool = False
+
+
+class PublicRefresh(BaseModel):
+    provider: Literal["sena", "sapiencia"]
+
+
+@router.post("/admin/learning/sources/sena/preview")
+def preview_sena(payload: PublicPreview, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_public_learning_catalog)):
+    return learning_sources.preview_sena(db, user, gateway, payload.query, force=payload.refresh)
+
+
+@router.post("/admin/learning/sources/sena/import")
+def import_sena(payload: PublicImport, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_public_learning_catalog)):
+    selected = gateway.selected(payload.preview_id, payload.ids, user.id)
+    return learning_resources.import_source(db, user, selected, namespace="sena", publish=payload.publish)
+
+
+@router.post("/admin/learning/sources/public/refresh")
+def refresh_public(payload: PublicRefresh, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_public_learning_catalog)):
+    if payload.provider == "sapiencia":
+        return learning_sources.refresh_sapiencia(db, user, gateway, force=True)
+    return learning_sources.refresh_sena(db, user, gateway, limit=5)
+
+
+@router.get("/learning/opportunities")
+def local_opportunities(user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return learning_sources.opportunities(db)
+
+
+@router.get("/admin/learning/sources/public")
+def public_sources(user=Depends(admin), db=Depends(get_unit_of_work)):
+    return learning_sources.opportunities(db)
+
+
 @router.get("/admin/learning/sources/curated")
 def curated_catalog(user=Depends(admin), gateway=Depends(get_curated_catalog)):
     return gateway.catalog()
@@ -54,7 +97,7 @@ def import_curated(payload: CuratedImport, user=Depends(admin), db=Depends(get_u
 
 
 @router.get("/admin/learning/sources")
-def learning_sources(user=Depends(admin), gateway=Depends(get_learn_catalog)):
+def configured_learning_sources(user=Depends(admin), gateway=Depends(get_learn_catalog)):
     return {"microsoft_learn": {"configured": gateway.configured, "authentication": "Microsoft Entra",
                                "certificate_verification": False}}
 
@@ -101,17 +144,17 @@ def admin_resources(user=Depends(admin), db=Depends(get_unit_of_work)):
 
 @router.post("/admin/learning/resources", status_code=201)
 def create_resource(payload: ResourceContent, user=Depends(admin), db=Depends(get_unit_of_work)):
-    return learning_resources.manage(db, user, [payload.model_dump()])
+    return learning_resources.manage(db, user, [payload.model_dump(mode="json")])
 
 
 @router.post("/admin/learning/resources/import", status_code=201)
 def import_resources(payload: ResourceImport, user=Depends(admin), db=Depends(get_unit_of_work)):
-    return learning_resources.manage(db, user, [row.model_dump() for row in payload.resources])
+    return learning_resources.manage(db, user, [row.model_dump(mode="json") for row in payload.resources])
 
 
 @router.put("/admin/learning/resources/{resource_id}")
 def edit_resource(resource_id: str, payload: ResourceUpdate, user=Depends(admin), db=Depends(get_unit_of_work)):
-    return learning_resources.manage(db, user, [payload.model_dump(exclude={"version"})], resource_id, payload.version)
+    return learning_resources.manage(db, user, [payload.model_dump(mode="json", exclude={"version"})], resource_id, payload.version)
 
 
 @router.get("/learning/jobs/{job_id}")

@@ -316,3 +316,64 @@ pasaron de nuevo 97 pruebas de aprendizaje, integraciones y arquitectura. La API
 real confirma los 34 recursos oficiales activos, sin duplicar sus tarjetas, y el
 acceso del administrador. Revisión visual pendiente por el bloqueo de navegador
 ya documentado. Backend actualizado en 127.0.0.1:8000, sesión 76496, PID 18848.
+
+
+## Formación en español y lectura de fuentes públicas — 10 de octubre de 2026
+
+La biblioteca editorial contiene **65 recursos de 13 grupos de proveedores**:
+55 de acceso gratuito y 10 de pago. Esta ampliación incorpora **19 programas
+virtuales del SENA y 12 cursos en español de HP LIFE**. Cubre las diez áreas,
+incluida atención y procesos en salud. Los temarios resumidos, requisitos,
+certificación e ideas de evidencia están separados de los laboratorios locales.
+Los cursos de HP LIFE tienen una reserva de estudio orientativa de 2 horas;
+la ficha pública no publica una duración numérica. Sus certificados son de
+finalización, sin acreditación educativa oficial.
+
+En Mi desarrollo > Cursos y prácticas hay accesos a Gratis en español y SENA.
+Los filtros avanzados incluyen idioma, modalidad, disponibilidad y certificado.
+El detalle muestra edad mínima, cobertura, última consulta y condiciones.
+Una inscripción anunciada no reserva una plaza. A los 14 días sin comprobación,
+o si falla una actualización, la disponibilidad pasa a por confirmar.
+
+Administración > Catálogo educativo permite buscar programas virtuales del
+SENA por tema, revisar sus enlaces e importar una selección. Por defecto quedan
+como borradores. El mapeo automático de habilidades es una sugerencia por título
+que debe revisarse; no acredita conocimientos ni modifica perfiles. La consulta
+está limitada a 20 programas y cacheada 24 horas. La importación reconoce un
+curso ya incorporado editorialmente y conserva sus ediciones y planes.
+
+Las convocatorias de Sapiencia se muestran en un bloque independiente, paginado
+de cuatro en cuatro, con requisitos territoriales y filtro de estado. No se
+convierten en cursos ficticios ni se les asignan horas inventadas. El candidato
+solo lee la copia guardada en la base local.
+
+Se implementó lectura de las páginas públicas de Betowa y Sapiencia, con hosts
+fijos, comprobación de robots.txt, sin redirecciones, límites de tamaño/tiempo,
+caché persistente y conservación de la última lectura si falla la fuente. No se
+usaron APIs privadas, RSS supuestos, cuentas de alumnos ni contenido de pago.
+Si cambia el HTML puede requerirse adaptar el lector. Las fuentes originales:
+https://betowa.sena.edu.co/oferta y https://sapiencia.gov.co/convocatorias/.
+HP LIFE es una selección editorial: https://www.life-global.org/es/allcourses
+con condiciones revisadas en https://www.life-global.org/es/help.
+
+La migración vigente es **0040_learning_sources**. Solo añade una caché pública;
+no elimina tablas ni cuentas. Para repetir la carga y actualización local:
+
+```powershell
+backend/.venv/Scripts/python.exe scripts/local.py setup
+backend/.venv/Scripts/python.exe scripts/local.py seed-education
+backend/.venv/Scripts/python.exe scripts/local.py sync-education
+```
+
+La actualización diaria se habilitó únicamente en `.local/backend.env` mediante
+PUBLIC_LEARNING_REFRESH_ENABLED=true. Se ejecuta al arrancar y cada 24 horas
+mientras el backend permanece abierto; si el equipo está apagado se recupera al
+siguiente arranque. Solo revisa fichas del SENA ya guardadas y convocatorias de
+Sapiencia. No publica nuevos cursos, no sobrescribe contenido editorial y no
+consume servicios de pago. Los demás entornos la tienen desactivada por defecto.
+Las consultas de candidatos no desencadenan conexiones externas. El refresco se
+limita por cantidad, tiempo y fallos consecutivos; no constituye un crawler masivo.
+
+Microsoft Learn mantiene su conector autenticado pendiente de acceso Entra.
+YouTube Data API y catálogos comerciales siguen requiriendo configuración o
+acceso autorizado; esta ampliación no simula una sincronización con ellos.

@@ -3,6 +3,7 @@ import { ArrowRight, Check, Clock3, ExternalLink, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AreaIcon } from "./LearningVisuals.jsx";
 import { certificateCosts, learningLanguages, learningLevels } from "../utils/learningPresentation.js";
+import { CourseEnrollment } from "./CourseEnrollment.jsx";
 
 export function ResourceDetailsDialog({ resource, onClose, onPlan, inPlan, busy }) {
   const dialog = useRef(null);
@@ -12,6 +13,7 @@ export function ResourceDetailsDialog({ resource, onClose, onPlan, inPlan, busy 
     <header className="flex items-start justify-between gap-4"><span className="learning-area-icon"><AreaIcon area={resource.category} /></span><button className="button-secondary !p-2" aria-label="Cerrar detalle del recurso" onClick={onClose}><X size={20} /></button></header>
     <p className="section-kicker mt-5">{resource.url ? "Formación externa + práctica local" : "Práctica TalentSync"}</p><h2 id="resource-detail-title" className="mt-2 text-2xl font-bold">{resource.title}</h2><p className="mt-3 text-sm text-[var(--muted)]">{resource.instructions}</p>
     <div className="resource-facts"><span><Clock3 size={16} />{resource.hours} h estimadas</span><span>{resource.cost === "paid" ? "De pago" : resource.cost === "free" ? "Gratuito" : "Coste por confirmar"}</span><span>{resource.provider}</span></div>
+    <CourseEnrollment resource={resource} />
     {resource.details && <section className="space-y-4"><div className="resource-facts"><span>{learningLevels[resource.details.level]}</span><span>{learningLanguages(resource.details.languages) || "Consultar idiomas"}</span></div><h3 className="font-bold">Contenido de la formación externa</h3><ul className="list-disc space-y-2 pl-5 text-sm">{resource.details.syllabus.map((item) => <li key={item}>{item}</li>)}</ul><p className="text-sm"><strong>Antes de comenzar:</strong> {resource.details.prerequisites}</p><p className="text-xs text-[var(--muted)]">{resource.details.duration_notes}</p></section>}
     <section><h3 className="font-bold">{resource.url ? "Práctica complementaria de TalentSync" : "Qué vas a trabajar"}</h3><div className="mt-3 flex flex-wrap gap-2">{(resource.targeted_skills || resource.skills || []).map((skill) => <span key={skill} className="learning-skill">{skill}</span>)}</div>{journey && <><p className="mt-3 text-sm text-[var(--muted)]">{journey.lab_scenario || journey.scenario}</p><ol className="resource-syllabus">{(journey.activities || journey.steps || []).map((item, index) => <li key={item.id}><span>{index + 1}</span><p>{item.prompt || item.title}</p></li>)}</ol></>}</section>
     {resource.details?.portfolio_idea && <section className="resource-impact"><h3 className="font-bold">Idea de evidencia para tu portafolio</h3><p className="mt-2 text-sm">{resource.details.portfolio_idea}</p><p className="mt-2 text-xs text-[var(--muted)]">Sugerencia de TalentSync para aplicar lo aprendido; no es un entregable ni una certificación prometida por el proveedor.</p></section>}

@@ -650,6 +650,15 @@ class ModelAuditRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class LearningSourceSnapshot(Base):
+    __tablename__ = "learning_source_snapshots"
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    content: Mapped[dict] = mapped_column(JSON, nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    attempted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    error: Mapped[str] = mapped_column(String(250), default="", nullable=False)
+
+
 class LearningResource(Base):
     __tablename__ = "learning_resources"
     id: Mapped[str] = mapped_column(String(100), primary_key=True)

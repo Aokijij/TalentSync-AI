@@ -35,6 +35,7 @@ def prepare_environment(*, testing=False):
         raise SystemExit("El entorno aislado requiere su propia base SQLite y ENVIRONMENT=development.")
     # Explicit values also override inherited shell variables and dotenv files.
     values.update({"TALENTSYNC_ENV_FILE": str(ENV_FILE), "PERIODIC_MAINTENANCE_ENABLED": "false",
+                   "PUBLIC_LEARNING_REFRESH_ENABLED": values.get("PUBLIC_LEARNING_REFRESH_ENABLED", "false"),
                    "RESEND_ENABLED": "false", "RESEND_API_KEY": "", "RESEND_FROM": "",
                    **{key: values.get(key, "false" if key == "LEARN_ENABLED" else "") for key in (
                        "LEARN_ENABLED", "LEARN_TENANT_ID", "LEARN_CLIENT_ID", "LEARN_CLIENT_SECRET")},
@@ -65,6 +66,7 @@ def prepare_environment(*, testing=False):
     if testing:
         # Tests must not depend on user integrations, weights or the demo database.
         values.update({"DATABASE_URL": "sqlite://", "MATCH_MODEL_PATH": "",
+                       "PUBLIC_LEARNING_REFRESH_ENABLED": "false",
                        "LEARN_ENABLED": "false", "LEARN_TENANT_ID": "", "LEARN_CLIENT_ID": "", "LEARN_CLIENT_SECRET": "",
                        "SESSION_AUTH_ENABLED": "false", "LOCAL_MAIL_ENABLED": "false", "LOCAL_ADMIN_REVIEW_ENABLED": "false", "LOCAL_MFA_REVIEW_ENABLED": "false", "COMPANY_MFA_REQUIRED": "true",
                        "WORKFLOW_MAINTENANCE_ENABLED": "false", "MODEL_MAINTENANCE_ENABLED": "false",
@@ -79,7 +81,7 @@ def prepare_environment(*, testing=False):
 
 def main():
     parser = argparse.ArgumentParser(description="TalentSync: entorno local aislado")
-    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "seed-review", "seed-demo", "seed-scenarios", "seed-quality", "seed-education", "accounts", "admin-sso", "model-prepare", "model-check", "doctor", "verify", "rehearse"))
+    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "seed-review", "seed-demo", "seed-scenarios", "seed-quality", "seed-education", "sync-education", "accounts", "admin-sso", "model-prepare", "model-check", "doctor", "verify", "rehearse"))
     parser.add_argument("options", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.options and args.command != "admin-sso":
@@ -105,6 +107,7 @@ def main():
         "seed-scenarios": ["-m", "scripts.seed_scenarios"],
         "seed-quality": ["-m", "scripts.seed_offer_quality"],
         "seed-education": ["-m", "scripts.seed_education_catalog"],
+        "sync-education": ["-m", "scripts.sync_education_sources"],
         "admin-sso": ["-m", "scripts.admin_sso", *args.options],
         "model-prepare": ["-m", "scripts.local_model", "prepare"],
         "model-check": ["-m", "scripts.local_model", "check"],

@@ -4,13 +4,14 @@ from uuid import uuid4
 
 from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
+from app.domain.services.learning_availability import availability
 from app.domain.services.learning_catalog import ASSESSMENTS, LOCAL_RESOURCES
 from app.domain.services.learning_journeys import journey_for
 from app.domain.services.sql_challenges import CHALLENGES
 
 
 def enrich(resource):
-    return {**resource, "journey": journey_for(resource), "assessment_ids": [key for key, bank in ASSESSMENTS.items() if bank["skill"] in resource["skills"]],
+    return {**resource, "availability": availability(resource), "journey": journey_for(resource), "assessment_ids": [key for key, bank in ASSESSMENTS.items() if bank["skill"] in resource["skills"]],
             "practical_ids": [key for key, bank in CHALLENGES.items() if bank["skill"] in resource["skills"]]}
 
 
@@ -67,7 +68,17 @@ def import_source(db, user, selected, *, namespace="microsoft_learn", publish=Fa
     # editorial changes and published plans are deliberately preserved on reimport.
     prefix = "learn" if namespace == "microsoft_learn" else namespace
     targets = [(f"course-{prefix}-{sha256(item['source_id'].encode()).hexdigest()[:32]}", item) for item in selected]
-    new = [(key, item) for key, item in targets if db.learning.resource(key) is None]
+    existing = db.learning.resources()
+    identities = {(row.content.get("source", {}).get("provider"), row.content.get("source", {}).get("id")) for row in existing}
+    urls = {row.content.get("url", "").rstrip("/") for row in existing}
+    new = []
+    for key, item in targets:
+        identity = (item["source"].get("provider"), item["source"].get("id"))
+        url = item["content"]["url"].rstrip("/")
+        if db.learning.resource(key) is None and identity not in identities and url not in urls:
+            new.append((key, item))
+            identities.add(identity)
+            urls.add(url)
     if len(db.learning.resources()) + len(new) > 200:
         raise UseCaseError(status_code=422, detail="El catálogo admite hasta doscientos recursos administrables")
     for key, item in new:

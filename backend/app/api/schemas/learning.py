@@ -1,10 +1,31 @@
 import ipaddress
+from datetime import date
 from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.domain.services.skills import normalize_skills
+
+
+class CourseEnrollment(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["unknown", "open", "closed", "ongoing"] = "unknown"
+    modality: Literal["virtual", "onsite", "hybrid", "distance", "unknown"] = "unknown"
+    region: str = Field(default="", max_length=180)
+    minimum_age: int | None = Field(default=None, ge=0, le=100)
+    opens_on: date | None = None
+    closes_on: date | None = None
+    checked_on: date | None = None
+    notes: str = Field(default="", max_length=800)
+
+    @model_validator(mode="after")
+    def valid_dates(self):
+        if self.opens_on and self.closes_on and self.opens_on > self.closes_on:
+            raise ValueError("La apertura debe ser anterior al cierre")
+        if self.status != "unknown" and not self.checked_on:
+            raise ValueError("La disponibilidad necesita una fecha de comprobación")
+        return self
 
 
 class CourseDetails(BaseModel):
@@ -18,6 +39,7 @@ class CourseDetails(BaseModel):
     certificate_notes: str = Field(default="", max_length=800)
     portfolio_idea: str = Field(default="", max_length=600)
     duration_notes: str = Field(default="", max_length=400)
+    enrollment: CourseEnrollment | None = None
 
 
 class ResourceContent(BaseModel):

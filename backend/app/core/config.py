@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     learn_tenant_id: str = ""
     learn_client_id: str = ""
     learn_client_secret: str = ""
+    public_learning_refresh_enabled: bool = False
     session_cookie_secure: bool = True
     public_app_url: str = "http://127.0.0.1:5173"
     oauth_github_client_id: str = ""

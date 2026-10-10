@@ -43,6 +43,12 @@ def get_curated_catalog():
     return curated_learning
 
 
+@lru_cache
+def get_public_learning_catalog():
+    from app.infrastructure.public_learning import PublicLearningCatalog
+    return PublicLearningCatalog()
+
+
 def get_current_user(
     request: Request, token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:

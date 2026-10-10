@@ -20,7 +20,7 @@ def _catalog():
     rows, seen = [], set()
     for row in payload["resources"]:
         provider = providers[row["provider_id"]]
-        content = ResourceContent(**row["content"], active=False).model_dump()
+        content = ResourceContent(**row["content"], active=False).model_dump(mode="json")
         if row["source_id"] in seen or urlsplit(content["url"]).hostname not in provider["hosts"]:
             raise ValueError("Invalid editorial course identity or provider host")
         seen.add(row["source_id"])

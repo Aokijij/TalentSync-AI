@@ -89,6 +89,22 @@
       "hosts": [
         "www.coursera.org"
       ]
+    },
+    {
+      "id": "sena",
+      "name": "SENA",
+      "url": "https://betowa.sena.edu.co/",
+      "hosts": [
+        "betowa.sena.edu.co"
+      ]
+    },
+    {
+      "id": "hp-life",
+      "name": "HP LIFE",
+      "url": "https://www.life-global.org/es/allcourses",
+      "hosts": [
+        "www.life-global.org"
+      ]
     }
   ],
   "resources": [
@@ -1342,6 +1358,1483 @@
           "certificate_notes": "Certificado de especialización al superar sus requisitos; no equivale a un título universitario.",
           "portfolio_idea": "Prepara un diagnóstico ficticio de abastecimiento con indicadores y mejoras priorizadas.",
           "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:231589",
+      "content": {
+        "category": "administration",
+        "title": "Manejo de datos con microsoft Excel en entornos organizacionales",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja excel, gestión de datos mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/manejo-de-datos-con-microsoft-excel-en-entornos-organizacionales?programId=231589&modality=V",
+        "skills": [
+          "excel",
+          "gestión de datos"
+        ],
+        "hours": 48.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Entorno de Excel y organización de hojas",
+            "Referencias y operadores",
+            "Preparación de datos con fórmulas y funciones"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Organiza una muestra de registros de oficina y explica tus criterios de clasificación, comprobación y seguimiento.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:87325",
+      "content": {
+        "category": "administration",
+        "title": "Manejo de herramientas microsoft office 2016: Excel",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja excel, gestión de datos mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/manejo-de-herramientas-microsoft-office-2016-excel?programId=87325&modality=V",
+        "skills": [
+          "excel",
+          "gestión de datos"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Hojas de cálculo y fórmulas básicas",
+            "Gráficos y presentación de informes",
+            "Organización con tablas dinámicas y macros"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Organiza una muestra de registros de oficina y explica tus criterios de clasificación, comprobación y seguimiento.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:67329",
+      "content": {
+        "category": "administration",
+        "title": "Administracion documental en el entorno laboral",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja gestión documental mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/administracion-documental-en-el-entorno-laboral?programId=67329&modality=V",
+        "skills": [
+          "gestión documental"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Fundamentos de la administración documental",
+            "Criterios de archivo",
+            "Gestión de comunicaciones oficiales"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Organiza una muestra de registros de oficina y explica tus criterios de clasificación, comprobación y seguimiento.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:69879",
+      "content": {
+        "category": "administration",
+        "title": "Organizacion documental en el entorno laboral",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja gestión documental mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/organizacion-documental-en-el-entorno-laboral?programId=69879&modality=V",
+        "skills": [
+          "gestión documental"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Clasificación y ciclo documental",
+            "Retención y transferencias",
+            "Inventario documental y conservación"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Organiza una muestra de registros de oficina y explica tus criterios de clasificación, comprobación y seguimiento.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:70838",
+      "content": {
+        "category": "finance",
+        "title": "Contabilidad en las organizaciones",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja contabilidad mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/contabilidad-en-las-organizaciones?programId=70838&modality=V",
+        "skills": [
+          "contabilidad"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Empresa y registros contables",
+            "Plan de cuentas",
+            "Elementos de los estados financieros"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Prepara un ejemplo contable con datos ficticios, conciliaciones y una explicación de los criterios empleados.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:171815",
+      "content": {
+        "category": "finance",
+        "title": "Contabilidad: reconocimiento de recursos financieros",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja contabilidad mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/contabilidad-reconocimiento-de-recursos-financieros?programId=171815&modality=V",
+        "skills": [
+          "contabilidad"
+        ],
+        "hours": 48.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Hechos económicos y reconocimiento contable",
+            "Registro de operaciones",
+            "Comprobación de registros y reportes"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Prepara un ejemplo contable con datos ficticios, conciliaciones y una explicación de los criterios empleados.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:6634",
+      "content": {
+        "category": "logistics",
+        "title": "Administracion y control de inventarios",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja inventarios mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/administracion-y-control-de-inventarios?programId=6634&modality=V",
+        "skills": [
+          "inventarios"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Conceptos y costes de inventario",
+            "Modelos de control",
+            "Políticas de existencias"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Diseña un control de existencias con datos ficticios, alertas de reposición y reglas para documentar diferencias.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:171454",
+      "content": {
+        "category": "service",
+        "title": "Atencion al cliente por medios tecnologicos",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja atención al cliente mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/atencion-al-cliente-por-medios-tecnologicos?programId=171454&modality=V",
+        "skills": [
+          "atención al cliente"
+        ],
+        "hours": 48.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Canales tecnológicos de atención",
+            "Respuestas según protocolos",
+            "Evaluación de la atención prestada"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Redacta un protocolo de atención con tres consultas ficticias, respuestas y un criterio para revisar su calidad.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:70327",
+      "content": {
+        "category": "service",
+        "title": "Crm - la administracion de la relacion con los clientes",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja crm, atención al cliente, ventas mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/crm-la-administracion-de-la-relacion-con-los-clientes?programId=70327&modality=V",
+        "skills": [
+          "crm",
+          "atención al cliente",
+          "ventas"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Fundamentos y tipos de CRM",
+            "Relación entre CRM y ventas",
+            "Marketing relacional"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Redacta un protocolo de atención con tres consultas ficticias, respuestas y un criterio para revisar su calidad.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:177854",
+      "content": {
+        "category": "sales",
+        "title": "Codigos QR como estrategia de ventas",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja ventas mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/codigos-qr-como-estrategia-de-ventas?programId=177854&modality=V",
+        "skills": [
+          "ventas"
+        ],
+        "hours": 48.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Planificación de promociones",
+            "Comunicación y piezas promocionales",
+            "Uso comercial de códigos QR y omnicanalidad"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Propón una campaña comercial pequeña con público, actividades, indicadores y un registro de resultados simulados.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:96249",
+      "content": {
+        "category": "sales",
+        "title": "Promotor en punto de ventas",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja ventas mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/promotor-en-punto-de-ventas?programId=96249&modality=V",
+        "skills": [
+          "ventas"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Planeación comercial y promoción",
+            "Indicadores de ventas",
+            "Registro de información y atención de reclamaciones"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Propón una campaña comercial pequeña con público, actividades, indicadores y un registro de resultados simulados.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:106612",
+      "content": {
+        "category": "care",
+        "title": "Acciones de prevencion en salud mental",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja promoción de la salud mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/acciones-de-prevencion-en-salud-mental?programId=106612&modality=V",
+        "skills": [
+          "promoción de la salud"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Conceptos de salud mental",
+            "Derechos y marco de prevención",
+            "Riesgos psicosociales y entorno familiar"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Elabora una ficha informativa sobre calidad o prevención institucional con fuentes y límites de actuación; no uses datos de pacientes.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:147055",
+      "content": {
+        "category": "care",
+        "title": "Acreditacion en salud",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja calidad en salud, gestión de calidad mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/acreditacion-en-salud?programId=147055&modality=V",
+        "skills": [
+          "calidad en salud",
+          "gestión de calidad"
+        ],
+        "hours": 48.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Garantía de calidad en salud",
+            "Sistema de acreditación",
+            "Criterios de mejora institucional"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Elabora una ficha informativa sobre calidad o prevención institucional con fuentes y límites de actuación; no uses datos de pacientes.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:188774",
+      "content": {
+        "category": "general",
+        "title": "English does work - level 1",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja inglés mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/english-does-work-level-1?programId=188774&modality=V",
+        "skills": [
+          "inglés"
+        ],
+        "hours": 48.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Presentaciones personales y verbo to be",
+            "Presente simple y preferencias",
+            "Pronombres y expresiones básicas"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Prepara una muestra breve que aplique lo aprendido a una situación laboral y explica cómo revisarías el resultado.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:195058",
+      "content": {
+        "category": "general",
+        "title": "English does work - level 10",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja inglés mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/english-does-work-level-10?programId=195058&modality=V",
+        "skills": [
+          "inglés"
+        ],
+        "hours": 48.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Condicionales y verbos modales",
+            "Predicciones y formas de futuro",
+            "Inglés aplicado a planes laborales y tecnología"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Prepara una muestra breve que aplique lo aprendido a una situación laboral y explica cómo revisarías el resultado.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:74924",
+      "content": {
+        "category": "education",
+        "title": "Diagnostico de competencias desde la ingenieria pedagogica",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja pedagogía mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/diagnostico-de-competencias-desde-la-ingenieria-pedagogica?programId=74924&modality=V",
+        "skills": [
+          "pedagogía"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Diagnóstico de necesidades formativas",
+            "Organización de la información",
+            "Validación de un plan de mejora educativo"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Diseña una actividad de aprendizaje con objetivo, pasos y una rúbrica que permita revisar resultados.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:89005",
+      "content": {
+        "category": "education",
+        "title": "Estrategias pedagogicas para el desarrollo del pensamiento",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja pedagogía mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/estrategias-pedagogicas-para-el-desarrollo-del-pensamiento?programId=89005&modality=V",
+        "skills": [
+          "pedagogía"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Modelos pedagógicos",
+            "Procesos de cognición y aprendizaje",
+            "Técnicas y estrategias de formación"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Diseña una actividad de aprendizaje con objetivo, pasos y una rúbrica que permita revisar resultados.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:68760",
+      "content": {
+        "category": "design",
+        "title": "Corel draw - utilizacion de herramientas de diseño vectorial",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja diseño vectorial, coreldraw mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/corel-draw-utilizacion-de-herramientas-de-diseno-vectorial?programId=68760&modality=V",
+        "skills": [
+          "diseño vectorial",
+          "coreldraw"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Herramientas de CorelDRAW",
+            "Elementos vectoriales, textos y color",
+            "Preparación y exportación de documentos"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Crea una pieza visual y documenta sus decisiones de composición, color y exportación.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "sena",
+      "source_id": "sena:6479",
+      "content": {
+        "category": "education",
+        "title": "Diseño de instrumentos de evaluacion",
+        "provider": "SENA",
+        "kind": "course",
+        "instructions": "Trabaja evaluación educativa mediante formación del SENA. La ficha oficial detalla el programa y las condiciones para participar.",
+        "url": "https://betowa.sena.edu.co/oferta/diseno-de-instrumentos-de-evaluacion?programId=6479&modality=V",
+        "skills": [
+          "evaluación educativa"
+        ],
+        "hours": 40.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Técnicas e instrumentos de evaluación",
+            "Diseño de preguntas y pruebas",
+            "Evaluación de conocimientos y habilidades"
+          ],
+          "prerequisites": "Edad mínima indicada en la ficha. Requiere registro y matrícula en el SENA, acceso a las herramientas necesarias y cumplimiento de los requisitos específicos del programa.",
+          "access_notes": "Formación gratuita. La inscripción y asignación de cupo se realizan exclusivamente en el SENA.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "El SENA determina la aprobación y expedición del certificado. Una práctica de TalentSync no acredita haber cursado esta formación.",
+          "portfolio_idea": "Diseña una actividad de aprendizaje con objetivo, pasos y una rúbrica que permita revisar resultados.",
+          "duration_notes": "Duración publicada por el SENA; comprueba el calendario de la ficha elegida.",
+          "enrollment": {
+            "status": "unknown",
+            "modality": "virtual",
+            "region": "Colombia · oferta virtual",
+            "minimum_age": 14,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Programa revisado en Betowa. Confirma el grupo, los requisitos y la disponibilidad de cupos antes de inscribirte."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:452",
+      "content": {
+        "category": "administration",
+        "title": "La planificación estratégica en la era de la IA",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar planificación estratégica, toma de decisiones y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/452-la-planificaci%C3%B3n-estrat%C3%A9gica-en-la-era-de-la-ia",
+        "skills": [
+          "planificación estratégica",
+          "toma de decisiones"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Preguntas para planificar con intención",
+            "Apoyo de herramientas de IA",
+            "Comunicación y revisión de decisiones"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Organiza una muestra de registros de oficina y explica tus criterios de clasificación, comprobación y seguimiento.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:441",
+      "content": {
+        "category": "general",
+        "title": "Pensamiento crítico en la era de la IA",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar pensamiento crítico, alfabetización digital y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/441-pensamiento-cr%C3%ADtico-en-la-era-de-la-ia",
+        "skills": [
+          "pensamiento crítico",
+          "alfabetización digital"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Revisión de información en línea",
+            "Detección de sesgos y desinformación",
+            "Marcos de decisión"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Prepara una muestra breve que aplique lo aprendido a una situación laboral y explica cómo revisarías el resultado.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:438",
+      "content": {
+        "category": "general",
+        "title": "Redes Profesionales para el Crecimiento Profesional",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar comunicación, networking y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/438-redes-profesionales-para-el-crecimiento-profesional",
+        "skills": [
+          "comunicación",
+          "networking"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Relaciones profesionales",
+            "Construcción de una red de contactos",
+            "Seguimiento de oportunidades"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Prepara una muestra breve que aplique lo aprendido a una situación laboral y explica cómo revisarías el resultado.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:431",
+      "content": {
+        "category": "administration",
+        "title": "IA para profesionales de negocios",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar inteligencia artificial, productividad y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/431-ia-para-profesionales-de-negocios",
+        "skills": [
+          "inteligencia artificial",
+          "productividad"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "IA aplicada al trabajo de negocio",
+            "Productividad y decisiones",
+            "Posibilidades y límites de uso"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Organiza una muestra de registros de oficina y explica tus criterios de clasificación, comprobación y seguimiento.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:419",
+      "content": {
+        "category": "administration",
+        "title": "Correo Electrónico Comercial",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar comunicación escrita, correo electrónico y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/419-correo-electr%C3%B3nico-comercial",
+        "skills": [
+          "comunicación escrita",
+          "correo electrónico"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Estructura de mensajes profesionales",
+            "Claridad y tono",
+            "Comunicación con destinatarios de trabajo"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Organiza una muestra de registros de oficina y explica tus criterios de clasificación, comprobación y seguimiento.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:402",
+      "content": {
+        "category": "technology",
+        "title": "IA para principiantes",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar inteligencia artificial y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/402-ia-para-principiantes",
+        "skills": [
+          "inteligencia artificial"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Conceptos iniciales de IA",
+            "Aplicaciones en la vida y el trabajo",
+            "Cambios y oportunidades en distintos sectores"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Prepara una muestra breve que aplique lo aprendido a una situación laboral y explica cómo revisarías el resultado.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:398",
+      "content": {
+        "category": "service",
+        "title": "Experiencia del cliente (CX) para el éxito comercial",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar atención al cliente, experiencia del cliente y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/398-experiencia-del-cliente-(cx)-para-el-%C3%A9xito-comercial",
+        "skills": [
+          "atención al cliente",
+          "experiencia del cliente"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Escucha de la voz del cliente",
+            "Decisiones centradas en el cliente",
+            "Mejora de experiencias y servicios"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Redacta un protocolo de atención con tres consultas ficticias, respuestas y un criterio para revisar su calidad.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:383",
+      "content": {
+        "category": "administration",
+        "title": "Gestión de proyectos con Agile",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar gestión de proyectos, scrum, kanban y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/383-gesti%C3%B3n-de-proyectos-con-agile",
+        "skills": [
+          "gestión de proyectos",
+          "scrum",
+          "kanban"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Valores y principios ágiles",
+            "Scrum y Kanban",
+            "Desarrollo iterativo y producto mínimo viable"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Organiza una muestra de registros de oficina y explica tus criterios de clasificación, comprobación y seguimiento.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:375",
+      "content": {
+        "category": "technology",
+        "title": "Introducción al Conocimiento de la Ciberseguridad",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar ciberseguridad, seguridad digital y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/375-introducci%C3%B3n-al-conocimiento-de-la-ciberseguridad",
+        "skills": [
+          "ciberseguridad",
+          "seguridad digital"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Identificación de amenazas habituales",
+            "Protección de información",
+            "Buenas prácticas de seguridad"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Prepara una muestra breve que aplique lo aprendido a una situación laboral y explica cómo revisarías el resultado.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:363",
+      "content": {
+        "category": "general",
+        "title": "Redacción de Currículums y Entrevistas de Trabajo",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar búsqueda de empleo, entrevistas y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/363-redacci%C3%B3n-de-curr%C3%ADculums-y-entrevistas-de-trabajo",
+        "skills": [
+          "búsqueda de empleo",
+          "entrevistas"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Preparación del currículum",
+            "Carta de presentación",
+            "Preparación de entrevistas"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Prepara una muestra breve que aplique lo aprendido a una situación laboral y explica cómo revisarías el resultado.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:136",
+      "content": {
+        "category": "general",
+        "title": "Liderazgo Efectivo",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar liderazgo, planificación y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/136-liderazgo-efectivo",
+        "skills": [
+          "liderazgo",
+          "planificación"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Autoconocimiento para liderar",
+            "Planificación estratégica",
+            "Acompañamiento del cambio"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Prepara una muestra breve que aplique lo aprendido a una situación laboral y explica cómo revisarías el resultado.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
+        }
+      }
+    },
+    {
+      "provider_id": "hp-life",
+      "source_id": "hp-life:355",
+      "content": {
+        "category": "technology",
+        "title": "Ciencia y Análisis de Datos",
+        "provider": "HP LIFE",
+        "kind": "course",
+        "instructions": "Formación en español para practicar análisis de datos, toma de decisiones y aplicar esos conceptos en situaciones de trabajo.",
+        "url": "https://www.life-global.org/es/course/355-ciencia-y-an%C3%A1lisis-de-datos",
+        "skills": [
+          "análisis de datos",
+          "toma de decisiones"
+        ],
+        "hours": 2.0,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Uso de datos en negocios digitales",
+            "Apoyo a decisiones e innovación",
+            "Datos y relación con clientes"
+          ],
+          "prerequisites": "Necesitas crear y confirmar tu cuenta de HP LIFE. Consulta las condiciones particulares del curso.",
+          "access_notes": "Curso gratuito y a tu propio ritmo. El estudio y la inscripción se realizan en HP LIFE.",
+          "certificate_cost": "free",
+          "certificate_notes": "HP LIFE ofrece un certificado de finalización tras completar todas las lecciones. Sus certificados no están acreditados ni avalados por un organismo educativo. Completar la práctica de TalentSync no emite ese certificado.",
+          "portfolio_idea": "Prepara una muestra breve que aplique lo aprendido a una situación laboral y explica cómo revisarías el resultado.",
+          "duration_notes": "Reserva orientativa de 2 horas propuesta por TalentSync; el proveedor no indica una duración numérica en esta ficha. Ajusta el tiempo a tu ritmo.",
+          "enrollment": {
+            "status": "ongoing",
+            "modality": "virtual",
+            "region": "Acceso internacional en línea",
+            "minimum_age": null,
+            "opens_on": null,
+            "closes_on": null,
+            "checked_on": "2026-10-10",
+            "notes": "Curso publicado para estudio a tu ritmo; requiere cuenta y confirmación del proveedor."
+          }
         }
       }
     }

@@ -27,7 +27,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
             "recommendations", "notifications", "company_followers", "alembic_version", "event_log",
             "user_sessions", "account_tokens", "mail_messages",
             "company_members", "company_invitations",
-            "learning_plans", "assessment_attempts", "learning_resources",
+            "learning_plans", "assessment_attempts", "learning_resources", "learning_source_snapshots",
             "trust_incidents", "model_audit_runs",
             "interview_rooms", "interview_participants", "interview_signals",
             "recommendation_feedback", "model_experiments", "offer_feedback",
@@ -58,7 +58,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment", "interview_evaluations"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0039_offer_quality"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0040_learning_sources"
     finally:
         engine.dispose()
 

@@ -22,6 +22,7 @@ async def lifespan(app: FastAPI):
     workflow_task = None
     model_task = None
     mail_task = None
+    education_task = None
     stop_event = asyncio.Event()
     if settings.match_model_path:
         from app.infrastructure.nlp.matching_encoder import matching_encoder
@@ -32,6 +33,9 @@ async def lifespan(app: FastAPI):
     if settings.model_maintenance_enabled:
         from app.infrastructure.model_scheduler import periodic_models
         model_task = asyncio.create_task(periodic_models(stop_event))
+    if settings.public_learning_refresh_enabled:
+        from app.infrastructure.education_scheduler import periodic_education
+        education_task = asyncio.create_task(periodic_education(stop_event))
     if settings.workflow_maintenance_enabled:
         from app.infrastructure.workflow_scheduler import periodic_workflow
         workflow_task = asyncio.create_task(periodic_workflow(stop_event))
@@ -51,6 +55,8 @@ async def lifespan(app: FastAPI):
             await model_task
         if mail_task:
             await mail_task
+        if education_task:
+            await education_task
 
 
 def create_app() -> FastAPI:
