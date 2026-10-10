@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from app.api.deps import (
@@ -64,6 +64,25 @@ def all_incidents(user=Depends(admin), db=Depends(get_unit_of_work)):
 @router.patch("/admin/incidents/{incident_id}")
 def review(incident_id: int, payload: IncidentReview, user=Depends(admin), db=Depends(get_unit_of_work)):
     return cases.review(db, user, incident_id, payload.model_dump())
+
+
+@router.get("/admin/incident-queue")
+def incident_queue(
+    bucket: Literal["pending", "resolved", "all"] = "pending",
+    status: Literal["all", "open", "in_review", "confirmed", "dismissed", "appealed"] = "all",
+    category: Literal["all", "ghosting", "inappropriate_interview", "suspected_fraud", "discrimination", "other"] = "all",
+    search: str = Query(default="", max_length=120),
+    sort: Literal["priority", "oldest", "newest"] = "priority",
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=8, ge=1, le=50),
+    user=Depends(admin), db=Depends(get_unit_of_work),
+):
+    return cases.incident_queue(db, bucket=bucket, status=status, category=category, search=search.strip(), sort=sort, page=page, page_size=page_size)
+
+
+@router.get("/admin/incidents/{incident_id}")
+def incident_detail(incident_id: int, user=Depends(admin), db=Depends(get_unit_of_work)):
+    return cases.incident_detail(db, incident_id)
 
 
 @router.get("/admin/ecosystem")

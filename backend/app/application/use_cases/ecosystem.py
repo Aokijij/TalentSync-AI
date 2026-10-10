@@ -73,6 +73,17 @@ def review(db, user, incident_id, payload):
     return incident_view(row, private=True, db=db)
 
 
+def incident_queue(db, **filters):
+    return db.ecosystem.incident_queue(**filters)
+
+
+def incident_detail(db, incident_id):
+    row = db.ecosystem.incident(incident_id)
+    if row is None:
+        raise UseCaseError(status_code=404, detail="Incidencia no encontrada")
+    return incident_view(row, private=True, db=db)
+
+
 def appeal(db, user, incident_id, message):
     company = context(db, user, owner=True)
     row = db.ecosystem.incident(incident_id)
