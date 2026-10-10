@@ -1,3 +1,4 @@
+import { salaryLabel } from "../utils/offerQuality.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BriefcaseBusiness,
@@ -17,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { api, getApiErrorMessage } from "../api/client.js";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
@@ -51,6 +52,7 @@ const NEW_JOB_DEFAULTS = {
 };
 
 export function CompanyJobsPage() {
+  const navigate = useNavigate();
   const { register, handleSubmit, reset, watch, setValue } = useForm({
     defaultValues: NEW_JOB_DEFAULTS,
   });
@@ -196,12 +198,7 @@ export function CompanyJobsPage() {
   }
 
   function openCreate() {
-    setError("");
-    setEditingJob(null);
-    setPendingSave(null);
-    setShowPreview(false);
-    reset(NEW_JOB_DEFAULTS);
-    setShowModal(true);
+    navigate("/empresa/calidad?nueva=1");
   }
 
   async function editJob(job) {
@@ -317,6 +314,7 @@ export function CompanyJobsPage() {
             onChange={(event) => setStatusFilter(event.target.value)}
           >
             <option value="all">Todos los estados</option>
+            <option value="draft">Borradores</option>
             <option value="active">Activas</option>
             <option value="paused">Pausadas</option>
             <option value="filled">Cubiertas</option>
@@ -740,8 +738,8 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           </span>
           {job.salary ? (
             <span className="inline-flex items-center gap-1.5">
-              <CircleDollarSign size={14} />$
-              {Number(job.salary).toLocaleString("es-CO")}
+              <CircleDollarSign size={14} />
+              {salaryLabel(job)}
             </span>
           ) : null}
           <span className="font-semibold text-[var(--accent)]">

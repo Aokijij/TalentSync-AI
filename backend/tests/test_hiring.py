@@ -86,8 +86,9 @@ def test_quality_checklist_changes_after_saving_actionable_corrections(client):
     patch = {"description": "Atiende solicitudes de clientes, documenta necesidades y coordina propuestas comerciales con el equipo. Realiza seguimiento de acuerdos y registra resultados verificables.", "requirements": "Experiencia en comunicación comercial, seguimiento de oportunidades y venta consultiva para entender las necesidades de cada cliente.", "salary": 2500000, "modality": "onsite", "location": "Bogotá", "response_days": 7, "skill_requirements": [{"skill": "ventas", "essential": True, "weight": 3}]}
     assert client.patch(f"/api/v1/jobs/{job['id']}", headers=headers, json=patch).status_code == 200
     after = client.get(endpoint, headers=headers).json()
-    assert after["completeness"] > before["completeness"] and after["completeness"] == 100
-    assert all(row["passed"] for row in after["checks"])
+    assert after["completeness"] > before["completeness"]
+    assert after["can_publish"] is False
+    assert any(row["key"] == "contract_type" for row in after["blockers"])
     _, candidate = register(client, "sales-quality-match", profession="Asesor comercial", skills=["ventas"])
     match = client.post(f"/api/v1/jobs/{job['id']}/match", headers=candidate)
     assert match.status_code == 200

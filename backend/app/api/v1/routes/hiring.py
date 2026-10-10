@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends
 
 from app.api.deps import get_unit_of_work, require_roles
+from app.api.schemas.job import QualityPreview
+from app.api.schemas.job_quality import OfferFeedbackInput
 from app.application.use_cases import hiring as cases
 from app.domain.entities.enums import UserRole
 
@@ -10,3 +12,23 @@ router = APIRouter()
 @router.get("/hiring/quality/{job_id}")
 def quality(job_id: int, user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)), db=Depends(get_unit_of_work)):
     return cases.quality(db, user, job_id)
+
+
+@router.post("/hiring/quality/preview")
+def preview(payload: QualityPreview, user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return cases.preview(db, user, payload.model_dump())
+
+
+@router.get("/hiring/feedback/{job_id}")
+def own_feedback(job_id: int, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return cases.candidate_feedback(db, user, job_id)
+
+
+@router.put("/hiring/feedback/{job_id}")
+def feedback(job_id: int, payload: OfferFeedbackInput, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return cases.candidate_feedback(db, user, job_id, payload.reason)
+
+
+@router.delete("/hiring/feedback/{job_id}")
+def delete_feedback(job_id: int, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return cases.candidate_feedback(db, user, job_id, remove=True)

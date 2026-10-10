@@ -3,6 +3,13 @@ from statistics import median
 
 
 def assess_quality(job, comparable_jobs):
+    if getattr(job, "quality_details", None):
+        from app.domain.services.offer_review import review_offer
+        return review_offer(job, comparable_jobs)
+    return assess_legacy_quality(job, comparable_jobs)
+
+
+def assess_legacy_quality(job, comparable_jobs):
     text = f"{job.title} {job.requirements}"
     lowered = text.lower()
     issues = []

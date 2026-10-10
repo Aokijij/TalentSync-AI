@@ -14,6 +14,10 @@ import {
 } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
+import { OfferConditions } from "../components/OfferConditions.jsx";
+import { OfferFeedback } from "../components/OfferFeedback.jsx";
+import { salaryLabel } from "../utils/offerQuality.js";
+
 import { api, apiFileUrl } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
@@ -176,7 +180,7 @@ export function JobDetailPage() {
               <span className="flex items-center gap-1">
                 <CircleDollarSign size={16} />
                 {job.salary
-                  ? `$${job.salary.toLocaleString("es-CO")} COP`
+                  ? salaryLabel(job)
                   : job.source_kind === "external"
                     ? "Salario no informado"
                     : "A convenir"}
@@ -206,6 +210,7 @@ export function JobDetailPage() {
       </section>
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="surface-card space-y-6 p-6">
+          <OfferConditions job={job} />
           {job.source_kind === "external" ? (
             <div>
               <h2 className="font-semibold">Resumen de la oferta</h2>
@@ -352,6 +357,7 @@ export function JobDetailPage() {
           </div>
         </section>
       ) : null}
+      {user?.role === "candidate" && !alreadyApplied && job.status === "active" && job.source_kind !== "external" && <OfferFeedback key={job.id} jobId={job.id} />}
       {showQuestions ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/65 p-4 backdrop-blur-xs">
           <section role="dialog" aria-modal="true" aria-labelledby="questions-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">

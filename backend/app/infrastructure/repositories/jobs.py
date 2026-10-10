@@ -3,11 +3,20 @@ from datetime import datetime
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.infrastructure.database.models import Company, Job
+from app.infrastructure.database.models import Company, Job, OfferFeedback
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class JobRepository(SqlAlchemyRepository[Job]):
+    def offer_feedback_for(self, job_id):
+        return self.session.query(OfferFeedback).filter_by(job_id=job_id).all()
+
+    def candidate_offer_feedback(self, user_id, job_id):
+        return self.session.query(OfferFeedback).filter_by(user_id=user_id, job_id=job_id).first()
+
+    def new_offer_feedback(self, **values):
+        return OfferFeedback(**values)
+
     @staticmethod
     def _available(query):
         now = datetime.utcnow()

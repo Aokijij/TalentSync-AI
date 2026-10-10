@@ -1,3 +1,4 @@
+import { salaryLabel } from "../utils/offerQuality.js";
 import { JobInterestButtons, InterestsToggle } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
 import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
@@ -447,7 +448,7 @@ function JobCard({ interests, job, match, confidence, applied, showMatch, return
       <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-[var(--line)] pt-4">
         <strong>
           {job.salary
-            ? `$${job.salary.toLocaleString("es-CO")} COP`
+            ? salaryLabel(job)
             : job.source_kind === "external"
               ? "Salario no informado"
               : "A convenir"}

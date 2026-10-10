@@ -1,4 +1,5 @@
 from datetime import datetime
+from types import SimpleNamespace
 from typing import Any
 
 from app.application.errors import UseCaseError
@@ -7,7 +8,19 @@ from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases.matching import upsert_recommendation
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Company, Job, User
+from app.domain.services.offer_review import review_offer
 from app.domain.services.reputation import company_health
+
+REVIEW_FIELDS = {"title", "description", "requirements", "salary", "location", "modality", "employment_type", "sector", "response_days", "quality_details", "skill_requirements", "pipeline_stages"}
+
+
+def validate_guided_publication(values):
+    if values.get("quality_details") and values.get("status") == "active":
+        review = review_offer(SimpleNamespace(**values))
+        if not review["can_publish"]:
+            missing = [row["label"] for row in review["blockers"]]
+            missing += [row["message"] for row in review["issues"] if row["severity"] == "critical"]
+            raise UseCaseError(status_code=422, detail="Antes de publicar: " + "; ".join(missing) + ". Puedes guardar un borrador.")
 
 
 def owned_company(db: UnitOfWork, user: User) -> Company | None:
@@ -89,12 +102,14 @@ def create_job(
     validate_retired_scenarios(payload.get("application_questions") or [], [])
     if company.verification_required and company.verification_status != "verified":
         payload["status"] = "draft"
+    validate_guided_publication({**payload, "id": None})
     analysis = nlp.analyze_job(
         f"{payload['title']} {payload['description']} {payload['requirements']}"
     )
     job = db.jobs.new(
         **{key: value for key, value in payload.items() if key != "company_id"},
         company_id=company.id,
+        quality_revision=1 if payload.get("quality_details") else 0,
         skills=analysis.skills,
         embedding=analysis.embedding,
     )
@@ -150,6 +165,11 @@ def update_job(
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
     ensure_job_access(db, job, current_user)
     changes = dict(payload)
+    if job.quality_details and "quality_details" in changes and changes["quality_details"] is None:
+        raise UseCaseError(status_code=422, detail="Conserva las condiciones de la revisión guiada")
+    review_values = {key: changes.get(key, getattr(job, key, None)) for key in REVIEW_FIELDS | {"status", "id", "company_id", "blind_hiring"}}
+    validate_guided_publication(review_values)
+    review_changed = bool(review_values.get("quality_details")) and any(getattr(job, key, None) != changes[key] for key in REVIEW_FIELDS.intersection(changes))
     if "application_questions" in changes:
         validate_retired_scenarios(changes["application_questions"] or [], job.application_questions or [])
     if "response_days" in changes and changes["response_days"] is None:
@@ -181,6 +201,17 @@ def update_job(
             )
     for key, value in changes.items():
         setattr(job, key, value)
+    if review_changed:
+        job.quality_revision += 1
+        from app.application.use_cases.events import record_event
+        record_event(db, "job.quality_updated", "job", job.id, actor_user_id=current_user.id,
+                     details={"version": job.quality_revision, "status": job.status})
+        for application in job.applications:
+            if application.status in {ApplicationStatus.HIRED, ApplicationStatus.REJECTED}:
+                continue
+            db.add(db.notifications.new(user_id=application.user_id, type="job_conditions_updated",
+                   title="La empresa actualizó la oferta", body=f"Revisa las condiciones y el proceso de {job.title}. Versión {job.quality_revision}.",
+                   action_url=f"/vacantes/{job.id}"))
     if previous_status != "filled" and job.status == "filled":
         rejected_stage = next(
             (
@@ -251,13 +282,14 @@ def reopen_job(job_id: int, mode: str, current_user: User, db: UnitOfWork, *, nl
     if job.company.verification_required and job.company.verification_status != "verified":
         raise UseCaseError(status_code=403, detail="Verifica la empresa antes de publicar")
     if mode == "continue":
+        validate_guided_publication({key: "active" if key == "status" else getattr(job, key, None) for key in REVIEW_FIELDS | {"status", "id", "company_id", "blind_hiring"}})
         job.status = "active"
         db.commit()
         db.refresh(job)
         return job
     # A new vacancy keeps the previous selection process and notifications intact.
     payload = {key: getattr(job, key) for key in ["company_id", "title", "description", "requirements", "salary", "location", "department", "modality", "employment_type", "sector", "benefits", "languages", "application_questions", "required_education_level", "required_study_fields"]}
-    payload.update({key: getattr(job, key) for key in ["blind_hiring", "skill_requirements", "response_days"]})
+    payload.update({key: getattr(job, key) for key in ["blind_hiring", "skill_requirements", "response_days", "quality_details"]})
     payload["application_questions"] = [question for question in payload["application_questions"] or [] if question.get("category") != "work_scenario"]
     payload["pipeline_stages"] = job.pipeline_stages
     return create_job(payload, current_user, db, nlp=nlp)

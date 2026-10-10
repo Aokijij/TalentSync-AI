@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.api.schemas.job_quality import QualityDetails
 from app.api.schemas.language import LanguageLevel, unique_languages
 from app.api.schemas.matching import SkillRequirement, unique_requirements
 from app.domain.entities.job_sectors import JOB_SECTORS
@@ -63,6 +64,7 @@ def default_pipeline_stages() -> list[PipelineStage]:
 
 
 class JobCreate(PipelineStagesMixin):
+    quality_details: QualityDetails | None = None
     blind_hiring: bool = True
     response_days: int = Field(default=7, ge=1, le=30)
     skill_requirements: list[SkillRequirement] = Field(default_factory=list, max_length=50)
@@ -74,7 +76,7 @@ class JobCreate(PipelineStagesMixin):
     title: str = Field(min_length=2, max_length=180)
     description: str = Field(min_length=10)
     requirements: str = Field(min_length=10)
-    salary: float | None = None
+    salary: float | None = Field(default=None, ge=0, le=1_000_000_000, allow_inf_nan=False)
     location: str | None = None
     department: str | None = None
     modality: str = "remote"
@@ -106,6 +108,7 @@ class JobCreate(PipelineStagesMixin):
 
 
 class JobUpdate(PipelineStagesMixin):
+    quality_details: QualityDetails | None = None
     response_days: int | None = Field(default=None, ge=1, le=30)
     skill_requirements: list[SkillRequirement] | None = Field(default=None, max_length=50)
     _unique_requirements = field_validator("skill_requirements")(unique_requirements)
@@ -114,7 +117,7 @@ class JobUpdate(PipelineStagesMixin):
     title: str | None = Field(default=None, min_length=2, max_length=180)
     description: str | None = Field(default=None, min_length=10)
     requirements: str | None = Field(default=None, min_length=10)
-    salary: float | None = None
+    salary: float | None = Field(default=None, ge=0, le=1_000_000_000, allow_inf_nan=False)
     location: str | None = None
     department: str | None = None
     modality: str | None = None
@@ -149,6 +152,9 @@ class JobUpdate(PipelineStagesMixin):
 
 
 class JobResponse(BaseModel):
+    quality_details: QualityDetails | None = None
+    quality_revision: int = 0
+    quality_summary: dict | None = None
     employer_trust: dict = Field(default_factory=dict)
     blind_hiring: bool = False
     response_days: int = 7
@@ -199,3 +205,10 @@ class PublicStatsResponse(BaseModel):
     companies: int
     candidates: int
     applications: int
+
+
+class QualityPreview(JobCreate):
+    job_id: int | None = None
+    title: str = Field(default="", max_length=180)
+    description: str = Field(default="", max_length=20000)
+    requirements: str = Field(default="", max_length=20000)

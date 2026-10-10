@@ -80,6 +80,7 @@ class User(Base):
     assessment_attempts: Mapped[list["AssessmentAttempt"]] = relationship(cascade="all, delete-orphan")
     reported_incidents: Mapped[list["TrustIncident"]] = relationship(cascade="all, delete-orphan")
     recommendation_feedback: Mapped[list["RecommendationFeedback"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    offer_feedback: Mapped[list["OfferFeedback"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     interview_participants: Mapped[list["InterviewParticipant"]] = relationship(cascade="all, delete-orphan")
     social_identities: Mapped[list["SocialIdentity"]] = relationship(cascade="all, delete-orphan")
     oauth_link_attempts: Mapped[list["OAuthAttempt"]] = relationship(cascade="all, delete-orphan", foreign_keys="OAuthAttempt.link_user_id")
@@ -303,6 +304,9 @@ class Job(Base):
     title: Mapped[str] = mapped_column(String(180), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     requirements: Mapped[str] = mapped_column(Text, nullable=False)
+    quality_details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    quality_revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    offer_feedback: Mapped[list["OfferFeedback"]] = relationship(back_populates="job", cascade="all, delete-orphan")
     salary: Mapped[float | None] = mapped_column(Float)
     location: Mapped[str | None] = mapped_column(String(120))
     department: Mapped[str | None] = mapped_column(String(120))
@@ -347,6 +351,14 @@ class Job(Base):
     recommendations: Mapped[list["Recommendation"]] = relationship(
         back_populates="job", cascade="all, delete-orphan"
     )
+
+    @property
+    def quality_summary(self) -> dict | None:
+        if not self.quality_details:
+            return None
+        from app.domain.services.offer_review import review_offer
+        review = review_offer(self)
+        return {key: review[key] for key in ("score", "level", "can_publish")}
 
     @property
     def company_name(self) -> str | None:
@@ -714,3 +726,16 @@ class Notification(Base):
         }:
             return "applications"
         return "system"
+
+
+class OfferFeedback(Base):
+    __tablename__ = "offer_feedback"
+    __table_args__ = (UniqueConstraint("user_id", "job_id", name="uq_offer_feedback_pair"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)
+    reason: Mapped[str] = mapped_column(String(30), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    user: Mapped[User] = relationship(back_populates="offer_feedback")
+    job: Mapped[Job] = relationship(back_populates="offer_feedback")

@@ -83,6 +83,8 @@ class CompanyFollower(Protocol):
 
 
 class Job(Protocol):
+    quality_details: dict | None
+    quality_revision: int
     id: int
     company_id: int
     title: str
