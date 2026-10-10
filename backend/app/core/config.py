@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     session_auth_enabled: bool = False
     company_mfa_required: bool = True
     local_admin_review_enabled: bool = False
+    local_mfa_review_enabled: bool = False
     local_mail_enabled: bool = False
     smtp_enabled: bool = False
     smtp_host: str = ""
@@ -149,8 +150,13 @@ class Settings(BaseSettings):
         return self
 
     @property
+    def mfa_review_active(self):
+        return (self.local_mfa_review_enabled and self.environment == "development"
+                and self.database_url.startswith("sqlite:"))
+
+    @property
     def admin_mfa_required(self):
-        return not (self.local_admin_review_enabled and self.environment == "development"
+        return not self.mfa_review_active and not (self.local_admin_review_enabled and self.environment == "development"
                     and self.database_url.startswith("sqlite:"))
 
     @property

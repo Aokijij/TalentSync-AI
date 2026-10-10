@@ -4,7 +4,9 @@ from types import SimpleNamespace
 
 import pytest
 from test_account_security import browser, csrf  # noqa: F401
+from test_admin_sso import begin, corporate, finish, staff  # noqa: F401
 from test_api_flows import client, register  # noqa: F401
+from test_social_access import callback, social, start  # noqa: F401
 
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
@@ -18,6 +20,49 @@ def test_admin_review_waiver_is_local_only(monkeypatch, environment, database, w
     monkeypatch.setattr(settings, "environment", environment)
     monkeypatch.setattr(settings, "database_url", database)
     assert settings.admin_mfa_required is not waived
+
+
+@pytest.mark.parametrize("environment,database,active", [("development", "sqlite://", True), ("production", "sqlite://", False), ("staging", "sqlite://", False), ("development", "postgresql://localhost/db", False)])
+def test_all_role_mfa_review_is_local_only(monkeypatch, environment, database, active):
+    monkeypatch.setattr(settings, "local_mfa_review_enabled", True)
+    monkeypatch.setattr(settings, "environment", environment)
+    monkeypatch.setattr(settings, "database_url", database)
+    assert settings.mfa_review_active is active
+
+
+@pytest.mark.parametrize("role,endpoint", [("candidate", "/profiles/me"), ("company", "/organization/me"), ("admin", "/admin/stats")])
+@pytest.mark.parametrize("enrolled", [False, True])
+def test_review_login_without_mfa_for_every_role_preserves_secrets(browser, monkeypatch, role, endpoint, enrolled):
+    monkeypatch.setattr(settings, "local_mfa_review_enabled", True)
+    monkeypatch.setattr(settings, "environment", "development")
+    extra = {"company_name": "Local review company", "nit": "REVIEW-123"} if role == "company" else {}
+    user, _ = register(browser, "review-" + role, "company" if role == "company" else "candidate", **extra)
+    with browser.session_factory() as db:
+        row = db.get(User, user["id"])
+        row.role = UserRole(role)
+        row.mfa_enabled = enrolled
+        row.mfa_secret = "preserved-secret" if enrolled else None
+        row.recovery_codes = ["preserved-recovery"] if enrolled else []
+        db.commit()
+    login_url = f"/api/v1/auth/session/{role}/login"
+    assert browser.post(login_url, json={"email": user["email"], "password": "Wrong-password-2026!"}).status_code == 401
+    result = browser.post(login_url, json={"email": user["email"], "password": "Test-password-2026!"})
+    assert result.status_code == 200, result.text
+    assert not result.json().get("mfa_required") and not result.json()["mfa_setup_required"]
+    options = browser.get("/api/v1/auth/options").json()
+    assert options["mfa_review"] and not options["admin_mfa_required"] and not options["company_mfa_required"]
+    assert browser.get("/api/v1" + endpoint).status_code == 200
+    with browser.session_factory() as db:
+        row = db.get(User, user["id"])
+        assert row.mfa_enabled is enrolled and row.mfa_last_counter is None
+        assert row.mfa_secret == ("preserved-secret" if enrolled else None)
+        assert row.recovery_codes == (["preserved-recovery"] if enrolled else [])
+        assert db.query(UserSession).filter_by(user_id=user["id"]).one().mfa_verified is False
+    monkeypatch.setattr(settings, "local_mfa_review_enabled", False)
+    if enrolled or role != "candidate":
+        assert browser.get("/api/v1" + endpoint).status_code == 403
+    if enrolled:
+        assert browser.post(login_url, json={"email": user["email"], "password": "Test-password-2026!"}).json()["mfa_required"]
 
 
 def test_local_admin_login_preserves_enrolled_authenticator(browser, monkeypatch):
@@ -39,6 +84,38 @@ def test_local_admin_login_preserves_enrolled_authenticator(browser, monkeypatch
         assert db.query(UserSession).filter_by(user_id=user["id"]).one().mfa_verified is False
     monkeypatch.setattr(settings, "local_admin_review_enabled", False)
     assert browser.get("/api/v1/admin/stats").status_code == 403
+
+
+def test_social_review_login_skips_challenge_without_claiming_mfa(social, monkeypatch):
+    monkeypatch.setattr(settings, "local_mfa_review_enabled", True)
+    monkeypatch.setattr(settings, "environment", "development")
+    callback(social, start(social))
+    with social.session_factory() as db:
+        user = db.query(User).one()
+        user.mfa_enabled = True
+        user.mfa_secret = "preserved-secret"
+        db.commit()
+    response = callback(social, start(social))
+    assert response.headers["location"].endswith("/candidato")
+    assert social.get("/api/v1/profiles/me").status_code == 200
+    with social.session_factory() as db:
+        assert all(not row.mfa_verified for row in db.query(UserSession).all())
+        assert db.query(User).one().mfa_secret == "preserved-secret"
+    monkeypatch.setattr(settings, "local_mfa_review_enabled", False)
+    assert social.get("/api/v1/profiles/me").status_code == 403
+
+
+def test_corporate_review_login_skips_platform_mfa(corporate, monkeypatch):
+    monkeypatch.setattr(settings, "local_mfa_review_enabled", True)
+    monkeypatch.setattr(settings, "environment", "development")
+    staff(corporate, mfa=True)
+    response = finish(corporate, begin(corporate))
+    assert response.headers["location"].endswith("/admin")
+    assert corporate.get("/api/v1/admin/stats").status_code == 200
+    with corporate.session_factory() as db:
+        assert db.query(UserSession).one().mfa_verified is False
+    monkeypatch.setattr(settings, "local_mfa_review_enabled", False)
+    assert corporate.get("/api/v1/admin/stats").status_code == 403
 
 
 def test_external_certificate_needs_completed_owned_plan_and_proof(client):

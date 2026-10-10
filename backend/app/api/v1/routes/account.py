@@ -42,7 +42,7 @@ def _cookie_response(request, response, payload, db, security, admin):
         if f"/{portal}/login" in request.url.path:
             values["portal"] = portal
     result = cases.create_session(db, values, security, admin=admin,
-                                  user_agent=request.headers.get("user-agent", ""), company_mfa_required=settings.company_mfa_required, admin_mfa_required=settings.admin_mfa_required)
+                                  user_agent=request.headers.get("user-agent", ""), company_mfa_required=settings.company_mfa_required, admin_mfa_required=settings.admin_mfa_required, mfa_review=settings.mfa_review_active)
     if result.get("mfa_required"):
         return result
     set_session_cookies(response, result)
@@ -62,7 +62,8 @@ def set_session_cookies(response, result):
 @router.get("/auth/options")
 def options(gateway=Depends(get_social_identity_provider)):
     return {"mode": "session" if settings.session_auth_enabled else "legacy",
-            "company_mfa_required": settings.company_mfa_required,
+            "company_mfa_required": settings.company_mfa_required and not settings.mfa_review_active,
+            "mfa_review": settings.mfa_review_active,
             "admin_mfa_required": settings.admin_mfa_required,
             "local_mail": settings.local_mail_enabled and settings.environment == "development",
             "providers": [{"id": name, "enabled": gateway.configured(name),

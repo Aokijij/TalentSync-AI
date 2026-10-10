@@ -44,7 +44,7 @@ def callback(request: Request, provider: str, state: str = Query(default="", max
     try:
         result = cases.callback(db, provider, state, request.cookies.get("talentsync_oauth_browser"), code,
                                 gateway, security, user_agent=request.headers.get("user-agent", ""),
-                                session_token=request.cookies.get("talentsync_session"))
+                                session_token=request.cookies.get("talentsync_session"), mfa_review=settings.mfa_review_active)
         status = "linked" if result.get("linked") else "mfa" if result.get("mfa_required") else "new" if result["created"] else "ok"
     except UseCaseError as error:
         status = "existing" if error.status_code == 409 else "unavailable" if error.status_code == 503 else "failed"
@@ -76,7 +76,7 @@ def link(request: Request, response: Response, provider: str, payload: SocialAcc
          user=Depends(candidate), db=Depends(get_unit_of_work), gateway=Depends(get_social_identity_provider),
          security=Depends(get_account_security)):
     _origin(request)
-    result = cases.begin(db, provider, gateway, security, user=user, session=_session(request), credentials=payload.model_dump())
+    result = cases.begin(db, provider, gateway, security, user=user, session=_session(request), credentials=payload.model_dump(), mfa_review=settings.mfa_review_active)
     _temporary_cookie(response, "talentsync_oauth_browser", result["browser"], 600)
     return {"url": result["url"]}
 
@@ -86,7 +86,7 @@ def link(request: Request, response: Response, provider: str, payload: SocialAcc
 def unlink(request: Request, provider: str, payload: SocialAccountRequest,
            user=Depends(candidate), db=Depends(get_unit_of_work), security=Depends(get_account_security)):
     _origin(request)
-    return cases.unlink(db, user, _session(request), provider, payload.model_dump(), security)
+    return cases.unlink(db, user, _session(request), provider, payload.model_dump(), security, mfa_review=settings.mfa_review_active)
 
 
 @router.post("/auth/social/complete")

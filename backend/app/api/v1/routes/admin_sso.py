@@ -43,7 +43,7 @@ def callback(request: Request, state: str = Query(default="", max_length=256), c
     result = None
     try:
         result = cases.callback(db, state, request.cookies.get("talentsync_admin_sso_browser"), code, gateway, security,
-                                user_agent=request.headers.get("user-agent", ""), **get_corporate_configuration())
+                                user_agent=request.headers.get("user-agent", ""), mfa_review=settings.mfa_review_active, **get_corporate_configuration())
         destination = "/acceso-corporativo?status=mfa" if result.get("mfa_required") else "/seguridad" if result["mfa_setup_required"] else "/admin"
     except UseCaseError as error:
         destination = "/acceso-corporativo?status=unavailable" if error.status_code == 503 else "/acceso-corporativo?status=failed"

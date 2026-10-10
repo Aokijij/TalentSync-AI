@@ -4,7 +4,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 
 const labels = { google: "Google", github: "GitHub", linkedin: "LinkedIn" };
 
-export function SocialAccounts({ user, providers = [], onSessionsChanged }) {
+export function SocialAccounts({ user, providers = [], onSessionsChanged, mfaReview = false }) {
   const [identities, setIdentities] = useState(null);
   const [selection, setSelection] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -52,9 +52,9 @@ export function SocialAccounts({ user, providers = [], onSessionsChanged }) {
       <h3 className="font-semibold">{selection.unlink ? "Desvincular" : "Vincular"} {labels[selection.provider]}</h3>
       <p className="text-sm text-[var(--muted)]">{selection.unlink ? "Confirma tu contraseña para conservar el acceso por correo. Cerraremos las demás sesiones y cancelaremos los accesos sociales pendientes." : "Confirma tu acceso a TalentSync. Después elegirás la cuenta en el proveedor; la autorización vence en diez minutos."}</p>
       <label className="block text-sm">Contraseña actual de TalentSync<input name="password" className="field-control mt-1" required type="password" autoComplete="current-password" maxLength={72} /></label>
-      {user.mfa_enabled && <label className="block text-sm">Código de autenticación o recuperación<input name="code" className="field-control mt-1" required minLength={6} maxLength={128} autoComplete="one-time-code" /></label>}
+      {user.mfa_enabled && !mfaReview && <label className="block text-sm">Código de autenticación o recuperación<input name="code" className="field-control mt-1" required minLength={6} maxLength={128} autoComplete="one-time-code" /></label>}
       <div className="flex flex-wrap gap-3"><button disabled={busy} className="button-primary">{busy ? "Validando…" : selection.unlink ? "Confirmar desvinculación" : "Continuar al proveedor"}</button><button type="button" className="button-secondary" disabled={busy} onClick={() => setSelection(null)}>Cancelar</button></div>
     </form>}
-    <p className="text-xs text-[var(--muted)]">Si te registraste con una cuenta social y aún no tienes contraseña, define una mediante <Link className="text-[var(--accent)]" to="/recuperar-acceso">Recuperar acceso</Link>. Los proveedores vinculados siguen sujetos al MFA de TalentSync.</p>
+    <p className="text-xs text-[var(--muted)]">Si te registraste con una cuenta social y aún no tienes contraseña, define una mediante <Link className="text-[var(--accent)]" to="/recuperar-acceso">Recuperar acceso</Link>. {mfaReview ? "La verificación en dos pasos está pausada durante esta revisión local." : "Los proveedores vinculados siguen sujetos al MFA de TalentSync."}</p>
   </section>;
 }

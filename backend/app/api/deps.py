@@ -46,7 +46,7 @@ def get_current_user(
                     raise HTTPException(status_code=401, detail="El proveedor corporativo cambió; inicia sesión de nuevo")
             elif settings.admin_sso_required:
                 raise HTTPException(status_code=401, detail="Inicia una sesión mediante el proveedor corporativo")
-        admin_review = user.role == UserRole.ADMIN and not settings.admin_mfa_required
+        admin_review = settings.mfa_review_active or user.role == UserRole.ADMIN and not settings.admin_mfa_required
         access_notice = user.role == UserRole.COMPANY and (
             (request.method == "GET" and request.url.path == "/api/v1/organization/access")
             or (request.method == "POST" and request.url.path == "/api/v1/organization/access-review")

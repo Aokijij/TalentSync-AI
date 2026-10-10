@@ -38,7 +38,7 @@ def bound_admin(db, subject, provider="workspace"):
     return user
 
 
-def callback(db, state, browser, code, gateway, security, *, user_agent="", domain="", provider="workspace", authority=""):
+def callback(db, state, browser, code, gateway, security, *, user_agent="", domain="", provider="workspace", authority="", mfa_review=False):
     if provider not in PROVIDERS or not gateway.configured(provider):
         raise UseCaseError(status_code=503, detail="El acceso corporativo no está configurado")
     row = db.accounts.oauth_attempt(token_digest(state))
@@ -61,14 +61,14 @@ def callback(db, state, browser, code, gateway, security, *, user_agent="", doma
         raise UseCaseError(status_code=400, detail="El acceso corporativo fue cancelado")
     identity = gateway.exchange(provider, code, verifier, nonce)
     user = bound_admin(db, identity["subject"], provider)
-    if user.mfa_enabled:
+    if user.mfa_enabled and not mfa_review:
         pending = secrets.token_urlsafe(48)
         db.add(db.accounts.new_token(user_id=user.id, token_hash=token_digest(pending), purpose="admin_sso_mfa",
             context={"subject": identity["subject"], "domain": domain, "provider": provider, "authority": authority}, expires_at=datetime.utcnow() + timedelta(minutes=5)))
         db.commit()
         return {"pending": pending, "mfa_required": True}
     # First access can only reach account security until platform MFA is configured.
-    return issue_session(db, user, user_agent=user_agent, authentication_method=provider, authentication_authority=authority)
+    return issue_session(db, user, user_agent=user_agent, authentication_method=provider, authentication_authority=authority, mfa_review=mfa_review)
 
 
 def complete(db, pending, code, security, *, user_agent="", domain="", provider="workspace", authority=""):

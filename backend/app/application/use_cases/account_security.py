@@ -41,7 +41,7 @@ def _mfa(db, user, code, security):
     raise UseCaseError(status_code=401, detail="Código de autenticación inválido o ya utilizado")
 
 
-def create_session(db, payload, security, *, admin=False, user_agent="", company_mfa_required=True, admin_mfa_required=True):
+def create_session(db, payload, security, *, admin=False, user_agent="", company_mfa_required=True, admin_mfa_required=True, mfa_review=False):
     user = db.users.find_by_email(payload["email"])
     if user is None:
         # Perform equivalent password work for unknown accounts.
@@ -52,15 +52,15 @@ def create_session(db, payload, security, *, admin=False, user_agent="", company
         raise UseCaseError(status_code=401, detail="Credenciales inválidas para este acceso")
     if payload.get("portal") and user.role.value != payload["portal"]:
         raise UseCaseError(status_code=401, detail="Esta cuenta no pertenece a este acceso. Utiliza el portal de tu rol.")
-    review = user.role == UserRole.ADMIN and not admin_mfa_required
+    review = mfa_review or user.role == UserRole.ADMIN and not admin_mfa_required
     if user.mfa_enabled and not review and not payload.get("code"):
         return {"mfa_required": True}
     if not review:
         _mfa(db, user, payload.get("code"), security)
-    return issue_session(db, user, remember=payload.get("remember"), user_agent=user_agent, company_mfa_required=company_mfa_required, admin_mfa_required=admin_mfa_required)
+    return issue_session(db, user, remember=payload.get("remember"), user_agent=user_agent, company_mfa_required=company_mfa_required, admin_mfa_required=admin_mfa_required, mfa_review=mfa_review)
 
 
-def issue_session(db, user, *, remember=False, user_agent="", authentication_method="password", authentication_authority="", company_mfa_required=True, admin_mfa_required=True):
+def issue_session(db, user, *, remember=False, user_agent="", authentication_method="password", authentication_authority="", company_mfa_required=True, admin_mfa_required=True, mfa_review=False):
     # Callers must authenticate the user and complete any configured MFA first.
     token, csrf = secrets.token_urlsafe(48), secrets.token_urlsafe(32)
     now = datetime.utcnow()
@@ -68,14 +68,14 @@ def issue_session(db, user, *, remember=False, user_agent="", authentication_met
     lifetime = timedelta(days=30) if remember else timedelta(hours=8)
     session = db.accounts.new_session(user_id=user.id, token_hash=token_digest(token),
         csrf_hash=token_digest(csrf), user_agent=user_agent[:255], created_at=now,
-          last_seen_at=now, expires_at=now + lifetime, mfa_verified=user.mfa_enabled and not (user.role == UserRole.ADMIN and not admin_mfa_required), authentication_method=authentication_method,
+          last_seen_at=now, expires_at=now + lifetime, mfa_verified=user.mfa_enabled and not mfa_review and not (user.role == UserRole.ADMIN and not admin_mfa_required), authentication_method=authentication_method,
           authentication_authority=authentication_authority)
     db.add(session)
     db.flush()
     record_event(db, "session.created", "user", user.id, actor_user_id=user.id, details={"session_id": session.id})
     db.commit()
     return {"token": token, "csrf": csrf, "remember": remember, "user": user,
-            "mfa_setup_required": requires_mfa_setup(user.role, company_mfa_required, admin_mfa_required) and not user.mfa_enabled}
+            "mfa_setup_required": not mfa_review and requires_mfa_setup(user.role, company_mfa_required, admin_mfa_required) and not user.mfa_enabled}
 
 
 def resolve_session(db, token, *, csrf=None, mutation=False):

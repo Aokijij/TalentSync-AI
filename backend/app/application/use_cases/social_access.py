@@ -16,11 +16,11 @@ from app.domain.entities.enums import UserRole
 from app.domain.services.authentication import token_digest
 
 
-def begin(db, provider, gateway, security, *, user=None, session=None, credentials=None):
+def begin(db, provider, gateway, security, *, user=None, session=None, credentials=None, mfa_review=False):
     if provider not in {"github", "google", "linkedin"} or not gateway.configured(provider):
         raise UseCaseError(status_code=503, detail="El acceso social no está configurado")
     if user is not None:
-        _reauthenticate(db, user, session, credentials, security)
+        _reauthenticate(db, user, session, credentials, security, mfa_review=mfa_review)
         if any(row.provider == provider for row in db.accounts.identities_for_user(user.id)):
             raise UseCaseError(status_code=409, detail="Ese proveedor ya está vinculado a tu cuenta")
     state, browser, verifier = (secrets.token_urlsafe(48) for _ in range(3))
@@ -36,7 +36,7 @@ def begin(db, provider, gateway, security, *, user=None, session=None, credentia
     return {"url": url, "browser": browser}
 
 
-def callback(db, provider, state, browser, code, gateway, security, *, user_agent="", session_token=None):
+def callback(db, provider, state, browser, code, gateway, security, *, user_agent="", session_token=None, mfa_review=False):
     if not gateway.configured(provider):
         raise UseCaseError(status_code=503, detail="El acceso social no está configurado")
     row = db.accounts.oauth_attempt(token_digest(state))
@@ -49,7 +49,7 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
     if purpose not in {"login", "link"}:
         raise UseCaseError(status_code=400, detail="Solicitud de acceso inválida")
     if purpose == "link":
-        _link_context(db, session_token, link_user_id, link_session_id)
+        _link_context(db, session_token, link_user_id, link_session_id, mfa_review=mfa_review)
     if not db.accounts.claim_oauth_attempt(row.id):
         raise UseCaseError(status_code=400, detail="El acceso ya fue utilizado")
     db.commit()  # Consume before network I/O; provider failure must not make state reusable.
@@ -57,7 +57,7 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
         raise UseCaseError(status_code=400, detail="No se autorizó el acceso social")
     identity_data = gateway.exchange(provider, code, verifier, nonce)
     if purpose == "link":
-        user = _link_context(db, session_token, link_user_id, link_session_id)
+        user = _link_context(db, session_token, link_user_id, link_session_id, mfa_review=mfa_review)
         if (db.accounts.identity(provider, identity_data["subject"])
                 or any(row.provider == provider for row in db.accounts.identities_for_user(user.id))):
             raise UseCaseError(status_code=409, detail="No se pueden unir ni reemplazar cuentas sociales existentes")
@@ -84,27 +84,28 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
         db.add(db.accounts.new_identity(user_id=user.id, provider=provider, subject=identity_data["subject"]))
         record_event(db, "account.created", "user", user.id, actor_user_id=user.id,
                      details={"role": "candidate", "source": provider})
-    if user.mfa_enabled:
+    if user.mfa_enabled and not mfa_review:
         pending = secrets.token_urlsafe(48)
         db.add(db.accounts.new_token(user_id=user.id, token_hash=token_digest(pending), purpose="social_mfa",
             expires_at=datetime.utcnow() + timedelta(minutes=5)))
         db.commit()
         return {"pending": pending, "mfa_required": True}
-    return {**issue_session(db, user, user_agent=user_agent), "created": created}
+    return {**issue_session(db, user, user_agent=user_agent, mfa_review=mfa_review), "created": created}
 
 
-def _reauthenticate(db, user, session, credentials, security):
+def _reauthenticate(db, user, session, credentials, security, *, mfa_review=False):
     if user.role != UserRole.CANDIDATE or session is None or session.user_id != user.id:
         raise UseCaseError(status_code=403, detail="Se requiere una sesión de candidato")
     _password(user, (credentials or {}).get("password", ""), security)
-    _mfa(db, user, (credentials or {}).get("code"), security)
+    if not mfa_review:
+        _mfa(db, user, (credentials or {}).get("code"), security)
 
 
-def _link_context(db, session_token, user_id, session_id):
+def _link_context(db, session_token, user_id, session_id, *, mfa_review=False):
     user, session = resolve_session(db, session_token or "")
     db.refresh(user)
     if (user.id != user_id or session.id != session_id or user.role != UserRole.CANDIDATE
-            or (user.mfa_enabled and not session.mfa_verified)):
+            or (user.mfa_enabled and not session.mfa_verified and not mfa_review)):
         raise UseCaseError(status_code=403, detail="La vinculación corresponde a otra sesión")
     return user
 
@@ -113,11 +114,11 @@ def identities(db, user):
     return [{"provider": row.provider, "created_at": row.created_at} for row in db.accounts.identities_for_user(user.id)]
 
 
-def unlink(db, user, session, provider, credentials, security):
+def unlink(db, user, session, provider, credentials, security, *, mfa_review=False):
     selected = next((row for row in db.accounts.identities_for_user(user.id) if row.provider == provider), None)
     if selected is None:
         raise UseCaseError(status_code=404, detail="Proveedor no vinculado")
-    _reauthenticate(db, user, session, credentials, security)
+    _reauthenticate(db, user, session, credentials, security, mfa_review=mfa_review)
     db.delete(selected)
     db.accounts.cancel_social_access(user.id)
     db.accounts.revoke_sessions(user.id, except_id=session.id)
