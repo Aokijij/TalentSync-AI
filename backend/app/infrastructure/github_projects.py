@@ -1,9 +1,12 @@
 """Opt-in public GitHub metadata and manifest reader. No clone, source execution or credentials."""
 import base64
+import copy
 import hashlib
 import json
 import re
+import threading
 import time
+from collections import OrderedDict, deque
 from pathlib import PurePosixPath
 from urllib.parse import urlsplit
 
@@ -18,6 +21,9 @@ class GitHubProjectInspector:
     def __init__(self, settings, transport=None):
         self.settings = settings
         self.transport = transport
+        self._lock = threading.Lock()
+        self._cache = OrderedDict()
+        self._calls = deque()
 
     @staticmethod
     def repository(url):
@@ -37,11 +43,17 @@ class GitHubProjectInspector:
         except ValueError:
             raise UseCaseError(status_code=422, detail="Usa la URL raíz HTTPS de un repositorio público: https://github.com/propietario/repositorio") from None
 
-    @staticmethod
-    def _json(client, path, limit=1_000_000):
+    def _json(self, client, path, limit=1_000_000):
+        with self._lock:
+            now = time.monotonic()
+            while self._calls and self._calls[0] < now - 3600:
+                self._calls.popleft()
+            if len(self._calls) >= 50:
+                raise UseCaseError(status_code=503, detail="Se alcanzó el presupuesto local de consultas a GitHub. Intenta más tarde o registra el enlace como evidencia manual.")
+            self._calls.append(now)
         with client.stream("GET", f"https://api.github.com{path}", headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}) as response:
             if response.status_code in {403, 429}:
-                raise UseCaseError(status_code=503, detail="GitHub limitó temporalmente las consultas públicas. Prueba más tarde o usa un ZIP local.")
+                raise UseCaseError(status_code=503, detail="GitHub limitó temporalmente las consultas públicas. Prueba más tarde o registra el enlace como evidencia manual.")
             if response.status_code == 404:
                 raise UseCaseError(status_code=422, detail="No encontramos un repositorio público accesible con contenido")
             response.raise_for_status()
@@ -54,13 +66,29 @@ class GitHubProjectInspector:
 
     def inspect(self, url):
         if not self.settings.github_project_analysis_enabled:
-            raise UseCaseError(status_code=503, detail="La lectura de GitHub está desactivada; puedes analizar un ZIP local")
+            raise UseCaseError(status_code=503, detail="La consulta pública de GitHub está desactivada")
+        owner, repo = self.repository(url)
+        key = (owner.casefold(), repo.casefold())
+        with self._lock:
+            cached = self._cache.get(key)
+            if cached and cached[0] > time.monotonic():
+                return copy.deepcopy(cached[1])
+        report = self._inspect(url)
+        with self._lock:
+            self._cache[key] = (time.monotonic() + 600, copy.deepcopy(report))
+            while len(self._cache) > 32:
+                self._cache.popitem(last=False)
+        return report
+
+    def _inspect(self, url):
+        if not self.settings.github_project_analysis_enabled:
+            raise UseCaseError(status_code=503, detail="La lectura de GitHub está desactivada; puedes registrar el enlace como evidencia manual")
         owner, repo = self.repository(url)
         root = f"/repos/{owner}/{repo}"
         deadline = time.monotonic() + 30
         def fetch(client, path, limit=1_000_000):
             if time.monotonic() >= deadline:
-                raise UseCaseError(status_code=503, detail="La consulta de GitHub tardó demasiado. Prueba más tarde o usa un ZIP local.")
+                raise UseCaseError(status_code=503, detail="La consulta de GitHub tardó demasiado. Prueba más tarde o registra el enlace como evidencia manual.")
             return self._json(client, path, limit)
         try:
             with httpx.Client(timeout=httpx.Timeout(8, connect=3), follow_redirects=False, trust_env=False, transport=self.transport) as client:
@@ -104,4 +132,4 @@ class GitHubProjectInspector:
                     files_considered=len(files), files_ignored=ignored, manifests_read=len(manifests))
                 return report
         except (httpx.HTTPError, ValueError, TypeError, KeyError, AttributeError, RecursionError):
-            raise UseCaseError(status_code=422, detail="No pudimos analizar el repositorio completo dentro de los límites: 2.000 entradas y 32 manifiestos de 256 KiB. No seguimos redirecciones. Puedes usar un ZIP local.") from None
+            raise UseCaseError(status_code=422, detail="No pudimos analizar el repositorio completo dentro de los límites: 2.000 entradas y 32 manifiestos de 256 KiB. No seguimos redirecciones. Puedes registrar el enlace como evidencia manual.") from None

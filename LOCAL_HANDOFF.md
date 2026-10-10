@@ -203,3 +203,17 @@ redacción y los estados efectivos de integraciones se describen en
 [docs/CIERRE_FUNCIONES_LOCALES.md](docs/CIERRE_FUNCIONES_LOCALES.md).
 La revisión sigue sin proveedores externos ni servicios de pago. Los certificados
 y las empresas continúan con comprobación manual, claramente identificada.
+
+## Primera etapa de integraciones
+
+GitHub público ya tiene recorrido de candidato con consentimiento, vista previa
+y guardado como evidencia declarada. El entorno local habilita ese lector.
+Microsoft Learn incorpora vista previa administrativa e importación de
+borradores, pendiente de credenciales de Microsoft Entra. Resend está preparado
+como transporte de la bandeja de salida; permanece desactivado hasta disponer
+de dominio/remitente verificado. El lanzador local sigue impidiendo correo
+externo y acceso a almacenamiento de Azure.
+
+Activación, límites y estado real en
+[docs/INTEGRACIONES_PRIMERA_ETAPA.md](docs/INTEGRACIONES_PRIMERA_ETAPA.md).
+Plantilla sin secretos: `backend/integrations.env.example`.

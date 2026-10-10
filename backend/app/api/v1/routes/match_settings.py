@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends
 
 from app.api.deps import (
+    get_account_security,
+    get_repository_inspector,
     get_text_analysis,
     get_unit_of_work,
     require_roles,
@@ -8,12 +10,31 @@ from app.api.deps import (
 from app.api.schemas.matching import (
     CandidatePreferences,
     EvidenceSubmission,
+    ProjectEvidenceSubmission,
+    RepositoryPreviewRequest,
 )
 from app.application.use_cases import match_settings as cases
+from app.application.use_cases import project_evidence
+from app.core.config import settings
 from app.domain.entities.enums import UserRole
 
 router = APIRouter()
 candidate = require_roles(UserRole.CANDIDATE)
+
+
+@router.get("/integrations/github/capabilities")
+def project_capabilities(user=Depends(candidate)):
+    return {"github_public": settings.github_project_analysis_enabled}
+
+
+@router.post("/integrations/github/preview")
+def github_preview(payload: RepositoryPreviewRequest, user=Depends(candidate), inspector=Depends(get_repository_inspector), security=Depends(get_account_security)):
+    return project_evidence.preview(user, payload.url, inspector, security)
+
+
+@router.post("/integrations/github/evidence")
+def save_project(payload: ProjectEvidenceSubmission, user=Depends(candidate), db=Depends(get_unit_of_work), security=Depends(get_account_security)):
+    return project_evidence.save(db, user, payload.model_dump(mode="json"), security)
 
 
 @router.get("/matching/preferences")

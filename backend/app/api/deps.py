@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -28,6 +30,12 @@ from app.infrastructure.security.accounts import AccountSecurity
 from app.infrastructure.security.jwt import decode_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+
+@lru_cache
+def get_learn_catalog():
+    from app.infrastructure.learn_catalog import LearnCatalog
+    return LearnCatalog(settings)
 
 
 def get_current_user(
@@ -132,6 +140,7 @@ def get_project_inspector() -> ProjectInspectorPort:
     return ProjectInspector()
 
 
+@lru_cache
 def get_repository_inspector():
     from app.infrastructure.github_projects import GitHubProjectInspector
     return GitHubProjectInspector(settings)

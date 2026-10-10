@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     if settings.match_model_path:
         from app.infrastructure.nlp.matching_encoder import matching_encoder
         await asyncio.to_thread(matching_encoder)
-    if settings.smtp_enabled:
+    if settings.smtp_enabled or settings.resend_enabled:
         from app.infrastructure.mail_scheduler import periodic_mail
         mail_task = asyncio.create_task(periodic_mail(stop_event))
     if settings.model_maintenance_enabled:

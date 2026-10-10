@@ -5,6 +5,7 @@ from app.application.use_cases.mail_delivery import deliver_outbox
 from app.core.config import settings
 from app.infrastructure.database.session import SessionLocal
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
+from app.infrastructure.security.resend import ResendDelivery
 from app.infrastructure.security.smtp import SmtpDelivery
 
 logger = logging.getLogger(__name__)
@@ -12,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 def run_mail_cycle():
     with SessionLocal() as session:
-        return deliver_outbox(SqlAlchemyUnitOfWork(session), SmtpDelivery(settings))
+        gateway = ResendDelivery(settings) if settings.resend_enabled else SmtpDelivery(settings)
+        return deliver_outbox(SqlAlchemyUnitOfWork(session), gateway)
 
 
 async def periodic_mail(stop_event):

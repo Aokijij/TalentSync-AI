@@ -3,7 +3,12 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, StrictFloat, StrictInt, StrictStr
 
-from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
+from app.api.deps import (
+    get_learn_catalog,
+    get_text_analysis,
+    get_unit_of_work,
+    require_roles,
+)
 from app.api.schemas.learning import (
     ExternalCertificate,
     ResourceContent,
@@ -17,6 +22,34 @@ from app.domain.entities.enums import UserRole
 router = APIRouter()
 candidate = require_roles(UserRole.CANDIDATE)
 admin = require_roles(UserRole.ADMIN)
+
+
+class LearnPreview(BaseModel):
+    kind: Literal["modules", "learning-paths"] = "modules"
+    products: str = Field(default="", max_length=120, pattern=r"^[a-z0-9,-]*$")
+    cursor: str = Field(default="", max_length=4000)
+
+
+class LearnImport(BaseModel):
+    preview_id: str = Field(min_length=20, max_length=100)
+    ids: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(min_length=1, max_length=100)
+
+
+@router.get("/admin/learning/sources")
+def learning_sources(user=Depends(admin), gateway=Depends(get_learn_catalog)):
+    return {"microsoft_learn": {"configured": gateway.configured, "authentication": "Microsoft Entra",
+                               "certificate_verification": False}}
+
+
+@router.post("/admin/learning/sources/microsoft-learn/preview")
+def preview_learn(payload: LearnPreview, user=Depends(admin), gateway=Depends(get_learn_catalog)):
+    return gateway.preview(**payload.model_dump(), actor_id=user.id)
+
+
+@router.post("/admin/learning/sources/microsoft-learn/import")
+def import_learn(payload: LearnImport, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_learn_catalog)):
+    selected = gateway.selected(payload.preview_id, payload.ids, actor_id=user.id)
+    return learning_resources.import_source(db, user, selected)
 
 
 class PlanUpdate(BaseModel):

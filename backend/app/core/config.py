@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     smtp_username: str = ""
     smtp_password: str = ""
     smtp_from: str = ""
+    resend_enabled: bool = False
+    resend_api_key: str = ""
+    resend_from: str = ""
+    learn_enabled: bool = False
+    learn_tenant_id: str = ""
+    learn_client_id: str = ""
+    learn_client_secret: str = ""
     session_cookie_secure: bool = True
     public_app_url: str = "http://127.0.0.1:5173"
     oauth_github_client_id: str = ""
@@ -138,6 +145,21 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def safe_smtp_configuration(self):
+        if self.resend_enabled:
+            if self.smtp_enabled or self.local_mail_enabled:
+                raise ValueError("Selecciona un solo transporte de correo: local, SMTP o Resend")
+            if not self.resend_api_key or any(char.isspace() for char in self.resend_api_key):
+                raise ValueError("Resend requiere una clave API válida")
+            TypeAdapter(EmailStr).validate_python(self.resend_from)
+        if self.learn_enabled:
+            from uuid import UUID
+            try:
+                UUID(self.learn_tenant_id)
+                UUID(self.learn_client_id)
+            except ValueError:
+                raise ValueError("Microsoft Learn requiere identificadores UUID de tenant y aplicación") from None
+            if not self.learn_client_secret:
+                raise ValueError("Microsoft Learn requiere el secreto de la aplicación")
         if self.smtp_enabled:
             if self.local_mail_enabled:
                 raise ValueError("SMTP y el buzón local no pueden activarse simultáneamente")
@@ -161,11 +183,11 @@ class Settings(BaseSettings):
 
     @property
     def mail_delivery_enabled(self):
-        return self.local_mail_enabled or self.smtp_enabled
+        return self.local_mail_enabled or self.smtp_enabled or self.resend_enabled
 
     @property
     def mail_delivery_mode(self):
-        return "pending" if self.smtp_enabled else "local"
+        return "pending" if self.smtp_enabled or self.resend_enabled else "local"
 
     @field_validator("catalog_max_age_days", "catalog_min_skills")
     @classmethod

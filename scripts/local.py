@@ -35,6 +35,9 @@ def prepare_environment(*, testing=False):
         raise SystemExit("El entorno aislado requiere su propia base SQLite y ENVIRONMENT=development.")
     # Explicit values also override inherited shell variables and dotenv files.
     values.update({"TALENTSYNC_ENV_FILE": str(ENV_FILE), "PERIODIC_MAINTENANCE_ENABLED": "false",
+                   "RESEND_ENABLED": "false", "RESEND_API_KEY": "", "RESEND_FROM": "",
+                   **{key: values.get(key, "false" if key == "LEARN_ENABLED" else "") for key in (
+                       "LEARN_ENABLED", "LEARN_TENANT_ID", "LEARN_CLIENT_ID", "LEARN_CLIENT_SECRET")},
                    "SMTP_ENABLED": "false", "SMTP_HOST": "", "SMTP_USERNAME": "", "SMTP_PASSWORD": "", "SMTP_FROM": "",
                    "SMTP_PORT": "587", "SMTP_SECURITY": "starttls",
                    "SESSION_AUTH_ENABLED": "true", "LOCAL_MAIL_ENABLED": "true",
@@ -61,6 +64,7 @@ def prepare_environment(*, testing=False):
     if testing:
         # Tests must not depend on user integrations, weights or the demo database.
         values.update({"DATABASE_URL": "sqlite://", "MATCH_MODEL_PATH": "",
+                       "LEARN_ENABLED": "false", "LEARN_TENANT_ID": "", "LEARN_CLIENT_ID": "", "LEARN_CLIENT_SECRET": "",
                        "SESSION_AUTH_ENABLED": "false", "LOCAL_MAIL_ENABLED": "false", "LOCAL_ADMIN_REVIEW_ENABLED": "false", "LOCAL_MFA_REVIEW_ENABLED": "false", "COMPANY_MFA_REQUIRED": "true",
                        "WORKFLOW_MAINTENANCE_ENABLED": "false", "MODEL_MAINTENANCE_ENABLED": "false",
                        "GITHUB_PROJECT_ANALYSIS_ENABLED": "false", "WORKSPACE_DOMAIN": "",
