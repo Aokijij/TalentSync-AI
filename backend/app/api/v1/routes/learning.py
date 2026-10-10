@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, StrictFloat, StrictInt, StrictStr
 
 from app.api.deps import (
+    get_curated_catalog,
     get_learn_catalog,
     get_text_analysis,
     get_unit_of_work,
@@ -33,6 +34,23 @@ class LearnPreview(BaseModel):
 class LearnImport(BaseModel):
     preview_id: str = Field(min_length=20, max_length=100)
     ids: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(min_length=1, max_length=100)
+
+
+class CuratedImport(BaseModel):
+    revision: str = Field(min_length=24, max_length=24)
+    ids: list[Annotated[str, Field(min_length=1, max_length=160)]] = Field(min_length=1, max_length=50)
+    publish: bool = False
+
+
+@router.get("/admin/learning/sources/curated")
+def curated_catalog(user=Depends(admin), gateway=Depends(get_curated_catalog)):
+    return gateway.catalog()
+
+
+@router.post("/admin/learning/sources/curated/import")
+def import_curated(payload: CuratedImport, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_curated_catalog)):
+    return learning_resources.import_source(db, user, gateway.selected(payload.revision, payload.ids),
+                                            namespace="curated", publish=payload.publish)
 
 
 @router.get("/admin/learning/sources")

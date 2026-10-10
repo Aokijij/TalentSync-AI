@@ -263,3 +263,71 @@ Referencias oficiales:
 - [Restricción del remitente de pruebas](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain)
 - [Límites de GitHub REST](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)
 - [API pública de Codewars](https://dev.codewars.com/)
+
+## Ampliación editorial de educación · 2026-10-10
+
+`backend/app/data/education_catalog.json` contiene 34 recursos de 11 proveedores
+(24 gratuitos y 10 de pago), con identificadores estables, lista de dominios
+permitidos, fecha de revisión y metadatos de contenido/acceso/certificación.
+Es una selección editorial de páginas oficiales, no una sincronización automática
+ni una integración de matrícula o emisión de certificados. Complementa el
+conector autenticado de Microsoft Learn, que continúa requiriendo acceso Entra.
+
+Fuentes incluidas: Microsoft Learn (5), Google Career Certificates / AI Essentials
+(7), Google Skillshop (2), HubSpot Academy (5), IBM en Coursera (2), Cisco (3),
+freeCodeCamp (2), OpenLearn (4), AWS Skill Builder (1), Harvard CS50 (2), Rutgers
+en Coursera (1). Los resúmenes están redactados para TalentSync; los títulos de
+presentación en español no implican que todo el material esté en español.
+Los idiomas declarados se muestran en la ficha y se pueden filtrar.
+
+Rutas de administración nuevas:
+
+- `GET /api/v1/admin/learning/sources/curated`: selección y revisión vigente.
+- `POST /api/v1/admin/learning/sources/curated/import`: revisión, hasta cincuenta
+  IDs distintos y `publish=false` por defecto. Solo acepta IDs del catálogo del
+  servidor; no permite inyectar contenido o enlaces mediante esta operación.
+- Respuestas 409 por revisión desactualizada y 422 por IDs desconocidos,
+  duplicados, selección vacía o límite del catálogo. Importación atómica antes
+  de escribir y límite vigente de doscientos recursos administrables.
+
+Los IDs importados son deterministas. Repetir no publica ni sobrescribe recursos
+ya existentes. Los formularios antiguos conservan los detalles enriquecidos si
+no los envían; el editor actual permite actualizarlos. Las referencias estáticas
+anteriores con la misma URL se retiran de la oferta nueva y siguen resolviendo
+planes guardados una vez que el nuevo curso se publica. Importar un borrador no
+retira la referencia anterior. Se conserva una marca interna de publicación para
+que archivar posteriormente un curso no reviva su referencia antigua.
+
+No se automatizan pagos, inscripciones, extracción de certificados ni seguimiento
+de alumnos. El tiempo estimado de TalentSync se identifica en `duration_notes`.
+El acceso y el certificado tienen condiciones distintas: Learn puede cobrar sus
+exámenes, Google/IBM/Rutgers pueden requerir suscripción, y CS50 distingue su
+certificado gratuito del certificado verificado de edX de pago. Las prácticas de
+nube o las licencias adicionales pueden generar cargos fuera de TalentSync.
+No se requiere activar esos servicios para consultar la biblioteca local.
+
+Mantenimiento: revisar las páginas oficiales, actualizar el JSON y su fecha de
+revisión, reiniciar el backend, ejecutar las pruebas y revisar las publicaciones existentes desde el
+editor. La importación conserva deliberadamente ediciones y archivados anteriores;
+una revisión del JSON no actualiza silenciosamente los cursos ya publicados.
+
+Validación local: 570 pruebas backend aprobadas y una omitida de staging, 33
+frontend, lint Python/JavaScript y build. Después del ajuste final de referencias
+en borrador se repitieron 97 pruebas de aprendizaje, arquitectura e integraciones,
+todas aprobadas. Se comprobó también la API real con las cuentas ficticias y la
+semilla idempotente (34 creados, luego 34 conservados). El navegador continúa
+bloqueando la inspección visual local; no se considera validada su apariencia.
+
+Referencias de condiciones y enlaces actuales:
+
+- [Microsoft Learn y sus preguntas frecuentes](https://learn.microsoft.com/en-us/training/support/faq)
+- [Google Career Certificates](https://grow.google/certificates/)
+- [Google Analytics Academy](https://support.google.com/analytics/answer/15068052)
+- [HubSpot Academy: preguntas de certificación](https://knowledge.hubspot.com/help-and-resources/hubspot-academy-certification-frequently-asked-questions)
+- [Cisco Networking Academy](https://www.netacad.com/)
+- [freeCodeCamp: currículo de Python vigente](https://www.freecodecamp.org/news/freecodecamps-new-python-certification-is-now-live)
+- [OpenLearn: comunicación en el trabajo](https://www.open.edu/openlearn/money-business/effective-communication-the-workplace/content-section-overview)
+- [AWS: formación Cloud Practitioner](https://aws.amazon.com/training/learn-about/cloud-practitioner/)
+- [CS50: condiciones del certificado](https://cs50.harvard.edu/x/certificate/)
+- [IBM: análisis de datos](https://www.coursera.org/professional-certificates/ibm-data-analyst)
+- [Rutgers: cadena de suministro](https://www.coursera.org/specializations/supply-chain-management)

@@ -276,3 +276,43 @@ estados de carga/error y una vista vacía. GitHub/Codewars siguen opcionales al
 final. Estilos propios con variables de tema, dos columnas en escritorio y una
 en móvil. Sin cambios de API ni datos. Pasaron 32 pruebas frontend, eslint y
 compilación; revisión visual pendiente por el bloqueo de navegador existente.
+
+## Biblioteca ampliada de formación · 10 de octubre de 2026
+
+Se añadieron 34 recursos oficiales de 11 proveedores: Microsoft Learn, Google
+Career Certificates, Google Skillshop, HubSpot Academy, IBM en Coursera,
+Cisco Networking Academy, freeCodeCamp, OpenLearn, AWS, Harvard CS50 y Rutgers
+en Coursera. Son 24 de acceso gratuito y 10 de pago, en nueve áreas. La selección
+es editorial y versionada, con enlaces revisados; no pretende ser una API de
+sincronización de los once proveedores ni el catálogo completo de cada uno.
+
+Cada ficha incluye temario resumido, nivel, idiomas confirmados, requisitos,
+condiciones de acceso/certificación, referencia de duración e idea de evidencia
+propuesta por TalentSync. Las estimaciones propias se distinguen de duraciones
+publicadas. El precio regional se consulta en el proveedor; una prueba temporal
+no se anuncia como formación gratuita permanente. La práctica local se presenta
+separada del temario externo. Completar el plan no concede credenciales externas.
+
+El candidato dispone de filtros por proveedor, idioma, nivel, coste, origen y
+formato, junto con búsqueda, áreas y páginas de doce recursos. «Todas las áreas»
+permite explorar la biblioteca completa. El administrador explora fuentes en
+páginas de ocho, selecciona cursos y los importa como borradores o los publica
+explícitamente. Puede editar sus detalles; el conector API de Learn conserva
+su configuración autorizada independiente. Reimportar conserva ediciones,
+archivados y planes. Las referencias antiguas duplicadas se conservan archivadas
+para resolver planes existentes, sin volver a aparecer como cursos nuevos.
+
+El comando `backend/.venv/Scripts/python.exe scripts/local.py seed-education`
+publica la selección solo en `.local/talentsync.sqlite3`, sin sustituir datos,
+crear cuentas, comprar cursos o llamar servicios externos. Se ejecutó una vez
+creando 34 recursos y una segunda conservando los mismos 34. Evidencia agregada
+sin secretos en `.local/verification/education-catalog.json` y `education-api.json`.
+Correo externo sigue apagado y la pausa local de MFA se conserva.
+
+Validación: batería completa de 570 pruebas backend aprobadas y una omitida de
+PostgreSQL staging; 33 pruebas frontend, ruff, eslint y build correctos. Después
+del ajuste final para que importar un borrador no retire una referencia publicada,
+pasaron de nuevo 97 pruebas de aprendizaje, integraciones y arquitectura. La API
+real confirma los 34 recursos oficiales activos, sin duplicar sus tarjetas, y el
+acceso del administrador. Revisión visual pendiente por el bloqueo de navegador
+ya documentado. Backend actualizado en 127.0.0.1:8000, sesión 76496, PID 18848.

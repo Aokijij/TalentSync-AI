@@ -38,6 +38,11 @@ def get_learn_catalog():
     return LearnCatalog(settings)
 
 
+def get_curated_catalog():
+    from app.infrastructure import curated_learning
+    return curated_learning
+
+
 def get_current_user(
     request: Request, token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:

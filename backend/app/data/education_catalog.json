@@ -1,0 +1,1349 @@
+{
+  "reviewed_at": "2026-10-10",
+  "providers": [
+    {
+      "id": "microsoft",
+      "name": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/training/",
+      "hosts": [
+        "learn.microsoft.com"
+      ]
+    },
+    {
+      "id": "google-career",
+      "name": "Google Career Certificates",
+      "url": "https://grow.google/certificates/",
+      "hosts": [
+        "grow.google"
+      ]
+    },
+    {
+      "id": "google-skillshop",
+      "name": "Google Skillshop",
+      "url": "https://skillshop.withgoogle.com/",
+      "hosts": [
+        "skillshop.withgoogle.com",
+        "skillshop.docebosaas.com"
+      ]
+    },
+    {
+      "id": "hubspot",
+      "name": "HubSpot Academy",
+      "url": "https://academy.hubspot.com/",
+      "hosts": [
+        "academy.hubspot.com"
+      ]
+    },
+    {
+      "id": "ibm",
+      "name": "IBM · Coursera",
+      "url": "https://www.coursera.org/ibm",
+      "hosts": [
+        "www.coursera.org"
+      ]
+    },
+    {
+      "id": "cisco",
+      "name": "Cisco Networking Academy",
+      "url": "https://www.netacad.com/",
+      "hosts": [
+        "www.netacad.com"
+      ]
+    },
+    {
+      "id": "freecodecamp",
+      "name": "freeCodeCamp",
+      "url": "https://www.freecodecamp.org/learn",
+      "hosts": [
+        "www.freecodecamp.org"
+      ]
+    },
+    {
+      "id": "openlearn",
+      "name": "OpenLearn · The Open University",
+      "url": "https://www.open.edu/openlearn/",
+      "hosts": [
+        "www.open.edu"
+      ]
+    },
+    {
+      "id": "aws",
+      "name": "AWS Skill Builder",
+      "url": "https://skillbuilder.aws/",
+      "hosts": [
+        "skillbuilder.aws"
+      ]
+    },
+    {
+      "id": "harvard",
+      "name": "Harvard · CS50",
+      "url": "https://cs50.harvard.edu/",
+      "hosts": [
+        "cs50.harvard.edu"
+      ]
+    },
+    {
+      "id": "rutgers",
+      "name": "Rutgers · Coursera",
+      "url": "https://www.coursera.org/specializations/supply-chain-management",
+      "hosts": [
+        "www.coursera.org"
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "provider_id": "microsoft",
+      "source_id": "microsoft:data-analytics",
+      "content": {
+        "title": "Introducción al análisis de datos de Microsoft",
+        "provider": "Microsoft Learn",
+        "url": "https://learn.microsoft.com/es-es/training/paths/data-analytics-microsoft/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Explora cómo convertir datos en información para tomar decisiones y qué herramientas intervienen en el análisis.",
+        "skills": [
+          "power bi",
+          "análisis de datos",
+          "visualización de datos"
+        ],
+        "hours": 4,
+        "cost": "free",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Roles y herramientas del análisis",
+            "Informes y decisiones con Power BI",
+            "Panorama de Microsoft Fabric"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Contenido de aprendizaje gratuito. Algunas herramientas, licencias o prácticas con recursos en la nube pueden generar cargos; revisa antes de activarlas.",
+          "certificate_cost": "paid",
+          "certificate_notes": "Completar la ruta no equivale a una certificación Microsoft. Los exámenes profesionales se tramitan y pagan por separado.",
+          "portfolio_idea": "Diseña un esquema de informe de ventas con las preguntas que responderá y sus fuentes.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "microsoft",
+      "source_id": "microsoft:prepare-power-bi",
+      "content": {
+        "title": "Preparación de datos para el análisis con Power BI",
+        "provider": "Microsoft Learn",
+        "url": "https://learn.microsoft.com/es-es/training/paths/prepare-data-power-bi/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Aprende a preparar fuentes para construir informes con datos consistentes y transformaciones documentadas.",
+        "skills": [
+          "power bi",
+          "power query",
+          "limpieza de datos"
+        ],
+        "hours": 5,
+        "cost": "free",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Conexión a fuentes",
+            "Limpieza y transformación con Power Query",
+            "Carga y preparación de tablas"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Contenido de aprendizaje gratuito. Algunas herramientas, licencias o prácticas con recursos en la nube pueden generar cargos; revisa antes de activarlas.",
+          "certificate_cost": "paid",
+          "certificate_notes": "Completar la ruta no equivale a una certificación Microsoft. Los exámenes profesionales se tramitan y pagan por separado.",
+          "portfolio_idea": "Documenta una limpieza de datos con errores detectados y reglas de transformación.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "microsoft",
+      "source_id": "microsoft:model-power-bi",
+      "content": {
+        "title": "Modelar datos con Power BI",
+        "provider": "Microsoft Learn",
+        "url": "https://learn.microsoft.com/es-es/training/paths/model-data-power-bi/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Profundiza en modelos semánticos y cálculos para producir análisis reutilizables.",
+        "skills": [
+          "power bi",
+          "dax",
+          "modelado de datos"
+        ],
+        "hours": 8,
+        "cost": "free",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Modelos semánticos y relaciones",
+            "Cálculos y contexto de filtro en DAX",
+            "Inteligencia de tiempo"
+          ],
+          "prerequisites": "Familiaridad con Power BI Desktop, tablas, relaciones y cálculos.",
+          "access_notes": "Contenido de aprendizaje gratuito. Algunas herramientas, licencias o prácticas con recursos en la nube pueden generar cargos; revisa antes de activarlas.",
+          "certificate_cost": "paid",
+          "certificate_notes": "Completar la ruta no equivale a una certificación Microsoft. Los exámenes profesionales se tramitan y pagan por separado.",
+          "portfolio_idea": "Crea un modelo de ventas con medidas explicadas y pruebas de sus totales.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "microsoft",
+      "source_id": "microsoft:cloud-concepts",
+      "content": {
+        "title": "Azure: conceptos fundamentales de la nube",
+        "provider": "Microsoft Learn",
+        "url": "https://learn.microsoft.com/es-es/training/paths/microsoft-azure-fundamentals-describe-cloud-concepts/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Comprende los conceptos de infraestructura y servicios cloud antes de diseñar una solución.",
+        "skills": [
+          "azure",
+          "computación en la nube",
+          "seguridad informática"
+        ],
+        "hours": 3,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Conceptos de computación en la nube",
+            "Beneficios de los servicios cloud",
+            "Modelos de servicio"
+          ],
+          "prerequisites": "Conocimientos básicos de tecnología de la información.",
+          "access_notes": "Contenido de aprendizaje gratuito. Algunas herramientas, licencias o prácticas con recursos en la nube pueden generar cargos; revisa antes de activarlas.",
+          "certificate_cost": "paid",
+          "certificate_notes": "Completar la ruta no equivale a una certificación Microsoft. Los exámenes profesionales se tramitan y pagan por separado.",
+          "portfolio_idea": "Compara alternativas de alojamiento para un caso ficticio, sin desplegar recursos de pago.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "microsoft",
+      "source_id": "microsoft:ai-apps",
+      "content": {
+        "title": "Introducción a aplicaciones y agentes de IA en Azure",
+        "provider": "Microsoft Learn",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-ai-apps-agents/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Explora conceptos y servicios para plantear aplicaciones y agentes de inteligencia artificial.",
+        "skills": [
+          "inteligencia artificial",
+          "azure",
+          "ia generativa"
+        ],
+        "hours": 6,
+        "cost": "free",
+        "details": {
+          "level": "any",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Panorama de aplicaciones de IA",
+            "Servicios para aplicaciones y agentes",
+            "Uso responsable de IA"
+          ],
+          "prerequisites": "Consulta los conocimientos y herramientas solicitados en cada módulo.",
+          "access_notes": "Contenido de aprendizaje gratuito. Algunas herramientas, licencias o prácticas con recursos en la nube pueden generar cargos; revisa antes de activarlas.",
+          "certificate_cost": "paid",
+          "certificate_notes": "Completar la ruta no equivale a una certificación Microsoft. Los exámenes profesionales se tramitan y pagan por separado.",
+          "portfolio_idea": "Describe un asistente para un proceso de trabajo, con límites, datos necesarios y criterios de evaluación.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "google-career",
+      "source_id": "google-career:data",
+      "content": {
+        "title": "Google: certificado profesional en análisis de datos",
+        "provider": "Google Career Certificates",
+        "url": "https://grow.google/certificates/data-analytics/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Ruta profesional para recorrer el proceso de análisis desde las preguntas de negocio hasta la comunicación de resultados.",
+        "skills": [
+          "sql",
+          "análisis de datos",
+          "hojas de cálculo",
+          "visualización de datos"
+        ],
+        "hours": 150,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Preparación y limpieza de datos",
+            "Análisis con hojas de cálculo y SQL",
+            "Visualización y comunicación de hallazgos"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Programa de pago mediante la plataforma indicada por Google. Suscripción y precio según país; una prueba temporal no es acceso gratuito permanente.",
+          "certificate_cost": "paid",
+          "certificate_notes": "El certificado se obtiene cumpliendo los requisitos del programa y del proveedor. No se emite al completar el plan local.",
+          "portfolio_idea": "Presenta un estudio de datos públicos con consultas reproducibles y conclusiones para un negocio.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "google-career",
+      "source_id": "google-career:project",
+      "content": {
+        "title": "Google: certificado profesional en gestión de proyectos",
+        "provider": "Google Career Certificates",
+        "url": "https://grow.google/certificates/project-management/",
+        "category": "administration",
+        "kind": "course",
+        "instructions": "Organiza proyectos, recursos y comunicaciones con una ruta de formación orientada al trabajo.",
+        "skills": [
+          "gestión de proyectos",
+          "planificación",
+          "agile",
+          "gestión de riesgos"
+        ],
+        "hours": 150,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Inicio y planificación",
+            "Ejecución y seguimiento",
+            "Agile y cierre del proyecto"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Programa de pago mediante la plataforma indicada por Google. Suscripción y precio según país; una prueba temporal no es acceso gratuito permanente.",
+          "certificate_cost": "paid",
+          "certificate_notes": "El certificado se obtiene cumpliendo los requisitos del programa y del proveedor. No se emite al completar el plan local.",
+          "portfolio_idea": "Prepara un acta de proyecto, cronograma y registro de riesgos para una iniciativa ficticia.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "google-career",
+      "source_id": "google-career:ux",
+      "content": {
+        "title": "Google: certificado profesional en diseño UX",
+        "provider": "Google Career Certificates",
+        "url": "https://grow.google/certificates/ux-design/",
+        "category": "design",
+        "kind": "course",
+        "instructions": "Recorre el proceso de diseño centrado en las personas, desde la investigación hasta la prueba de propuestas.",
+        "skills": [
+          "diseño ux",
+          "investigación de usuarios",
+          "prototipado",
+          "figma"
+        ],
+        "hours": 150,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Investigación de usuarios",
+            "Ideación y prototipos",
+            "Pruebas de usabilidad y portafolio"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Programa de pago mediante la plataforma indicada por Google. Suscripción y precio según país; una prueba temporal no es acceso gratuito permanente.",
+          "certificate_cost": "paid",
+          "certificate_notes": "El certificado se obtiene cumpliendo los requisitos del programa y del proveedor. No se emite al completar el plan local.",
+          "portfolio_idea": "Publica un caso de rediseño con hallazgos de investigación y decisiones del prototipo.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "google-career",
+      "source_id": "google-career:marketing",
+      "content": {
+        "title": "Google: marketing digital y comercio electrónico",
+        "provider": "Google Career Certificates",
+        "url": "https://grow.google/certificates/digital-marketing-ecommerce/",
+        "category": "sales",
+        "kind": "course",
+        "instructions": "Explora cómo atraer clientes y evaluar acciones comerciales en canales digitales.",
+        "skills": [
+          "marketing digital",
+          "comercio electrónico",
+          "email marketing",
+          "analítica web"
+        ],
+        "hours": 150,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Estrategia y captación digital",
+            "Relación con clientes",
+            "Comercio electrónico y medición"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Programa de pago mediante la plataforma indicada por Google. Suscripción y precio según país; una prueba temporal no es acceso gratuito permanente.",
+          "certificate_cost": "paid",
+          "certificate_notes": "El certificado se obtiene cumpliendo los requisitos del programa y del proveedor. No se emite al completar el plan local.",
+          "portfolio_idea": "Diseña una campaña para un comercio ficticio con objetivos, segmentos y tablero de medición.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "google-career",
+      "source_id": "google-career:cyber",
+      "content": {
+        "title": "Google: certificado profesional en ciberseguridad",
+        "provider": "Google Career Certificates",
+        "url": "https://grow.google/certificates/cybersecurity/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Desarrolla bases para identificar riesgos, analizar eventos y documentar respuestas de seguridad.",
+        "skills": [
+          "ciberseguridad",
+          "linux",
+          "sql",
+          "python"
+        ],
+        "hours": 150,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Fundamentos de seguridad y riesgos",
+            "Redes y sistemas",
+            "Análisis de incidentes y automatización"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Programa de pago mediante la plataforma indicada por Google. Suscripción y precio según país; una prueba temporal no es acceso gratuito permanente.",
+          "certificate_cost": "paid",
+          "certificate_notes": "El certificado se obtiene cumpliendo los requisitos del programa y del proveedor. No se emite al completar el plan local.",
+          "portfolio_idea": "Documenta un análisis de incidente ficticio usando datos de laboratorio, sin información privada.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "google-career",
+      "source_id": "google-career:support",
+      "content": {
+        "title": "Google: certificado profesional en soporte de TI",
+        "provider": "Google Career Certificates",
+        "url": "https://grow.google/certificates/it-support/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Construye fundamentos para diagnosticar problemas técnicos y atender solicitudes de soporte.",
+        "skills": [
+          "soporte técnico",
+          "redes",
+          "sistemas operativos",
+          "resolución de problemas"
+        ],
+        "hours": 150,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Soporte y diagnóstico",
+            "Redes y sistemas operativos",
+            "Administración y seguridad"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Programa de pago mediante la plataforma indicada por Google. Suscripción y precio según país; una prueba temporal no es acceso gratuito permanente.",
+          "certificate_cost": "paid",
+          "certificate_notes": "El certificado se obtiene cumpliendo los requisitos del programa y del proveedor. No se emite al completar el plan local.",
+          "portfolio_idea": "Elabora una guía de diagnóstico con casos, pruebas y registro de soluciones.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "google-career",
+      "source_id": "google-career:ai-essentials",
+      "content": {
+        "title": "Google AI Essentials: IA para el trabajo",
+        "provider": "Google Career Certificates",
+        "url": "https://grow.google/ai-essentials/",
+        "category": "general",
+        "kind": "course",
+        "instructions": "Aprende a usar herramientas de IA en tareas cotidianas con revisión crítica de sus resultados.",
+        "skills": [
+          "inteligencia artificial",
+          "productividad",
+          "prompts",
+          "pensamiento crítico"
+        ],
+        "hours": 10,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Fundamentos y productividad con IA",
+            "Instrucciones eficaces",
+            "Uso responsable y actualización"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Programa de pago mediante la plataforma indicada por Google. Suscripción y precio según país; una prueba temporal no es acceso gratuito permanente.",
+          "certificate_cost": "paid",
+          "certificate_notes": "El certificado se obtiene cumpliendo los requisitos del programa y del proveedor. No se emite al completar el plan local.",
+          "portfolio_idea": "Compara un flujo de trabajo antes y después de incorporar IA, explicando la revisión humana.",
+          "duration_notes": "Google presenta esta formación como un programa de menos de diez horas; el ritmo individual puede variar."
+        }
+      }
+    },
+    {
+      "provider_id": "google-skillshop",
+      "source_id": "google-skillshop:ads",
+      "content": {
+        "title": "Google Ads: rutas de formación y certificación",
+        "provider": "Google Skillshop",
+        "url": "https://skillshop.withgoogle.com/intl/es-419_ALL/googleads/",
+        "category": "sales",
+        "kind": "course",
+        "instructions": "Colección de rutas gratuitas para comprender campañas de Google Ads. Elige la especialidad pertinente para tu trabajo.",
+        "skills": [
+          "google ads",
+          "marketing digital",
+          "publicidad digital"
+        ],
+        "hours": 8,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Configuración y estrategia de campañas",
+            "Objetivos y medición",
+            "Preparación de certificaciones"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Formación gratuita con cuenta del proveedor. No necesitas contratar campañas publicitarias para consultar el contenido.",
+          "certificate_cost": "free",
+          "certificate_notes": "La certificación de Skillshop requiere superar su evaluación específica; estudiar un curso no la concede automáticamente.",
+          "portfolio_idea": "Prepara una propuesta de campaña con presupuesto ficticio y criterios de medición, sin contratar anuncios.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "google-skillshop",
+      "source_id": "google-skillshop:analytics-101",
+      "content": {
+        "title": "Google Analytics 101: primeros pasos",
+        "provider": "Google Skillshop",
+        "url": "https://skillshop.docebosaas.com/learn/courses/8108/get-started-using-google-analytics",
+        "category": "sales",
+        "kind": "course",
+        "instructions": "Primer curso de Analytics Academy para comprender la configuración y lectura inicial de Google Analytics.",
+        "skills": [
+          "google analytics",
+          "analítica web",
+          "marketing digital"
+        ],
+        "hours": 4,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Configuración de Google Analytics",
+            "Recogida de datos",
+            "Primeros informes y medición"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Formación gratuita con cuenta del proveedor. No necesitas contratar campañas publicitarias para consultar el contenido.",
+          "certificate_cost": "free",
+          "certificate_notes": "La certificación de Skillshop requiere superar su evaluación específica; estudiar un curso no la concede automáticamente.",
+          "portfolio_idea": "Define un plan de medición con eventos y preguntas de negocio para una tienda ficticia.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "hubspot",
+      "source_id": "hubspot:sales",
+      "content": {
+        "title": "HubSpot: ventas inbound",
+        "provider": "HubSpot Academy",
+        "url": "https://academy.hubspot.com/courses/inbound-sales",
+        "category": "sales",
+        "kind": "course",
+        "instructions": "Mejora conversaciones comerciales centradas en las necesidades del cliente.",
+        "skills": [
+          "ventas",
+          "prospección",
+          "negociación",
+          "atención al cliente"
+        ],
+        "hours": 3.1,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Identificación de oportunidades",
+            "Conversaciones de exploración",
+            "Presentación de soluciones"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Formación gratuita en HubSpot Academy con registro. No requiere contratar una suscripción comercial para el contenido de este recurso.",
+          "certificate_cost": "free",
+          "certificate_notes": "Certificación gratuita cuando se cumplen las evaluaciones y condiciones indicadas por HubSpot Academy.",
+          "portfolio_idea": "Diseña una guía de descubrimiento y una propuesta comercial para un cliente ficticio.",
+          "duration_notes": "Duración de vídeo indicada en la revisión: aproximadamente 3 h 6 min; las actividades requieren tiempo adicional."
+        }
+      }
+    },
+    {
+      "provider_id": "hubspot",
+      "source_id": "hubspot:digital",
+      "content": {
+        "title": "HubSpot: marketing digital",
+        "provider": "HubSpot Academy",
+        "url": "https://academy.hubspot.com/courses/digital-marketing",
+        "category": "sales",
+        "kind": "course",
+        "instructions": "Organiza una estrategia de marketing con canales y objetivos conectados.",
+        "skills": [
+          "marketing digital",
+          "seo",
+          "redes sociales",
+          "email marketing"
+        ],
+        "hours": 3.4,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es",
+            "en"
+          ],
+          "syllabus": [
+            "Estrategia y contenido",
+            "Canales de captación",
+            "Medición y optimización"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Formación gratuita en HubSpot Academy con registro. No requiere contratar una suscripción comercial para el contenido de este recurso.",
+          "certificate_cost": "free",
+          "certificate_notes": "Certificación gratuita cuando se cumplen las evaluaciones y condiciones indicadas por HubSpot Academy.",
+          "portfolio_idea": "Presenta un plan digital con calendario de contenidos y métricas de seguimiento.",
+          "duration_notes": "Duración de vídeo indicada en la revisión: aproximadamente 3 h 24 min; no incluye todo el tiempo de práctica."
+        }
+      }
+    },
+    {
+      "provider_id": "hubspot",
+      "source_id": "hubspot:content",
+      "content": {
+        "title": "HubSpot: marketing de contenidos",
+        "provider": "HubSpot Academy",
+        "url": "https://academy.hubspot.com/courses/content-marketing",
+        "category": "sales",
+        "kind": "course",
+        "instructions": "Aprende a planear contenidos útiles y relacionarlos con objetivos de comunicación.",
+        "skills": [
+          "marketing de contenidos",
+          "redacción",
+          "storytelling",
+          "seo"
+        ],
+        "hours": 8,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Estrategia editorial",
+            "Creación y reutilización de contenido",
+            "Promoción y evaluación"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Formación gratuita en HubSpot Academy con registro. No requiere contratar una suscripción comercial para el contenido de este recurso.",
+          "certificate_cost": "free",
+          "certificate_notes": "Certificación gratuita cuando se cumplen las evaluaciones y condiciones indicadas por HubSpot Academy.",
+          "portfolio_idea": "Crea un calendario editorial con una pieza de contenido y una explicación de su público.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "hubspot",
+      "source_id": "hubspot:support",
+      "content": {
+        "title": "HubSpot: atención excepcional al cliente",
+        "provider": "HubSpot Academy",
+        "url": "https://academy.hubspot.com/courses/delivering-exceptional-customer-support",
+        "category": "service",
+        "kind": "course",
+        "instructions": "Explora prácticas para resolver consultas y dar seguimiento a la experiencia del cliente.",
+        "skills": [
+          "atención al cliente",
+          "resolución de problemas",
+          "comunicación",
+          "indicadores de servicio"
+        ],
+        "hours": 3,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Comprensión de solicitudes",
+            "Diagnóstico y resolución",
+            "Seguimiento y métricas de soporte"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Formación gratuita en HubSpot Academy con registro. No requiere contratar una suscripción comercial para el contenido de este recurso.",
+          "certificate_cost": "none",
+          "certificate_notes": "Este recurso se presenta como curso, no como certificación profesional. Consulta si la edición ofrece una constancia de participación.",
+          "portfolio_idea": "Documenta un caso de atención con diagnóstico, respuesta y criterio de seguimiento.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "hubspot",
+      "source_id": "hubspot:email",
+      "content": {
+        "title": "HubSpot: certificación en email marketing",
+        "provider": "HubSpot Academy",
+        "url": "https://academy.hubspot.com/courses/email-marketing-certification-en",
+        "category": "sales",
+        "kind": "course",
+        "instructions": "Diseña comunicaciones por correo con segmentación, medición y prácticas responsables.",
+        "skills": [
+          "email marketing",
+          "segmentación",
+          "pruebas a b",
+          "automatización"
+        ],
+        "hours": 4,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Segmentación y estrategia",
+            "Contenido y automatización",
+            "Pruebas y medición de resultados"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Formación gratuita en HubSpot Academy con registro. No requiere contratar una suscripción comercial para el contenido de este recurso.",
+          "certificate_cost": "free",
+          "certificate_notes": "Certificación gratuita cuando se cumplen las evaluaciones y condiciones indicadas por HubSpot Academy.",
+          "portfolio_idea": "Prepara una secuencia de correos de ejemplo, su segmentación y un plan de pruebas.",
+          "duration_notes": "Duración de vídeo indicada en la revisión: aproximadamente 3 h 59 min; añade tiempo para evaluaciones."
+        }
+      }
+    },
+    {
+      "provider_id": "ibm",
+      "source_id": "ibm:data-analyst",
+      "content": {
+        "title": "IBM: certificado profesional en análisis de datos",
+        "provider": "IBM · Coursera",
+        "url": "https://www.coursera.org/professional-certificates/ibm-data-analyst",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Formación aplicada para explorar, analizar y presentar datos usando herramientas habituales del trabajo.",
+        "skills": [
+          "excel",
+          "python",
+          "sql",
+          "análisis de datos"
+        ],
+        "hours": 150,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Hojas de cálculo y visualización",
+            "Análisis con Python y SQL",
+            "Proyecto de análisis aplicado"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Programa de pago en Coursera. El precio y la suscripción dependen de la región; consulta posibles ayudas. La inscripción inicial gratuita no garantiza certificado gratuito.",
+          "certificate_cost": "paid",
+          "certificate_notes": "Certificado del programa tras cumplir sus evaluaciones. No equivale a un título universitario ni incluye exámenes profesionales externos.",
+          "portfolio_idea": "Publica un análisis reproducible con un cuaderno de trabajo y conclusiones claras.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "ibm",
+      "source_id": "ibm:project-manager",
+      "content": {
+        "title": "IBM: certificado profesional en gestión de proyectos",
+        "provider": "IBM · Coursera",
+        "url": "https://www.coursera.org/professional-certificates/ibm-project-manager",
+        "category": "administration",
+        "kind": "course",
+        "instructions": "Practica planificación, ejecución y comunicación de proyectos con entregables de gestión.",
+        "skills": [
+          "gestión de proyectos",
+          "agile",
+          "presupuestos",
+          "gestión de riesgos"
+        ],
+        "hours": 120,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Documentación y alcance",
+            "Cronograma, presupuesto y riesgos",
+            "Trabajo ágil y proyecto final"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Programa de pago en Coursera. El precio y la suscripción dependen de la región; consulta posibles ayudas. La inscripción inicial gratuita no garantiza certificado gratuito.",
+          "certificate_cost": "paid",
+          "certificate_notes": "Certificado del programa IBM tras cumplir sus evaluaciones. La preparación para CAPM no incluye ni sustituye el examen de PMI.",
+          "portfolio_idea": "Construye un expediente de proyecto con matriz de responsabilidades, presupuesto y seguimiento.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "cisco",
+      "source_id": "cisco:python",
+      "content": {
+        "title": "Cisco: Python Essentials 1",
+        "provider": "Cisco Networking Academy",
+        "url": "https://www.netacad.com/courses/python-essentials-1",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Introducción práctica a la programación con Python para resolver problemas sencillos.",
+        "skills": [
+          "python",
+          "programación",
+          "resolución de problemas"
+        ],
+        "hours": 30,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Sintaxis y tipos de datos",
+            "Control de flujo",
+            "Funciones y colecciones"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Curso gratuito con cuenta de Networking Academy. La oferta de idiomas se consulta al inscribirse.",
+          "certificate_cost": "unknown",
+          "certificate_notes": "Consulta la insignia o constancia disponible en esta edición. Las certificaciones profesionales y sus exámenes son independientes.",
+          "portfolio_idea": "Crea un pequeño programa de inventarios con validación de entradas y documentación.",
+          "duration_notes": "Duración orientativa del proveedor: 30 horas; depende del ritmo y de las prácticas."
+        }
+      }
+    },
+    {
+      "provider_id": "cisco",
+      "source_id": "cisco:networking",
+      "content": {
+        "title": "Cisco: fundamentos de redes",
+        "provider": "Cisco Networking Academy",
+        "url": "https://www.netacad.com/courses/networking-basics",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Comprende cómo se conectan dispositivos y cómo investigar problemas de comunicación.",
+        "skills": [
+          "redes",
+          "tcp ip",
+          "soporte técnico"
+        ],
+        "hours": 22,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Dispositivos y conectividad",
+            "Direccionamiento y protocolos",
+            "Diagnóstico de redes"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Curso gratuito con cuenta de Networking Academy. La oferta de idiomas se consulta al inscribirse.",
+          "certificate_cost": "unknown",
+          "certificate_notes": "Consulta la insignia o constancia disponible en esta edición. Las certificaciones profesionales y sus exámenes son independientes.",
+          "portfolio_idea": "Documenta una red ficticia con su diagrama, direccionamiento y pruebas de diagnóstico.",
+          "duration_notes": "Duración orientativa del proveedor: 22 horas."
+        }
+      }
+    },
+    {
+      "provider_id": "cisco",
+      "source_id": "cisco:cyber",
+      "content": {
+        "title": "Cisco: introducción a la ciberseguridad",
+        "provider": "Cisco Networking Academy",
+        "url": "https://www.netacad.com/courses/introduction-to-cybersecurity",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Reconoce amenazas comunes y medidas básicas para proteger información y sistemas.",
+        "skills": [
+          "ciberseguridad",
+          "protección de datos",
+          "gestión de riesgos"
+        ],
+        "hours": 6,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Amenazas y protección de información",
+            "Seguridad personal y organizacional",
+            "Panorama de la profesión"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Curso gratuito con cuenta de Networking Academy. La oferta de idiomas se consulta al inscribirse.",
+          "certificate_cost": "unknown",
+          "certificate_notes": "Consulta la insignia o constancia disponible en esta edición. Las certificaciones profesionales y sus exámenes son independientes.",
+          "portfolio_idea": "Prepara un inventario ficticio de riesgos con medidas de protección priorizadas.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "freecodecamp",
+      "source_id": "freecodecamp:web-v9",
+      "content": {
+        "title": "freeCodeCamp: diseño web adaptable",
+        "provider": "freeCodeCamp",
+        "url": "https://www.freecodecamp.org/learn/responsive-web-design-v9",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Currículo interactivo con lecciones, talleres y proyectos para construir interfaces web.",
+        "skills": [
+          "html",
+          "css",
+          "accesibilidad",
+          "diseño web"
+        ],
+        "hours": 200,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "HTML semántico y formularios",
+            "CSS, Flexbox y Grid",
+            "Accesibilidad y proyectos adaptables"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Currículo gratuito, con ejercicios en el navegador. La evaluación final puede requerir la aplicación de exámenes del proveedor.",
+          "certificate_cost": "free",
+          "certificate_notes": "Certificación gratuita tras completar los proyectos y aprobar el examen exigido por freeCodeCamp.",
+          "portfolio_idea": "Publica una página adaptable con una revisión de accesibilidad y decisiones de diseño.",
+          "duration_notes": "Currículo extenso: el proveedor describe cientos de horas de contenido. Las 200 h son una referencia de planificación de TalentSync, no una duración oficial exacta."
+        }
+      }
+    },
+    {
+      "provider_id": "freecodecamp",
+      "source_id": "freecodecamp:python-v9",
+      "content": {
+        "title": "freeCodeCamp: programación con Python",
+        "provider": "freeCodeCamp",
+        "url": "https://www.freecodecamp.org/learn/python-v9",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Practica Python con actividades interactivas, laboratorios y proyectos previos al examen del proveedor.",
+        "skills": [
+          "python",
+          "estructuras de datos",
+          "algoritmos",
+          "programación"
+        ],
+        "hours": 200,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Funciones y colecciones",
+            "Clases y estructuras de datos",
+            "Algoritmos y proyectos"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Currículo gratuito, con ejercicios en el navegador. La evaluación final puede requerir la aplicación de exámenes del proveedor.",
+          "certificate_cost": "free",
+          "certificate_notes": "Certificación gratuita tras completar los proyectos y aprobar el examen exigido por freeCodeCamp.",
+          "portfolio_idea": "Documenta un programa con pruebas y explica las decisiones sobre sus estructuras de datos.",
+          "duration_notes": "Currículo extenso con cientos de horas de contenido según el proveedor; la referencia de 200 h es una estimación de planificación de TalentSync."
+        }
+      }
+    },
+    {
+      "provider_id": "openlearn",
+      "source_id": "openlearn:accounting",
+      "content": {
+        "title": "OpenLearn: introducción a contabilidad y registros",
+        "provider": "OpenLearn · The Open University",
+        "url": "https://www.open.edu/openlearn/money-business/introduction-bookkeeping-and-accounting/content-section-0",
+        "category": "finance",
+        "kind": "course",
+        "instructions": "Conoce las bases del registro contable y cómo interpretar información financiera sencilla.",
+        "skills": [
+          "contabilidad",
+          "registros contables",
+          "estados financieros"
+        ],
+        "hours": 8,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Registros y partida doble",
+            "Balance",
+            "Resultados y lectura de cuentas"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Curso gratuito de OpenLearn, en inglés. Una cuenta permite guardar progreso y consultar la constancia disponible.",
+          "certificate_cost": "free",
+          "certificate_notes": "Constancia gratuita de participación al cumplir los requisitos; algunos cursos incluyen insignia. No equivale a un título universitario.",
+          "portfolio_idea": "Prepara registros de operaciones ficticias y explica su efecto en un balance.",
+          "duration_notes": "El proveedor indica aproximadamente 8 horas de estudio."
+        }
+      }
+    },
+    {
+      "provider_id": "openlearn",
+      "source_id": "openlearn:communication",
+      "content": {
+        "title": "OpenLearn: comunicación eficaz en el trabajo",
+        "provider": "OpenLearn · The Open University",
+        "url": "https://www.open.edu/openlearn/money-business/effective-communication-the-workplace/content-section-overview",
+        "category": "general",
+        "kind": "course",
+        "instructions": "Explora situaciones laborales para comunicarte con mayor claridad y comprender a otras personas.",
+        "skills": [
+          "comunicación",
+          "trabajo en equipo",
+          "escucha activa"
+        ],
+        "hours": 24,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Comunicación verbal y no verbal",
+            "Comunicación escrita",
+            "Conversaciones difíciles en el trabajo"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Curso gratuito de OpenLearn, en inglés. Una cuenta permite guardar progreso y consultar la constancia disponible.",
+          "certificate_cost": "free",
+          "certificate_notes": "Constancia gratuita de participación al cumplir los requisitos; algunos cursos incluyen insignia. No equivale a un título universitario.",
+          "portfolio_idea": "Presenta una guía de comunicación con mensajes antes y después de revisarlos.",
+          "duration_notes": "El proveedor propone ocho semanas de unas tres horas de estudio: 24 horas en total."
+        }
+      }
+    },
+    {
+      "provider_id": "openlearn",
+      "source_id": "openlearn:supply",
+      "content": {
+        "title": "OpenLearn: sostenibilidad en la cadena de suministro",
+        "provider": "OpenLearn · The Open University",
+        "url": "https://www.open.edu/openlearn/money-business/leadership-management/supply-chain-sustainability/content-section-0",
+        "category": "logistics",
+        "kind": "course",
+        "instructions": "Analiza cómo las decisiones de abastecimiento y operación se relacionan con la sostenibilidad.",
+        "skills": [
+          "cadena de suministro",
+          "sostenibilidad",
+          "logística"
+        ],
+        "hours": 8,
+        "cost": "free",
+        "details": {
+          "level": "any",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Cadena de suministro e impactos",
+            "Decisiones sostenibles",
+            "Relación con proveedores"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Curso gratuito de OpenLearn, en inglés. Una cuenta permite guardar progreso y consultar la constancia disponible.",
+          "certificate_cost": "free",
+          "certificate_notes": "Constancia gratuita de participación al cumplir los requisitos; algunos cursos incluyen insignia. No equivale a un título universitario.",
+          "portfolio_idea": "Compara dos opciones ficticias de abastecimiento con criterios de coste e impacto.",
+          "duration_notes": "El proveedor indica aproximadamente 8 horas de estudio."
+        }
+      }
+    },
+    {
+      "provider_id": "openlearn",
+      "source_id": "openlearn:children",
+      "content": {
+        "title": "OpenLearn: apoyo al desarrollo infantil",
+        "provider": "OpenLearn · The Open University",
+        "url": "https://www.open.edu/openlearn/education-development/childhood-youth/supporting-childrens-development/content-section-overview",
+        "category": "education",
+        "kind": "course",
+        "instructions": "Introducción al acompañamiento del desarrollo infantil para reflexionar sobre el apoyo educativo.",
+        "skills": [
+          "desarrollo infantil",
+          "acompañamiento educativo",
+          "comunicación"
+        ],
+        "hours": 15,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Desarrollo y aprendizaje",
+            "Apoyo en entornos educativos",
+            "Reflexión sobre prácticas de acompañamiento"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Curso gratuito de OpenLearn, en inglés. Una cuenta permite guardar progreso y consultar la constancia disponible.",
+          "certificate_cost": "free",
+          "certificate_notes": "Constancia gratuita de participación al cumplir los requisitos; algunos cursos incluyen insignia. No equivale a un título universitario.",
+          "portfolio_idea": "Diseña una actividad educativa ficticia con objetivos y criterios de observación, sin datos de menores.",
+          "duration_notes": "Referencia de estudio del proveedor: aproximadamente 15 horas."
+        }
+      }
+    },
+    {
+      "provider_id": "aws",
+      "source_id": "aws:cloud-practitioner",
+      "content": {
+        "title": "AWS Cloud Practitioner Essentials",
+        "provider": "AWS Skill Builder",
+        "url": "https://skillbuilder.aws/learn/94T2BEN85A/aws-cloud-practitioner-essentials/8D79F3AVR7",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Conoce los servicios y conceptos esenciales de AWS antes de plantear una solución cloud.",
+        "skills": [
+          "aws",
+          "computación en la nube",
+          "seguridad informática",
+          "costes cloud"
+        ],
+        "hours": 12.75,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Beneficios y servicios de AWS",
+            "Seguridad y responsabilidad compartida",
+            "Precios y fundamentos de arquitectura"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Curso digital gratuito en AWS Skill Builder con cuenta. Las suscripciones, laboratorios adicionales y recursos desplegados en AWS pueden tener coste.",
+          "certificate_cost": "paid",
+          "certificate_notes": "El examen AWS Certified Cloud Practitioner se contrata aparte; finalizar este curso no concede esa certificación.",
+          "portfolio_idea": "Describe una arquitectura ficticia con responsabilidades y estimación de costes, sin desplegar recursos.",
+          "duration_notes": "La página oficial de formación indica 12 horas y 45 minutos para este curso."
+        }
+      }
+    },
+    {
+      "provider_id": "harvard",
+      "source_id": "harvard:cs50x",
+      "content": {
+        "title": "Harvard CS50x: introducción a las ciencias de la computación",
+        "provider": "Harvard · CS50",
+        "url": "https://cs50.harvard.edu/x/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Curso introductorio con problemas prácticos y un proyecto final para desarrollar pensamiento computacional.",
+        "skills": [
+          "programación",
+          "algoritmos",
+          "python",
+          "sql",
+          "html"
+        ],
+        "hours": 120,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Fundamentos y algoritmos",
+            "Programación y bases de datos",
+            "Desarrollo y proyecto final"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "El material del curso es gratuito. La inscripción en la opción verificada de edX es independiente y puede tener coste.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "CS50 ofrece un certificado gratuito al cumplir los requisitos del curso. El certificado verificado de edX es una opción de pago separada.",
+          "portfolio_idea": "Publica un proyecto propio con instrucciones de ejecución y explicación de sus decisiones.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "harvard",
+      "source_id": "harvard:cs50p",
+      "content": {
+        "title": "Harvard CS50: introducción a la programación con Python",
+        "provider": "Harvard · CS50",
+        "url": "https://cs50.harvard.edu/python/",
+        "category": "technology",
+        "kind": "course",
+        "instructions": "Aprende Python mediante ejercicios y un proyecto que permite practicar organización y comprobación de programas.",
+        "skills": [
+          "python",
+          "pruebas de software",
+          "programación",
+          "manejo de archivos"
+        ],
+        "hours": 80,
+        "cost": "free",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Funciones y excepciones",
+            "Pruebas y bibliotecas",
+            "Archivos, expresiones y proyecto final"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "El material del curso es gratuito. La inscripción en la opción verificada de edX es independiente y puede tener coste.",
+          "certificate_cost": "conditional",
+          "certificate_notes": "CS50 ofrece un certificado gratuito al cumplir los requisitos del curso. El certificado verificado de edX es una opción de pago separada.",
+          "portfolio_idea": "Presenta una herramienta en Python con pruebas, documentación y un ejemplo reproducible.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    },
+    {
+      "provider_id": "rutgers",
+      "source_id": "rutgers:supply-chain",
+      "content": {
+        "title": "Rutgers: especialización en gestión de la cadena de suministro",
+        "provider": "Rutgers · Coursera",
+        "url": "https://www.coursera.org/specializations/supply-chain-management",
+        "category": "logistics",
+        "kind": "course",
+        "instructions": "Ruta para comprender decisiones de operación, planificación y compras en una cadena de suministro.",
+        "skills": [
+          "logística",
+          "cadena de suministro",
+          "planificación",
+          "compras"
+        ],
+        "hours": 80,
+        "cost": "paid",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "en"
+          ],
+          "syllabus": [
+            "Logística y operaciones",
+            "Planificación y abastecimiento",
+            "Estrategia de cadena de suministro"
+          ],
+          "prerequisites": "No se exige experiencia previa; consulta los requisitos de la edición del proveedor.",
+          "access_notes": "Especialización de pago en Coursera. Precio y suscripción según país; revisa las condiciones antes de inscribirte.",
+          "certificate_cost": "paid",
+          "certificate_notes": "Certificado de especialización al superar sus requisitos; no equivale a un título universitario.",
+          "portfolio_idea": "Prepara un diagnóstico ficticio de abastecimiento con indicadores y mejoras priorizadas.",
+          "duration_notes": "Estimación orientativa de TalentSync para organizar el estudio; confirma la duración y dedicación en el proveedor."
+        }
+      }
+    }
+  ]
+}

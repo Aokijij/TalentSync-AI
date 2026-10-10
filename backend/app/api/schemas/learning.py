@@ -1,10 +1,23 @@
 import ipaddress
-from typing import Literal
+from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.domain.services.skills import normalize_skills
+
+
+class CourseDetails(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    level: Literal["beginner", "intermediate", "advanced", "any"] = "any"
+    languages: list[Annotated[str, Field(min_length=2, max_length=40)]] = Field(default_factory=list, max_length=6)
+    syllabus: list[Annotated[str, Field(min_length=3, max_length=180)]] = Field(default_factory=list, max_length=12)
+    prerequisites: str = Field(default="", max_length=500)
+    access_notes: str = Field(default="", max_length=800)
+    certificate_cost: Literal["free", "paid", "conditional", "none", "unknown"] = "unknown"
+    certificate_notes: str = Field(default="", max_length=800)
+    portfolio_idea: str = Field(default="", max_length=600)
+    duration_notes: str = Field(default="", max_length=400)
 
 
 class ResourceContent(BaseModel):
@@ -22,6 +35,7 @@ class ResourceContent(BaseModel):
     affiliate: bool = False
     disclosure: str = Field(default="", max_length=500)
     active: bool = True
+    details: CourseDetails | None = None
 
     @field_validator("title", "provider", "instructions", "disclosure")
     @classmethod
