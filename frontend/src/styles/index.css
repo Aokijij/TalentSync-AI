@@ -1321,6 +1321,77 @@ html[data-theme="dark"] .role-admin .button-primary { color: #302211; }
 .company-job-quality progress::-moz-progress-bar { background: var(--quality-color); border-radius: 999px; }
 .company-job-quality-caption { font-size: .72rem; color: var(--muted); }
 .company-job-quality-caption svg { flex-shrink: 0; color: var(--quality-color); }
+
+.team-workspace { overflow: hidden; }
+.team-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.5rem 1.5rem 1rem; }
+.team-heading { display: flex; align-items: center; gap: .85rem; }
+.team-heading-icon, .team-avatar { display: grid; place-items: center; flex-shrink: 0; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: .85rem; width: 2.75rem; height: 2.75rem; }
+.team-heading h2 { font-size: 1.15rem; font-weight: 750; }
+.team-heading p, .team-editor header p { margin-top: .2rem; color: var(--muted); font-size: .8rem; }
+.team-overview { display: flex; flex-wrap: wrap; gap: .7rem 1.5rem; padding: 0 1.5rem 1rem; color: var(--muted); font-size: .75rem; }
+.team-overview > span { display: inline-flex; align-items: center; gap: .45rem; }
+.team-dot { width: .4rem; height: .4rem; border-radius: 50%; background: var(--muted); }
+.team-dot.active { background: var(--success); }
+.team-permissions-help { margin: 0 1.5rem 1.25rem; font-size: .75rem; color: var(--muted); }
+.team-permissions-help summary { width: fit-content; cursor: pointer; color: var(--accent); }
+.team-permissions-help summary svg { display: inline; margin-right: .4rem; vertical-align: middle; }
+.team-permissions-help > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; padding: 1rem; margin-top: .7rem; border-radius: .75rem; background: var(--surface-subtle); }
+.team-permissions-help strong { display: block; margin-bottom: .3rem; color: var(--ink-strong); }
+.team-list-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; }
+.team-list-tabs { display: flex; gap: .35rem; padding: .25rem; border: 1px solid var(--line); border-radius: .7rem; }
+.team-list-tabs button { display: flex; align-items: center; gap: .5rem; padding: .55rem .75rem; border-radius: .5rem; font-size: .8rem; font-weight: 650; color: var(--muted); }
+.team-list-tabs button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.team-list-tabs button span { font-size: .65rem; border-radius: .3rem; padding: .1rem .3rem; background: var(--surface-subtle); }
+.team-filters { display: flex; gap: .6rem; flex: 1; justify-content: flex-end; }
+.team-search { position: relative; display: block; min-width: 0; }
+.team-search > svg { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.team-search .field-control { padding-left: 2.2rem; }
+.team-filters .field-control { min-height: 2.5rem; font-size: .8rem; }
+.team-filters > select { width: auto; max-width: 12rem; }
+.team-list { padding: 0 1.5rem; }
+.team-member + .team-member { border-top: 1px solid var(--line); }
+.team-member-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: 1rem; align-items: center; padding: 1.15rem 0; }
+.team-avatar { width: 2.4rem; height: 2.4rem; font-size: .8rem; font-weight: 750; }
+.team-member-identity h3 { font-size: .85rem; font-weight: 700; overflow-wrap: anywhere; }
+.team-member-identity p, .team-member-identity small { display: block; color: var(--muted); font-size: .72rem; overflow-wrap: anywhere; }
+.team-member-identity small { margin-top: .25rem; }
+.team-role { color: var(--muted); font-size: .75rem; }
+.team-status { padding: .25rem .55rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .65rem; font-weight: 650; white-space: nowrap; }
+.team-status.active { color: var(--success); background: color-mix(in srgb, var(--success) 8%, transparent); border-color: color-mix(in srgb, var(--success) 25%, transparent); }
+.team-editor { margin: 0 1.5rem 1.25rem; padding: 1.25rem; border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius: 1rem; background: var(--surface-subtle); }
+.team-member .team-editor { margin: 0 0 1.25rem; }
+.team-editor > header, .team-editor > footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.team-editor > header h3 { font-size: 1rem; font-weight: 750; }
+.team-editor > footer { justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 1rem; }
+.team-email { display: block; font-size: .8rem; font-weight: 650; margin-top: 1rem; }
+.team-email .field-control { margin-top: .4rem; }
+.team-role-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: 1rem; }
+.team-role-picker legend, .team-assignment-picker legend { font-size: .8rem; font-weight: 650; margin-bottom: .6rem; }
+.team-role-picker > label { display: flex; align-items: center; gap: .65rem; padding: .85rem; border: 1px solid var(--line); border-radius: .75rem; cursor: pointer; }
+.team-role-picker > label.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.team-role-picker strong, .team-access-toggle strong { display: block; font-size: .8rem; }
+.team-role-picker small, .team-access-toggle small { display: block; margin-top: .2rem; color: var(--muted); font-size: .72rem; }
+.team-role-note { display: flex; align-items: center; gap: .6rem; font-size: .75rem; color: var(--muted); padding: .8rem 0; }
+.team-role-note svg { flex-shrink: 0; color: var(--accent); }
+.team-assignment-picker { margin-top: 1rem; }
+.team-assignment-picker legend span { margin-left: .5rem; color: var(--accent); font-size: .7rem; }
+.team-assignment-list { max-height: 14rem; overflow-y: auto; margin-top: .6rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--surface); }
+.team-assignment-list > label { display: flex; align-items: flex-start; gap: .65rem; padding: .65rem .85rem; font-size: .75rem; cursor: pointer; }
+.team-assignment-list input { margin-top: .2rem; }
+.team-assignment-list > label + label { border-top: 1px solid var(--line); }
+.team-assignment-list small { display: block; color: var(--muted); font-size: .65rem; margin-top: .15rem; }
+.team-assignment-list > p { padding: 1rem; font-size: .8rem; color: var(--muted); }
+.team-assignment-picker > p, .team-invite-note { font-size: .72rem; color: var(--muted); margin-top: .6rem; }
+.team-access-toggle { display: flex; align-items: center; gap: .7rem; padding: .85rem; margin-top: .7rem; border: 1px solid var(--line); border-radius: .75rem; }
+.team-access-toggle.revoked { border-color: var(--warning); }
+.team-access-toggle.revoked small { color: var(--warning); }
+.team-editor input[type="checkbox"], .team-editor input[type="radio"] { accent-color: var(--accent); flex-shrink: 0; }
+.team-list-footer { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .9rem 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .75rem; }
+.team-list-footer nav { display: flex; align-items: center; gap: .6rem; }
+.team-empty { display: grid; justify-items: center; text-align: center; padding: 2.5rem 1rem; color: var(--muted); gap: .5rem; font-size: .8rem; }
+.team-empty h3 { font-weight: 700; color: var(--ink-strong); }
+@media (max-width: 900px) { .team-member-row { grid-template-columns: auto minmax(0, 1fr) auto; gap: .6rem .75rem; } .team-member-identity { grid-column: 2 / -1; } .team-member-row > .team-role { grid-column: 2; } .team-member-row > .team-status { grid-column: 2; justify-self: start; } .team-member-row > button { grid-column: 3; grid-row: 2 / 4; } .team-filters { flex-basis: 100%; justify-content: stretch; } .team-filters > .team-search { flex: 1; } }
+@media (max-width: 600px) { .team-header { align-items: stretch; flex-direction: column; padding: 1.1rem; } .team-overview { padding: 0 1.1rem 1rem; gap: .6rem 1rem; } .team-heading-icon { display: none; } .team-permissions-help { margin: 0 1.1rem 1rem; } .team-permissions-help > div { grid-template-columns: 1fr; } .team-list-toolbar { padding: 1rem; } .team-list { padding: 0 1rem; } .team-filters { flex-direction: column; } .team-filters > select { width: 100%; max-width: none; } .team-editor { margin: 0 1rem 1rem; padding: 1rem; } .team-role-picker { grid-template-columns: 1fr; } .team-editor > footer { flex-wrap: wrap; } .team-list-footer { padding: 1rem; } }
 @media (max-width: 1050px) { .offer-workspace { grid-template-columns: minmax(0, 1fr); } .offer-advisor { grid-template-columns: repeat(2, minmax(0, 1fr)); } .offer-steps button { flex: 0 0 auto; } .offer-mobile-score { display: flex; align-items: center; justify-content: space-between; gap: .7rem; border: 1px solid var(--line); background: var(--surface); padding: .8rem 1rem; border-radius: .8rem; position: sticky; top: .5rem; z-index: 10; } .offer-mobile-score > div { display: flex; align-items: center; gap: .7rem; } .offer-mobile-score strong { font-size: 1.4rem; color: var(--accent); } .offer-mobile-score small { color: var(--muted); font-size: .7rem; margin-left: .15rem; } .offer-mobile-score p { font-size: .75rem; color: var(--muted); } .offer-mobile-score button { display: inline-flex; align-items: center; gap: .4rem; font-size: .75rem; font-weight: 650; color: var(--accent); } }
 @media (max-width: 640px) { .offer-picker, .offer-fields, .offer-advisor, .offer-public-grid, .offer-feedback-grid { grid-template-columns: minmax(0, 1fr); } .offer-editor { padding: 1.15rem; } .offer-skill { grid-template-columns: minmax(0, 1fr) 65px auto; } .offer-skill > label:first-child { grid-column: 1 / -1; } .offer-editor-footer { flex-wrap: wrap; } .offer-step-header h2 { font-size: 1.3rem; } }
 @media (max-width: 700px) {
