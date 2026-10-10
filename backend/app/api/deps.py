@@ -146,6 +146,12 @@ def get_repository_inspector():
     return GitHubProjectInspector(settings)
 
 
+@lru_cache
+def get_codewars_reader():
+    from app.infrastructure.codewars import CodewarsReader
+    return CodewarsReader(settings)
+
+
 def get_sql_sandbox():
     from app.infrastructure.sql_sandbox import SQLSandbox
     return SQLSandbox()

@@ -45,6 +45,7 @@ def status(user=Depends(admin), db=Depends(get_unit_of_work), nlp=Depends(get_te
         neural_active=getattr(nlp, "match_method", "").startswith("local-sentence-transformer:"),
         local_mail=settings.local_mail_enabled, smtp=settings.smtp_enabled,
         resend=settings.resend_enabled, learn=settings.learn_enabled, github_projects=settings.github_project_analysis_enabled,
+        codewars=settings.codewars_enabled,
         providers={key: gateway.configured(key) for key in ("google", "github", "linkedin", "workspace", "entra")},
         catalog=bool(settings.jsearch_api_key or settings.jooble_api_key or settings.adzuna_app_id and settings.adzuna_app_key))
     result["mfa_review_active"] = settings.mfa_review_active

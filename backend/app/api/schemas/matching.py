@@ -70,3 +70,14 @@ class ProjectEvidenceSubmission(EvidenceSubmission):
 class RepositoryPreviewRequest(BaseModel):
     url: str = Field(min_length=10, max_length=250)
     confirm_public_access: Literal[True]
+
+
+class CodewarsPreviewRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=80)
+    confirm_public_access: Literal[True]
+
+
+class CodewarsEvidenceSubmission(EvidenceSubmission):
+    kind: Literal["portfolio"] = "portfolio"
+    preview_token: str = Field(min_length=50, max_length=30000)
+    confirm_ownership: Literal[True]

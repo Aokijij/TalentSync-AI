@@ -1,4 +1,4 @@
-def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog, resend=False, learn=False, github_projects=False):
+def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog, resend=False, learn=False, github_projects=False, codewars=False):
     """Report only explicit capabilities; configuration is not proof of delivery."""
     rows = [
         {"name": "Modelo de compatibilidad local", "state": "local_ready" if neural_active else "local_fallback", "status": "Modelo neuronal activo en esta máquina." if neural_active else "Compatibilidad léxica disponible; el modelo neuronal no está activo.", "next_steps": "Revisar afinidad y brechas con los escenarios de candidato."},
@@ -22,5 +22,8 @@ def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog
         {"name": "Proyectos públicos de GitHub", "state": "configured" if github_projects else "disabled",
          "status": "Consulta pública disponible por solicitud del candidato, con caché y presupuesto de peticiones." if github_projects else "Lector preparado, pendiente de habilitar. No requiere credenciales para repositorios públicos.",
          "next_steps": "El candidato elige un repositorio desde su perfil. Los archivos aportan indicios técnicos; no prueban autoría ni dominio profesional."},
+        {"name": "Codewars", "state": "configured" if codewars else "disabled",
+         "status": "Consulta pública por solicitud del candidato, sin claves, con caché y presupuesto de peticiones." if codewars else "Conector público preparado, pendiente de habilitar.",
+         "next_steps": "Consultar el usuario desde Evidencias del perfil, elegir lenguajes y guardar una referencia declarada. Los rangos no certifican dominio ni titularidad."},
     ])
     return rows

@@ -228,3 +228,25 @@ credenciales ni envío: `scripts/resend_test.py --preview`. Se conservó el esta
 del único correo real aceptado; el nuevo diseño no se reenvió. Pasaron 65 pruebas
 de correo/integraciones y lint de los archivos modificados. Propuesta de dominio
 pendiente de disponibilidad/compra: `talentsyncempleo.com`; no se configuró DNS.
+
+## Continuación gratuita: Codewars
+
+`CODEWARS_ENABLED=true` en `.local/backend.env`. El candidato puede consultar un
+usuario público desde Evidencias, revisar rangos/lenguajes, seleccionar cuáles
+relacionar y guardar una referencia sin verificar. Se exige consentimiento y
+declaración de titularidad; añadir habilidades al perfil es opcional. Otra
+consulta/guardado de la misma cuenta actualiza la referencia sin duplicarla.
+La API no autentica titularidad ni acredita competencias profesionales.
+
+Consulta pública sin credenciales; presupuesto de 50 peticiones/hora/proceso,
+caché de 32 cuentas/10 minutos, respuesta máxima de 128 KiB. La vista previa
+cifrada pertenece al candidato y caduca en 10 minutos. No se guardan nombre,
+clan, habilidades autodeclaradas ni soluciones. No hay sincronización automática.
+El lanzador conserva correo externo apagado y también desactiva Codewars en
+las pruebas automatizadas. Se reinició el backend local con la nueva opción;
+la comprobación API confirma GitHub, Codewars, correo local y pausa de MFA.
+Validación: 556 pruebas backend aprobadas, una omitida de PostgreSQL staging,
+28 pruebas frontend, ruff/eslint y build correctos. Componente nuevo comprobado
+mediante API y compilación; revisión visual pendiente por el bloqueo del
+navegador descrito en la guía de integraciones. Backend actualizado: Uvicorn
+en 127.0.0.1:8000, sesión 33439, PID 19960.

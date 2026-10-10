@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     oauth_linkedin_client_id: str = ""
     oauth_linkedin_client_secret: str = ""
     github_project_analysis_enabled: bool = False
+    codewars_enabled: bool = False
     oauth_workspace_client_id: str = ""
     oauth_workspace_client_secret: str = ""
     workspace_domain: str = ""

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import (
     get_account_security,
+    get_codewars_reader,
     get_repository_inspector,
     get_text_analysis,
     get_unit_of_work,
@@ -9,17 +10,37 @@ from app.api.deps import (
 )
 from app.api.schemas.matching import (
     CandidatePreferences,
+    CodewarsEvidenceSubmission,
+    CodewarsPreviewRequest,
     EvidenceSubmission,
     ProjectEvidenceSubmission,
     RepositoryPreviewRequest,
 )
+from app.application.errors import UseCaseError
+from app.application.use_cases import codewars_evidence, project_evidence
 from app.application.use_cases import match_settings as cases
-from app.application.use_cases import project_evidence
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
 
 router = APIRouter()
 candidate = require_roles(UserRole.CANDIDATE)
+
+
+@router.get("/integrations/codewars/capabilities")
+def codewars_capabilities(user=Depends(candidate)):
+    return {"codewars_public": settings.codewars_enabled}
+
+
+@router.post("/integrations/codewars/preview")
+def codewars_preview(payload: CodewarsPreviewRequest, user=Depends(candidate), reader=Depends(get_codewars_reader), security=Depends(get_account_security)):
+    return codewars_evidence.preview(user, payload.username, reader, security)
+
+
+@router.post("/integrations/codewars/evidence")
+def save_codewars(payload: CodewarsEvidenceSubmission, user=Depends(candidate), db=Depends(get_unit_of_work), security=Depends(get_account_security)):
+    if not settings.codewars_enabled:
+        raise UseCaseError(status_code=503, detail="La consulta de Codewars está desactivada en este entorno.")
+    return codewars_evidence.save(db, user, payload.model_dump(mode="json"), security)
 
 
 @router.get("/integrations/github/capabilities")

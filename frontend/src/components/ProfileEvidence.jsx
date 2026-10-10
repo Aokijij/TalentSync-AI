@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { GitHubEvidence } from "./GitHubEvidence.jsx";
+import { CodewarsEvidence } from "./CodewarsEvidence.jsx";
 
 export function ProfileEvidence({ onChanged }) {
   const { confirm } = useFeedback();
@@ -22,6 +23,7 @@ export function ProfileEvidence({ onChanged }) {
     <div className="mt-4 space-y-4">
       <p className="text-sm text-[var(--muted)]">Relaciona un logro, una muestra de trabajo o una certificación con tus habilidades. Se muestran junto a los requisitos de las vacantes y, con tu permiso, a las empresas de tus procesos. Los enlaces se conservan sin descargar archivos.</p>
       <GitHubEvidence onSaved={async (data) => { setRows(data); await onChanged?.(); }} />
+      <CodewarsEvidence onSaved={async (data) => { setRows(data); await onChanged?.(); }} />
       {error && <p role="alert" className="text-[var(--error)]">{error}</p>}
       {message && <p role="status">{message} <Link className="text-[var(--accent)]" to="/recomendaciones">Ver compatibilidad actualizada</Link></p>}
       <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => {
@@ -49,6 +51,7 @@ export function ProfileEvidence({ onChanged }) {
         <h3 className="font-semibold">{row.title}</h3><p className="text-sm">{row.description}</p>
         <p className="mt-1 text-xs text-[var(--muted)]">{row.skills.join(", ")} · Evidencia declarada{row.add_to_profile ? " · Incorporada al perfil" : ""}</p>
         {row.analysis?.origin === "github_public" && <p className="mt-1 text-xs text-[var(--muted)]">GitHub · revisión {row.analysis.revision.slice(0, 12)} · Tecnologías detectadas mediante análisis estático; autoría sin verificar</p>}
+        {row.analysis?.origin === "codewars_public" && <p className="mt-1 text-xs leading-5 text-[var(--muted)]">Codewars · {row.analysis.overall.rank} · {row.analysis.completed_challenges.toLocaleString("es-CO")} retos resueltos · Consulta: {new Date(row.analysis.fetched_at).toLocaleDateString("es-CO")} · Cuenta declarada; titularidad sin verificar</p>}
         <div className="mt-2 flex gap-3">{row.url && <a className="text-sm text-[var(--accent)]" href={row.url} target="_blank" rel="noopener noreferrer">Abrir referencia</a>}
           <button className="text-sm text-[var(--muted)]" disabled={busy} onClick={async () => { if (await confirm({ title: "Retirar esta evidencia", description: "La referencia dejará de aparecer en tu perfil. Tus habilidades declaradas se conservan.", confirmLabel: "Retirar evidencia" })) act(async () => { await api.delete(`/matching/evidence/${row.id}`); setRows(rows.filter((item) => item.id !== row.id)); setMessage("Referencia retirada; tus habilidades del perfil se conservan."); }); }}>Retirar</button>
         </div>

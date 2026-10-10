@@ -78,6 +78,58 @@ que una persona completó la formación y no verifica certificados.
 La conexión real queda pendiente de credenciales y comprobación con la cuenta
 autorizada. Se probaron respuestas simuladas basadas en el contrato oficial.
 
+## Codewars: práctica pública y referencia declarada
+
+Habilitado en esta máquina mediante `CODEWARS_ENABLED=true` en
+`.local/backend.env`. Usa la API pública de Codewars sin claves, aplicaciones
+OAuth ni servicios de pago. No requiere una cuenta de Azure ni registrar dominio.
+
+Recorrido: **Candidato → Mi perfil → Evidencias de mi experiencia → Consultar
+Codewars**.
+
+1. Escribir el nombre de usuario y autorizar la consulta pública.
+2. Revisar el rango general, el total de retos resueltos y los lenguajes con
+   rango y puntos de práctica. Se ignora la lista de habilidades autodeclaradas
+   de Codewars y no se importan nombre, clan ni posición de clasificación.
+3. Seleccionar lenguajes, describir lo practicado y declarar la titularidad de
+   la cuenta. Incorporarlos a las habilidades del perfil es opcional y aparece
+   desmarcado inicialmente.
+4. Guardar la referencia. Consultar y guardar otra vez esa misma cuenta actualiza
+   la referencia existente sin duplicarla. Retirarla desde Evidencias conserva
+   las habilidades declaradas que se hayan añadido al perfil.
+
+La referencia queda **sin verificar**. Los datos prueban lo que la API pública
+informa de esa cuenta; la plataforma no autentica su titularidad y los rangos no
+constituyen una certificación profesional. No se importan soluciones, no se
+ejecuta código y no se aumenta una puntuación por el número de retos. Añadir
+lenguajes al perfil solo los incorpora como habilidades declaradas.
+
+La vista previa está cifrada, pertenece al candidato y vence en diez minutos.
+Solo admite guardar lenguajes de esa consulta y utiliza la URL de perfil generada
+por el servidor. Actualizar requiere una nueva consulta manual; no existe una
+sincronización en segundo plano. La caché pública dura diez minutos, admite 32
+cuentas y devuelve copias independientes. Cada proceso limita las consultas a
+50 peticiones por hora, 128 KiB por respuesta y 20 lenguajes por referencia.
+Se rechazan redirecciones y nombres que puedan alterar la ruta del proveedor.
+
+Un perfil nuevo sin rangos se muestra como tal, sin inventar habilidades. Ante
+errores, límites o un nombre no encontrado se explica el estado y se conserva
+la posibilidad de registrar una referencia manual.
+
+Comprobación real: consulta de un perfil público de referencia, con 13 lenguajes
+devueltos. Se comprobó también la vista previa desde la API local y su estado en
+administración. Ese perfil público no se guardó como evidencia de un candidato.
+Evidencia: `.local/verification/codewars-public-smoke.json` e
+`.local/verification/integrations-api.json` (archivos locales no versionados).
+Las 30 pruebas específicas cubren consentimiento, permisos, titularidad de la
+vista previa, caducidad, selección de lenguajes, actualización, retirada,
+configuración desactivada, límites de red y errores del proveedor.
+Regresión completa tras añadir Codewars: **556 pruebas backend aprobadas y una
+omitida para PostgreSQL staging; 28 pruebas frontend aprobadas**, lint y build
+correctos. La comprobación funcional se realizó mediante la API local; la
+revisión visual del nuevo componente en navegador sigue pendiente por la
+restricción de acceso ya indicada.
+
 ## Resend: transporte preparado y prueba real aceptada
 
 Implementado como alternativa a SMTP sobre la bandeja de salida existente:
@@ -196,7 +248,7 @@ La revisión visual del navegador quedó pendiente porque su política de acceso
 bloqueó la pestaña local; no se considera validada la apariencia interactiva.
 
 Quedan para otras etapas: YouTube curado, oferta oficial SENA/Sapiencia,
-Codewars opcional, registros empresariales autorizados, fuentes salariales
+registros empresariales autorizados, fuentes salariales
 con cobertura comprobada, calendarios y validación de certificados por emisor.
 No se debe inferir fraude por ausencia de logo o de un registro en una fuente
 incompleta, ni acreditar competencias a partir de un contador de commits.
@@ -210,3 +262,4 @@ Referencias oficiales:
 - [Idempotencia de Resend](https://resend.com/docs/dashboard/emails/idempotency-keys)
 - [Restricción del remitente de pruebas](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain)
 - [Límites de GitHub REST](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)
+- [API pública de Codewars](https://dev.codewars.com/)
