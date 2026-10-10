@@ -156,7 +156,7 @@ def refresh_user_recommendations(
         key=lambda item: item.match_percentage,
         reverse=True,
     )
-    recommendations.sort(key=lambda item: (company_health(db.jobs.get(item.job_id).company)["visibility_reduced"], -item.match_percentage))
+    recommendations = personalize(db, user, recommendations)
     diverse_recommendations: list[Recommendation] = []
     used_skill_tokens: set[str] = set()
     for recommendation in recommendations:
@@ -168,7 +168,7 @@ def refresh_user_recommendations(
             used_skill_tokens |= job_tokens
         if len(diverse_recommendations) >= 50:
             break
-    return personalize(db, user, diverse_recommendations)
+    return diverse_recommendations
 
 
 def rank_candidates_for_job(

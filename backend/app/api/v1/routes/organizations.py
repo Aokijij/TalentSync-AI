@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.deps import get_unit_of_work, require_roles
@@ -45,6 +47,14 @@ def team(user=Depends(company_user), db=Depends(get_unit_of_work)):
     return cases.team(db, user)
 
 
+@router.get("/organization/team-page")
+def team_page(kind: Literal["members", "invitations"] = "members",
+              status: Literal["all", "active", "revoked", "pending", "accepted", "expired"] = "all",
+              search: str = Query(default="", max_length=120), page: int = Query(default=1, ge=1),
+              page_size: int = Query(default=6, ge=1, le=50), user=Depends(company_user), db=Depends(get_unit_of_work)):
+    return cases.team_page(db, user, kind=kind, status=status, search=search.strip(), page=page, page_size=page_size)
+
+
 @router.post("/organization/invitations")
 @limiter.limit("20/hour")
 def invite(request: Request, payload: TeamInvitation, user=Depends(company_user), db=Depends(get_unit_of_work)):
@@ -86,6 +96,13 @@ def assignments(user=Depends(company_user), db=Depends(get_unit_of_work)):
 @router.get("/admin/verifications")
 def verifications(user=Depends(admin_user), db=Depends(get_unit_of_work)):
     return cases.verification_queue(db)
+
+
+@router.get("/admin/verification-queue")
+def verification_page(status: Literal["all", "pending", "reviewing", "information_required", "verified", "rejected", "suspended"] = "all",
+                      search: str = Query(default="", max_length=120), page: int = Query(default=1, ge=1),
+                      page_size: int = Query(default=5, ge=1, le=50), user=Depends(admin_user), db=Depends(get_unit_of_work)):
+    return cases.verification_page(db, status=status, search=search.strip(), page=page, page_size=page_size)
 
 
 @router.post("/admin/verifications/{company_id}")

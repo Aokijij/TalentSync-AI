@@ -35,8 +35,12 @@ No se permite quitar las condiciones estructuradas para evadir la validación.
   duración total es una estimación independiente desde la postulación.
 - Los cambios materiales incrementan una versión y notifican a las personas con
   procesos en curso. El evento guarda la versión, sin copiar contenido privado.
-- La puntuación de calidad no modifica el índice de compatibilidad ni reordena
-  automáticamente las recomendaciones.
+- La puntuación de calidad no modifica el índice de compatibilidad. Ayuda a
+  ordenar ofertas dentro de bandas de diez puntos de afinidad, después de la
+  confianza de la empresa y las señales consentidas de personalización. Su efecto
+  es de hasta cinco puntos de ordenación. Las ofertas externas tienen efecto
+  neutro; no se les inventa una valoración. El candidato puede elegir ordenar
+  solo por compatibilidad, conservando la prioridad de confianza empresarial.
 
 ## Opiniones y referencia salarial
 
@@ -69,3 +73,15 @@ no restablece usuarios ni reemplaza vacantes. Los enlaces se guardan en
 La migración `0039_offer_quality` añade condiciones, versión y opiniones. Antes
 de aplicarla a la revisión local se hizo una copia de SQLite en `.local/backups/`.
 Este trabajo no publica cambios ni modifica recursos de Azure.
+
+## Redacción guiada local
+
+El panel de Calidad de ofertas prepara borradores de responsabilidades y requisitos
+con las misiones, evaluación, plazos, nivel y habilidades que registró la empresa.
+No llama a un modelo generativo ni inventa salarios, experiencia, métricas o
+condiciones. Cuando faltan hechos, muestra preguntas para completarlos.
+
+Cada propuesta permite comparar el texto actual, editar y aplicar únicamente ese
+campo. Aplicar modifica el borrador; guardar y publicar siguen siendo acciones
+separadas. Si se cambia la oferta después de generar una propuesta, se exige
+prepararla de nuevo para evitar sobrescribir cambios posteriores.

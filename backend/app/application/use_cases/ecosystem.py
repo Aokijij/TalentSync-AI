@@ -98,13 +98,20 @@ def appeal(db, user, incident_id, message):
     return incident_view(row, db=db)
 
 
-def dashboard(db):
+def company_directory(db, **filters):
+    from app.domain.services.reputation import health_from_counts
+    result = db.ecosystem.company_directory(**filters)
+    result["items"] = [{"id": row["id"], "name": row["name"], **health_from_counts(row["measured"], row["missed"], row["confirmed"])} for row in result["items"]]
+    return result
+
+
+def dashboard(db, *, include_companies=True):
     candidates = db.users.candidates_with_profiles()[:500]
     jobs = db.jobs.active()[:500]
     demand = Counter(skill_key(row["skill"]) for job in jobs for row in requirements_for(job))
     supply = Counter(skill for user in candidates for skill in skill_set(user.profile.skills))
     skill_rows = [{"skill": skill, "vacancies": demand[skill], "candidate_profiles": supply[skill]} for skill in demand | supply]
-    companies = [row for row in db.companies.list_owned(None) if not row.is_external][:200]
+    companies = [row for row in db.companies.list_owned(None) if not row.is_external][:200] if include_companies else []
     return {"scope": "local_platform_data", "candidate_sample": len(candidates), "vacancy_sample": len(jobs),
             "skills": sorted(skill_rows, key=lambda row: (-row["vacancies"], row["skill"])),
             "companies": [{"id": row.id, "name": row.name, **company_health(row)} for row in companies],

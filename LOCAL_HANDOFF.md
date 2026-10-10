@@ -193,3 +193,13 @@ SQLite aislada. No restablece contraseñas ni los recorridos ya probados.
 - Migración `0038_interview_evaluations`: agrega la columna de notas de entrevista, sin modificar las postulaciones existentes.
 
 El entorno local guarda archivos, correo de demostración y base SQLite en `.local/`; las llamadas de Azure, correo SMTP y portales de pago permanecen deshabilitadas por `scripts/local.py`. Para arrancar: `backend/.venv/Scripts/python.exe -X utf8 scripts/local.py backend` y el servidor Vite de `frontend`. Cuentas y recorridos: `.local/escenarios/GUIA_ESCENARIOS.md` (privado, no versionado). La revisión de gastos y el alcance propuesto para retirar Azure están en `.local/AZURE_USO_LOCAL.md`.
+
+
+## Cierre adicional de funciones locales
+
+La paginación completa de verificación, directorio empresarial y equipo, la
+integración de calidad en el orden de recomendaciones, los borradores de
+redacción y los estados efectivos de integraciones se describen en
+[docs/CIERRE_FUNCIONES_LOCALES.md](docs/CIERRE_FUNCIONES_LOCALES.md).
+La revisión sigue sin proveedores externos ni servicios de pago. Los certificados
+y las empresas continúan con comprobación manual, claramente identificada.

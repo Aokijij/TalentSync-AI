@@ -23,13 +23,13 @@ export function TrustPage() {
 }
 
 export function EcosystemPage() {
-  const [data, setData] = useState(null); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
-  async function load() { const { data: result } = await api.get("/admin/ecosystem"); setData(result); }
+  const [data, setData] = useState(null); const [directoryRefresh, setDirectoryRefresh] = useState(0); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
+  async function load() { const { data: result } = await api.get("/admin/ecosystem", { params: { include_companies: false } }); setData(result); setDirectoryRefresh((value) => value + 1); }
   useEffect(() => { load().catch((failure) => setError(getApiErrorMessage(failure))); }, []);
   async function act(action) { setBusy(true); setError(""); try { await action(); await load(); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }
   return <div className="space-y-5"><PageHeader kicker="Administración" title="Salud del ecosistema" description="Observa procesos, revisa incidencias y comprueba cambios en el motor de compatibilidad." />{error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}{data && <><p className="surface-card p-4 text-sm">{data.notice}</p><SkillMarketTable data={data} />
     <section className="surface-card space-y-4 p-5"><h2 className="font-bold">Auditoría del motor</h2><button disabled={busy} className="button-primary" onClick={() => act(() => api.post("/admin/ecosystem/audit"))}>Ejecutar comprobación y guardar versión</button><p className="text-xs text-[var(--muted)]">Compara hasta 200 pares con metadatos de identidad alternativos. La auditoría por grupos demográficos requiere un conjunto de datos consentido y todavía no está disponible.</p>{data.audits.map((row) => <article key={row.id} className="space-y-2 border-t border-[var(--line)] pt-3"><h3 className="font-semibold">{row.version} · {new Date(row.created_at + "Z").toLocaleString("es-CO")}</h3><p className="text-sm">{row.metrics.pair_count} pares · cambios al variar identidad: {row.metrics.identity_invariance_violations}</p><p className="text-sm">Cambio de distribución (PSI): {row.metrics.distribution_psi ?? "Sin muestra previa suficiente"}{row.metrics.distribution_review_suggested && " · Conviene revisar el cambio"}</p><p className="text-xs text-[var(--muted)]">{row.metrics.notice}</p></article>)}</section>
-    <CompanyTrustDirectory companies={data.companies} /></>}
+    <CompanyTrustDirectory refresh={directoryRefresh} /></>}
     <IncidentReviewQueue onReviewed={() => load().catch((failure) => setError(getApiErrorMessage(failure)))} />
   </div>;
 }

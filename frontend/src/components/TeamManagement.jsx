@@ -1,24 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Mail, Plus, Search, Settings2, ShieldCheck, UsersRound, X } from "lucide-react";
 import { api } from "../api/client.js";
+import { useDebouncedValue, usePagedList } from "../hooks/usePagedList.js";
 
 const ROLES = { recruiter: "Reclutador", interviewer: "Entrevistador" };
 const INVITATION_STATUS = { pending: "Pendiente", accepted: "Aceptada", expired: "Vencida o cancelada" };
 const PAGE_SIZE = 6;
 const initials = (name) => name.trim().split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
 
-export function TeamManagement({ members, invitations, jobs, busy, act, canInvite, mfaRequired }) {
+export function TeamManagement({ jobs, busy: saving, act, canInvite, mfaRequired, refresh = 0, onCount }) {
   const [view, setView] = useState("members");
   const [query, setQuery] = useState(""), [status, setStatus] = useState("all"), [page, setPage] = useState(1);
   const [editor, setEditor] = useState(null);
-  const active = members.filter((member) => member.active).length;
-  const pending = invitations.filter((row) => row.status === "pending").length;
-  const rows = (view === "members" ? members : invitations).filter((row) => {
-    const matches = `${row.name || ""} ${row.email} ${ROLES[row.role] || ""}`.toLowerCase().includes(query.trim().toLowerCase());
-    return matches && (status === "all" || (view === "members" ? status === (row.active ? "active" : "revoked") : status === row.status));
-  });
-  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE)), currentPage = Math.min(page, pages);
-  const visible = rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const search = useDebouncedValue(query);
+  const { data, loading, error, reload } = usePagedList("/organization/team-page", { kind: view, status, search, page, page_size: PAGE_SIZE }, refresh);
+  const counts = data?.counts || {};
+  const active = counts.active || 0, pending = counts.pending || 0;
+  const total = data?.total || 0, memberCount = counts.members || 0, invitationCount = counts.invitations || 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE)), currentPage = data?.page || 1;
+  const visible = data?.items || [];
+  const busy = saving || loading || search !== query.trim();
+  useEffect(() => { onCount?.(memberCount); }, [memberCount, onCount]);
   function changeView(value) { setView(value); setStatus("all"); setQuery(""); setPage(1); setEditor(null); }
   async function save(values) {
     const success = await act(() => editor.kind === "invite"
@@ -31,21 +33,23 @@ export function TeamManagement({ members, invitations, jobs, busy, act, canInvit
       <div className="team-heading"><span className="team-heading-icon"><UsersRound size={22} /></span><div><h2>Tu equipo de contratación</h2><p>Gestiona personas, permisos y procesos desde un solo lugar.</p></div></div>
       <button type="button" className="button-primary" disabled={busy || !!editor || !canInvite} onClick={() => setEditor({ kind: "invite" })}><Plus size={17} />Invitar integrante</button>
     </header>
-    <div className="team-overview"><span><i className="team-dot active" />{active} {active === 1 ? "activo" : "activos"}</span><span><i className="team-dot" />{members.length - active} con acceso retirado</span><span><Mail size={14} />{pending} {pending === 1 ? "invitación pendiente" : "invitaciones pendientes"}</span></div>
+    <div className="team-overview"><span><i className="team-dot active" />{active} {active === 1 ? "activo" : "activos"}</span><span><i className="team-dot" />{counts.revoked || 0} con acceso retirado</span><span><Mail size={14} />{pending} {pending === 1 ? "invitación pendiente" : "invitaciones pendientes"}</span></div>
     <details className="team-permissions-help"><summary><ShieldCheck size={15} />Qué puede hacer cada rol</summary><div><p><strong>Propietario</strong>Administra verificación, equipo, empresa y contratación.</p><p><strong>Reclutador</strong>Gestiona las vacantes y candidaturas de la empresa. No administra el equipo.</p><p><strong>Entrevistador</strong>Consulta procesos asignados y guarda evaluaciones internas. No publica ofertas ni cambia decisiones de contratación.</p></div></details>
     {editor?.kind === "invite" && <TeamEditor key="invite" jobs={jobs} busy={busy} mfaRequired={mfaRequired} onSave={save} onClose={() => setEditor(null)} />}
     <div className="team-list-toolbar">
-      <nav aria-label="Listas del equipo" className="team-list-tabs"><button type="button" aria-pressed={view === "members"} disabled={busy || !!editor} onClick={() => changeView("members")}>Integrantes <span>{members.length}</span></button><button type="button" aria-pressed={view === "invitations"} disabled={busy || !!editor} onClick={() => changeView("invitations")}>Invitaciones <span>{invitations.length}</span></button></nav>
-      <div className="team-filters"><label className="team-search"><Search size={16} /><input className="field-control" aria-label="Buscar en el equipo" placeholder="Nombre, correo o rol" value={query} disabled={!!editor} onChange={(event) => { setQuery(event.target.value); setPage(1); }} /></label><select className="field-control" aria-label="Filtrar estado del equipo" value={status} disabled={!!editor} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="all">Todos los estados</option>{view === "members" ? <><option value="active">Acceso activo</option><option value="revoked">Acceso retirado</option></> : <><option value="pending">Pendientes</option><option value="accepted">Aceptadas</option><option value="expired">Vencidas o canceladas</option></>}</select></div>
+      <nav aria-label="Listas del equipo" className="team-list-tabs"><button type="button" aria-pressed={view === "members"} disabled={busy || !!editor} onClick={() => changeView("members")}>Integrantes <span>{memberCount}</span></button><button type="button" aria-pressed={view === "invitations"} disabled={busy || !!editor} onClick={() => changeView("invitations")}>Invitaciones <span>{invitationCount}</span></button></nav>
+      <div className="team-filters"><label className="team-search"><Search size={16} /><input className="field-control" aria-label="Buscar en el equipo" maxLength={120} placeholder="Nombre, correo o rol" value={query} disabled={!!editor} onChange={(event) => { setQuery(event.target.value); setPage(1); }} /></label><select className="field-control" aria-label="Filtrar estado del equipo" value={status} disabled={!!editor} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="all">Todos los estados</option>{view === "members" ? <><option value="active">Acceso activo</option><option value="revoked">Acceso retirado</option></> : <><option value="pending">Pendientes</option><option value="accepted">Aceptadas</option><option value="expired">Vencidas o canceladas</option></>}</select></div>
     </div>
-    <div className="team-list">
-      {!visible.length && <div className="team-empty"><UsersRound size={28} /><h3>{query || status !== "all" ? "No hay coincidencias" : view === "members" ? "Tu equipo comienza aquí" : "Sin invitaciones"}</h3><p>{query || status !== "all" ? "Prueba con otro nombre, correo o estado." : view === "members" ? "Invita a un reclutador o entrevistador para trabajar juntos." : "Las invitaciones que prepares aparecerán en esta lista."}</p></div>}
+    {error && <p role="alert" className="offer-alert error">{error}<button type="button" className="button-secondary button-sm" onClick={reload}>Reintentar</button></p>}
+    <div className="team-list" aria-busy={busy}>
+      {loading && <p role="status" className="p-4 text-sm text-[var(--muted)]">Cargando equipo…</p>}
+      {!busy && !error && !visible.length && <div className="team-empty"><UsersRound size={28} /><h3>{query || status !== "all" ? "No hay coincidencias" : view === "members" ? "Tu equipo comienza aquí" : "Sin invitaciones"}</h3><p>{query || status !== "all" ? "Prueba con otro nombre, correo o estado." : view === "members" ? "Invita a un reclutador o entrevistador para trabajar juntos." : "Las invitaciones que prepares aparecerán en esta lista."}</p></div>}
       {visible.map((row) => <article key={row.id} className={`team-member ${editor?.member?.id === row.id ? "is-editing" : ""}`}>
         <div className="team-member-row"><span className="team-avatar" aria-hidden="true">{view === "members" ? initials(row.name || row.email) : <Mail size={19} />}</span><div className="team-member-identity"><h3>{row.name || row.email}</h3>{row.name && <p>{row.email}</p>}<small>{view === "members" ? row.role === "recruiter" ? "Gestiona todas las vacantes" : `${row.assigned_job_ids.length} ${row.assigned_job_ids.length === 1 ? "vacante asignada" : "vacantes asignadas"}` : `Vence ${new Date(row.expires_at + "Z").toLocaleDateString("es-CO")}`}</small></div><span className="team-role">{ROLES[row.role]}</span><span className={`team-status ${(view === "members" ? row.active : row.status === "accepted") ? "active" : ""}`}>{view === "members" ? row.active ? "Activo" : "Acceso retirado" : INVITATION_STATUS[row.status]}</span>{view === "members" ? <button type="button" className="button-secondary button-sm" disabled={busy || !!editor} aria-label={`Gestionar permisos de ${row.name}`} onClick={() => setEditor({ kind: "edit", member: row })}><Settings2 size={15} />Gestionar</button> : row.status === "pending" ? <button type="button" className="button-secondary button-sm" disabled={busy || !!editor} onClick={() => act(() => api.delete(`/organization/invitations/${row.id}`))}>Cancelar invitación</button> : null}</div>
         {view === "members" && editor?.member?.id === row.id && <TeamEditor key={row.id} member={row} jobs={jobs} busy={busy} mfaRequired={mfaRequired} onSave={save} onClose={() => setEditor(null)} />}
       </article>)}
     </div>
-    {!!rows.length && <footer className="team-list-footer"><p>{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, rows.length)} de {rows.length} {view === "members" ? rows.length === 1 ? "integrante" : "integrantes" : rows.length === 1 ? "invitación" : "invitaciones"}</p>{pages > 1 && <nav aria-label="Paginación del equipo"><button type="button" className="button-secondary button-sm" aria-label="Página anterior del equipo" disabled={busy || !!editor || currentPage === 1} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={16} /></button><span>{currentPage} / {pages}</span><button type="button" className="button-secondary button-sm" aria-label="Página siguiente del equipo" disabled={busy || !!editor || currentPage === pages} onClick={() => setPage(currentPage + 1)}><ChevronRight size={16} /></button></nav>}</footer>}
+    {!!total && <footer className="team-list-footer"><p>{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, total)} de {total} {view === "members" ? total === 1 ? "integrante" : "integrantes" : total === 1 ? "invitación" : "invitaciones"}</p>{pages > 1 && <nav aria-label="Paginación del equipo"><button type="button" className="button-secondary button-sm" aria-label="Página anterior del equipo" disabled={busy || !!editor || currentPage === 1} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={16} /></button><span>{currentPage} / {pages}</span><button type="button" className="button-secondary button-sm" aria-label="Página siguiente del equipo" disabled={busy || !!editor || currentPage === pages} onClick={() => setPage(currentPage + 1)}><ChevronRight size={16} /></button></nav>}</footer>}
   </section>;
 }
 

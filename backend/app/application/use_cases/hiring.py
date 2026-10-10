@@ -18,7 +18,7 @@ def quality(db, user, job_id):
     return report
 
 
-def preview(db, user, payload):
+def preview_job(db, user, payload):
     values = dict(payload)
     job_id = values.pop("job_id", None)
     if job_id is not None:
@@ -30,7 +30,16 @@ def preview(db, user, payload):
     else:
         company = owned_company(db, user)
         values.update(id=None, company_id=company.id if company else None)
-    return review_offer(SimpleNamespace(**values), db.jobs.active())
+    return SimpleNamespace(**values)
+
+
+def preview(db, user, payload):
+    return review_offer(preview_job(db, user, payload), db.jobs.active())
+
+
+def writing(db, user, payload):
+    from app.domain.services.offer_writing import writing_draft
+    return writing_draft(preview_job(db, user, payload))
 
 
 def candidate_feedback(db, user, job_id, reason=None, *, remove=False):

@@ -19,6 +19,11 @@ def preview(payload: QualityPreview, user=Depends(require_roles(UserRole.COMPANY
     return cases.preview(db, user, payload.model_dump())
 
 
+@router.post("/hiring/quality/writing")
+def writing(payload: QualityPreview, user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return cases.writing(db, user, payload.model_dump())
+
+
 @router.get("/hiring/feedback/{job_id}")
 def own_feedback(job_id: int, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
     return cases.candidate_feedback(db, user, job_id)

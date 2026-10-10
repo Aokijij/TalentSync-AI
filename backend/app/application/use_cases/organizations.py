@@ -110,6 +110,14 @@ def team(db, user):
     return result
 
 
+def team_page(db, user, **filters):
+    company = context(db, user, owner=True)
+    valid = {"all", "active", "revoked"} if filters["kind"] == "members" else {"all", "pending", "accepted", "expired"}
+    if filters["status"] not in valid:
+        raise UseCaseError(status_code=422, detail="El estado no corresponde a esta lista")
+    return db.organizations.team_page(company.id, **filters)
+
+
 def _job_ids(db, company, ids):
     for job_id in ids:
         job = db.jobs.get(job_id)
@@ -191,7 +199,7 @@ def accept_invitation(db, user, token):
 
 def update_member(db, user, member_id, payload):
     company = context(db, user, owner=True)
-    member = next((row for row in db.organizations.members(company.id) if row.id == member_id), None)
+    member = db.organizations.member(company.id, member_id)
     if member is None:
         raise UseCaseError(status_code=404, detail="Miembro no encontrado")
     member.role = payload["role"]
@@ -219,6 +227,14 @@ def verification_queue(db):
     return [{"id": row.id, "name": row.name, "nit": row.nit, "status": row.verification_status,
              "submission": row.verification_submission, "feedback": row.verification_feedback, "email_verified": row.owner.email_verified, "verification_missing": verification_missing(row.verification_submission)}
             for row in db.organizations.verification_queue()]
+
+
+def verification_page(db, **filters):
+    result = db.organizations.verification_page(**filters)
+    result["items"] = [{"id": row.id, "name": row.name, "nit": row.nit, "status": row.verification_status,
+                        "submission": row.verification_submission, "feedback": row.verification_feedback,
+                        "email_verified": row.owner.email_verified, "verification_missing": verification_missing(row.verification_submission)} for row in result["items"]]
+    return result
 
 
 VERIFICATION_FIELDS = {"legal_name": "Razón social", "tax_id": "Identificación tributaria", "business_activity": "Actividad de la empresa",

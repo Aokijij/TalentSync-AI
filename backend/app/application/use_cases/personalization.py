@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
+from app.domain.services.discovery import discovery_key, discovery_signals
 from app.domain.services.match_explanations import MATCH_VERSION, preference_alignment
 from app.domain.services.personalization import (
     collaborative_interest,
@@ -61,18 +62,17 @@ def order(db, user, recommendations):
     if not consented(user):
         for row in recommendations:
             row.personalization = {"enabled": False}
-        return recommendations
-    signals = db.personalization.feedback()
-    own_signals = {row.job_id: row.interested for row in db.personalization.feedback(user.id)}
-    visible = [row for row in recommendations if own_signals.get(row.job_id) is not False]
+        visible = recommendations
+    else:
+        signals = db.personalization.feedback()
+        own_signals = {row.job_id: row.interested for row in db.personalization.feedback(user.id)}
+        visible = [row for row in recommendations if own_signals.get(row.job_id) is not False]
+        for row in visible:
+            row.personalization = {"enabled": True, "interested": own_signals.get(row.job_id), **collaborative_interest(user.profile, row.job_id, signals),
+                "notice": "Interés agregado de perfiles con habilidades similares; separado de la afinidad técnica."}
     for row in visible:
-        row.personalization = {"enabled": True, "interested": own_signals.get(row.job_id), **collaborative_interest(user.profile, row.job_id, signals),
-            "notice": "Interés agregado de perfiles con habilidades similares; separado de la afinidad técnica."}
-    # Personalization breaks ties within ten-point affinity bands. Reputation
-    # remains the primary ordering tier established by the matching use case.
-    tiers = {row.job_id: row.job.employer_trust["visibility_reduced"] for row in visible}
-    return sorted(visible, key=lambda row: (tiers[row.job_id], -int(row.match_percentage // 10), -int(own_signals.get(row.job_id) is True),
-        -(row.personalization.get("score") if row.personalization.get("score") is not None else 50), -row.match_percentage))
+        row.discovery = {**discovery_signals(row.job, row.match_percentage), "visibility_reduced": row.job.employer_trust["visibility_reduced"]}
+    return sorted(visible, key=discovery_key)
 
 
 def training_rows(db, nlp):

@@ -86,8 +86,16 @@ def incident_detail(incident_id: int, user=Depends(admin), db=Depends(get_unit_o
 
 
 @router.get("/admin/ecosystem")
-def dashboard(user=Depends(admin), db=Depends(get_unit_of_work)):
-    return cases.dashboard(db)
+def dashboard(include_companies: bool = True, user=Depends(admin), db=Depends(get_unit_of_work)):
+    return cases.dashboard(db, include_companies=include_companies)
+
+
+@router.get("/admin/company-directory")
+def company_directory(search: str = Query(default="", max_length=120),
+                      filter: Literal["all", "attention", "rated", "unrated"] = "all",
+                      page: int = Query(default=1, ge=1), page_size: int = Query(default=6, ge=1, le=50),
+                      user=Depends(admin), db=Depends(get_unit_of_work)):
+    return cases.company_directory(db, search=search.strip(), filter=filter, page=page, page_size=page_size)
 
 
 @router.post("/admin/ecosystem/audit")

@@ -1,3 +1,4 @@
+import { OfferWritingAssistant } from "../components/OfferWritingAssistant.jsx";
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Eye, Lightbulb, Plus, Save, ShieldCheck, Target, Trash2 } from "lucide-react";
@@ -118,6 +119,7 @@ export function HiringQualityPage() {
           {quality && <details className="surface-card offer-reference"><summary>Referencia salarial local</summary><p className="mt-3 text-sm">{quality.salary_reference.median ? `$${quality.salary_reference.median.toLocaleString("es-CO")} COP · ${quality.salary_reference.sample_size} empresas comparables` : `Muestra insuficiente: ${quality.salary_reference.sample_size} de 5 empresas comparables.`}</p><p className="mt-2 text-xs text-[var(--muted)]">{quality.salary_reference.notice}</p></details>}
         </aside>
       </div>
+      <OfferWritingAssistant key={selected || "new"} draft={draft} disabled={busy} onApply={update} onStep={go} />
       {savedReport?.feedback && <section className="surface-card offer-diagnostics"><div><p className="section-kicker">Después de publicar</p><h2>Lo que dicen los candidatos</h2><p className="text-sm text-[var(--muted)]">Versión {savedReport.revision} · {savedReport.feedback.sample_size} opiniones voluntarias{dirty ? " · Guarda para actualizar la versión" : ""}</p></div>{savedReport.feedback.available ? <div className="offer-feedback-grid">{savedReport.feedback.reasons.filter((row) => row.count > 0).map((row) => <article key={row.key}><strong>{row.count}</strong><h3>{row.label}</h3><p>{row.action}</p></article>)}</div> : <p className="offer-tip">El diagnóstico aparecerá cuando esta versión reúna cinco opiniones. Puedes probarlo con la oferta de ejemplo que incluye comentarios.</p>}<p className="text-xs text-[var(--muted)]">{savedReport.feedback.notice}</p></section>}
     </>}
   </div>;

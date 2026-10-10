@@ -36,6 +36,7 @@ export function RecommendationsPage() {
   const [preferences, setPreferences] = useState(null);
   const interests = useJobInterests(true, () => load(false));
   const [query, setQuery] = useState("");
+  const [rankingMode, setRankingMode] = useState("balanced");
   const [respectPreferences, setRespectPreferences] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -87,11 +88,11 @@ export function RecommendationsPage() {
   const enriched = useRecommendations(recommendations, minCompatibility, false);
   const filteredRecommendations = useMemo(
     () =>
-      enriched.filter((item) => {
+      (rankingMode === "compatibility" ? [...enriched].sort((a, b) => Number(!!a.discovery?.visibility_reduced) - Number(!!b.discovery?.visibility_reduced) || b.match_percentage - a.match_percentage || a.job_id - b.job_id) : enriched).filter((item) => {
         const job = jobsById.get(item.job_id);
         return job && meetsRequiredPreferences(item, respectPreferences) && searchJob(job, query) && visibleInterest(job, interests.byId, "all") && (sourceFilter === "all" || job.source_kind === sourceFilter);
       }),
-    [enriched, jobsById, sourceFilter, query, interests.byId, respectPreferences],
+    [enriched, jobsById, sourceFilter, query, interests.byId, respectPreferences, rankingMode],
   );
   const pages = totalPages(filteredRecommendations, pageSize);
   const visibleRecommendations = pageItems(filteredRecommendations, page, pageSize);
@@ -186,11 +187,12 @@ export function RecommendationsPage() {
                   Lista de empleo recomendada
                 </h2>
                 <p className="text-sm text-[var(--muted)]">
-                  Ordenadas por compatibilidad con tu trayectoria y habilidades.
+                  {rankingMode === "balanced" ? "Compatibilidad similar: priorizamos información clara y tus decisiones de personalización." : "Ordenadas por compatibilidad, teniendo en cuenta la confianza de la empresa."}
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
+              <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">Ordenar<select className="field-control input-sm" aria-label="Ordenar recomendaciones" value={rankingMode} onChange={(event) => { setRankingMode(event.target.value); setPage(1); }}><option value="balanced">Recomendadas</option><option value="compatibility">Mayor compatibilidad</option></select></label>
               <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">
                 Origen
                 <select className="field-control input-sm w-36" value={sourceFilter} onChange={(event) => changeSource(event.target.value)}>
@@ -250,6 +252,7 @@ export function RecommendationsPage() {
                           Postulación en {externalPortal(job)}
                         </span>
                       ) : null}
+                      {item.discovery?.quality_score != null && <span className="recommendation-quality" title={item.discovery.notice}>Claridad de oferta {item.discovery.quality_score}%</span>}
                       {applied ? (
                         <span className="rounded-[var(--radius-md)] bg-[var(--success)]/10 px-2 py-1 text-xs font-semibold text-[var(--ink)]">
                           Postulado
@@ -321,6 +324,7 @@ export function RecommendationsPage() {
                   </div>
                   {isExpanded ? (
                     <div className="grid gap-6 border-t border-[var(--line)] pt-5 lg:col-span-3 lg:grid-cols-2">
+                      <p className="lg:col-span-2 text-xs text-[var(--muted)]">{item.discovery?.notice}</p>
                       <MatchBreakdown
                         details={item.match_details}
                         skillMatch={item.skill_match_percentage}
