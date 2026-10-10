@@ -264,3 +264,15 @@ esta adaptación solo afecta la presentación. Sin cambios de backend, permisos
 ni puntuaciones. Validación: 32 pruebas frontend, eslint y build correctos.
 La revisión visual continúa pendiente por el bloqueo del navegador indicado
 en la guía de integraciones.
+
+## Diseño de evidencias
+
+La sección muestra primero las referencias guardadas en tarjetas, con tipo,
+habilidades como etiquetas, enlace y acción de retirar. Descripción completa,
+procedencia y límites de verificación se consultan en un detalle desplegable.
+El formulario se abre desde «Añadir evidencia», conserva el borrador al cerrar
+y se limpia tras guardar. Incluye foco al abrir/cerrar, bloqueo durante guardado,
+estados de carga/error y una vista vacía. GitHub/Codewars siguen opcionales al
+final. Estilos propios con variables de tema, dos columnas en escritorio y una
+en móvil. Sin cambios de API ni datos. Pasaron 32 pruebas frontend, eslint y
+compilación; revisión visual pendiente por el bloqueo de navegador existente.
