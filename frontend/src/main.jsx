@@ -7,6 +7,7 @@ import { AppRoutes } from "./routes/AppRoutes.jsx";
 import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import { FeedbackProvider } from "./contexts/FeedbackContext.jsx";
 import "./styles/index.css";
+import "./styles/review-refinements.css";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>

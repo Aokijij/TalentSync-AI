@@ -1,0 +1,5 @@
+export function OfferQualityLevel({ quality }) {
+  if (!quality?.rating) return null;
+  const { rating, rating_scale: levels } = quality;
+  return <div className={`quality-level-block level-${rating.code.toLowerCase()}`}><div className="quality-current-level"><span>{rating.code}</span><div><strong>{rating.label}</strong><small>{quality.score} puntos · rango {rating.minimum}–{rating.maximum}</small></div></div><div className="quality-level-track" aria-label="Escala de calidad">{[...(levels || [])].reverse().map((row) => <span key={row.code} data-level={row.code} className={rating.code === row.code ? "current" : ""}>{row.code}</span>)}</div><details className="quality-level-explanation"><summary>¿Qué significa cada nivel?</summary><p>Evalúa la claridad y la información registrada. El nivel no garantiza condiciones laborales ni sustituye los requisitos para publicar.</p><ol>{levels?.map((row) => <li key={row.code} aria-current={row.code === rating.code ? "true" : undefined}><span>{row.code}</span><div><strong>{row.label} · {row.minimum}–{row.maximum}</strong><p>{row.description}</p></div></li>)}</ol></details></div>;
+}

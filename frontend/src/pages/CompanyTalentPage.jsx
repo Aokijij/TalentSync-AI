@@ -17,7 +17,7 @@ export function CompanyTalentPage() {
   const [selectedJobId, setSelectedJobId] = useState(searchParams.get("job") || "");
   const [candidates, setCandidates] = useState([]);
   const [page, setPage] = useState(Math.max(1, Math.min(100000, Math.floor(Number(searchParams.get("page"))) || 1))), [total, setTotal] = useState(0);
-  const pageSize = 8;
+  const pageSize = 9;
   const [query, setQuery] = useState(searchParams.get("query") || "");
   const [audience, setAudience] = useState(searchParams.get("audience") || "new");
   const [minMatch, setMinMatch] = useState(Math.max(0, Math.min(100, Number(searchParams.get("min") ?? 50) || 0)));

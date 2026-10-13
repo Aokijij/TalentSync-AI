@@ -1,3 +1,4 @@
+import { MonthYearPicker } from "./MonthYearPicker.jsx";
 import { Plus, Trash2 } from "lucide-react";
 import { experiencePeriod } from "../utils/experienceDates.js";
 
@@ -8,8 +9,8 @@ export function ExperienceFields({ items, editing, onChange }) {
     const current = item.is_current === true || /^(presente|actualidad|actual)$/i.test(item.end_year || "");
     return <article className="experience-entry" key={index}>{editing ? <>
       <div className="grid gap-4 sm:grid-cols-2">{[["role", "Cargo"], ["company", "Empresa"]].map(([key, label]) => <label className="text-sm" key={key}>{label}<input className="field-control mt-1" value={item[key] || ""} maxLength={160} onChange={(event) => update(index, { [key]: event.target.value })} /></label>)}
-        <label className="text-sm">Mes y año de inicio<input className="field-control mt-1" type="month" min="1900-01" max={month} value={item.start_date || ""} onChange={(event) => update(index, { start_date: event.target.value, start_year: event.target.value.slice(0, 4) })} /></label>
-        <label className="text-sm">Mes y año de finalización<input className="field-control mt-1" type="month" disabled={current} min={item.start_date || "1900-01"} max={month} value={current ? "" : item.end_date || ""} onChange={(event) => update(index, { end_date: event.target.value, end_year: event.target.value.slice(0, 4) })} /></label>
+        <MonthYearPicker label="Mes y año de inicio" max={month} value={item.start_date || ""} onChange={(value) => update(index, { start_date: value, start_year: value.slice(0, 4) })} />
+        <MonthYearPicker label="Mes y año de finalización" disabled={current} min={item.start_date || "1900-01"} max={month} value={current ? "" : item.end_date || ""} onChange={(value) => update(index, { end_date: value, end_year: value.slice(0, 4) })} />
       </div><label className="mobility-choice mt-3"><input type="checkbox" checked={current} onChange={(event) => update(index, { is_current: event.target.checked, end_date: "", end_year: event.target.checked ? "Presente" : "" })} /><span>Trabajo actualmente aquí</span></label>
       {item.start_year && !item.start_date && <p className="mt-2 text-xs text-[var(--muted)]">Registro anterior: {experiencePeriod(item)}. Completa los meses para precisar la duración; no se han supuesto fechas nuevas.</p>}
       <label className="mt-3 block text-sm">Responsabilidades y resultados<textarea className="field-control mt-1" rows={3} maxLength={3000} value={item.description || ""} onChange={(event) => update(index, { description: event.target.value })} /></label>

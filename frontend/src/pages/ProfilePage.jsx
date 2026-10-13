@@ -307,8 +307,8 @@ export function ProfilePage() {
       {previewMode ? (
         <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
       ) : (
-        <article className="mx-auto max-w-7xl overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
-          <header className="relative overflow-hidden border-b border-[var(--line)] bg-gradient-to-br from-[var(--accent)]/10 via-[var(--surface)] to-[var(--success)]/10 p-6 sm:p-8">
+        <article className="mx-auto max-w-7xl overflow-visible rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
+          <header className="relative overflow-hidden rounded-t-[var(--radius-2xl)] border-b border-[var(--line)] bg-gradient-to-br from-[var(--accent)]/10 via-[var(--surface)] to-[var(--success)]/10 p-6 sm:p-8">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[var(--accent)] to-[var(--success)]" />
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">

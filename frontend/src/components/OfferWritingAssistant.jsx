@@ -1,34 +1,33 @@
 import { useRef, useState } from "react";
-import { ArrowRight, FilePenLine, RotateCcw } from "lucide-react";
+import { ArrowRight, Check, FilePenLine, RotateCcw, Sparkles } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { offerPayload } from "../utils/offerQuality.js";
 
 export function OfferWritingAssistant({ draft, disabled, onApply, onStep }) {
-  const [result, setResult] = useState(null), [source, setSource] = useState("");
-  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [applied, setApplied] = useState([]);
+  const [result, setResult] = useState(null), [source, setSource] = useState(""), [field, setField] = useState("description");
+  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [applied, setApplied] = useState({});
   const request = useRef(0);
   const payload = { ...offerPayload(draft), ...(draft.id ? { job_id: draft.id } : {}) };
-  const fingerprint = JSON.stringify(payload);
-  const stale = !!result && fingerprint !== source;
+  const fingerprint = JSON.stringify(payload), stale = !!result && fingerprint !== source;
+  const proposal = result?.proposals.find((row) => row.field === field) || result?.proposals[0];
   async function prepare() {
-    const revision = ++request.current;
-    setBusy(true); setError("");
+    const revision = ++request.current; setBusy(true); setError("");
     try {
       const { data } = await api.post("/hiring/quality/writing", payload, { __quiet: true });
-      if (revision === request.current) { setResult(data); setSource(fingerprint); setApplied([]); }
+      if (revision === request.current) { setResult(data); setSource(fingerprint); setApplied({}); }
     } catch (failure) { if (revision === request.current) setError(getApiErrorMessage(failure)); }
     finally { if (revision === request.current) setBusy(false); }
   }
-  return <section className="surface-card offer-writing">
-    <h3><FilePenLine size={19} />Redacción guiada</h3><p>Convierte las misiones y habilidades que definiste en un borrador claro para este cargo.</p>
-    <button type="button" className="button-secondary button-sm" disabled={disabled || busy} onClick={prepare}>{result ? <RotateCcw size={15} /> : <FilePenLine size={15} />}{busy ? "Preparando…" : result ? "Preparar de nuevo" : "Preparar borradores"}</button>
-    {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}
-    {stale && <p role="status" className="offer-writing-status">La oferta cambió. Prepara de nuevo para trabajar con los datos actuales.</p>}
-    {result && <><p className="text-xs text-[var(--muted)]">{result.notice}</p>{result.proposals.map((proposal) => <article key={proposal.field}>
-      <h4>{proposal.label}</h4><p>{proposal.basis}</p>
-      <details><summary>Comparar con el texto actual</summary><p className="whitespace-pre-line">{proposal.original || "Sin texto registrado."}</p></details>
-      <label className="block text-sm">Borrador editable<textarea className="field-control mt-2" rows={6} value={proposal.text} disabled={disabled || busy || stale || applied.includes(proposal.field)} onChange={(event) => setResult((current) => ({ ...current, proposals: current.proposals.map((row) => row.field === proposal.field ? { ...row, text: event.target.value } : row) }))} /></label>
-      <button type="button" className="button-secondary button-sm" disabled={disabled || busy || stale || !proposal.text.trim() || applied.includes(proposal.field)} onClick={() => { onApply(proposal.field, proposal.text); setSource(JSON.stringify({ ...payload, [proposal.field]: proposal.text })); setApplied((current) => [...current, proposal.field]); }}><ArrowRight size={15} />{applied.includes(proposal.field) ? "Aplicado al borrador" : "Aplicar este texto"}</button>
-    </article>)}{result.questions.map((question) => <button className="offer-writing-question" type="button" key={question.text} onClick={() => onStep(question.step)}>{question.text}<ArrowRight size={16} /></button>)}</>}
+  function apply(text, restoring = false) {
+    onApply(proposal.field, text); setSource(JSON.stringify({ ...payload, [proposal.field]: text }));
+    setApplied((current) => { const next = { ...current }; if (restoring) delete next[proposal.field]; else next[proposal.field] = text; return next; });
+  }
+  const blocked = disabled || busy || stale;
+  return <section className="surface-card writing-workspace"><header><span><Sparkles size={23} /></span><div><h3>Mejora la redacción de tu oferta</h3><p>Conserva la información útil, ordena las responsabilidades y explica mejor qué necesitas.</p></div><button type="button" className="button-secondary button-sm" disabled={disabled || busy} onClick={prepare}>{result ? <RotateCcw size={15} /> : <FilePenLine size={15} />}{busy ? "Revisando…" : result ? "Revisar de nuevo" : "Preparar mejoras"}</button></header>
+    {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}{stale && <p role="status" className="offer-writing-status">La oferta cambió fuera del asistente. Revisa de nuevo para actualizar las propuestas.</p>}
+    {result && <><p className="writing-notice">{result.notice}</p>{!!result.proposals.length && <nav className="workspace-tabs" aria-label="Texto que quieres mejorar">{result.proposals.map((row) => <button key={row.field} type="button" className={proposal?.field === row.field ? "active" : ""} aria-pressed={proposal?.field === row.field} onClick={() => setField(row.field)}>{row.field === "description" ? "Responsabilidades" : "Requisitos"}{applied[row.field] && <Check size={14} />}</button>)}</nav>}
+      {proposal && <article className="writing-proposal"><div className="writing-changes"><h4>Qué mejora esta propuesta</h4><ul>{proposal.changes?.map((change) => <li key={change}><Check size={14} /><span>{change}</span></li>)}</ul><details><summary>Ver el texto anterior</summary><p className="whitespace-pre-line">{proposal.original || "Sin texto registrado."}</p></details></div><div className="writing-editor"><label htmlFor={`writing-${proposal.field}`}>Texto propuesto · puedes editarlo</label><textarea id={`writing-${proposal.field}`} className="field-control" rows={11} value={proposal.text} disabled={blocked} onChange={(event) => setResult((current) => ({ ...current, proposals: current.proposals.map((row) => row.field === proposal.field ? { ...row, text: event.target.value } : row) }))} /><footer><button type="button" className="button-primary button-sm" disabled={blocked || !proposal.text.trim() || draft[proposal.field] === proposal.text} onClick={() => apply(proposal.text)}><ArrowRight size={15} />{draft[proposal.field] === proposal.text ? "Aplicado al borrador" : "Aplicar este texto"}</button>{applied[proposal.field] && <button type="button" className="writing-undo" disabled={blocked} onClick={() => apply(proposal.original || "", true)}><RotateCcw size={14} />Restaurar texto anterior</button>}</footer><p>Aplicarlo actualiza el borrador. La oferta se guarda únicamente cuando pulses Guardar cambios.</p></div></article>}
+      {!!result.questions.length && <div className="writing-questions"><h4>Datos que conviene confirmar</h4>{result.questions.map((question) => <button className="offer-writing-question" type="button" key={question.text} onClick={() => onStep(question.step)}>{question.text}<ArrowRight size={16} /></button>)}</div>}
+    </>}
   </section>;
 }

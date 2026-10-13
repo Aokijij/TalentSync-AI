@@ -4,6 +4,8 @@ from collections import Counter
 from datetime import datetime, timedelta
 from statistics import median
 
+from app.domain.services.offer_rating import RATING_SCALE, offer_rating
+
 REASONS = {
     "salary": ("Salario", "Revisa el rango y explica la parte fija y variable."),
     "requirements": ("Requisitos", "Distingue habilidades esenciales, deseables y que pueden aprenderse."),
@@ -132,6 +134,7 @@ def review_offer(job, peers=()):
         issue("salary_below_local_reference", "El mínimo fijo está por debajo del 65% de la referencia local. Revisa las condiciones comparadas antes de cambiarlo.", 0, "salary")
     pending = sorted((row for row in checks if not row["passed"]), key=lambda row: (not row["required"], -row["weight"]))
     return {"version": 1, "completeness": score, "score": score, "level": "A" if can_publish and score >= 90 and not any(row["code"].startswith("wording_") for row in issues) else "B" if can_publish else "Pendiente",
+            "rating": offer_rating(score), "rating_scale": RATING_SCALE,
             "checks": checks, "issues": issues, "next_actions": pending, "blockers": blockers, "can_publish": can_publish,
             "readiness": "Lista para publicar" if can_publish else "Completa los requisitos de publicación",
             "salary_reference": reference, "blind_hiring": getattr(job, "blind_hiring", False),

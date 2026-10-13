@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BriefcaseBusiness,
   CalendarDays,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
@@ -738,7 +737,7 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           </div>
           {job.quality_summary && <progress aria-label={`Calidad de ${job.title}`} value={job.quality_summary.score} max={100} />}
           <div className="company-job-quality-caption">
-            <span>{job.quality_summary?.level === "A" ? "Nivel A · Condiciones completas" : job.quality_summary?.can_publish ? "Lista · Puedes seguir mejorándola" : "Por completar · Revisa qué falta"}</span>
+            <span>{job.quality_summary?.rating ? `Nivel ${job.quality_summary.rating.code} · ${job.quality_summary.rating.label}${job.quality_summary.can_publish ? " · Lista para publicar" : " · Revisa los requisitos pendientes"}` : "Sin evaluar · Revisar calidad"}</span>
             <ChevronRight size={15} aria-hidden="true" />
           </div>
         </Link>
@@ -773,14 +772,9 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           ))}
         </div>
       </div>
-      <footer className="vacancy-actions">
-        <Link className="button-primary button-sm" to={`/empresa/vacantes/${job.id}/candidatos`}><UsersRound size={15} />Candidatos ({job.applications_count ?? 0})</Link>
-        <button type="button" className="button-secondary button-sm" onClick={onEdit}><Edit3 size={15} />Editar</button>
-        <details className="vacancy-menu"><summary aria-label={`Más acciones para ${job.title}`}>Más <ChevronDown size={14} /></summary><div>
-          <Link to={`/empresa/calidad?vacante=${job.id}`}>Revisar calidad</Link>
-          <button type="button" onClick={(event) => { event.currentTarget.closest("details").removeAttribute("open"); onToggle(); }}>{job.status === "active" ? <PauseCircle size={15} /> : <PlayCircle size={15} />}{job.status === "active" ? "Pausar vacante" : job.status === "filled" ? "Reabrir vacante" : "Activar vacante"}</button>
-          <button type="button" className="text-[var(--error)]" onClick={(event) => { event.currentTarget.closest("details").removeAttribute("open"); onDelete(); }}><Trash2 size={15} />Eliminar vacante</button>
-        </div></details>
+      <footer className="job-actions-panel">
+        <div className="job-actions-main"><Link className="button-primary button-sm" to={`/empresa/vacantes/${job.id}/candidatos`}><UsersRound size={15} />Ver candidatos <span>{job.applications_count ?? 0}</span></Link><button type="button" className="button-secondary button-sm" onClick={onEdit}><Edit3 size={15} />Editar</button></div>
+        <div className="job-actions-secondary"><Link to={`/empresa/calidad?vacante=${job.id}`}>Revisar calidad<ChevronRight size={14} /></Link><button type="button" onClick={onToggle}>{job.status === "active" ? <PauseCircle size={15} /> : <PlayCircle size={15} />}{job.status === "active" ? "Pausar" : job.status === "filled" ? "Reabrir" : "Activar"}</button><button type="button" className="job-action-delete" onClick={onDelete} aria-label={`Eliminar vacante ${job.title}`}><Trash2 size={15} /><span>Eliminar</span></button></div>
       </footer>
     </article>
   );

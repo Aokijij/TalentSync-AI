@@ -58,7 +58,7 @@ La base actual ya contiene esos escenarios; no necesitas volver a generarlos par
 2. Confirma tu ciudad y departamento.
 3. En **Preferencias laborales → Ciudad y movilidad**, indica si aceptas trasladarte y si puedes viajar. Son decisiones diferentes.
 4. Añade otras ciudades donde puedes asistir habitualmente, separadas por comas. Esto no representa una preferencia de viajes ocasionales.
-5. En cada experiencia, completa el mes y año de inicio y finalización, o marca **Trabajo actualmente aquí**. Guarda el perfil.
+5. En cada experiencia, abre el calendario, escribe el año y elige un mes de la cuadrícula para inicio y finalización, o marca **Trabajo actualmente aquí**. Guarda el perfil.
 
 Las fechas antiguas que solo tienen año siguen disponibles: no se inventaron meses. Las fechas futuras o invertidas se rechazan. Un final vacío no cuenta como empleo actual. Los meses de cargos simultáneos no se suman dos veces al calcular la experiencia total.
 
@@ -75,12 +75,16 @@ Las fechas antiguas que solo tienen año siguen disponibles: no se inventaron me
 
 La puntuación se recalcula con el borrador actual. Si una revisión falla, no se presenta la puntuación anterior como vigente. El horario debe explicar días y horas o turnos; texto de relleno no basta. La revisión sigue siendo orientativa, basada en reglas; no verifica contratos ni condiciones reales.
 
-En **Mis vacantes**, Candidatos y Editar son las acciones principales. El menú Más contiene Calidad, Pausar/Activar/Reabrir y Eliminar. En Postulaciones, guarda los movimientos pendientes antes de finalizar el proceso.
+En **Mis vacantes**, Ver candidatos y Editar son las acciones principales. Debajo aparecen Revisar calidad, Pausar/Activar/Reabrir y Eliminar, sin desplegar un menú. En Postulaciones, guarda los movimientos pendientes antes de finalizar el proceso.
+
+La puntuación muestra cuatro niveles: **A · Excelente (90–100)**, **B · Buena (75–89)**, **C · Por mejorar (50–74)** y **D · Inicial (0–49)**. Abre **¿Qué significa cada nivel?** junto a la puntuación para consultar la explicación. El nivel describe la claridad e información registrada; los requisitos obligatorios para publicar se revisan por separado.
+
+En **Mejora la redacción de tu oferta**, pulsa Preparar mejoras. Revisa las pestañas Responsabilidades y Requisitos, consulta qué cambió y edita la propuesta. **Aplicar este texto** modifica el borrador; **Restaurar texto anterior** revierte esa aplicación. Guarda únicamente después de revisar. El asistente local conserva el contexto, organiza los datos y retira frases genéricas independientes; no inventa funciones, condiciones ni cifras. Si detecta información contradictoria, pide confirmarla.
 
 ## 7. Buscar talento y revisar procesos
 
 1. En **Buscar talento**, selecciona la vacante y el grupo: personas para invitar o quienes ya se postularon.
-2. Busca por nombre, profesión o habilidad y ajusta el porcentaje mínimo. Usa Anterior/Siguiente: se muestran ocho candidatos por página.
+2. Busca por nombre, profesión o habilidad y ajusta el porcentaje mínimo. Usa Anterior/Siguiente: se muestran nueve candidatos por página, en tres columnas cuando hay espacio.
 3. Revisa **Ubicación y movilidad**. Para presencial/híbrido, se compara la ciudad y el departamento cuando están disponibles; también se consideran las ciudades de asistencia declaradas.
 4. Un traslado aceptado se señala como pendiente de acordar. Poder viajar no se considera aceptación de asistencia diaria. Si faltan datos, se pide confirmar disponibilidad.
 5. Cuando hay otra ciudad y el candidato rechaza tanto viajes como traslado, el índice mostrado a la empresa recibe un ajuste relativo de −20%, explicado junto al índice profesional, y se bloquea la invitación. Es una regla local de disponibilidad, no una probabilidad de contratación. Las preferencias no modifican el índice profesional del candidato.
@@ -185,3 +189,9 @@ backend/.venv/Scripts/python.exe scripts/local.py verify
 ```
 
 Los informes agregados están en `.local/verification/`. La verificación usa bases temporales y no envía correos ni despliega la aplicación. Conserva los archivos privados de configuración fuera de Git.
+
+## Revisión del diseño y acceso
+
+En **Mi desarrollo**, el área de aprendizaje se elige con tarjetas e iconos; puedes cambiar entre tu perfil y otras áreas. En **Seguridad de cuenta**, usa la navegación lateral para Correo y acceso, Verificación en dos pasos y Dispositivos; el candidato también tiene Privacidad. Los dispositivos se organizan en sesiones activas/cerradas y páginas de seis. La verificación en dos pasos continúa pausada durante la revisión local.
+
+Después de actualizar, recarga la página con Ctrl+F5 para cargar los estilos actuales.

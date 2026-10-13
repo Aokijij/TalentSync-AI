@@ -51,7 +51,8 @@ def test_publication_requires_conditions_even_with_a_high_score(client):
     details = complete_offer()["quality_details"]
     published = client.patch(f"/api/v1/jobs/{job_id}", headers=owner, json={"status": "active", "quality_details": details})
     assert published.status_code == 200, published.text
-    assert published.json()["quality_summary"] == {"score": 100, "level": "A", "can_publish": True}
+    assert {key: published.json()["quality_summary"][key] for key in ("score", "level", "can_publish")} == {"score": 100, "level": "A", "can_publish": True}
+    assert published.json()["quality_summary"]["rating"]["label"] == "Excelente"
     assert client.get(f"/api/v1/jobs/{job_id}").json()["quality_details"]["missions"][0]["days"] == 60
 
 
@@ -65,7 +66,7 @@ def test_job_list_quality_matches_review_for_guided_and_legacy_offers(client):
     for job in (complete, legacy):
         report = client.get(f"/api/v1/hiring/quality/{job['id']}", headers=owner).json()
         assert offers[job["id"]]["quality_summary"] == {
-            key: report[key] for key in ("score", "level", "can_publish")
+            key: report[key] for key in ("score", "level", "can_publish", "rating")
         }
     assert offers[complete["id"]]["quality_summary"]["score"] == 100
     assert offers[legacy["id"]]["quality_summary"]["score"] < 100

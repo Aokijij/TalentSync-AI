@@ -360,7 +360,7 @@ class Job(Base):
     def quality_summary(self) -> dict:
         from app.domain.services.offer_review import review_offer
         review = review_offer(self)
-        return {key: review[key] for key in ("score", "level", "can_publish")}
+        return {key: review[key] for key in ("score", "level", "can_publish", "rating")}
 
     @property
     def company_name(self) -> str | None:
