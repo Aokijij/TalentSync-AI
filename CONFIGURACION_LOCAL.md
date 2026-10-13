@@ -100,7 +100,7 @@ En **Salud del ecosistema** hay dos apartados: Comportamiento de empresas y Band
 
 En **Catálogo educativo**:
 
-1. Biblioteca muestra una tabla administrativa con recursos publicados, sin publicar y base de plataforma. Permite buscar por título/habilidad, filtrar por proveedor, editar y abrir la fuente oficial.
+1. Pulsa el nombre del recurso o **Ver ficha** para consultar descripción, habilidades, requisitos, duración, idioma, acceso y certificado. Desde la ficha puedes abrir la fuente o editar los recursos administrables. Biblioteca muestra una tabla administrativa con recursos publicados, sin publicar y base de plataforma. Permite buscar por título/habilidad, filtrar por proveedor, editar y abrir la fuente oficial.
 2. Fuentes y conectores organiza cada proveedor en su propio apartado: Selección editorial, SENA, Sapiencia, YouTube y Microsoft. Muestra un conector a la vez y los pasos para activarlo.
 3. Biblioteca oficial contiene la selección editorial de 65 recursos. SENA y Sapiencia consultan fuentes públicas; YouTube y Microsoft requieren su configuración externa.
 4. Importa primero como borrador, comprueba contenido, habilidades, acceso y certificado, y publica la selección revisada.
@@ -201,3 +201,5 @@ Los informes agregados están en `.local/verification/`. La verificación usa ba
 En **Mi desarrollo**, el área de aprendizaje se elige con tarjetas e iconos; puedes cambiar entre tu perfil y otras áreas. En **Seguridad de cuenta**, usa la navegación lateral para Correo y acceso, Verificación en dos pasos y Dispositivos; el candidato también tiene Privacidad. Los dispositivos se organizan en sesiones activas/cerradas y páginas de seis. La verificación en dos pasos continúa pausada durante la revisión local.
 
 Después de actualizar, recarga la página con Ctrl+F5 para cargar los estilos actuales.
+
+El 13 de octubre de 2026 se incorporó una muestra activa al catálogo local: seis rutas editoriales de YouTube (Excel, Power Query, Word, Python, Git y SQL) y seis módulos de Microsoft Learn (tres de Power BI, privacidad, riesgos y procesamiento de facturas con AI Builder). Puedes encontrarlos con el filtro Proveedor en la biblioteca administrativa. La duración de las rutas de YouTube es una estimación de estudio y práctica de TalentSync; no equivale a la reproducción total de cada lista.

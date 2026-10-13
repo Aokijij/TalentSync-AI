@@ -80,3 +80,8 @@
 .connector-body .admin-opportunities > summary { display:none; }
 @media(max-width:1000px) { .dispatch-jobs { grid-template-columns:repeat(2,minmax(0,1fr)); } .connector-workspace { grid-template-columns:1fr; } .connector-workspace > nav { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media(max-width:640px) { .organization-identity { flex-wrap:wrap; } .organization-identity > a { margin-left:4rem; } .interview-dispatch { padding:1rem; } .dispatch-jobs { grid-template-columns:1fr; } .interview-dispatch > footer { flex-direction:column; align-items:stretch; } .admin-catalog-counts { grid-template-columns:repeat(2,minmax(0,1fr)); } .admin-catalog-toolbar { grid-template-columns:1fr; } .connector-workspace > nav { grid-template-columns:repeat(2,minmax(0,1fr)); } .connector-workspace nav small { display:none; } }
+
+.admin-resource-title { text-align:left; font-size:.8rem; font-weight:650; line-height:1.5; color:var(--ink-strong); cursor:pointer; }
+.admin-resource-title:hover { color:var(--accent); text-decoration:underline; }
+.admin-resource-title:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:.25rem; }
+.admin-catalog-actions { flex-wrap:wrap; }
