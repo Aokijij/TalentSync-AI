@@ -1,20 +1,22 @@
 import hashlib
 import json
+from datetime import date
 
-from app.domain.services.skills import skill_gap
+from app.domain.services.requirement_analysis import (
+    relevant_experience,
+    requirement_rows,
+    requirement_score,
+)
+from app.domain.services.requirement_analysis import (
+    requirements_for as requirements_for,
+)
 from app.domain.services.work_preferences import effective_preferences, location_fit
 
-MATCH_VERSION = "transparent-match-v4"
-
-
-def requirements_for(job):
-    return getattr(job, "skill_requirements", None) or [{"skill": skill, "essential": False, "weight": 1} for skill in job.skills or []]
+MATCH_VERSION = "contextual-match-v5"
 
 
 def weighted_coverage(profile, job):
-    rows = skill_gap(profile.skills, requirements_for(job))
-    total = sum(row["weight"] for row in rows)
-    return round(sum(row["weight"] for row in rows if row["covered"]) / total * 100, 2) if total else 0
+    return requirement_score(requirement_rows(profile, job))
 
 
 def input_version(profile, job, text_method="lexical-hashing-v1"):
@@ -23,7 +25,9 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
                getattr(profile, "educations", []), getattr(profile, "certifications", []), getattr(profile, "languages", []),
                getattr(profile, "evidence", []), job.skills, job.embedding, job.title, job.description, job.requirements,
                getattr(job, "skill_requirements", []), getattr(job, "languages", []), getattr(job, "required_study_fields", []),
-               getattr(job, "required_education_level", None), job.salary, job.modality, job.location, job.sector]
+               getattr(job, "required_education_level", None), job.salary, job.modality, job.location, job.sector,
+               (getattr(job, "quality_details", None) or {}).get("experience_years"),
+               (getattr(profile, "preferences", None) or {}).get("cv_skill_context", []), date.today().strftime("%Y-%m")]
     return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
 
 
@@ -42,7 +46,7 @@ def preference_alignment(profile, job):
     return {"score": score, "checks": checks, "unmet_conditions": [row["label"] for row in checks if row["required"] and row["matches"] is False], "unknown_conditions": [row["label"] for row in checks if row["matches"] is None]}
 
 
-def explain(profile, job, *, context, skills, language, education, certifications, confidence, percentage, text_method="lexical-hashing-v1"):
+def explain(profile, job, *, context, skills, language, education, certifications, confidence, percentage, text_method="lexical-hashing-v1", section_scores=None, experience_details=None, requirement_details=None):
     if education is None and certifications is None:
         components = [{"key": "skills", "label": "Habilidades", "score": skills, "weight": .6},
                       {"key": "context", "label": "Contexto profesional", "score": context, "weight": .3 if language is not None else .4}]
@@ -54,17 +58,16 @@ def explain(profile, job, *, context, skills, language, education, certification
                           ("certifications", "Certificaciones", certifications if certifications is not None else skills, .10)]]
     if language is not None:
         components.append({"key": "languages", "label": "Idiomas", "score": language, "weight": .1})
-    rows = skill_gap(profile.skills, requirements_for(job))
-    evidence = getattr(profile, "evidence", None) or []
-    for row in rows:
-        row["evidence"] = [{"title": item["title"], "kind": item["kind"], "verified": False} for item in evidence if row["key"] in item.get("skills", [])]
+    rows = requirement_details if requirement_details is not None else requirement_rows(profile, job)
     preferences = preference_alignment(profile, job)
     factor = .75 + confidence / 400 if getattr(job, "source_kind", "internal") == "external" else 1
     for component in components:
         component["points"] = round(component["score"] * component["weight"] * factor, 3)
     return {"version": MATCH_VERSION, "input_version": input_version(profile, job, text_method), "score_type": "compatibility_index",
             "notice": "Índice de afinidad con los datos registrados; no es una probabilidad de contratación.",
-            "text_method": text_method, "components": components, "requirements": rows,
+            "text_method": text_method, "components": components, "requirements": rows, "section_scores": section_scores or [],
+            "experience_requirement": experience_details or relevant_experience(profile, job),
+            "context_notice": "Se comparan cargos, funciones y conocimientos por separado. Cuando se pide experiencia mínima, los meses relacionados aportan el 20% de la señal de contexto; no son una señal adicional al total.",
             "unmet_essential_skills": [row["skill"] for row in rows if row.get("essential") and not row["covered"]],
             "preferences": preferences, "candidate_interest_score": preferences["score"], "overall_score": percentage,
-            "data_confidence": confidence, "ontology_version": "foundations-v1"}
+            "data_confidence": confidence, "ontology_version": "foundations-v1", "requirement_method": "explicit-context-v1"}

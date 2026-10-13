@@ -152,12 +152,16 @@ def combined_match(semantic: float, skill_score: float, language_score: float | 
 def recommendation_reasons(
     profile: Profile, job: Job, semantic: float, skill_score: float,
     education_score: float | None = None, certification_score: float | None = None,
+    requirement_details=None,
 ) -> list[str]:
     profile_skills = skill_set(profile.skills)
     requirements = getattr(job, "skill_requirements", None)
     job_skills = skill_set([row["skill"] for row in requirements] if requirements else job.skills)
     overlap = sorted(profile_skills.intersection(job_skills))
     missing = sorted(job_skills - profile_skills)
+    if requirement_details is not None:
+        overlap = [row["key"] for row in requirement_details if row["covered"]]
+        missing = [row["key"] for row in requirement_details if not row["covered"]]
     reasons: list[str] = []
     if profile.profession:
         profession = profile.profession.lower().strip()

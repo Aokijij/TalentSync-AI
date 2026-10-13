@@ -31,7 +31,7 @@ export function SkillRadarChart({
   title = "Mapa de compatibilidad",
 }) {
   const [page, setPage] = useState(1);
-  const allAxes = useMemo(() => requirements ? requirements.map((row) => ({ label: row.skill, candidate: row.covered ? 100 : 0, required: 100 })) : [...new Set(requiredSkills.filter(Boolean))].map((skill) => ({ label: skill, candidate: candidateScore(skill, candidateSkills), required: 100 })), [requirements, candidateSkills, requiredSkills]);
+  const allAxes = useMemo(() => requirements ? requirements.map((row) => ({ label: row.skill, candidate: row.score ?? (row.covered ? 100 : 0), status: row.status_label, required: 100 })) : [...new Set(requiredSkills.filter(Boolean))].map((skill) => ({ label: skill, candidate: candidateScore(skill, candidateSkills), required: 100 })), [requirements, candidateSkills, requiredSkills]);
   const pages = Math.max(1, Math.ceil(allAxes.length / 6));
   const safePage = Math.min(page, pages);
   // Balanced groups avoid a one-axis final page for seven requirements.
@@ -61,13 +61,13 @@ export function SkillRadarChart({
             {matched.map((item) => (
               <p key={item.label} className="flex items-center gap-2 rounded-xl border border-[var(--success)]/30 bg-[var(--success)]/10 px-3 py-2 text-sm font-semibold text-[var(--ink-strong)]">
                 <CheckCircle2 size={16} className="text-[var(--success)]" />
-                {item.label}: ya aparece en tu perfil
+                {item.label}: {item.status || "ya aparece en tu perfil"}
               </p>
             ))}
             {missing.map((item) => (
               <p key={item.label} className="flex items-center gap-2 rounded-xl border border-[var(--warning)]/30 bg-[var(--warning)]/10 px-3 py-2 text-sm font-semibold text-[var(--ink-strong)]">
                 <CircleDashed size={16} className="text-[var(--warning)]" />
-                {item.label}: habilidad por fortalecer
+                {item.label}: {item.status || "habilidad por fortalecer"}
               </p>
             ))}
           </div>

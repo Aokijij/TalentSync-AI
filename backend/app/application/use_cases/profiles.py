@@ -262,6 +262,7 @@ def upload_cv(
     profile.cv_text = analysis.clean_text
     profile.cv_filename = safe_name
     profile.cv_uploaded_at = datetime.utcnow()
+    profile.preferences = {**(profile.preferences or {}), "cv_skill_context": getattr(analysis, "skill_context", [])}
     profile.profession = analysis.profession or profile.profession
     profile.skills = normalize_skills([*(profile.skills or []), *analysis.skills])
     profile.experience = analysis.experience or profile.experience
@@ -272,9 +273,9 @@ def upload_cv(
         if len(location_parts) == 2:
             profile.department = location_parts[1]
     profile.phone = analysis.phone or profile.phone
-    profile.experiences = analysis.experiences or profile.experiences or []
-    profile.educations = analysis.educations or profile.educations or []
-    profile.certifications = analysis.certifications or profile.certifications or []
+    profile.experiences = _merge_imported(profile.experiences, analysis.experiences, ("role", "company"))
+    profile.educations = _merge_imported(profile.educations, analysis.educations, ("degree", "institution"))
+    profile.certifications = _merge_imported(profile.certifications, analysis.certifications, ("name", "issuer"))
     if analysis.experiences:
         profile.experience = build_professional_summary(
             profile, analysis.experience or profile.experience
@@ -284,3 +285,31 @@ def upload_cv(
     db.commit()
     db.refresh(profile)
     return profile
+
+
+def _merge_imported(existing, detected, keys):
+    from app.domain.services.skill_context import fold
+    merged = [dict(row) for row in existing or []]
+    for row in detected or []:
+        identity = tuple(fold(row.get(key)) for key in keys)
+        def same_record(item):
+            if tuple(fold(item.get(key)) for key in keys) != identity:
+                return False
+            if keys == ("role", "company"):
+                start_a, end_a = item.get("start_date") or item.get("start_year"), item.get("end_date") or item.get("end_year")
+                start_b, end_b = row.get("start_date") or row.get("start_year"), row.get("end_date") or row.get("end_year")
+                if all(value and str(value)[:4].isdigit() for value in (start_a, end_a, start_b, end_b)):
+                    # Separate rehires, while retaining confirmed fields when
+                    # the imported period overlaps the existing employment.
+                    return not (str(end_a)[:4] < str(start_b)[:4] or str(end_b)[:4] < str(start_a)[:4])
+            return True
+        previous = next((item for item in merged if same_record(item)), None)
+        if previous is None:
+            incoming = dict(row)
+            if keys == ("role", "company") and incoming.get("is_current") and any(item.get("is_current") for item in merged):
+                incoming.update(is_current=False, end_date=None, end_year="", date_review_required=True)
+            merged.append(incoming)
+        else:
+            # Keep manually confirmed content and supplied certificate links.
+            previous.update({key: value for key, value in row.items() if previous.get(key) in (None, "", [])})
+    return merged

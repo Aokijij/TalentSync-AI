@@ -1,4 +1,5 @@
 import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
+import { RequirementSupport } from "../components/RequirementSupport.jsx";
 import { SearchPreferences } from "../components/SearchPreferences.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { readRecommendationSettings, saveRecommendationSetting } from "../utils/recommendationSettings.js";
@@ -335,7 +336,7 @@ export function RecommendationsPage() {
                         semanticMatch={item.professional_context_percentage ?? item.semantic_match_percentage}
                         languageMatch={item.language_match_percentage}
                       />
-                      <div className="skill-evidence-panel"><SkillRadarChart requirements={item.match_details?.requirements || []} matchPercentage={item.match_percentage} /><details className="mt-4 text-xs text-[var(--muted)]"><summary className="cursor-pointer">Ver respaldo y requisitos completos</summary>{item.match_details?.requirements?.map((row) => <div className="mt-3" key={row.key}><strong>{row.skill}</strong>{row.evidence?.length ? row.evidence.map((evidence, index) => <p key={index}>{evidence.title} · Evidencia aportada</p>) : <p>Sin evidencia registrada para esta habilidad.</p>}</div>)}</details><Link className="mt-4 inline-block text-xs text-[var(--accent)]" to="/perfil#evidencias">Gestionar mis evidencias →</Link></div>
+                      <div className="skill-evidence-panel"><SkillRadarChart requirements={item.match_details?.requirements || []} matchPercentage={item.match_percentage} /><RequirementSupport details={item.match_details} /><Link className="mt-4 inline-block text-xs text-[var(--accent)]" to="/perfil#evidencias">Gestionar mis evidencias →</Link></div>
 
                       <div className="lg:col-span-2"><VacancyLearningPanel jobId={item.job_id} /></div>
                     </div>

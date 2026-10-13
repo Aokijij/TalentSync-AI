@@ -2,6 +2,8 @@
 
 Revisión del 13 de octubre de 2026, contrastada con el código y el entorno local de TalentSync. Este documento evalúa una mejora; no activa servicios externos ni modifica el motor de compatibilidad.
 
+Actualización posterior: se implementó `contextual-match-v5` con reglas de extracción contextual, estados por requisito, meses en cargos relacionados y similitud separada por cargos, funciones y conocimientos. Se conservan datos y documentos aportados al importar. El OCR, los formatos nuevos y un extractor neuronal de entidades siguen siendo propuestas pendientes. La tabla siguiente conserva el diagnóstico inicial; consulta `CONFIGURACION_LOCAL.md` para el comportamiento implementado y la escala de respaldo.
+
 ## Conclusión
 
 Sí es viable. La prioridad es obtener datos correctos y confirmados del CV antes de cambiar los pesos del ranking. TalentSync ya tiene embeddings locales, desglose por señales, normalización básica y recomendaciones de formación por brechas. Incorporar otro proveedor de parsing no es un requisito para empezar.

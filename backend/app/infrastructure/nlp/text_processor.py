@@ -1401,12 +1401,18 @@ class TextProcessor:
         return self.similarity_percentage(self.embed(left), stored_job_embedding)
 
     def analyze_cv(self, text: str) -> NLPResult:
+        from app.domain.services.skill_context import extraction_context
+        from app.domain.services.skills import skill_key
         clean = self.clean_text(text)
         experiences, educations, certifications = self.extract_resume_items(text)
+        detected = self.extract_skills(text)
+        context = extraction_context(text, detected, experiences, aliases={skill_key(key): value for key, value in SKILL_ALIAS_PATTERNS.items()})
+        states = {skill_key(skill): {row["state"] for row in context if row["skill"] == skill_key(skill)} for skill in detected}
+        positive_skills = [skill for skill in detected if "applied" in states[skill_key(skill)] or "declared" in states[skill_key(skill)] and not states[skill_key(skill)] & {"learning", "negated"}]
         return NLPResult(
             clean_text=clean,
             profession=self.extract_profession(text),
-            skills=self.extract_skills(text),
+            skills=positive_skills,
             experience="\n".join(
                 f"{item['role']} - {item['company']}" for item in experiences
             )
@@ -1421,6 +1427,7 @@ class TextProcessor:
             educations=educations,
             certifications=certifications,
             embedding=self.embed(clean),
+            skill_context=context,
         )
 
     def analyze(self, text: str) -> NLPResult:

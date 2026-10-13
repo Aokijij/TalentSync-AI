@@ -7,7 +7,6 @@ from app.domain.entities.records import Job, Recommendation, User
 from app.domain.services.match_explanations import (
     explain,
     input_version,
-    weighted_coverage,
 )
 from app.domain.services.matching import (
     combined_match,
@@ -16,23 +15,41 @@ from app.domain.services.matching import (
     professional_context_alignment,
     recommend_category,
     recommendation_reasons,
-    required_skill_coverage,
 )
-from app.domain.services.matching_text import professional_text
+from app.domain.services.matching_text import professional_sections
 from app.domain.services.professions import certification_match, education_match
 from app.domain.services.reputation import company_health
+from app.domain.services.requirement_analysis import (
+    relevant_experience,
+    requirement_rows,
+    requirement_score,
+)
 from app.domain.services.skills import skill_set
 
 
 def candidate_match(profile, job, *, nlp):
-    if hasattr(nlp, "matching_similarity"):
-        raw_semantic = nlp.matching_similarity(professional_text(profile), " ".join(filter(None, [job.title, job.description, job.requirements])), job.embedding)
-    else:
-        raw_semantic = nlp.similarity_percentage(nlp.embed(professional_text(profile)), job.embedding)
+    return _candidate_match(profile, job, nlp=nlp)[0]
+
+
+def _candidate_match(profile, job, *, nlp):
+    sections = []
+    pairs = professional_sections(profile, job)
+    total = sum(item[4] for item in pairs) or 1
+    for key, label, left, right, weight in pairs:
+        if not left:
+            score = 0
+        elif hasattr(nlp, "matching_similarity"):
+            score = nlp.matching_similarity(left, right, nlp.embed(right))
+        else:
+            score = nlp.similarity_percentage(nlp.embed(left), nlp.embed(right))
+        sections.append({"key": key, "label": label, "score": round(score, 2), "weight": round(weight / total, 4), "has_candidate_data": bool(left)})
+    raw_semantic = sum(row["score"] * row["weight"] for row in sections)
     context_score = professional_context_alignment(profile, job, raw_semantic)
-    skill_score = required_skill_coverage(profile.skills, job.skills)
-    if getattr(job, "skill_requirements", None):
-        skill_score = weighted_coverage(profile, job)
+    rows = requirement_rows(profile, job)
+    skill_score = requirement_score(rows)
+    experience = relevant_experience(profile, job)
+    if experience["required_months"]:
+        context_score = round(context_score * .8 + (experience["score"] or 0) * .2, 2)
     language_score = language_coverage(profile, job)
     education_score = education_match(profile, job)
     certification_score = certification_match(profile, job)
@@ -45,7 +62,7 @@ def candidate_match(profile, job, *, nlp):
         # TalentSync vacancy. Low data quality only lowers the score.
         percentage *= 0.75 + confidence / 400
         percentage = round(min(100.0, percentage), 2)
-    return percentage, context_score, skill_score, language_score, confidence, education_score, certification_score
+    return (percentage, context_score, skill_score, language_score, confidence, education_score, certification_score), {"section_scores": sections, "experience_details": experience, "requirement_details": rows}
 
 
 def external_data_confidence(job) -> float:
@@ -66,9 +83,10 @@ def upsert_recommendation(
 ) -> Recommendation:
     if user.profile is None:
         raise ValueError("El candidato no tiene perfil profesional")
-    percentage, context_score, skill_score, language_score, confidence, education_score, certification_score = candidate_match(
+    scores, analysis = _candidate_match(
         user.profile, job, nlp=nlp
     )
+    percentage, context_score, skill_score, language_score, confidence, education_score, certification_score = scores
     recommendation = db.recommendations.find_for_user_job(user.id, job.id)
     if recommendation is None:
         recommendation = db.recommendations.new(
@@ -79,9 +97,10 @@ def upsert_recommendation(
     recommendation.created_at = datetime.utcnow()
     recommendation.match_details = explain(user.profile, job, context=context_score, skills=skill_score, language=language_score,
         education=education_score, certifications=certification_score, confidence=confidence, percentage=percentage,
-        text_method=getattr(nlp, "match_method", "lexical-hashing-v1"))
+        text_method=getattr(nlp, "match_method", "lexical-hashing-v1"), **analysis)
     recommendation.reasons = recommendation_reasons(
-        user.profile, job, semantic=context_score, skill_score=skill_score, education_score=education_score, certification_score=certification_score
+        user.profile, job, semantic=context_score, skill_score=skill_score, education_score=education_score, certification_score=certification_score,
+        requirement_details=analysis["requirement_details"]
     )
     if language_score is not None:
         available = {item["name"]: item["level"] for item in user.profile.languages or []}

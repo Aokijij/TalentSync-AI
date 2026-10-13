@@ -206,6 +206,10 @@ class Profile(Base):
     def mobility(self):
         return (self.preferences or {}).get("mobility", {})
 
+    @property
+    def cv_skill_context(self):
+        return (self.preferences or {}).get("cv_skill_context", [])
+
 
 class Company(Base):
     __tablename__ = "companies"

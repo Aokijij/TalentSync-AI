@@ -167,3 +167,18 @@
 .recommendation-title-link { border-radius:4px; text-decoration:underline; text-decoration-color:transparent; text-underline-offset:3px; transition:color .15s,text-decoration-color .15s; }
 .recommendation-title-link:hover { color:var(--accent); text-decoration-color:currentColor; }
 .recommendation-title-link:focus-visible { outline:2px solid var(--accent); outline-offset:4px; text-decoration-color:currentColor; }
+.requirement-support { margin-top:1rem; border-top:1px solid var(--line); padding-top:.8rem; font-size:.78rem; }
+.requirement-support > summary, .cv-context-review > summary { cursor:pointer; color:var(--accent); font-weight:650; }
+.requirement-support-body { display:grid; gap:.8rem; margin-top:.8rem; }
+.requirement-support-body > article { padding:.8rem; border:1px solid var(--line); border-radius:.7rem; background:var(--surface-subtle); }
+.requirement-support-body article > div:first-child { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem; }
+.requirement-support-body article > p { margin-top:.5rem; color:var(--muted); line-height:1.6; }
+.requirement-support-body small { display:block; color:var(--muted); margin-top:.5rem; font-size:.68rem; line-height:1.6; }
+.requirement-status { padding:.25rem .45rem; border-radius:.4rem; background:var(--surface); color:var(--muted); font-size:.64rem; }
+.requirement-status.fulfilled { color:var(--success); background:color-mix(in srgb,var(--success) 9%,var(--surface)); }
+.requirement-status.partial { color:var(--warning); background:color-mix(in srgb,var(--warning) 9%,var(--surface)); }
+.requirement-sections { display:grid; gap:.4rem; margin-top:.6rem; }
+.requirement-sections p { display:flex; justify-content:space-between; gap:.5rem; }
+.cv-context-review { margin-bottom:1rem; padding:.8rem; border:1px solid var(--line); border-radius:.7rem; background:var(--surface); font-size:.75rem; }
+.cv-context-review > p, .cv-context-review > div { margin-top:.7rem; color:var(--muted); line-height:1.6; }
+.cv-context-review strong { color:var(--ink-strong); }

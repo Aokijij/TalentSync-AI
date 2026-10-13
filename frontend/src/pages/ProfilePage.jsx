@@ -440,6 +440,7 @@ export function ProfilePage() {
             </Section>
             <Section icon={BookOpen} title="Idiomas"><LanguagesEditor value={profile.languages} editing={editing} onChange={(value) => update("languages", value)} /></Section>
             <Section icon={BriefcaseBusiness} title="Habilidades">
+              {!!profile.cv_skill_context?.filter((row) => ["learning", "negated", "project"].includes(row.state) && !profile.skills.includes(row.skill)).length && <details className="cv-context-review"><summary>Menciones del CV que necesitan revisión</summary><p>No se añadieron como habilidades dominadas. Revisa el contexto y añade una habilidad solo si corresponde a tu nivel actual.</p>{profile.cv_skill_context.filter((row) => ["learning", "negated", "project"].includes(row.state) && !profile.skills.includes(row.skill)).map((row, index) => <div key={index}><strong>{row.skill} · {row.state === "learning" ? "En aprendizaje" : row.state === "project" ? "Uso en proyecto" : "Falta de experiencia indicada"}</strong><p>{row.excerpt}</p></div>)}</details>}
               <div className="flex flex-wrap gap-2">
                 {profile.skills.map((item) => (
                   <span

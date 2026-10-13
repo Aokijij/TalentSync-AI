@@ -225,3 +225,16 @@ Añadir habilidades se ofrece en Mi perfil → Evidencias de mi experiencia. Los
 Las prácticas complementarias se eligen por título, temario disponible, habilidades y descripción, con bancos locales por tema. El nivel determina la complejidad del cálculo; la duración amplía el caso, los pasos y los conceptos. La ficha muestra el nivel usado y el tiempo aproximado de práctica. Si no se puede identificar un tema específico, se indica que es una práctica de transferencia al área. No se presentan estos ejercicios como exámenes del proveedor ni como una cobertura completa de su curso.
 
 Cada intento conserva sus preguntas y soluciones solo en el servidor. Una edición de la ficha no cambia un intento empezado; al iniciar otro se usa la ficha actual. Los borradores anteriores a este cambio conservan el banco original hasta iniciar un nuevo intento.
+
+
+## Extracción contextual y compatibilidad por requisito
+
+El motor `contextual-match-v5` compara cargos/profesión, funciones y conocimientos declarados por separado con el mismo modelo local. La formación y los idiomas mantienen sus señales específicas. En Recomendaciones → Compatibilidad y formación → Ver cumplimiento por requisito se muestra el respaldo de cada habilidad, su cumplimiento y la experiencia relacionada.
+
+La extracción distingue menciones de uso, aprendizaje, proyectos y negación en español/inglés. Las menciones que solo aparecen en cursos, proyectos o aprendizaje no se incorporan automáticamente como habilidades dominadas. Mi perfil muestra su fragmento para revisión. Son reglas de contexto auditables combinadas con similitud semántica local; no es un nuevo modelo neuronal de extracción ni una garantía de precisión.
+
+Cada habilidad puede quedar cumplida con datos declarados (100), parcial por uso explícito en la descripción de una evidencia/proyecto (70), conflicto con lo declarado (50), aprendizaje (35), o sin cumplimiento registrado (0). Una base relacionada se explica, pero no suma cobertura de otra habilidad; las etiquetas de una evidencia sin contexto de uso tampoco suman. Es una escala inicial explícita de respaldo; no mide nivel de dominio ni verifica certificados. Los pesos de requisitos siguen siendo los configurados por la empresa. Las condiciones imprescindibles laborales se mantienen separadas.
+
+La experiencia mínima se lee del campo de la oferta o de un requisito numérico explícito. Se unen los meses de cargos relacionados sin duplicar periodos simultáneos. El total mide tiempo en esos cargos, no meses de uso probado de cada herramienta. Las fechas solo con año se muestran aproximadas; la falta de fechas no se interpreta como trabajo actual ni como experiencia suficiente. Si se exige un mínimo positivo, el tiempo relacionado ocupa el 20% de la señal de contexto, dentro de los pesos existentes.
+
+Una nueva carga conserva registros previos y enlaces aportados. El contexto original del CV se devuelve solo en el perfil propio; el desglose público de compatibilidad no incluye fragmentos del CV ni empleadores. La versión y el mes del cálculo invalidan cachés antiguas para periodos actuales. Los perfiles existentes se recalculan al consultar; no se modifican masivamente sus habilidades ni se reimportan sus CVs.
