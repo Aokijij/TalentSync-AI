@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     learn_client_id: str = ""
     learn_client_secret: str = ""
     public_learning_refresh_enabled: bool = False
+    youtube_learning_enabled: bool = False
+    youtube_api_key: str = ""
+    youtube_learning_daily_requests: int = Field(default=100, ge=2, le=500)
     session_cookie_secure: bool = True
     public_app_url: str = "http://127.0.0.1:5173"
     oauth_github_client_id: str = ""

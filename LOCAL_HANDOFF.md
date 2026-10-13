@@ -377,3 +377,53 @@ limita por cantidad, tiempo y fallos consecutivos; no constituye un crawler masi
 Microsoft Learn mantiene su conector autenticado pendiente de acceso Entra.
 YouTube Data API y catálogos comerciales siguen requiriendo configuración o
 acceso autorizado; esta ampliación no simula una sincronización con ellos.
+
+## Conector de listas públicas de YouTube · 10 de octubre de 2026
+
+Administración > Catálogo educativo incluye un bloque desplegable para revisar
+una lista pública por enlace o ID. Utiliza YouTube Data API v3 (`playlists.list`
+y `playlistItems.list`), dos peticiones por revisión y una muestra de hasta doce
+vídeos. No hay búsqueda masiva, OAuth de candidatos, descarga de vídeos,
+reproducción incrustada, consultas al abrir el catálogo ni publicación automática.
+Una muestra se identifica como tal y no se presenta como el temario completo.
+
+El administrador redacta una ficha propia con título, utilidad, habilidades,
+área, idiomas, nivel, tiempo de estudio, requisitos e idea de evidencia. La
+importación se guarda como borrador por defecto y evita duplicar la lista.
+Una lista no otorga certificación y su duración de estudio es una estimación
+editorial, independiente de la duración de reproducción. Importar conserva
+los cursos ya editados y sus planes. La publicación es una elección explícita.
+
+Los metadatos de la API se muestran temporalmente durante quince minutos y no
+se persisten en tablas, eventos ni tokens de vista previa. Solo se conserva el
+ID de la lista junto con la ficha editorial y la fecha de revisión. Esto evita
+crear una copia permanente de títulos, autores, descripciones o estadísticas
+de YouTube. La vista previa está asociada al administrador, expira y está
+limitada a 32 tokens por proceso. El navegador retira la consulta al vencer.
+
+El servidor solo consulta el host fijo www.googleapis.com, sin redirecciones,
+con tiempo/tamaño limitados y clave en cabecera, nunca en URLs ni respuestas.
+No se envían datos de perfiles. El bloque explica el tratamiento y enlaza a
+los términos de YouTube y la política de privacidad de Google.
+
+Configuración en el archivo privado `.local/backend.env`, nunca en VITE_*:
+
+```dotenv
+YOUTUBE_LEARNING_ENABLED=false
+YOUTUBE_API_KEY=
+YOUTUBE_LEARNING_DAILY_REQUESTS=100
+```
+
+Para activar, habilitar YouTube Data API v3 en un proyecto propio de Google,
+crear una clave restringida a esa API, escribirla únicamente en el archivo
+privado, cambiar enabled a true y reiniciar el backend. El límite local cuenta
+intentos, incluidos errores, y se reinicia a medianoche UTC. Es por proceso;
+reiniciar o usar varios workers no sustituye la cuota del proyecto de Google.
+Los tests desactivan esta configuración y usan respuestas simuladas aisladas.
+Sin clave permanece inactivo; el formulario manual permite añadir enlaces.
+
+Referencias oficiales:
+https://developers.google.com/youtube/v3/docs/playlists/list
+https://developers.google.com/youtube/v3/docs/playlistItems/list
+https://developers.google.com/youtube/terms/developer-policies
+https://docs.cloud.google.com/docs/authentication/api-keys-best-practices

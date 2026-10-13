@@ -33,6 +33,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=F
 
 
 @lru_cache
+def get_youtube_learning():
+    from app.infrastructure.youtube_learning import YouTubeLearning
+    return YouTubeLearning(settings)
+
+
+@lru_cache
 def get_learn_catalog():
     from app.infrastructure.learn_catalog import LearnCatalog
     return LearnCatalog(settings)

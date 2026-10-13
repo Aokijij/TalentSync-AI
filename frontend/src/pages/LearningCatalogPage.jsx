@@ -9,6 +9,7 @@ import { LearningResourceCard } from "../components/LearningResourceCard.jsx";
 import { LearnCatalogImport } from "../components/LearnCatalogImport.jsx";
 import { CuratedCatalogImport } from "../components/CuratedCatalogImport.jsx";
 import { PublicLearningSources } from "../components/PublicLearningSources.jsx";
+import { YouTubeLearningImport } from "../components/YouTubeLearningImport.jsx";
 import { certificateCosts, courseModalities, enrollmentStatuses, learningLevels } from "../utils/learningPresentation.js";
 
 export function LearningCatalogPage() {
@@ -60,6 +61,7 @@ export function LearningCatalogPage() {
     {error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}{message && <p role="status" className="surface-card p-4">{message}</p>}
     <CuratedCatalogImport onImported={setRows} />
     <PublicLearningSources onImported={setRows} />
+    <YouTubeLearningImport onImported={setRows} />
     <details className="surface-card p-5"><summary className="cursor-pointer font-bold">Conector de Microsoft Learn · API con acceso autorizado</summary><div className="mt-4"><LearnCatalogImport onImported={setRows} /></div></details>
     <div className="surface-card flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">Biblioteca de aprendizaje</h2><p className="mt-1 text-sm text-[var(--muted)]">{rows.filter((row) => !row.url).length} prácticas de TalentSync · {listedRows.filter((row) => row.url).length} recursos externos</p></div><button className="button-primary" onClick={() => { setEditing(null); setStep(0); setFormOpen(!formOpen); }}>{formOpen ? "Cerrar formulario" : "Añadir formación +"}</button></div>
     <section className="catalog-guide"><div><span className="learning-area-icon"><BookOpen size={23} /></span><h2 className="mt-3 text-lg font-bold">¿Qué puedes añadir?</h2><p className="mt-2 text-sm leading-6 text-[var(--muted)]">Un curso, taller o guía con enlace público. TalentSync lo recomendará cuando sus habilidades ayuden a cerrar una brecha. Las prácticas internas ya vienen en la biblioteca.</p></div><ol>{[[Link2, "1. Identifica el recurso", "Título, proveedor y enlace a su página."], [Sparkles, "2. Describe su utilidad", "Habilidades que enseña, área, tiempo y coste."], [CheckCircle2, "3. Revisa y publica", "Comprueba lo que verá el candidato."]].map(([Icon, title, copy]) => <li key={title}><Icon size={20} /><div><strong>{title}</strong><p>{copy}</p></div></li>)}</ol></section>

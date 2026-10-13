@@ -1,0 +1,50 @@
+import { useEffect, useState } from "react";
+import { ExternalLink, ListVideo, Search } from "lucide-react";
+import { api, getApiErrorMessage } from "../api/client.js";
+
+const areas = { general: "Transversales", technology: "Tecnología y datos", service: "Servicio al cliente", sales: "Ventas", administration: "Administración", finance: "Finanzas", logistics: "Logística", education: "Educación", design: "Diseño", care: "Atención en salud" };
+
+export function YouTubeLearningImport({ onImported }) {
+  const [status, setStatus] = useState(null), [url, setUrl] = useState("");
+  const [preview, setPreview] = useState(null), [busy, setBusy] = useState(false);
+  const [error, setError] = useState(""), [message, setMessage] = useState("");
+  useEffect(() => { let alive = true; api.get("/admin/learning/sources/youtube").then(({ data }) => { if (alive) setStatus(data); }).catch((failure) => { if (alive) setError(getApiErrorMessage(failure)); }); return () => { alive = false; }; }, []);
+  useEffect(() => {
+    if (!preview) return;
+    const timeout = setTimeout(() => { setPreview(null); setMessage("La revisión venció. Consulta la lista de nuevo antes de incorporarla."); }, preview.expires_in * 1000);
+    return () => clearTimeout(timeout);
+  }, [preview]);
+  async function act(action) {
+    setBusy(true); setError(""); setMessage("");
+    try { await action(); } catch (failure) { setError(getApiErrorMessage(failure)); }
+    finally { setBusy(false); try { setStatus((await api.get("/admin/learning/sources/youtube")).data); } catch { /* Preserve the last known connection status. */ } }
+  }
+  async function consult(event) {
+    event.preventDefault(); setPreview(null);
+    await act(async () => { setPreview((await api.post("/admin/learning/sources/youtube/preview", { url })).data); });
+  }
+  async function incorporate(event) {
+    event.preventDefault(); const values = new FormData(event.currentTarget);
+    await act(async () => {
+      const editorial = { title: values.get("title"), instructions: values.get("instructions"),
+        url: preview.url, provider: "YouTube", kind: "course", category: values.get("category"),
+        hours: Number(values.get("hours")), skills: values.get("skills").split(",").map((value) => value.trim()).filter(Boolean), cost: "free",
+        details: { level: values.get("level"), languages: values.get("languages").split(",").map((value) => value.trim()).filter(Boolean),
+          duration_notes: "Tiempo de estudio estimado por TalentSync; no es la duración de reproducción de la lista.",
+          access_notes: "Lista pública en YouTube, con publicidad y condiciones de acceso de la plataforma. La selección y su descripción son editoriales de TalentSync.",
+          prerequisites: values.get("prerequisites"), portfolio_idea: values.get("portfolio_idea") } };
+      const { data } = await api.post("/admin/learning/sources/youtube/import", { preview_id: preview.preview_id, editorial, publish: values.has("publish") });
+      onImported(data.resources); setPreview(null);
+      setMessage(data.created ? `Lista incorporada ${values.has("publish") ? "y publicada" : "como borrador"}.` : "La lista ya estaba incorporada; conserva sus ediciones y planes.");
+    });
+  }
+  return <details className="surface-card p-5"><summary className="cursor-pointer font-bold">YouTube · listas de reproducción seleccionadas</summary><div className="mt-4 space-y-4">
+    <div className="flex items-start gap-3"><ListVideo size={24} className="shrink-0 text-[var(--accent)]" /><p className="text-sm text-[var(--muted)]">Revisa una lista pública elegida por ti y describe su utilidad antes de incorporarla. La consulta muestra una muestra de hasta 12 vídeos; no certifica la calidad del canal ni las habilidades del candidato.</p></div>
+    {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}{message && <p role="status" className="learning-published">{message}</p>}
+    {status?.configured === false && <div className="rounded-xl border border-[var(--border)] p-4 text-sm"><strong>Preparado, pendiente de activar</strong><p className="mt-2 text-[var(--muted)]">Habilita YouTube Data API v3 y configura su clave solo en el servidor. También puedes añadir una lista con el formulario de formación manual.</p><details className="mt-3"><summary className="cursor-pointer font-semibold">Configuración local</summary><p className="mt-2">En el archivo privado .local/backend.env:</p><pre className="mt-2 overflow-x-auto text-xs">{"YOUTUBE_LEARNING_ENABLED=true\nYOUTUBE_API_KEY=tu_clave_privada\nYOUTUBE_LEARNING_DAILY_REQUESTS=100"}</pre><p className="mt-2">Reinicia el backend y recarga esta página. Restringe la clave a YouTube Data API v3; no la guardes en el frontend.</p><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 text-[var(--accent)]">Abrir configuración de Google<ExternalLink size={14} /></a></details></div>}
+    {status?.configured && <><p className="text-xs text-[var(--muted)]">{status.requests_used} / {status.request_limit} peticiones del proceso hoy (UTC). Una revisión completa utiliza 2 peticiones. El límite de Google se consulta en tu proyecto.</p><form className="flex flex-wrap items-end gap-3" onSubmit={consult}><label className="min-w-60 flex-1 text-sm">Enlace o identificador de la lista<input className="field-control mt-1" value={url} onChange={(event) => setUrl(event.target.value)} required minLength={10} maxLength={1000} placeholder="https://www.youtube.com/playlist?list=…" /></label><button className="button-secondary" disabled={busy}><Search size={15} />Revisar lista</button></form></>}
+    <p className="text-xs leading-5 text-[var(--muted)]">Al consultar se envía a Google el identificador de la lista desde el servidor. No se envían perfiles ni credenciales de candidatos. Se aplican los <a className="text-[var(--accent)]" href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">términos de YouTube</a> y la <a className="text-[var(--accent)]" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">política de privacidad de Google</a>.</p>
+    {preview && <div className="grid gap-5 lg:grid-cols-2"><section className="space-y-3 rounded-2xl border border-[var(--border)] p-4"><p className="section-kicker">Información de YouTube · consulta temporal</p><h3 className="font-bold">{preview.title}</h3><p className="text-sm text-[var(--muted)]">Canal: {preview.channel} · {preview.item_count} vídeos en la lista</p><p className="whitespace-pre-line text-sm text-[var(--muted)]">{preview.description}</p><a className="button-secondary button-sm" href={preview.url} target="_blank" rel="noopener noreferrer">Revisar en YouTube<ExternalLink size={14} /></a><details><summary className="cursor-pointer text-sm font-semibold">{preview.sample_only ? "Muestra de vídeos, no es el temario completo" : "Vídeos de la lista"}</summary><ul className="mt-3 space-y-2">{preview.videos.map((video, index) => <li key={`${video.url}-${index}`}><a className="text-sm text-[var(--accent)]" href={video.url} target="_blank" rel="noopener noreferrer">{video.title}</a></li>)}</ul></details></section>
+      <form className="grid gap-3 rounded-2xl border border-[var(--border)] p-4 sm:grid-cols-2" onSubmit={incorporate}><h3 className="font-bold sm:col-span-2">Tu selección para TalentSync</h3><p className="text-xs text-[var(--muted)] sm:col-span-2">Redacta una ficha propia tras revisar el contenido. Los títulos, descripciones y estadísticas de la API no se guardan en el catálogo.</p><label className="text-sm sm:col-span-2">Título de la ruta de estudio<input className="field-control mt-1" name="title" required minLength={3} maxLength={160} placeholder="Ej. Practica Excel con ejercicios de inventario" /></label><label className="text-sm sm:col-span-2">Qué aprenderá y para qué le servirá<textarea className="field-control mt-1" name="instructions" required minLength={10} maxLength={2000} /></label><label className="text-sm sm:col-span-2">Habilidades, separadas por comas<input className="field-control mt-1" name="skills" required maxLength={2000} /></label><label className="text-sm">Área<select className="field-control mt-1" name="category">{Object.entries(areas).map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label><label className="text-sm">Horas de estudio estimadas<input className="field-control mt-1" type="number" name="hours" min={0.01} max={1000} step="any" required /></label><label className="text-sm">Nivel<select className="field-control mt-1" name="level"><option value="any">Por confirmar</option><option value="beginner">Inicial</option><option value="intermediate">Intermedio</option><option value="advanced">Avanzado</option></select></label><label className="text-sm">Idiomas confirmados<input className="field-control mt-1" name="languages" maxLength={245} placeholder="es, en" /></label><label className="text-sm sm:col-span-2">Requisitos previos<textarea className="field-control mt-1" name="prerequisites" maxLength={500} /></label><label className="text-sm sm:col-span-2">Evidencia que podría preparar<textarea className="field-control mt-1" name="portfolio_idea" maxLength={600} /></label><p className="text-xs text-[var(--muted)] sm:col-span-2">El acceso público a una lista no concede un certificado ni acredita conocimientos.</p><label className="flex items-start gap-2 text-sm sm:col-span-2"><input type="checkbox" name="publish" />He revisado el contenido y quiero publicarlo</label><button disabled={busy} className="button-primary sm:col-span-2">Incorporar selección</button></form></div>}
+  </div></details>;
+}

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
@@ -9,6 +10,7 @@ from app.api.deps import (
     get_public_learning_catalog,
     get_text_analysis,
     get_unit_of_work,
+    get_youtube_learning,
     require_roles,
 )
 from app.api.schemas.learning import (
@@ -55,6 +57,43 @@ class PublicImport(LearnImport):
 
 class PublicRefresh(BaseModel):
     provider: Literal["sena", "sapiencia"]
+
+
+class YouTubePreview(BaseModel):
+    url: str = Field(min_length=10, max_length=1000)
+
+
+class YouTubeImport(BaseModel):
+    preview_id: str = Field(min_length=20, max_length=100)
+    editorial: ResourceContent
+    publish: bool = False
+
+
+@router.get("/admin/learning/sources/youtube")
+def youtube_status(user=Depends(admin), gateway=Depends(get_youtube_learning)):
+    return gateway.status()
+
+
+@router.post("/admin/learning/sources/youtube/preview")
+def youtube_preview(payload: YouTubePreview, user=Depends(admin), gateway=Depends(get_youtube_learning)):
+    return gateway.preview(payload.url, actor_id=user.id)
+
+
+@router.post("/admin/learning/sources/youtube/import")
+def youtube_import(payload: YouTubeImport, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_youtube_learning)):
+    identifier = gateway.selected(payload.preview_id, actor_id=user.id)
+    content = payload.editorial.model_dump(mode="json")
+    # Independent editorial fields are supplied by the reviewer; API descriptions,
+    # channel names, statistics and sample titles are not copied into persistence.
+    content.update(url=f"https://www.youtube.com/playlist?list={identifier}", provider="YouTube · selección de TalentSync",
+                   cost="free", sponsored=False, affiliate=False, disclosure="")
+    content.setdefault("details", None)
+    content["details"] = {**(content["details"] or {}), "certificate_cost": "none",
+                          "certificate_notes": "Esta lista de reproducción no concede un certificado de TalentSync. Consulta al creador si ofrece una formación certificada independiente."}
+    selected = [{"source_id": identifier, "content": content,
+                 "source": {"provider": "youtube", "id": identifier, "mode": "editorial", "api_metadata_stored": False,
+                            "reviewed_at": datetime.now(timezone.utc).date().isoformat()}}]
+    return learning_resources.import_source(db, user, selected, namespace="youtube", publish=payload.publish)
 
 
 @router.post("/admin/learning/sources/sena/preview")

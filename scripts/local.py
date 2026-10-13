@@ -36,6 +36,9 @@ def prepare_environment(*, testing=False):
     # Explicit values also override inherited shell variables and dotenv files.
     values.update({"TALENTSYNC_ENV_FILE": str(ENV_FILE), "PERIODIC_MAINTENANCE_ENABLED": "false",
                    "PUBLIC_LEARNING_REFRESH_ENABLED": values.get("PUBLIC_LEARNING_REFRESH_ENABLED", "false"),
+                   "YOUTUBE_LEARNING_ENABLED": values.get("YOUTUBE_LEARNING_ENABLED", "false"),
+                   "YOUTUBE_API_KEY": values.get("YOUTUBE_API_KEY", ""),
+                   "YOUTUBE_LEARNING_DAILY_REQUESTS": values.get("YOUTUBE_LEARNING_DAILY_REQUESTS", "100"),
                    "RESEND_ENABLED": "false", "RESEND_API_KEY": "", "RESEND_FROM": "",
                    **{key: values.get(key, "false" if key == "LEARN_ENABLED" else "") for key in (
                        "LEARN_ENABLED", "LEARN_TENANT_ID", "LEARN_CLIENT_ID", "LEARN_CLIENT_SECRET")},
@@ -67,6 +70,7 @@ def prepare_environment(*, testing=False):
         # Tests must not depend on user integrations, weights or the demo database.
         values.update({"DATABASE_URL": "sqlite://", "MATCH_MODEL_PATH": "",
                        "PUBLIC_LEARNING_REFRESH_ENABLED": "false",
+                       "YOUTUBE_LEARNING_ENABLED": "false", "YOUTUBE_API_KEY": "", "YOUTUBE_LEARNING_DAILY_REQUESTS": "100",
                        "LEARN_ENABLED": "false", "LEARN_TENANT_ID": "", "LEARN_CLIENT_ID": "", "LEARN_CLIENT_SECRET": "",
                        "SESSION_AUTH_ENABLED": "false", "LOCAL_MAIL_ENABLED": "false", "LOCAL_ADMIN_REVIEW_ENABLED": "false", "LOCAL_MFA_REVIEW_ENABLED": "false", "COMPANY_MFA_REQUIRED": "true",
                        "WORKFLOW_MAINTENANCE_ENABLED": "false", "MODEL_MAINTENANCE_ENABLED": "false",
