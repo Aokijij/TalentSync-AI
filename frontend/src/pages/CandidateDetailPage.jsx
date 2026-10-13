@@ -211,7 +211,7 @@ export function CandidateDetailPage() {
                 <p className="mt-1 text-sm text-[var(--muted)]">
                   {item.issuer}
                   {item.year ? ` · ${item.year}` : ""}
-                </p>
+                </p><div className="candidate-certificate-details"><span>Certificado aportado por el candidato</span>{item.url?.startsWith("https://") && <a className="button-secondary button-sm" href={item.url} target="_blank" rel="noopener noreferrer">Ver documento aportado ↗</a>}</div>
               </>
             )}
           />}

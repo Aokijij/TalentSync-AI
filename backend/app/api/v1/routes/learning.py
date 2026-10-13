@@ -168,6 +168,7 @@ class JourneyUpdate(BaseModel):
     answers: dict[str, Annotated[str, Field(max_length=550)]] = Field(default_factory=dict, max_length=3)
     activity_answers: dict[str, Answer] | None = Field(default=None, max_length=3)
     finish: bool = False
+    retry: bool = False
     add_to_profile: bool = False
 
 
@@ -224,6 +225,11 @@ def save_journey(resource_id: str, payload: JourneyUpdate, user=Depends(candidat
 @router.post("/learning/attempts/{attempt_id}/submit")
 def submit(attempt_id: str, payload: Submission, user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.submit_assessment(db, user, attempt_id, payload.answers)
+
+
+@router.post("/learning/plans/{resource_id}/skills")
+def add_plan_skills(resource_id: str, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.add_plan_skills(db, user, resource_id)
 
 
 @router.get("/learning/passport")

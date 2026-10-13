@@ -16,7 +16,7 @@ const kinds = {
   repository: { label: "Repositorio", Icon: Code2 },
 };
 
-function EvidenceCard({ row, busy, onRemove }) {
+function EvidenceCard({ row, busy, onRemove, onAddSkills }) {
   const { label, Icon } = kinds[row.kind] || kinds.experience;
   const skills = row.skills || [];
   const github = row.analysis?.origin === "github_public";
@@ -25,10 +25,10 @@ function EvidenceCard({ row, busy, onRemove }) {
     <div className="evidence-card-heading">
       <span className="evidence-icon"><Icon size={19} aria-hidden="true" /></span>
       <span className="evidence-kind">{label}</span>
-      <span className="evidence-status">Declarada</span>
+      <span className="evidence-status">{row.kind === "certificate" ? "Aportado" : "Declarada"}</span>
     </div>
     <h4>{row.title}</h4>
-    <p className="evidence-description">{row.description}</p>
+    <p className="evidence-description">{row.source === "external_certificate" ? "Certificado aportado por el candidato. TalentSync no valida certificados." : row.description}</p>
     <div className="evidence-skills" aria-label="Habilidades relacionadas">
       {skills.slice(0, 4).map((skill) => <span key={skill}>{skill}</span>)}
       {skills.length > 4 && <details className="evidence-extra-skills"><summary>+{skills.length - 4} más</summary><div>{skills.slice(4).map((skill) => <span key={skill}>{skill}</span>)}</div></details>}
@@ -37,12 +37,13 @@ function EvidenceCard({ row, busy, onRemove }) {
     <details className="evidence-card-detail">
       <summary>Detalles de la evidencia<ChevronDown size={14} aria-hidden="true" /></summary>
       <div>
-        <p className="whitespace-pre-wrap">{row.description}</p>
+        <p className="whitespace-pre-wrap">{row.source === "external_certificate" ? "Certificado aportado por el candidato. TalentSync no valida certificados." : row.description}</p>
         {github && <p>GitHub · revisión {row.analysis.revision?.slice(0, 12)}. Tecnologías detectadas mediante análisis estático; autoría sin verificar.</p>}
         {codewars && <p>Codewars · {row.analysis.overall?.rank} · {row.analysis.completed_challenges?.toLocaleString("es-CO")} retos resueltos · Consulta: {new Date(row.analysis.fetched_at).toLocaleDateString("es-CO")}. Cuenta declarada; titularidad sin verificar.</p>}
         <p>Esta referencia fue aportada por ti. No equivale a una habilidad verificada.</p>
       </div>
     </details>
+    {!row.add_to_profile && skills.length > 0 && <button type="button" className="button-secondary button-sm self-start" disabled={busy} onClick={() => onAddSkills(row)}><Plus size={14} />Añadir habilidades a mi perfil</button>}
     <footer className="evidence-card-actions">
       {row.url ? <a className="button-secondary button-sm" href={row.url} target="_blank" rel="noopener noreferrer">Abrir referencia<ExternalLink size={14} aria-hidden="true" /></a> : <span className="evidence-no-link">Sin enlace adjunto</span>}
       <button type="button" className="evidence-remove" disabled={busy} onClick={() => onRemove(row)} aria-label={`Retirar evidencia: ${row.title}`}><Trash2 size={15} aria-hidden="true" />Retirar</button>
@@ -134,7 +135,7 @@ export function ProfileEvidence({ profile, onChanged }) {
           <footer className="evidence-form-actions"><p><Info size={15} aria-hidden="true" />Aportar una evidencia no verifica automáticamente una habilidad.</p><div><button type="button" className="button-secondary button-sm" disabled={busy} onClick={closeForm}>Cancelar</button><button className="button-primary button-sm" disabled={busy}><Save size={16} aria-hidden="true" />{busy ? "Guardando…" : "Guardar evidencia"}</button></div></footer>
         </form>
       </section>
-      {loading ? <p role="status" className="evidence-empty">Cargando tus evidencias…</p> : rows.length ? <div className="evidence-grid">{rows.map((row) => <EvidenceCard key={row.id} row={row} busy={busy} onRemove={remove} />)}</div> : !error && <div className="evidence-empty"><span className="evidence-icon"><FolderOpen size={24} aria-hidden="true" /></span><h4>Tu experiencia merece verse</h4><p>Empieza con un logro laboral, una muestra de trabajo o un certificado. Puede ser de cualquier profesión.</p></div>}
+      {loading ? <p role="status" className="evidence-empty">Cargando tus evidencias…</p> : rows.length ? <div className="evidence-grid">{rows.map((row) => <EvidenceCard key={row.id} row={row} busy={busy} onRemove={remove} onAddSkills={(row) => act(async () => { const { data } = await api.post(`/matching/evidence/${row.id}/skills`); setRows(data); await onChanged?.(); setMessage("Habilidades incorporadas como declaradas por ti."); })} />)}</div> : !error && <div className="evidence-empty"><span className="evidence-icon"><FolderOpen size={24} aria-hidden="true" /></span><h4>Tu experiencia merece verse</h4><p>Empieza con un logro laboral, una muestra de trabajo o un certificado. Puede ser de cualquier profesión.</p></div>}
       <details className="evidence-integrations" onToggle={(event) => { if (event.currentTarget.open) setToolsActivated(true); }}>
         <summary><Link2 size={18} aria-hidden="true" /><span><strong>{programmingRelevant ? "Conectar GitHub o Codewars" : "Otras fuentes de evidencia"}</strong><span>Opcional · Proyectos y práctica de programación</span></span><ChevronDown size={16} aria-hidden="true" /></summary>
         {toolsActivated && <div className="evidence-integration-content"><p>Elige qué proyectos o retos relacionar con tus habilidades.</p><GitHubEvidence onSaved={async (data) => { setRows(data); await onChanged?.(); }} /><CodewarsEvidence onSaved={async (data) => { setRows(data); await onChanged?.(); }} /></div>}

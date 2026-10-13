@@ -83,6 +83,11 @@ def remove_evidence(evidence_id: str, user=Depends(candidate), db=Depends(get_un
     cases.remove_evidence(db, user, evidence_id)
 
 
+@router.post("/matching/evidence/{evidence_id}/skills")
+def add_evidence_skills(evidence_id: str, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.add_evidence_skills(db, user, evidence_id)
+
+
 @router.get("/matching/jobs/{job_id}")
 def explanation(job_id: int, user=Depends(candidate), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis)):
     return cases.match_details(db, user, job_id, nlp)

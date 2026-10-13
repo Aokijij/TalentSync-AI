@@ -62,6 +62,23 @@ def remove_evidence(db, user, evidence_id):
     db.commit()
 
 
+def add_evidence_skills(db, user, evidence_id):
+    rows = user.profile.evidence or []
+    evidence = next((row for row in rows if row["id"] == evidence_id), None)
+    if evidence is None:
+        raise UseCaseError(status_code=404, detail="Evidencia no encontrada")
+    db.learning.lock_owner(user.id)
+    skills = normalize_skills([*(user.profile.skills or []), *evidence.get("skills", [])])
+    if len(skills) > 100:
+        raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cien habilidades")
+    user.profile.skills = skills
+    user.profile.evidence = [{**row, "add_to_profile": True} if row["id"] == evidence_id else row for row in rows]
+    user.profile.updated_at = datetime.utcnow()
+    record_event(db, "profile.evidence_skills_added", "profile", user.profile.id, actor_user_id=user.id, details={"source": "declared"})
+    db.commit()
+    return user.profile.evidence
+
+
 def match_details(db, user, job_id, nlp):
     job = get_job(job_id, db, user)
     return upsert_recommendation(db, user, job, nlp=nlp).match_details

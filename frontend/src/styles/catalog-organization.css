@@ -85,3 +85,33 @@
 .admin-resource-title:hover { color:var(--accent); text-decoration:underline; }
 .admin-resource-title:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:.25rem; }
 .admin-catalog-actions { flex-wrap:wrap; }
+
+.learning-catalog-grid, .learning-results-courses { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; }
+.learning-catalog-grid .learning-resource { padding:1.05rem; gap:.7rem; border-radius:1rem; }
+.learning-catalog-grid .learning-resource h3 { font-size:.95rem; line-height:1.5; }
+.learning-catalog-grid .learning-resource > p { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; font-size:.78rem; line-height:1.6; }
+.learning-catalog-grid .learning-resource .learning-area-icon { width:36px; height:36px; }
+.learning-catalog-grid .learning-resource .button-primary, .learning-catalog-grid .learning-resource .button-secondary, .learning-catalog-grid .learning-resource .button-outline { min-height:34px; padding:.5rem .65rem; font-size:.72rem; gap:.35rem; }
+.learning-catalog-grid .learning-resource > div.space-y-2 { padding:.65rem; border-radius:.7rem; }
+.learning-catalog-grid .learning-resource > div.space-y-2 p:last-child { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.learning-catalog-grid .learning-resource > div.mt-auto { gap:.4rem; }
+.practice-score-summary { display:flex; gap:1rem; align-items:center; padding:1.2rem; background:var(--surface-subtle); border-radius:1rem; }
+.practice-score-summary > strong { font-size:2rem; color:var(--accent); }
+.practice-score-summary h3 { font-size:1rem; font-weight:700; }
+.practice-score-summary p { font-size:.75rem; margin-top:.3rem; color:var(--muted); }
+.practice-result-card { padding:1rem; display:flex; flex-direction:column; align-items:start; gap:.8rem; }
+.practice-result-card > div:first-child { width:100%; }
+.practice-result-card summary { cursor:pointer; font-size:.75rem; color:var(--accent); font-weight:650; }
+.learning-skills-choice { display:grid; gap:.4rem; }
+.learning-skills-choice p { font-size:.65rem; line-height:1.5; color:var(--muted); }
+.certificate-actions { display:flex; flex-wrap:wrap; gap:.6rem; margin-top:1rem; }
+.external-certificate { border-radius:.85rem; padding:1rem; }
+.external-certificate h3 { font-size:.86rem; }
+.external-certificate p { font-size:.75rem; line-height:1.6; }
+.external-certificate.certificate-supplied { border-color:color-mix(in srgb,var(--success) 30%,var(--line)); }
+.external-certificate.personal-learning { display:flex; gap:.75rem; }
+.candidate-certificate-details { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-top:.75rem; padding:.7rem; border:1px solid var(--line); border-radius:.65rem; background:var(--surface-subtle); }
+.candidate-certificate-details > span { color:var(--muted); font-size:.7rem; }
+.candidate-certificate-details > a { font-size:.7rem; }
+@media(max-width:1050px) { .learning-catalog-grid, .learning-results-courses { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:640px) { .learning-catalog-grid, .learning-results-courses { grid-template-columns:1fr; } .practice-score-summary { align-items:start; } }

@@ -1,7 +1,7 @@
 import random
 from collections import Counter
 from datetime import datetime, timedelta
-from uuid import NAMESPACE_URL, uuid5
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
@@ -96,7 +96,8 @@ def plans(db, user, resource_id=None, status=None):
         record_event(db, "learning.plan_updated", "profile", user.profile.id, actor_user_id=user.id, details={"status": status})
         db.commit()
     return [{"id": row.id, "resource": resources.get(row.resource_id), "status": row.status, "created_at": row.created_at, "completed_at": row.completed_at,
-             "version": row.version, "progress": {**(row.progress or {}), "published": bool((row.progress or {}).get("published")) and any(item.get("id") == (row.progress or {}).get("evidence_id") for item in user.profile.evidence or [])}} for row in db.learning.plans(user.id)]
+             "version": row.version, "certificate": next((item for item in user.profile.certifications or [] if item.get("resource_id") == row.resource_id), None),
+             "skills_added": skill_set(resources.get(row.resource_id, {}).get("skills", [])) <= skill_set(user.profile.skills or []), "progress": {**(row.progress or {}), "activity_feedback": (row.progress or {}).get("activity_feedback", []) if row.status == "completed" else [], "published": bool((row.progress or {}).get("published")) and any(item.get("id") == (row.progress or {}).get("evidence_id") for item in user.profile.evidence or [])}} for row in db.learning.plans(user.id)]
 
 
 def leave_plan(db, user, resource_id, version):
@@ -112,10 +113,37 @@ def leave_plan(db, user, resource_id, version):
 
 
 def save_journey(db, user, resource_id, payload):
-    resource = next((row for row in catalog_resources(db, include_inactive=True) if row["id"] == resource_id), None)
+    resource = next((item for item in catalog_resources(db, include_inactive=True) if item["id"] == resource_id), None)
     row = db.learning.plan(user.id, resource_id)
     if resource is None or row is None:
         raise UseCaseError(status_code=404, detail="Añade primero esta práctica a tu plan")
+    previous = row.progress or {}
+    if payload.get("retry"):
+        legacy_attempt = row.status == "completed" and bool(previous.get("activity_feedback"))
+        if not previous.get("submitted") and not legacy_attempt:
+            raise UseCaseError(status_code=409, detail="Entrega el intento actual antes de iniciar otro")
+        db.learning.lock_owner(user.id)
+        if sum(item.status != "completed" for item in db.learning.plans(user.id)) >= 3:
+            raise UseCaseError(status_code=409, detail="Finaliza o abandona un recurso antes de volver a intentarlo")
+        if not db.learning.claim_progress(row.id, user.id, payload["version"]):
+            raise UseCaseError(status_code=409, detail="El plan cambió; actualiza antes de reintentar")
+        history = (user.profile.preferences or {}).get("learning_results", [])
+        if legacy_attempt and not any(item["resource_id"] == resource_id for item in history):
+            feedback = previous["activity_feedback"]
+            score = round(sum(item["correct"] for item in feedback) / len(feedback) * 100, 1)
+            result = {"id": uuid4().hex, "resource_id": resource_id, "title": resource["title"], "provider": resource["provider"],
+                      "score": score, "passed": score >= 80, "feedback": [{**item, "message": item["message"] if item["correct"] else "Revisa esta actividad en otro intento."} for item in feedback],
+                      "completed_at": row.completed_at.isoformat() if row.completed_at else datetime.utcnow().isoformat(),
+                      "attempt_number": 1, "skills": resource["skills"], "published": previous.get("published", False)}
+            user.profile.preferences = {**(user.profile.preferences or {}), "learning_results": [*history, result][-100:]}
+        row.progress = {"answers": {}, "activity_answers": {}, "activity_feedback": [], "submitted": False,
+                        "published": previous.get("published", False), "evidence_id": previous.get("evidence_id"),
+                        "attempt_number": previous.get("attempt_number", 1) + 1}
+        row.status, row.completed_at = "in_progress", None
+        db.commit()
+        return plans(db, user)
+    if previous.get("submitted"):
+        raise UseCaseError(status_code=409, detail="Este intento ya se entregó. Inicia otro para cambiar las respuestas")
     if row.status == "completed" and not payload.get("finish"):
         db.learning.lock_owner(user.id)
         if sum(item.status != "completed" for item in db.learning.plans(user.id)) >= 3:
@@ -124,31 +152,40 @@ def save_journey(db, user, resource_id, payload):
     answers = {key: value.strip() for key, value in payload["answers"].items()}
     if set(answers) - {step["id"] for step in steps}:
         raise UseCaseError(status_code=422, detail="La práctica contiene un paso desconocido")
+    finish = payload.get("finish", False)
     activity_answers = payload.get("activity_answers")
-    activity_feedback = []
+    feedback = []
     if activity_answers is not None:
         activities = activities_for(activity_key(resource))
         if set(activity_answers) - {item["id"] for item in activities}:
             raise UseCaseError(status_code=422, detail="Actividad desconocida")
+        if finish and set(activity_answers) != {item["id"] for item in activities}:
+            raise UseCaseError(status_code=422, detail="Responde las tres actividades antes de entregar")
         for index, item in enumerate(activities):
             if item["id"] not in activity_answers:
                 continue
-            correct = _evaluate(item, activity_answers[item["id"]])
-            activity_feedback.append({"question_id": item["id"], "correct": correct, "message": item["feedback"]})
             value = activity_answers[item["id"]]
-            if item["type"] in {"order", "matching"}:
-                detail = " → ".join(item["choices"][key] for key in value)
+            partial = value == "" or item["type"] == "matching" and isinstance(value, list) and -1 in value
+            if partial:
+                if finish:
+                    raise UseCaseError(status_code=422, detail="Completa las respuestas antes de entregar")
+                if isinstance(value, list) and (len(value) != len(item["terms"]) or any(type(key) is not int or key < -1 or key >= len(item["choices"]) for key in value)):
+                    raise UseCaseError(status_code=422, detail="Relaciones de la actividad inválidas")
             else:
-                detail = str(value)
+                correct = False if item["type"] == "matching" and isinstance(value, list) and len(set(value)) != len(value) and len(value) == len(item["terms"]) and all(type(key) is int and 0 <= key < len(item["choices"]) for key in value) else _evaluate(item, value)
+                if finish:
+                    feedback.append({"question_id": item["id"], "prompt": item["prompt"], "correct": correct,
+                                     "message": item["feedback"] if correct else "Revisa los datos del caso y tu decisión en un nuevo intento."})
+            detail = " → ".join(item["choices"][key] if key >= 0 else "Sin relacionar" for key in value) if isinstance(value, list) else str(value)
             answers[steps[index]["id"]] = f"{item['prompt']} Mi respuesta: {detail}."[:550]
-    finish = payload.get("finish", False)
-    if finish and activity_answers is not None and (len(activity_feedback) != 3 or not all(item["correct"] for item in activity_feedback)):
-        raise UseCaseError(status_code=422, detail="Revisa las tres actividades con la retroalimentación antes de publicar")
-    if finish and any(len(answers.get(step["id"], "")) < 40 for step in steps):
+    if finish and activity_answers is None and any(len(answers.get(step["id"], "")) < 40 for step in steps):
         raise UseCaseError(status_code=422, detail="Desarrolla cada paso con al menos 40 caracteres antes de publicar")
+    score = round(sum(item["correct"] for item in feedback) / len(feedback) * 100, 1) if finish and feedback else None
+    passed = score is None or score >= 80
+    publish = finish and passed
     evidence_id = uuid5(NAMESPACE_URL, f"talentsync:learning-evidence:{user.id}:{resource_id}").hex
     existing = [item for item in user.profile.evidence or [] if item["id"] != evidence_id]
-    if finish and len(existing) >= 50:
+    if publish and len(existing) >= 50:
         raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cincuenta evidencias; retira una antes de publicar")
     skills = normalize_skills([*(user.profile.skills or []), *resource["skills"]]) if payload.get("add_to_profile") else user.profile.skills
     if finish and len(skills) > 100:
@@ -156,21 +193,45 @@ def save_journey(db, user, resource_id, payload):
     if not db.learning.claim_progress(row.id, user.id, payload["version"]):
         raise UseCaseError(status_code=409, detail="El plan cambió en otra pestaña. Actualiza para conservar el avance más reciente")
     now = datetime.utcnow()
-    previous = row.progress or {}
-    row.progress = {"activity_answers": activity_answers if activity_answers is not None else previous.get("activity_answers"), "activity_feedback": activity_feedback, "answers": answers, "published": finish or bool(previous.get("published")),
+    row.progress = {"activity_answers": activity_answers if activity_answers is not None else previous.get("activity_answers"),
+                    "activity_feedback": feedback, "answers": answers, "published": publish or bool(previous.get("published")),
+                    "submitted": finish and activity_answers is not None, "score": score, "passed": passed if finish else None,
+                    "attempt_number": previous.get("attempt_number", 1),
                     "has_unpublished_changes": not finish and (bool(previous.get("has_unpublished_changes")) or answers != previous.get("answers", {})),
-                    "evidence_id": evidence_id if finish else previous.get("evidence_id")}
-    row.status = "completed" if finish else "in_progress"
-    row.completed_at = now if finish else None
-    if finish:
+                    "evidence_id": evidence_id if publish else previous.get("evidence_id")}
+    row.status, row.completed_at = ("completed", now) if finish else ("in_progress", None)
+    if publish:
         user.profile.evidence = [*existing, {"id": evidence_id, "title": resource["journey"]["lab_title"] if activity_answers is not None else resource["journey"]["title"], "kind": "project", "url": None,
             "skills": resource["skills"], "description": "\n\n".join(f"{step['title']}: {answers[step['id']]}" for step in steps),
             "verified": False, "add_to_profile": bool(payload.get("add_to_profile")), "source": "learning_practice", "created_at": now.isoformat()}]
+    if finish:
         if payload.get("add_to_profile"):
             user.profile.skills = skills
         user.profile.updated_at = now
-    record_event(db, "learning.practice_published" if finish else "learning.practice_saved", "profile", user.profile.id,
+        result = {"id": uuid4().hex, "resource_id": resource_id, "title": resource["title"], "provider": resource["provider"],
+                  "score": score, "passed": passed, "feedback": feedback, "completed_at": now.isoformat(),
+                  "attempt_number": previous.get("attempt_number", 1), "skills": resource["skills"], "published": publish}
+        history = (user.profile.preferences or {}).get("learning_results", [])
+        user.profile.preferences = {**(user.profile.preferences or {}), "learning_results": [*history, result][-100:]}
+    record_event(db, "learning.practice_published" if publish else "learning.practice_saved", "profile", user.profile.id,
                  actor_user_id=user.id, details={"status": row.status})
+    db.commit()
+    return plans(db, user)
+
+
+def add_plan_skills(db, user, resource_id):
+    row = db.learning.plan(user.id, resource_id)
+    resource = next((item for item in catalog_resources(db, include_inactive=True) if item["id"] == resource_id), None)
+    if row is None or resource is None:
+        raise UseCaseError(status_code=404, detail="Recurso no encontrado en tu plan")
+    if row.status != "completed":
+        raise UseCaseError(status_code=409, detail="Finaliza el intento antes de incorporar sus habilidades")
+    db.learning.lock_owner(user.id)
+    skills = normalize_skills([*(user.profile.skills or []), *resource["skills"]])
+    if len(skills) > 100:
+        raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cien habilidades")
+    user.profile.skills, user.profile.updated_at = skills, datetime.utcnow()
+    record_event(db, "learning.skills_added", "profile", user.profile.id, actor_user_id=user.id, details={"source": "declared"})
     db.commit()
     return plans(db, user)
 
@@ -247,11 +308,23 @@ def grant_fundamentals(db, user, row, now):
 def passport(db, user):
     now = datetime.utcnow()
     resources = catalog_resources(db)
+    results = list((user.profile.preferences or {}).get("learning_results", []))
+    represented = {item["resource_id"] for item in results}
+    for plan in plans(db, user):
+        if plan["status"] != "completed" or not plan["resource"] or plan["resource"]["id"] in represented:
+            continue
+        progress = plan["progress"]
+        feedback = progress.get("activity_feedback") or []
+        results.append({"id": f"legacy-plan-{plan['id']}", "resource_id": plan["resource"]["id"], "title": plan["resource"]["title"],
+                        "provider": plan["resource"]["provider"], "score": round(sum(item["correct"] for item in feedback) / len(feedback) * 100, 1) if feedback else None,
+                        "passed": all(item["correct"] for item in feedback) if feedback else True, "feedback": [{**item, "message": item["message"] if item["correct"] else "Revisa esta actividad en un nuevo intento."} for item in feedback],
+                        "completed_at": plan["completed_at"], "attempt_number": 1, "skills": plan["resource"]["skills"], "published": progress.get("published", False)})
     return {"practice_evidence": [{"id": item["id"], "title": item["title"], "skills": item["skills"]} for item in user.profile.evidence or [] if item.get("source") == "learning_practice"],
+            "learning_results": list(reversed(results)), "certificates": user.profile.certifications or [],
             "assessments": [{**public_attempt(row), "valid": bool(row.passed and row.valid_until and row.valid_until >= now),
                              "improvement_resources": [resource for resource in resources if skill_set([row.skill]) & skill_set(resource["skills"])][:4] if any(not item["correct"] for item in row.feedback) else []}
                             for row in db.learning.attempts(user.id) if row.status == "completed"],
-            "notice": "Las micropruebas acreditan únicamente fundamentos evaluados por TalentSync; no equivalen a certificaciones profesionales ni experiencia laboral."}
+            "notice": "Las prácticas, habilidades declaradas y certificados aportados aparecen separados de las evaluaciones de fundamentos. TalentSync no valida certificados externos."}
 
 
 def patterns(db, user):
@@ -275,17 +348,20 @@ def register_external_certificate(db, user, resource_id, payload):
         raise UseCaseError(status_code=404, detail="Plan de formación externa no encontrado")
     if plan.status != "completed":
         raise UseCaseError(status_code=409, detail="Finaliza el plan antes de registrar el certificado externo")
+    if (resource.get("details") or {}).get("certificate_cost") == "none" and not any(item.get("resource_id") == resource_id for item in user.profile.certifications or []):
+        raise UseCaseError(status_code=422, detail="Este recurso es para aprendizaje sin certificado anunciado")
     if payload["year"] > datetime.utcnow().year:
         raise UseCaseError(status_code=422, detail="La fecha de expedición no puede estar en el futuro")
     identifier = uuid5(NAMESPACE_URL, f"talentsync:external-certificate:{user.id}:{resource_id}").hex
     certificate = {"id": identifier, "name": payload["name"], "issuer": resource["provider"], "year": str(payload["year"]),
         "url": payload["credential_url"], "certificate_id": payload["certificate_id"], "source": "external_certificate",
         "resource_id": resource_id, "verified": False}
+    previous_evidence = next((item for item in user.profile.evidence or [] if item.get("id") == identifier), {})
     user.profile.certifications = [item for item in user.profile.certifications or [] if item.get("id") != identifier] + [certificate]
     user.profile.evidence = [item for item in user.profile.evidence or [] if item.get("id") != identifier] + [{
         "id": identifier, "title": payload["name"], "kind": "certificate", "url": payload["credential_url"], "skills": resource["skills"],
-        "description": f"Certificado externo aportado por el candidato. Emisor: {resource['provider']}. Su autenticidad debe revisarse en el enlace del proveedor.",
-        "verified": False, "source": "external_certificate", "created_at": datetime.utcnow().isoformat()}]
+        "description": f"Certificado externo aportado por el candidato. Emisor: {resource['provider']}. TalentSync no valida certificados.",
+        "verified": False, "add_to_profile": previous_evidence.get("add_to_profile", False), "source": "external_certificate", "created_at": datetime.utcnow().isoformat()}]
     record_event(db, "learning.external_certificate_added", "user", user.id, actor_user_id=user.id, details={"source": "external_certificate"})
     db.commit()
-    return {"message": "Certificado añadido a Certificaciones y Evidencias como documento aportado. No está verificado automáticamente."}
+    return {"message": "Certificado aportado añadido al perfil. TalentSync no valida certificados.", "certificate": certificate}

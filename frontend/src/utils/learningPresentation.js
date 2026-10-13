@@ -14,3 +14,9 @@ export function learningLanguages(codes = []) {
   const names = { es: "Español", en: "Inglés", pt: "Portugués", fr: "Francés", de: "Alemán" };
   return codes.map((code) => names[code] || code).join(" · ");
 }
+
+export function formatLearningHours(value) {
+  const hours = Number(value);
+  if (!Number.isFinite(hours) || hours <= 0) return "Por confirmar";
+  return hours < 0.05 ? "< 0.1" : String(Math.round(hours * 10) / 10);
+}

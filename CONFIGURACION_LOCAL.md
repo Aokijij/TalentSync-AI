@@ -203,3 +203,14 @@ En **Mi desarrollo**, el área de aprendizaje se elige con tarjetas e iconos; pu
 Después de actualizar, recarga la página con Ctrl+F5 para cargar los estilos actuales.
 
 El 13 de octubre de 2026 se incorporó una muestra activa al catálogo local: seis rutas editoriales de YouTube (Excel, Power Query, Word, Python, Git y SQL) y seis módulos de Microsoft Learn (tres de Power BI, privacidad, riesgos y procesamiento de facturas con AI Builder). Puedes encontrarlos con el filtro Proveedor en la biblioteca administrativa. La duración de las rutas de YouTube es una estimación de estudio y práctica de TalentSync; no equivale a la reproducción total de cada lista.
+
+## Aprendizaje: intentos, resultados y certificados aportados
+
+- Los cursos se muestran en tres columnas en escritorio. Las horas se presentan con un decimal como máximo. Los filtros conservan proveedor, coste, idioma, nivel y certificado; se retiraron los accesos rápidos duplicados.
+- En el laboratorio, Guardar borrador conserva respuestas sin corregirlas ni mostrar soluciones. Puedes avanzar aunque una respuesta sea incorrecta.
+- Al entregar las tres actividades se guarda una puntuación. Se explican los aciertos; los errores indican qué actividad reforzar sin entregar la solución. Para modificar las respuestas usa Volver a intentarlo. Los intentos anteriores permanecen en Mis resultados, incluso si abandonas el plan después.
+- Una práctica acertada puede publicar una evidencia declarada. Estas prácticas se distinguen de las evaluaciones independientes de fundamentos y de completar un curso externo.
+- Mis resultados incluye intentos/prácticas, certificados aportados y evaluaciones. Añadir habilidades a mi perfil es una decisión explícita y las incorpora como declaradas, no verificadas. También puedes hacerlo desde una evidencia existente.
+- El plan reconoce el certificado que ya aportaste y permite consultar o editar sus datos. Los recursos sin certificado anunciado se muestran como aprendizaje personal. TalentSync no valida certificados ni promete comprobar su autenticidad.
+- Cuando una empresa tiene permiso para ver el perfil completo, puede abrir los documentos aportados. La selección ciega conserva su restricción de identidad.
+- Microsoft Learn incorpora el idioma y nivel informados por la API, descripción limpia, duración y requisitos/unidades cuando el proveedor los entrega. Los campos ausentes remiten a la fuente; no se inventan temarios. Las fichas editoriales de YouTube conservan descripciones propias de TalentSync.

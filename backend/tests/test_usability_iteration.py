@@ -62,10 +62,14 @@ def test_interactive_laboratory_drafts_checks_and_publishes_scoped_evidence(clie
     answers = {item["id"]: item["answer"] for item in activities_for(activity_key(resource))}
     wrong = {**answers, "calculation": -999}
     draft = client.patch(endpoint + "/journey", headers=headers, json={"version": plan["version"], "activity_answers": wrong}).json()[0]
-    assert not all(item["correct"] for item in draft["progress"]["activity_feedback"])
+    assert draft["progress"]["activity_feedback"] == [] and draft["progress"]["score"] is None
     payload = {"version": draft["version"], "activity_answers": wrong, "finish": True}
-    assert client.patch(endpoint + "/journey", headers=headers, json=payload).status_code == 422
-    payload["activity_answers"] = answers
+    failed = client.patch(endpoint + "/journey", headers=headers, json=payload)
+    assert failed.status_code == 200 and failed.json()[0]["progress"]["score"] == 66.7
+    assert not failed.json()[0]["progress"]["published"]
+    retried = client.patch(endpoint + "/journey", headers=headers, json={"version": failed.json()[0]["version"], "retry": True})
+    assert retried.status_code == 200
+    payload.update(version=retried.json()[0]["version"], activity_answers=answers)
     response = client.patch(endpoint + "/journey", headers=headers, json=payload)
     assert response.status_code == 200, response.text
     assert response.json()[0]["progress"]["published"]

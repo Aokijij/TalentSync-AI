@@ -1,3 +1,4 @@
+import { formatLearningHours } from "../utils/learningPresentation.js";
 import { useEffect, useState } from "react";
 import { Download, ExternalLink, Library } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
@@ -48,7 +49,7 @@ export function LearnCatalogImport({ onImported }) {
         <div className="mt-3 max-h-96 divide-y divide-[var(--line)] overflow-y-auto">{preview.resources.map((row) => <div className="flex items-start gap-3 py-4" key={row.source_id}>
           <input className="mt-1" type="checkbox" aria-label={`Seleccionar ${row.content.title}`} disabled={busy} checked={selected.includes(row.source_id)} onChange={(event) => setSelected(event.target.checked ? [...selected, row.source_id] : selected.filter((id) => id !== row.source_id))} />
           <div className="min-w-0"><a className="inline-flex items-center gap-2 font-bold text-[var(--accent)]" href={row.content.url} target="_blank" rel="noreferrer">{row.content.title}<ExternalLink size={14} className="shrink-0" /></a>
-          <p className="mt-1 text-xs text-[var(--muted)]">{Math.round(row.content.hours * 60)} min · Gratuito · {row.source.locale}</p><p className="mt-2 text-sm leading-6 text-[var(--muted)]">{row.content.instructions}</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">{formatLearningHours(row.content.hours)} h · Gratuito · {row.source.locale}</p><p className="mt-2 text-sm leading-6 text-[var(--muted)]">{row.content.instructions}</p>
           <p className="mt-2 text-xs">Etiquetas a revisar: {row.content.skills.join(", ")}</p></div>
         </div>)}</div>
         <div className="mt-4 flex flex-wrap items-center gap-3"><button className="button-primary" disabled={busy || !selected.length} onClick={importDrafts}><Download size={16} />Importar {selected.length || "selección"} como borrador</button>{preview.next_cursor && <button className="button-secondary" disabled={busy} onClick={() => consult(preview.next_cursor)}>Siguiente página</button>}</div>

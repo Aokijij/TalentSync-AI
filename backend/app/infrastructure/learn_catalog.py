@@ -1,5 +1,6 @@
 """Authenticated Learn Platform metadata; explicit, bounded admin previews only."""
 import copy
+import html
 import re
 import secrets
 import threading
@@ -83,9 +84,20 @@ class LearnCatalog:
         skills = [product["name"] or product["id"] for product in row.get("products", [])][:20]
         if not skills:
             raise ValueError("no product tags")
-        content = ResourceContent(title=row["title"], provider="Microsoft Learn", url=row["url"],
-            instructions=row["summary"], skills=skills, hours=row["durationInMinutes"] / 60,
-            category="technology", kind="course", cost="free", active=False).model_dump()
+        def plain(value):
+            return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", str(value or ""))).split())
+        levels = [item.get("id", "") if isinstance(item, dict) else item for item in row.get("levels", [])]
+        language = str(row.get("locale", "")).split("-")[0].lower()
+        syllabus = [plain(item.get("title"))[:180] for item in row.get("units", []) if isinstance(item, dict) and item.get("title")][:12]
+        content = ResourceContent(title=plain(row["title"]), provider="Microsoft Learn", url=row["url"],
+            instructions=plain(row["summary"]), skills=skills, hours=row["durationInMinutes"] / 60,
+            category="technology", kind="course", cost="free", active=False,
+            details={"level": next((level for level in levels if level in {"beginner", "intermediate", "advanced"}), "any"),
+                     "languages": [language] if len(language) == 2 else [], "syllabus": syllabus,
+                     "prerequisites": plain(row.get("prerequisites"))[:500] or "Consulta los conocimientos previos del módulo en Microsoft Learn.",
+                     "access_notes": "Contenido formativo gratuito de Microsoft Learn. Los ejercicios pueden requerir una cuenta, licencias o servicios adicionales; revisa sus condiciones antes de activarlos.",
+                     "certificate_cost": "none", "certificate_notes": "Completar este módulo o ruta no equivale por sí solo a obtener una certificación profesional de Microsoft.",
+                     "duration_notes": "Duración estimada informada por Microsoft Learn. La práctica adicional puede requerir más tiempo."}).model_dump()
         return {"source_id": uid, "content": content,
                 "source": {"provider": "microsoft_learn", "id": uid, "updated_at": str(row.get("updatedAt", ""))[:100],
                            "locale": str(row.get("locale", ""))[:20], "api_version": VERSION}}
