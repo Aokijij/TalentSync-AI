@@ -1,4 +1,4 @@
-import re
+import unicodedata
 from datetime import datetime
 
 from app.application.errors import UseCaseError
@@ -13,30 +13,15 @@ from app.application.use_cases.matching import (
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Notification, Recommendation, User
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.experience_dates import experience_months
 from app.domain.services.match_explanations import requirements_for
 from app.domain.services.skills import skill_gap
+from app.domain.services.work_preferences import location_fit
 
 
 def profile_experience(profile) -> tuple[float | None, str | None]:
-    total_years = 0
-    roles: list[str] = []
-    for item in profile.experiences or []:
-        start_match = re.search("\\d{4}", str(item.get("start_year", "")))
-        end_value = str(item.get("end_year", ""))
-        end_match = re.search("\\d{4}", end_value)
-        if item.get("role"):
-            roles.append(str(item["role"]))
-        if not start_match:
-            continue
-        start = int(start_match.group())
-        end = (
-            int(end_match.group())
-            if end_match
-            else datetime.utcnow().year
-            if end_value.lower() in {"presente", "actualidad", "actual", ""}
-            else start
-        )
-        total_years += max(0, end - start)
+    total_years = round(experience_months(profile.experiences) / 12, 2)
+    roles = [str(item["role"]) for item in profile.experiences or [] if item.get("role")]
     summary = ", ".join(roles[:2]) or profile.experience
     return (float(total_years) if total_years else None, summary)
 
@@ -66,6 +51,9 @@ def ranked_candidates(
     applied_ids = {user_id for (user_id,) in db.applications.candidate_ids(job.id)}
     ranked = []
     for user, percentage in rank_candidates_for_job(db, job, nlp=nlp):
+        professional_percentage = percentage
+        fit = location_fit(user.profile, job)
+        percentage = round(percentage * fit["factor"], 2)
         has_applied = user.id in applied_ids
         application = (
             db.applications.find_for_user_job(user.id, job.id)
@@ -91,6 +79,9 @@ def ranked_candidates(
                 related_skills=related,
                 validated_foundations=validated,
                 profession=user.profile.profession,
+                professional_match_percentage=professional_percentage,
+                location_fit=fit,
+                experience_months=experience_months(user.profile.experiences),
                 match_percentage=(max(0.0, min(100.0, percentage + (application.screening_adjustment or 0))) if application else percentage),
                 skills=user.profile.skills or [],
                 languages=user.profile.languages or [],
@@ -119,6 +110,8 @@ def ranked_candidates(
                     else None
                 ),
             )
+        if audience in {"invite", "applied"} and candidate["match_percentage"] < minimum_match:
+            continue
         if query:
             searchable = " ".join(
                 [
@@ -126,8 +119,9 @@ def ranked_candidates(
                     candidate["profession"] or "",
                     " ".join(candidate["skills"]),
                 ]
-            ).lower()
-            if not all(term in searchable for term in query.lower().split()):
+            ).casefold()
+            fold = lambda text: "".join(char for char in unicodedata.normalize("NFKD", text.casefold()) if not unicodedata.combining(char))
+            if not all(term in fold(searchable) for term in fold(query).split()):
                 continue
         ranked.append(candidate)
     return sorted(
@@ -163,6 +157,8 @@ def invite_candidate(
             status_code=409, detail="El candidato ya se postuló a esta vacante"
         )
     recommendation = upsert_recommendation(db, candidate, job, nlp=nlp)
+    if not location_fit(candidate.profile, job)["invitation_allowed"]:
+        raise UseCaseError(status_code=422, detail="El candidato no acepta viajes ni traslado a otra ciudad. Respeta sus preferencias de movilidad.")
     if recommendation.match_percentage < 50:
         raise UseCaseError(
             status_code=422,

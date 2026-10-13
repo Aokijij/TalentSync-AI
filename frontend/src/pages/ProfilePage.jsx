@@ -1,3 +1,5 @@
+import { experiencePeriod } from "../utils/experienceDates.js";
+import { ExperienceFields, MobilityFields } from "../components/ExperienceFields.jsx";
 import { useLocation } from "react-router-dom";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
@@ -117,7 +119,7 @@ export function ProfilePage() {
   async function save() {
     setError("");
     try {
-      const { data } = await api.put("/profiles/me", { ...profile, name });
+      const { data } = await api.put("/profiles/me", { ...profile, name, mobility: { ...profile.mobility, commuting_cities: (profile.mobility?.commuting_cities || []).map((value) => value.trim()).filter(Boolean) } });
       setProfile(normalize(data));
       await refreshUser();
       setEditing(false);
@@ -165,7 +167,7 @@ export function ProfilePage() {
       // Export the visible draft, including the selected style and palette.
       if (editing) {
         if (!await confirm({ title: "Guardar y exportar", description: "Se guardarán los cambios que ves, incluidos el estilo y el color, antes de generar el PDF.", confirmLabel: "Guardar y descargar" })) return;
-        const { data } = await api.put("/profiles/me", { ...profile, name });
+        const { data } = await api.put("/profiles/me", { ...profile, name, mobility: { ...profile.mobility, commuting_cities: (profile.mobility?.commuting_cities || []).map((value) => value.trim()).filter(Boolean) } });
         setProfile(normalize(data)); setEditing(false); await refreshUser();
       }
       const { data } = await api.get("/profiles/me/export", { responseType: "blob" });
@@ -580,7 +582,7 @@ export function ProfilePage() {
                   </p>
                 </div>
               )}
-            </Section></div>
+            <MobilityFields value={profile.mobility || {}} editing={editing} onChange={(value) => update("mobility", value)} /></Section></div>
             </aside>
       </div>
         </article>
@@ -601,6 +603,7 @@ function Section({ icon: Icon, title, children }) {
   );
 }
 function Items({ type, profile, editing, update, updateItem }) {
+  if (type === "experiences") return <ExperienceFields items={profile.experiences} editing={editing} onChange={(items) => update("experiences", items)} />;
   const fields =
     type === "experiences"
       ? ["role", "company", "start_year", "end_year", "description"]
@@ -836,8 +839,7 @@ function ResumePreview({ profile, name, email, photoVersion }) {
                       <p className="resume-item-company">{item.company}</p>
                     </div>
                     <p className="resume-item-date">
-                      {item.start_year}
-                      {item.end_year ? ` - ${item.end_year}` : ""}
+                      {experiencePeriod(item)}
                     </p>
                   </div>
                   {item.description ? (

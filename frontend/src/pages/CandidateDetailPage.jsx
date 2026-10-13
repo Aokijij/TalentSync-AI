@@ -1,3 +1,4 @@
+import { experiencePeriod } from "../utils/experienceDates.js";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -169,8 +170,7 @@ export function CandidateDetailPage() {
                   {item.role}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[var(--accent)]">
-                  {item.company ? `${item.company} · ` : ""}{item.start_year}
-                  {item.end_year ? ` - ${item.end_year}` : ""}
+                  {item.company ? `${item.company} · ` : ""}{experiencePeriod(item)}
                 </p>
                 {item.description && (
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">

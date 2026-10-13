@@ -95,7 +95,11 @@ def review_offer(job, peers=()):
     action = bool(re.search(r"\b(?:desarroll|registr|analiz|revis|gestion|coordin|atend|prepar|diseñ|implement|manten|verific|concil|organiz|control|document|program|supervis|apoy|resolv|oper|realiz|crea|constru)\w*", description.casefold()))
     context = bool(re.search(r"\b(?:equipo|resultado|entrega|cliente|reporte|informe|proyecto|proceso|venta|soporte|servicio|producto|registro|sistema)\w*", description.casefold()))
     critical = any(row["severity"] == "critical" for row in issues)
-    complete_missions = bool(missions) and all(len(row.get("outcome", "").strip()) >= 15 and len(row.get("measure", "").strip()) >= 10 for row in missions)
+    def meaningful(value, minimum, words):
+        return len(value.strip()) >= minimum and len(set(re.findall(r"\w+", value.casefold()))) >= words
+    complete_missions = bool(missions) and all(meaningful(row.get("outcome", ""), 15, 4) and meaningful(row.get("measure", ""), 10, 3) and 1 <= (row.get("days") or 0) <= 365 for row in missions)
+    schedule = d.get("schedule", "").strip().casefold()
+    schedule_ok = meaningful(schedule, 10, 3) and bool(re.search(r"lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|d[ií]as|seman|turnos", schedule)) and bool(re.search(r"\d|horario|diurn|nocturn|rotativ", schedule))
     response_days = getattr(job, "response_days", 0) or 0
     process_days = d.get("process_days") or 0
     if process_days and response_days > process_days:
@@ -111,11 +115,11 @@ def review_offer(job, peers=()):
     check("title", "Cargo específico", 0, 5 <= len(title) <= 180 and len(set(re.findall(r"\w+", title))) >= 2 and not re.search(r"\b(?:urgente|gana dinero)\b", title.casefold()), 0, "Usa un nombre específico de cargo, sin reclamos publicitarios.", True)
     check("salary", "Salario fijo o rango real", 10, range_ok, 0, "Publica un salario fijo mensual positivo en COP. El rango máximo es opcional.", True)
     check("contract_type", "Contrato definido", 7, d.get("contract_type"), 0, "Selecciona el tipo de contrato, separado de la dedicación.", True)
-    check("schedule", "Jornada y horario", 7, len(d.get("schedule", "").strip()) >= 10, 0, "Indica días, horario y condiciones de disponibilidad.", True)
+    check("schedule", "Jornada y horario", 7, schedule_ok, 0, "Completa Jornada y horario con días y horas o turnos. Ejemplo: lunes a viernes, 8:00 a 17:00, una hora de descanso. Para turnos, explica días, rotación y franjas.", True)
     check("location", "Modalidad y ubicación", 6, job.modality in {"remote", "hybrid", "onsite"} and bool((job.location or "").strip()), 0, "Indica la ciudad o el territorio permitido para trabajar de forma remota.", True)
-    check("description", "Responsabilidades concretas", 12, len(description) >= 100 and action and context, 1, "Explica acciones concretas, entregables y contexto de trabajo.", True)
+    check("description", "Responsabilidades concretas", 12, meaningful(description, 100, 10) and action and context, 1, "En Responsabilidades y contexto escribe qué hará, para quién y qué entregará. Ejemplo: conciliará facturas para preparar el cierre mensual con el equipo contable.", True)
     check("missions", "Resultados esperados y evaluación", 13, complete_missions, 1, "Define al menos un resultado, cómo se evaluará y en qué plazo.", True)
-    check("requirements", "Experiencia y nivel explícitos", 10, len(requirements) >= 60 and d.get("seniority") and d.get("experience_years") is not None, 2, "Indica nivel, experiencia y evidencia aceptada; admite proyectos cuando corresponda.", True)
+    check("requirements", "Experiencia y nivel explícitos", 10, meaningful(requirements, 60, 8) and d.get("seniority") and d.get("experience_years") is not None, 2, "Completa Nivel del cargo, Experiencia mínima y Conocimientos y evidencia aceptada. Se permite 0 años. Explica qué debe demostrar y si aceptas proyectos de formación.", True)
     check("skill_requirements", "Habilidades priorizadas", 10, 1 <= len(skills) <= 10 and any(row.get("essential") for row in skills), 2, "Define hasta diez habilidades y distingue esenciales de deseables.", True)
     check("process", "Entrevistas y duración estimada", 10, d.get("interview_count") is not None and process_days >= 1 and bool(getattr(job, "pipeline_stages", None)), 3, "Declara entrevistas, etapas y duración estimada del proceso.", True)
     check("response_days", "Compromiso de respuesta", 5, 1 <= response_days <= 14 and response_days <= process_days, 3, "Acuerda respuesta por avance de hasta catorce días y dentro del plazo total.", True)

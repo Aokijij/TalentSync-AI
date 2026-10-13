@@ -202,6 +202,10 @@ class Profile(Base):
     def photo_url(self) -> str | None:
         return f"/api/v1/profiles/{self.user_id}/photo" if self.photo_filename else None
 
+    @property
+    def mobility(self):
+        return (self.preferences or {}).get("mobility", {})
+
 
 class Company(Base):
     __tablename__ = "companies"

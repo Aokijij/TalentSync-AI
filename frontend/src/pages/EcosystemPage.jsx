@@ -3,7 +3,7 @@ import { IncidentCard } from "../components/IncidentCard.jsx";
 import { CompanyTrustDirectory } from "../components/CompanyTrustDirectory.jsx";
 import { TrustCard } from "../components/TrustCard.jsx";
 import { ShieldCheck, MessageSquare, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { SkillMarketTable } from "../components/SkillMarketTable.jsx";
 import { useEffect, useState } from "react";
 import { api, getApiErrorMessage } from "../api/client.js";
@@ -23,13 +23,15 @@ export function TrustPage() {
 }
 
 export function EcosystemPage() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("vista") === "incidencias" ? "incidencias" : "empresas";
   const [data, setData] = useState(null); const [directoryRefresh, setDirectoryRefresh] = useState(0); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   async function load() { const { data: result } = await api.get("/admin/ecosystem", { params: { include_companies: false } }); setData(result); setDirectoryRefresh((value) => value + 1); }
   useEffect(() => { load().catch((failure) => setError(getApiErrorMessage(failure))); }, []);
   async function act(action) { setBusy(true); setError(""); try { await action(); await load(); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }
-  return <div className="space-y-5"><PageHeader kicker="Administración" title="Salud del ecosistema" description="Observa procesos, revisa incidencias y comprueba cambios en el motor de compatibilidad." />{error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}{data && <><p className="surface-card p-4 text-sm">{data.notice}</p><SkillMarketTable data={data} />
+  return <div className="space-y-5"><PageHeader kicker="Administración" title="Salud del ecosistema" description="Consulta el comportamiento de las empresas o atiende solicitudes en una bandeja independiente." />{error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}<nav className="workspace-tabs" aria-label="Secciones del ecosistema"><button className={tab === "empresas" ? "active" : ""} aria-pressed={tab === "empresas"} onClick={() => setParams({ vista: "empresas" })}>Comportamiento de empresas</button><button className={tab === "incidencias" ? "active" : ""} aria-pressed={tab === "incidencias"} onClick={() => setParams({ vista: "incidencias" })}>Bandeja de incidencias</button></nav>{tab === "empresas" && data && <><CompanyTrustDirectory refresh={directoryRefresh} /><details className="surface-card p-5"><summary className="cursor-pointer font-bold">Oferta y demanda de habilidades</summary><div className="mt-4"><p className="text-sm text-[var(--muted)]">{data.notice}</p><SkillMarketTable data={data} /></div></details><details className="surface-card p-5"><summary className="cursor-pointer font-bold">Auditoría del motor de compatibilidad</summary><div className="mt-4">
     <section className="surface-card space-y-4 p-5"><h2 className="font-bold">Auditoría del motor</h2><button disabled={busy} className="button-primary" onClick={() => act(() => api.post("/admin/ecosystem/audit"))}>Ejecutar comprobación y guardar versión</button><p className="text-xs text-[var(--muted)]">Compara hasta 200 pares con metadatos de identidad alternativos. La auditoría por grupos demográficos requiere un conjunto de datos consentido y todavía no está disponible.</p>{data.audits.map((row) => <article key={row.id} className="space-y-2 border-t border-[var(--line)] pt-3"><h3 className="font-semibold">{row.version} · {new Date(row.created_at + "Z").toLocaleString("es-CO")}</h3><p className="text-sm">{row.metrics.pair_count} pares · cambios al variar identidad: {row.metrics.identity_invariance_violations}</p><p className="text-sm">Cambio de distribución (PSI): {row.metrics.distribution_psi ?? "Sin muestra previa suficiente"}{row.metrics.distribution_review_suggested && " · Conviene revisar el cambio"}</p><p className="text-xs text-[var(--muted)]">{row.metrics.notice}</p></article>)}</section>
-    <CompanyTrustDirectory refresh={directoryRefresh} /></>}
-    <IncidentReviewQueue onReviewed={() => load().catch((failure) => setError(getApiErrorMessage(failure)))} />
+    </div></details></>}
+    {tab === "incidencias" && <IncidentReviewQueue onReviewed={() => load().catch((failure) => setError(getApiErrorMessage(failure)))} />}
   </div>;
 }

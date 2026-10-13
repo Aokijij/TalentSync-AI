@@ -1,8 +1,23 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.api.schemas.language import LanguageLevel, unique_languages
+from app.domain.services.experience_dates import validate_experiences
+
+
+class Mobility(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    willing_to_relocate: bool | None = None
+    willing_to_travel: bool | None = None
+    commuting_cities: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("commuting_cities")
+    @classmethod
+    def cities(cls, values):
+        if any(not value.strip() or len(value.strip()) > 120 for value in values):
+            raise ValueError("Indica ciudades válidas de hasta 120 caracteres")
+        return list(dict.fromkeys(value.strip() for value in values))
 
 
 class ProfileBase(BaseModel):
@@ -22,6 +37,8 @@ class ProfileBase(BaseModel):
     phone: str | None = None
     # Older profiles can have NULL in these columns until they are edited.
     experiences: list[dict] | None = Field(default_factory=list)
+    _experience_dates = field_validator("experiences")(validate_experiences)
+    mobility: Mobility = Field(default_factory=Mobility)
     educations: list[dict] | None = Field(default_factory=list)
     certifications: list[dict] | None = Field(default_factory=list)
     resume_style: str = "classic"

@@ -1,3 +1,35 @@
+import unicodedata
+
+
+def city_key(value):
+    value = str(value or "").split(",")[0].strip().casefold()
+    value = "".join(c for c in unicodedata.normalize("NFKD", value) if not unicodedata.combining(c))
+    return "bogota" if value in {"bogota d.c.", "bogota dc", "bogota d.c"} else value
+
+
+def location_fit(profile, job):
+    mobility = (getattr(profile, "preferences", None) or {}).get("mobility", {})
+    def result(status, message, factor=1):
+        return {"status": status, "message": message, "factor": factor, "invitation_allowed": status != "conflict"}
+    if job.modality == "remote":
+        return result("remote", "Sin asistencia presencial; confirma el territorio permitido por la oferta.")
+    if job.modality not in {"onsite", "hybrid"} or not job.location or not getattr(profile, "location", None):
+        return result("unknown", "Falta confirmar la ciudad o la disponibilidad para asistir.")
+    same = city_key(profile.location) == city_key(job.location)
+    departments = (getattr(profile, "department", None), getattr(job, "department", None))
+    if same and all(departments) and city_key(departments[0]) != city_key(departments[1]):
+        same = False
+    if same or city_key(job.location) in {city_key(value) for value in mobility.get("commuting_cities", [])}:
+        return result("local", "Puede asistir en la ciudad de la vacante según su perfil.")
+    if mobility.get("willing_to_relocate") is True:
+        return result("relocation", "Está dispuesto a cambiar de ciudad; acuerda las condiciones del traslado.")
+    if mobility.get("willing_to_travel") is True:
+        return result("confirm", "Puede viajar, pero esto no confirma asistencia habitual. Consulta su disponibilidad.")
+    if mobility.get("willing_to_relocate") is False and mobility.get("willing_to_travel") is False:
+        return result("conflict", "Otra ciudad: no acepta traslado ni viajes. Ajuste de disponibilidad: −20% relativo al índice profesional.", .8)
+    return result("unknown", "Otra ciudad: falta confirmar traslado, viajes o asistencia habitual.")
+
+
 def effective_preferences(profile):
     """Profile fields are authoritative; preferences only stores requirement flags."""
     flags = getattr(profile, "preferences", None) or {}
@@ -7,6 +39,7 @@ def effective_preferences(profile):
         "minimum_salary": getattr(profile, "desired_salary", None),
         "modalities": [modality] if modality else [],
         "locations": [location] if location else [],
+        "mobility": flags.get("mobility", {}),
         **{key: bool(flags.get(key, False)) for key in (
             "salary_required", "modality_required", "location_required"
         )},

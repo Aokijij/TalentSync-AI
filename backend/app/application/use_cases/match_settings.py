@@ -20,6 +20,7 @@ def preferences(db, user, payload=None):
         if "locations" in payload:
             user.profile.location = next(iter(payload["locations"]), None)
         user.profile.preferences = {
+            **(user.profile.preferences or {}),
             **{key: bool((user.profile.preferences or {}).get(key, False)) for key in (
                 "salary_required", "modality_required", "location_required"
             )},

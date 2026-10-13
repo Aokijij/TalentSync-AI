@@ -327,7 +327,7 @@ export function CompanyApplicationsPage() {
         </p>
       ) : null}
 
-      <section className="surface-card flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
+      <section className="surface-card board-toolbar">
         <div className="flex min-w-0 items-center gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--radius-md)] bg-[var(--accent)]/10 text-[var(--accent)]">
             <BriefcaseBusiness size={20} />
@@ -345,7 +345,7 @@ export function CompanyApplicationsPage() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="board-actions">
           {Object.keys(pendingChanges).length ? (
             <button
               type="button"

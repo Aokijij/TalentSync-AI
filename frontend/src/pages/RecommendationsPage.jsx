@@ -179,7 +179,7 @@ export function RecommendationsPage() {
 
       {!loading && !error && (
         <section className="surface-card">
-          <div className="flex flex-col gap-3 border-b border-[var(--line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="recommendation-list-heading">
             <div className="flex items-center gap-3">
               <BriefcaseBusiness className="text-[var(--success)]" size={20} />
               <div>
@@ -191,19 +191,19 @@ export function RecommendationsPage() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">Ordenar<select className="field-control input-sm" aria-label="Ordenar recomendaciones" value={rankingMode} onChange={(event) => { setRankingMode(event.target.value); setPage(1); }}><option value="balanced">Recomendadas</option><option value="compatibility">Mayor compatibilidad</option></select></label>
-              <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">
+            <div className="recommendation-filterbar">
+              <label className="filter-field">Ordenar<select className="field-control" aria-label="Ordenar recomendaciones" value={rankingMode} onChange={(event) => { setRankingMode(event.target.value); setPage(1); }}><option value="balanced">Recomendadas</option><option value="compatibility">Mayor compatibilidad</option></select></label>
+              <label className="filter-field">
                 Origen
-                <select className="field-control input-sm w-36" value={sourceFilter} onChange={(event) => changeSource(event.target.value)}>
+                <select className="field-control" value={sourceFilter} onChange={(event) => changeSource(event.target.value)}>
                   <option value="all">Todas</option>
                   <option value="internal">TalentSync</option>
                   <option value="external">Externas</option>
                 </select>
               </label>
-              <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">
+              <label className="filter-field">
                 Recomendar desde
-                <select className="field-control input-sm w-24" value={minCompatibility} onChange={(event) => changeMinimum(event.target.value)}>
+                <select className="field-control" value={minCompatibility} onChange={(event) => changeMinimum(event.target.value)}>
                   {[0, 40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}
                 </select>
               </label>

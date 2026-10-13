@@ -97,7 +97,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
                 "skills": profile.skills or [], "languages": profile.languages or [],
                 "availability": profile.availability, "preferred_modality": profile.preferred_modality,
                 "desired_salary": profile.desired_salary,
-                "experiences": [{key: row.get(key) for key in ("role", "start_year", "end_year")} for row in profile.experiences or []],
+                "experiences": [{key: row.get(key) for key in ("role", "start_year", "end_year", "start_date", "end_date", "is_current")} for row in profile.experiences or []],
                 "educations": [{key: row.get(key) for key in ("degree", "start_year", "end_year")} for row in profile.educations or []],
             }
     if current_user.role == UserRole.COMPANY and (
@@ -120,6 +120,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
         "education": profile.education,
         "location": profile.location,
         "department": profile.department,
+        "mobility": (profile.preferences or {}).get("mobility", {}),
         "availability": profile.availability,
         "preferred_modality": profile.preferred_modality,
         "preferred_sector": profile.preferred_sector,
@@ -158,6 +159,8 @@ def update_my_profile(
     profile.desired_salary = payload["desired_salary"]
     profile.phone = payload["phone"]
     profile.experiences = payload["experiences"] or []
+    if "mobility" in payload:
+        profile.preferences = {**(profile.preferences or {}), "mobility": payload["mobility"]}
     profile.educations = payload["educations"] or []
     profile.certifications = payload["certifications"] or []
     profile.resume_style = payload["resume_style"]

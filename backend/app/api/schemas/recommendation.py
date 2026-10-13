@@ -24,6 +24,9 @@ class RecommendationResponse(BaseModel):
 
 
 class RankedCandidate(BaseModel):
+    professional_match_percentage: float | None = None
+    location_fit: dict = Field(default_factory=dict)
+    experience_months: int = 0
     identity_hidden: bool = False
     related_skills: list[dict] = Field(default_factory=list)
     validated_foundations: list[dict] = Field(default_factory=list)

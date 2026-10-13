@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BriefcaseBusiness,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
@@ -772,40 +773,14 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           ))}
         </div>
       </div>
-      <footer className="flex flex-wrap items-center gap-2 border-t border-[var(--line)] bg-[var(--surface-subtle)] p-4">
-        <Link
-          className="button-primary button-sm"
-          to={`/empresa/vacantes/${job.id}/candidatos`}
-        >
-          <UsersRound size={15} />
-          Ver candidatos ({job.applications_count ?? 0})
-        </Link>
-        <button
-          type="button"
-          className="button-secondary button-sm"
-          onClick={onEdit}
-        >
-          <Edit3 size={15} />
-          Editar
-        </button>
-        <Link className="button-secondary button-sm" to={`/empresa/calidad?vacante=${job.id}`}>Revisar calidad</Link>
-        {(
-          <button
-            type="button"
-            className="button-secondary button-sm"
-            onClick={onToggle}
-          >
-            {job.status === "active" ? <PauseCircle size={15} /> : <PlayCircle size={15} />}
-            {job.status === "active" ? "Pausar" : job.status === "filled" ? "Reabrir" : "Activar"}
-          </button>
-        )}
-        <button
-          type="button"
-          className="button-ghost button-sm ml-auto text-[var(--error)]"
-          onClick={onDelete}
-        >
-          <Trash2 size={15} />
-        </button>
+      <footer className="vacancy-actions">
+        <Link className="button-primary button-sm" to={`/empresa/vacantes/${job.id}/candidatos`}><UsersRound size={15} />Candidatos ({job.applications_count ?? 0})</Link>
+        <button type="button" className="button-secondary button-sm" onClick={onEdit}><Edit3 size={15} />Editar</button>
+        <details className="vacancy-menu"><summary aria-label={`Más acciones para ${job.title}`}>Más <ChevronDown size={14} /></summary><div>
+          <Link to={`/empresa/calidad?vacante=${job.id}`}>Revisar calidad</Link>
+          <button type="button" onClick={(event) => { event.currentTarget.closest("details").removeAttribute("open"); onToggle(); }}>{job.status === "active" ? <PauseCircle size={15} /> : <PlayCircle size={15} />}{job.status === "active" ? "Pausar vacante" : job.status === "filled" ? "Reabrir vacante" : "Activar vacante"}</button>
+          <button type="button" className="text-[var(--error)]" onClick={(event) => { event.currentTarget.closest("details").removeAttribute("open"); onDelete(); }}><Trash2 size={15} />Eliminar vacante</button>
+        </div></details>
       </footer>
     </article>
   );

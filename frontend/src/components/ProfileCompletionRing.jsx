@@ -25,7 +25,7 @@ const checks = [
   {
     label: "2 experiencias completas",
     weight: 18,
-    test: (profile) => (profile?.experiences || []).filter((item) => item.role?.trim() && item.company?.trim() && item.start_year && (item.description?.trim().length ?? 0) >= 50).length >= 2,
+    test: (profile) => (profile?.experiences || []).filter((item) => item.role?.trim() && item.company?.trim() && (item.start_date || item.start_year) && (item.description?.trim().length ?? 0) >= 50).length >= 2,
   },
   {
     label: "Formación académica completa",

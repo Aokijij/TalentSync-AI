@@ -2,7 +2,7 @@ import hashlib
 import json
 
 from app.domain.services.skills import skill_gap
-from app.domain.services.work_preferences import effective_preferences
+from app.domain.services.work_preferences import effective_preferences, location_fit
 
 MATCH_VERSION = "transparent-match-v4"
 
@@ -35,8 +35,8 @@ def preference_alignment(profile, job):
     if prefs.get("modalities"):
         checks.append({"label": "Modalidad", "matches": job.modality in prefs["modalities"], "required": prefs.get("modality_required", False)})
     if prefs.get("locations") and job.modality != "remote":
-        locations = {str(value).strip().casefold() for value in prefs["locations"]}
-        checks.append({"label": "Ubicación", "matches": None if not job.location else job.location.strip().casefold() in locations, "required": prefs.get("location_required", False)})
+        fit = location_fit(profile, job)
+        checks.append({"label": "Ubicación", "matches": True if fit["status"] in {"local", "relocation"} else False if fit["status"] == "conflict" or job.location and not prefs.get("mobility") else None, "required": prefs.get("location_required", False)})
     known = [row for row in checks if row["matches"] is not None]
     score = round(sum(row["matches"] for row in known) / len(known) * 100, 2) if known else None
     return {"score": score, "checks": checks, "unmet_conditions": [row["label"] for row in checks if row["required"] and row["matches"] is False], "unknown_conditions": [row["label"] for row in checks if row["matches"] is None]}

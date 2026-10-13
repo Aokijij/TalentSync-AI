@@ -178,9 +178,10 @@ def rank_candidates_for_job(
     ranked: list[tuple[User, float]] = []
     for user in users:
         if user.profile:
-            recommendation = upsert_recommendation(
-                db, user, job, nlp=nlp, commit_result=False
-            )
+            recommendation = db.recommendations.find_for_user_job(user.id, job.id)
+            if (recommendation is None or recommendation.created_at < datetime.utcnow() - timedelta(minutes=10)
+                    or (recommendation.match_details or {}).get("input_version") != input_version(user.profile, job, getattr(nlp, "match_method", "lexical-hashing-v1"))):
+                recommendation = upsert_recommendation(db, user, job, nlp=nlp, commit_result=False)
             percentage = recommendation.match_percentage
             ranked.append((user, percentage))
     db.commit()

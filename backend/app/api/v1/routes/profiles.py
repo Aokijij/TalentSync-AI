@@ -50,7 +50,7 @@ def update_my_profile(
     nlp: TextAnalysis = Depends(get_text_analysis),
 ) -> Profile:
     return use_cases.update_my_profile(
-        payload=payload.model_dump(), current_user=current_user, db=db, nlp=nlp
+        payload=payload.model_dump(exclude={"mobility"} if "mobility" not in payload.model_fields_set else set()), current_user=current_user, db=db, nlp=nlp
     )
 
 
