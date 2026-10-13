@@ -8,6 +8,7 @@ import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import { FeedbackProvider } from "./contexts/FeedbackContext.jsx";
 import "./styles/index.css";
 import "./styles/review-refinements.css";
+import "./styles/catalog-organization.css";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>

@@ -3,6 +3,8 @@
 import re
 import unicodedata
 
+from app.domain.services.profile_status import is_ongoing
+
 PROFESSION_GROUPS = {
     "software": ("ingenieria de sistemas", "ingenieria informatica", "ingenieria de software", "ciencias de la computacion", "desarrollo de software", "tecnologia en sistemas", "analisis y desarrollo de sistemas"),
     "data": ("ciencia de datos", "analitica de datos", "estadistica", "matematicas", "inteligencia de negocios", "business intelligence", "ingenieria de datos"),
@@ -64,7 +66,8 @@ def education_match(profile, job):
     field_score = 100.0 if not fields else min(100.0, sum(any(fields_are_related(entry, field) for entry in entries) for field in fields) / len(fields) * 100)
     level_score = 100.0
     if required_level:
-        best = max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in entries), default=0)
+        completed = [str(item.get("degree", "")) for item in (getattr(profile, "educations", None) or []) if not is_ongoing(item)] if getattr(profile, "educations", None) else entries
+        best = max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in completed), default=0)
         level_score = min(100.0, best / LEVEL_RANK[required_level] * 100)
     return round(field_score * .7 + level_score * .3, 2)
 

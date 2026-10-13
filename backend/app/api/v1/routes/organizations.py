@@ -6,6 +6,7 @@ from app.api.deps import get_unit_of_work, require_roles
 from app.api.schemas.organization import (
     AcceptInvitation,
     AccessReviewRequest,
+    InterviewAssignments,
     TeamInvitation,
     TeamUpdate,
     VerificationReview,
@@ -91,6 +92,16 @@ def update(member_id: int, payload: TeamUpdate, user=Depends(company_user), db=D
 @router.get("/organization/assignments")
 def assignments(user=Depends(company_user), db=Depends(get_unit_of_work)):
     return cases.assignments(db, user)
+
+
+@router.get("/organization/interview-team")
+def interview_team(user=Depends(company_user), db=Depends(get_unit_of_work)):
+    return cases.interview_team(db, user)
+
+
+@router.patch("/organization/interview-team/{member_id}")
+def assign_interviews(member_id: int, payload: InterviewAssignments, user=Depends(company_user), db=Depends(get_unit_of_work)):
+    return cases.assign_interviews(db, user, member_id, payload.model_dump())
 
 
 @router.get("/admin/verifications")

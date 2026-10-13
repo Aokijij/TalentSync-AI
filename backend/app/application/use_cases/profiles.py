@@ -98,7 +98,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
                 "availability": profile.availability, "preferred_modality": profile.preferred_modality,
                 "desired_salary": profile.desired_salary,
                 "experiences": [{key: row.get(key) for key in ("role", "start_year", "end_year", "start_date", "end_date", "is_current")} for row in profile.experiences or []],
-                "educations": [{key: row.get(key) for key in ("degree", "start_year", "end_year")} for row in profile.educations or []],
+                "educations": [{key: row.get(key) for key in ("degree", "start_year", "end_year", "is_current")} for row in profile.educations or []],
             }
     if current_user.role == UserRole.COMPANY and (
         not company_can_view_candidate(db, current_user, user_id)

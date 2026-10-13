@@ -58,7 +58,9 @@ La base actual ya contiene esos escenarios; no necesitas volver a generarlos par
 2. Confirma tu ciudad y departamento.
 3. En **Preferencias laborales → Ciudad y movilidad**, indica si aceptas trasladarte y si puedes viajar. Son decisiones diferentes.
 4. Añade otras ciudades donde puedes asistir habitualmente, separadas por comas. Esto no representa una preferencia de viajes ocasionales.
-5. En cada experiencia, abre el calendario, escribe el año y elige un mes de la cuadrícula para inicio y finalización, o marca **Trabajo actualmente aquí**. Guarda el perfil.
+5. Solo marca un trabajo como actual. Al seleccionar otro, revisa y completa la finalización del anterior. En cada experiencia, abre el calendario, escribe el año y elige un mes de la cuadrícula para inicio y finalización, o marca **Trabajo actualmente aquí**. Guarda el perfil.
+
+En Formación académica, marca **Estudio actualmente aquí** para una carrera en curso. Se mostrará **En curso** en el perfil y la hoja de vida, y no se tomará como un nivel académico terminado.
 
 Las fechas antiguas que solo tienen año siguen disponibles: no se inventaron meses. Las fechas futuras o invertidas se rechazan. Un final vacío no cuenta como empleo actual. Los meses de cargos simultáneos no se suman dos veces al calcular la experiencia total.
 
@@ -90,14 +92,16 @@ En **Mejora la redacción de tu oferta**, pulsa Preparar mejoras. Revisa las pes
 5. Cuando hay otra ciudad y el candidato rechaza tanto viajes como traslado, el índice mostrado a la empresa recibe un ajuste relativo de −20%, explicado junto al índice profesional, y se bloquea la invitación. Es una regla local de disponibilidad, no una probabilidad de contratación. Las preferencias no modifican el índice profesional del candidato.
 6. En **Organización y equipo → Procesos asignados**, filtra por vacante, etapa o candidato. La lista muestra ocho procesos por página; Abrir proceso conserva el acceso a entrevista y evaluación interna según el rol.
 
+El propietario y el reclutador pueden abrir **Asignar entrevistas**, elegir un entrevistador activo y seleccionar sus vacantes. Guardar reemplaza las asignaciones de ese entrevistador; desmarcar una vacante retira el acceso. Esta acción no cambia roles ni permite invitar o retirar integrantes. Cuando la empresa ya está verificada, Verificada pasa al último apartado y la pantalla abre Equipo o Procesos.
+
 ## 8. Administración y catálogo educativo
 
 En **Salud del ecosistema** hay dos apartados: Comportamiento de empresas y Bandeja de incidencias. El mapa de habilidades y la auditoría están desplegables dentro del primero; las incidencias se atienden en su propia bandeja.
 
 En **Catálogo educativo**:
 
-1. Biblioteca permite buscar, filtrar, editar y añadir recursos.
-2. Fuentes y conectores permite elegir una fuente; se muestra un conector a la vez.
+1. Biblioteca muestra una tabla administrativa con recursos publicados, sin publicar y base de plataforma. Permite buscar por título/habilidad, filtrar por proveedor, editar y abrir la fuente oficial.
+2. Fuentes y conectores organiza cada proveedor en su propio apartado: Selección editorial, SENA, Sapiencia, YouTube y Microsoft. Muestra un conector a la vez y los pasos para activarlo.
 3. Biblioteca oficial contiene la selección editorial de 65 recursos. SENA y Sapiencia consultan fuentes públicas; YouTube y Microsoft requieren su configuración externa.
 4. Importa primero como borrador, comprueba contenido, habilidades, acceso y certificado, y publica la selección revisada.
 
@@ -123,6 +127,8 @@ CODEWARS_ENABLED=true
 Reinicia el backend. El refresco de SENA/Sapiencia revisa fichas ya guardadas mientras el servidor está abierto; no publica cursos automáticamente. Desde el catálogo administrativo puedes buscar e incorporar otros programas del SENA.
 
 GitHub y Codewars se consultan desde **Mi perfil → Evidencias → Otras fuentes de evidencia** o el apartado de programación, según el perfil. Son opcionales. Solo consultan información pública y no verifican por sí mismos la autoría ni el dominio de una habilidad.
+
+La guía detallada para comenzar las dos integraciones está en [ACTIVAR_YOUTUBE_MICROSOFT.md](ACTIVAR_YOUTUBE_MICROSOFT.md).
 
 ## 10. YouTube: preparado, desactivado por ahora
 

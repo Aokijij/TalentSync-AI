@@ -1,23 +1,18 @@
+import { AdminLearningLibrary } from "../components/AdminLearningLibrary.jsx";
+import { LearningConnectors } from "../components/LearningConnectors.jsx";
 import { ArrowRight, ArrowLeft } from "lucide-react";
-import { LearningFilters } from "../components/LearningFilters.jsx";
-import { filterResources } from "../utils/learningFilters.js";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { useEffect, useState } from "react";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
-import { LearningResourceCard } from "../components/LearningResourceCard.jsx";
-import { LearnCatalogImport } from "../components/LearnCatalogImport.jsx";
-import { CuratedCatalogImport } from "../components/CuratedCatalogImport.jsx";
-import { PublicLearningSources } from "../components/PublicLearningSources.jsx";
-import { YouTubeLearningImport } from "../components/YouTubeLearningImport.jsx";
 import { certificateCosts, courseModalities, enrollmentStatuses, learningLevels } from "../utils/learningPresentation.js";
 
 export function LearningCatalogPage() {
   const { confirm } = useFeedback();
   const [step, setStep] = useState(0), [preview, setPreview] = useState({});
   function advance(event) { event.preventDefault(); const form = event.currentTarget.closest("form"); const fields = [...form.querySelectorAll(`fieldset[data-step="${step}"] input, fieldset[data-step="${step}"] textarea, fieldset[data-step="${step}"] select`)]; if (fields.some((field) => !field.reportValidity())) return; setPreview(Object.fromEntries(new FormData(form))); setStep(step + 1); }
-  const [view, setView] = useState("library"), [source, setSource] = useState("curated");
-  const [filters, setFilters] = useState({}), [formOpen, setFormOpen] = useState(false), [page, setPage] = useState(1);
+  const [view, setView] = useState("library");
+  const [formOpen, setFormOpen] = useState(false);
   const [rows, setRows] = useState([]);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
@@ -58,18 +53,12 @@ export function LearningCatalogPage() {
       form.reset(); return data;
     });
   }
-  return <div className="space-y-5"><PageHeader kicker="Administración" title="Catálogo educativo" description="Asocia cursos y talleres a habilidades concretas. Las recomendaciones se ordenan por utilidad y tiempo, sin ponderar comisiones ni patrocinios." />
+  return <div className="space-y-5"><PageHeader kicker="Administración" title="Catálogo educativo" description="Gestiona recursos, revisa borradores y controla qué formación se publica para los candidatos." />
     {error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}{message && <p role="status" className="surface-card p-4">{message}</p>}
     <nav className="workspace-tabs" aria-label="Secciones del catálogo"><button className={view === "library" ? "active" : ""} aria-pressed={view === "library"} onClick={() => setView("library")}>Biblioteca <span>{listedRows.length}</span></button><button className={view === "sources" ? "active" : ""} aria-pressed={view === "sources"} onClick={() => setView("sources")}>Fuentes y conectores</button></nav>
-    {view === "sources" && <section className="catalog-sources"><div className="section-heading"><div><h2 className="text-xl font-bold">Amplía tu biblioteca</h2><p className="mt-1 text-sm text-[var(--muted)]">Elige una fuente, revisa sus condiciones y publica solo la selección que necesites.</p></div></div>
-    <div className="source-switcher" role="group" aria-label="Fuente educativa">{[["curated", "Biblioteca oficial"], ["public", "SENA y Sapiencia"], ["youtube", "YouTube"], ["microsoft", "Microsoft Learn"]].map(([key, label]) => <button key={key} aria-pressed={source === key} className={source === key ? "active" : ""} onClick={() => setSource(key)}>{label}</button>)}</div>
-    {source === "curated" && <CuratedCatalogImport onImported={setRows} />}
-    {source === "public" && <PublicLearningSources onImported={setRows} />}
-    {source === "youtube" && <YouTubeLearningImport onImported={setRows} />}
-    {source === "microsoft" && <details open className="surface-card p-5"><summary className="cursor-pointer font-bold">Conector de Microsoft Learn · API con acceso autorizado</summary><div className="mt-4"><LearnCatalogImport onImported={setRows} /></div></details>}
-    </section>}
+    {view === "sources" && <LearningConnectors onImported={setRows} />}
     {view === "library" && <>
-    <div className="surface-card flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">Biblioteca de aprendizaje</h2><p className="mt-1 text-sm text-[var(--muted)]">{rows.filter((row) => !row.url).length} prácticas de TalentSync · {listedRows.filter((row) => row.url).length} recursos externos</p></div><button className="button-primary" onClick={() => { setEditing(null); setStep(0); setFormOpen(!formOpen); }}>{formOpen ? "Cerrar formulario" : "Añadir formación +"}</button></div>
+    <div className="surface-card flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">Gestión de la biblioteca</h2><p className="mt-1 text-sm text-[var(--muted)]">{rows.filter((row) => !row.url).length} prácticas de TalentSync · {listedRows.filter((row) => row.url).length} recursos externos</p></div><button className="button-primary" onClick={() => { setEditing(null); setStep(0); setFormOpen(!formOpen); }}>{formOpen ? "Cerrar formulario" : "Añadir formación +"}</button></div>
     {(formOpen || editing) && <form id="catalog-editor" key={editing?.id || "new"} onSubmit={save} className="surface-card grid gap-4 p-5 sm:grid-cols-2">
       <div className="sm:col-span-2"><p className="section-kicker">Paso {step + 1} de 3</p><h2 className="mt-2 text-xl font-bold">{["Identifica la formación", "Conecta con las habilidades", "Revisa antes de publicar"][step]}</h2><progress className="mt-4 w-full" value={step + 1} max={3} aria-label="Progreso del recurso" /></div>
       <fieldset data-step="0" hidden={step !== 0} className="catalog-fields sm:col-span-2"><legend className="sr-only">Identificación del recurso</legend>
@@ -89,7 +78,7 @@ export function LearningCatalogPage() {
       </fieldset><div className="flex flex-wrap gap-3 sm:col-span-2">{step > 0 && <button className="button-secondary" type="button" onClick={() => setStep(step - 1)}><ArrowLeft size={16} />Anterior</button>}{step < 2 ? <button className="button-primary" type="button" onClick={advance}>Continuar<ArrowRight size={16} /></button> : <button className="button-primary" disabled={busy}>Publicar recurso</button>}<button className="button-secondary" type="button" disabled={busy} onClick={() => { setEditing(null); setFormOpen(false); }}>Cancelar</button></div>
     </form>}
 
-    <LearningFilters value={filters} resources={listedRows} onChange={(value) => { setFilters(value); setPage(1); }} /><section className="space-y-4"><h2 className="font-bold">Recursos disponibles y archivados · {filterResources(listedRows, filters).length}</h2><div className="grid gap-4 lg:grid-cols-2">{filterResources(listedRows, filters).slice((page - 1) * 10, page * 10).map((row) => <div key={row.id} className="surface-card space-y-3 p-4"><LearningResourceCard resource={row} compact />{row.version ? <button className="button-secondary" disabled={busy} onClick={() => { setEditing(row); setStep(0); setFormOpen(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Editar</button> : <p className="text-xs text-[var(--muted)]">{row.url ? "Referencia externa incluida en la biblioteca" : "Ejercicio original de TalentSync"}</p>}</div>)}</div><div className="flex flex-wrap items-center gap-3"><button className="button-secondary" disabled={page === 1} onClick={() => setPage(page - 1)}>Anterior</button><span className="text-sm">Página {page} de {Math.max(1, Math.ceil(filterResources(listedRows, filters).length / 10))}</span><button className="button-secondary" disabled={page * 10 >= filterResources(listedRows, filters).length} onClick={() => setPage(page + 1)}>Siguiente</button></div></section>
+    <AdminLearningLibrary rows={listedRows} busy={busy} onEdit={(row) => { setEditing(row); setStep(0); setFormOpen(true); }} />
     <details className="surface-card p-5"><summary className="cursor-pointer font-bold">Opciones avanzadas · importar un lote JSON</summary><p className="my-3 text-sm text-[var(--muted)]">Hasta cincuenta recursos por lote y doscientos en total. Usa una lista de objetos con los campos del formulario. No se consultan APIs ni se importan alumnos, compras o certificados.</p><form className="space-y-3" onSubmit={async (event) => { event.preventDefault(); const form = event.currentTarget; const value = new FormData(form).get("catalog"); if (!await confirm({ title: "Importar estos recursos", description: "El lote se añadirá al catálogo educativo que consultan los candidatos.", confirmLabel: "Importar recursos" })) return; act(async () => { const resources = JSON.parse(value); const { data } = await api.post("/admin/learning/resources/import", { resources }); form.reset(); return data; }); }}><label className="block">Lista JSON<textarea className="field-control mt-1 min-h-36 font-mono" name="catalog" required maxLength={200000} /></label><button className="button-secondary" disabled={busy}>Importar recursos</button></form></details>
   </>} </div>;
 }

@@ -48,5 +48,10 @@ class TeamUpdate(BaseModel):
     assigned_job_ids: list[int] = Field(default_factory=list, max_length=100)
 
 
+class InterviewAssignments(BaseModel):
+    assigned_job_ids: list[int] = Field(default_factory=list, max_length=100)
+    model_config = {"extra": "forbid"}
+
+
 class AcceptInvitation(BaseModel):
     token: str = Field(min_length=20, max_length=200)

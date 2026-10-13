@@ -1,3 +1,5 @@
+import { EducationFields } from "../components/EducationFields.jsx";
+import { isOngoing } from "../utils/profileStatus.js";
 import { experiencePeriod } from "../utils/experienceDates.js";
 import { ExperienceFields, MobilityFields } from "../components/ExperienceFields.jsx";
 import { useLocation } from "react-router-dom";
@@ -603,6 +605,7 @@ function Section({ icon: Icon, title, children }) {
   );
 }
 function Items({ type, profile, editing, update, updateItem }) {
+  if (type === "educations") return <EducationFields items={profile.educations} editing={editing} onChange={(items) => update("educations", items)} />;
   if (type === "experiences") return <ExperienceFields items={profile.experiences} editing={editing} onChange={(items) => update("experiences", items)} />;
   const fields =
     type === "experiences"
@@ -862,7 +865,7 @@ function ResumePreview({ profile, name, email, photoVersion }) {
                     <p className="resume-item-title">{item.degree}</p>
                     <p className="resume-item-company">{item.institution}</p>
                   </div>
-                  <p className="resume-item-date">{item.start_year}{item.end_year ? ` - ${item.end_year}` : ""}</p>
+                  <p className="resume-item-date">{item.start_year}{isOngoing(item) ? " – En curso" : item.end_year ? ` - ${item.end_year}` : ""}</p>
                 </div>
               ))}
             </ResumeSection>

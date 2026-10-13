@@ -4,6 +4,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.api.schemas.language import LanguageLevel, unique_languages
 from app.domain.services.experience_dates import validate_experiences
+from app.domain.services.profile_status import (
+    single_current_employment,
+    validate_educations,
+)
 
 
 class Mobility(BaseModel):
@@ -61,6 +65,8 @@ class ProfileBase(BaseModel):
 
 class ProfileUpdate(ProfileBase):
     name: str | None = Field(default=None, min_length=2, max_length=120)
+    _single_employment = field_validator("experiences")(single_current_employment)
+    _study_status = field_validator("educations")(validate_educations)
 
 
 class ProfileResponse(ProfileBase):

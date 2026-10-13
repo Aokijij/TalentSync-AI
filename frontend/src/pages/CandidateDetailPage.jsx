@@ -1,3 +1,4 @@
+import { isOngoing } from "../utils/profileStatus.js";
 import { experiencePeriod } from "../utils/experienceDates.js";
 import { useEffect, useState } from "react";
 import {
@@ -192,7 +193,7 @@ export function CandidateDetailPage() {
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[var(--accent)]">
                   {item.institution ? `${item.institution} · ` : ""}{item.start_year}
-                  {item.end_year ? ` - ${item.end_year}` : ""}
+                  {isOngoing(item) ? " – En curso" : item.end_year ? ` - ${item.end_year}` : ""}
                 </p>
               </>
             )}

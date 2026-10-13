@@ -211,6 +211,37 @@ def update_member(db, user, member_id, payload):
     return {"message": "Permisos actualizados y sesiones anteriores cerradas"}
 
 
+def assignment_manager(db, user):
+    company = context(db, user)
+    member = db.organizations.member_for_user(user.id)
+    if company.owner_user_id != user.id and not (member and member.active and member.role == "recruiter"):
+        raise UseCaseError(status_code=403, detail="Solo el propietario o un reclutador puede asignar entrevistas")
+    if company.verification_status == "suspended" or (company.verification_required and company.verification_status != "verified"):
+        raise UseCaseError(status_code=403, detail="Verifica la empresa antes de asignar entrevistas")
+    return company
+
+
+def interview_team(db, user):
+    company = assignment_manager(db, user)
+    return [{"id": member.id, "name": db.users.get(member.user_id).name, "assigned_job_ids": member.assigned_job_ids}
+            for member in db.organizations.members(company.id) if member.active and member.role == "interviewer"]
+
+
+def assign_interviews(db, user, member_id, payload):
+    company = assignment_manager(db, user)
+    member = db.organizations.member(company.id, member_id)
+    if member is None or member.role != "interviewer" or not member.active:
+        raise UseCaseError(status_code=404, detail="Entrevistador activo no encontrado en tu empresa")
+    previous = list(member.assigned_job_ids)
+    member.assigned_job_ids = _job_ids(db, company, payload["assigned_job_ids"])
+    for job_id in sorted(set(previous) ^ set(member.assigned_job_ids)):
+        record_event(db, "company.interviews_assigned", "company_member", member.id, actor_user_id=user.id,
+                     details={"company_id": company.id, "job_id": job_id,
+                              "status": "assigned" if job_id in member.assigned_job_ids else "removed"})
+    db.commit()
+    return {"message": "Procesos del entrevistador actualizados"}
+
+
 def assignments(db, user):
     company = context(db, user)
     if company.verification_status == "suspended" or (company.verification_required and company.verification_status != "verified"):

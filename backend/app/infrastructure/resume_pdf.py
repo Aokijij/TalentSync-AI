@@ -52,7 +52,8 @@ def resume_pdf(user):
             text(title, 14, True)
             for item in items:
                 text(" · ".join(str(item.get(field) or "") for field in fields if item.get(field)), 11, True)
-                text(" – ".join(str(value) for value in [item.get("start_date") or item.get("start_year"), "Actualidad" if item.get("is_current") else item.get("end_date") or item.get("end_year")] if value))
+                ongoing_label = "En curso" if key == "educations" else "Actualidad"
+                text(" – ".join(str(value) for value in [item.get("start_date") or item.get("start_year"), ongoing_label if item.get("is_current") else item.get("end_date") or item.get("end_year")] if value))
                 text(item.get("description") or "")
     if profile.skills:
         text("Habilidades", 14, True); text(" · ".join(profile.skills))
