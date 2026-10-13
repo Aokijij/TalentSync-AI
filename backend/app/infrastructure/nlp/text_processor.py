@@ -1403,13 +1403,12 @@ class TextProcessor:
     def analyze_cv(self, text: str) -> NLPResult:
         from app.domain.services.skill_context import extraction_context
         from app.domain.services.skills import skill_key
-        from app.infrastructure.nlp.cv_entities import extract_entities
         clean = self.clean_text(text)
         experiences, educations, certifications = self.extract_resume_items(text)
         detected = self.extract_skills(text)
         context = extraction_context(text, detected, experiences, aliases={skill_key(key): value for key, value in SKILL_ALIAS_PATTERNS.items()})
         states = {skill_key(skill): {row["state"] for row in context if row["skill"] == skill_key(skill)} for skill in detected}
-        positive_skills = [skill for skill in detected if "applied" in states[skill_key(skill)] or "declared" in states[skill_key(skill)] and not states[skill_key(skill)] & {"learning", "negated"}]
+        positive_skills = [skill for skill in detected if "applied" in states[skill_key(skill)] or "declared" in states[skill_key(skill)] and not states[skill_key(skill)] & {"learning", "negated", "training", "unknown"}]
         return NLPResult(
             clean_text=clean,
             profession=self.extract_profession(text),
@@ -1429,7 +1428,6 @@ class TextProcessor:
             certifications=certifications,
             embedding=self.embed(clean),
             skill_context=context,
-            entity_review=extract_entities(text),
         )
 
     def analyze(self, text: str) -> NLPResult:

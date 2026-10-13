@@ -3,7 +3,11 @@ import re
 from datetime import date
 
 from app.domain.services.experience_dates import experience_months, month_index
-from app.domain.services.skill_context import fold, skill_mentions
+from app.domain.services.skill_context import (
+    fold,
+    profile_skill_context,
+    skill_mentions,
+)
 from app.domain.services.skills import skill_gap, skill_key, skill_set
 
 STATUS_LABELS = {"fulfilled": "Cumplido con datos declarados", "partial": "Cumplimiento parcial", "unknown": "Sin información suficiente", "not_met": "No cumple según lo registrado"}
@@ -17,7 +21,7 @@ def requirement_rows(profile, job):
     rows = skill_gap(profile.skills, requirements_for(job))
     experiences = getattr(profile, "experiences", None) or []
     evidence = getattr(profile, "evidence", None) or []
-    imported = (getattr(profile, "preferences", None) or {}).get("cv_skill_context", [])
+    imported = profile_skill_context(profile)
     for row in rows:
         key = row["key"]
         work, signals = [], []
@@ -31,7 +35,7 @@ def requirement_rows(profile, job):
         # Import context is useful for undeclared suggestions, but cannot
         # override the candidate's later explicit profile edits.
         if not row["covered"]:
-            signals.extend(item for item in imported if skill_key(item.get("skill", "")) == key and item.get("state") in {"learning", "negated", "project"})
+            signals.extend(item for item in imported if skill_key(item.get("skill", "")) == key and item.get("state") in {"learning", "negated", "project", "training", "unknown"})
         supplied = [item for item in evidence if key in skill_set(item.get("skills", []))]
         contextual_evidence = [item for item in supplied if any(mention["state"] in {"applied", "declared"} for mention in skill_mentions(item.get("description", ""), [key]))]
         positive = bool(work) or any(item["state"] == "applied" for item in signals)
@@ -46,6 +50,8 @@ def requirement_rows(profile, job):
             reason = "Hay información contradictoria; revisa la habilidad y su contexto." if negative else "La habilidad aparece en aprendizaje; no se presupone dominio profesional." if learning else "La habilidad aparece en un proyecto del CV; no acredita duración laboral." if project else "La descripción de una evidencia aportada menciona el uso de esta habilidad; no acredita duración laboral." if contextual_evidence else "Tienes una base relacionada; no suma cumplimiento de esta habilidad."
         elif negative:
             status, score, reason = "not_met", 0, "La información registrada indica falta de experiencia o conocimiento en esta habilidad."
+        elif any(item["state"] == "training" for item in signals):
+            status, score, reason = "unknown", 0, "La habilidad se menciona en formación; esto no indica aprendizaje actual ni acredita dominio."
         else:
             status, score, reason = "unknown", 0, "No hay información suficiente para determinar el cumplimiento."
         related = [experiences[index] for index in work]

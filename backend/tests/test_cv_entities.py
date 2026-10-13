@@ -95,13 +95,12 @@ def test_busy_worker_and_absent_configuration_do_not_spawn(monkeypatch, tmp_path
         cv_entities._gate.release()
 
 
-def test_neural_upload_suggestions_are_owner_only_and_not_automatically_applied(client, monkeypatch, tmp_path):
+def test_cv_upload_uses_guidance_without_running_retired_neural_diagnostics(client, monkeypatch, tmp_path):
     from app.core.config import settings
     from app.infrastructure.nlp import resumes
     monkeypatch.setattr(settings, "upload_dir", str(tmp_path))
     monkeypatch.setattr(resumes, "extract_pdf_text", lambda _: "Habilidades\nSQL\nEstoy aprendiendo DuckDB.")
-    suggestions = {"method": cv_entities.METHOD, "status": "ready", "entities": [{"kind": "skill", "text": "DuckDB", "excerpt": "Estoy aprendiendo DuckDB.", "context": "learning"}]}
-    monkeypatch.setattr(cv_entities, "extract_entities", lambda _: suggestions)
+    monkeypatch.setattr(cv_entities, "extract_entities", lambda _: pytest.fail("Retired diagnostic must not run on upload"))
     user, candidate = register(client, "neural-review", skills=["sql"])
     _, company = company_account(client)
     job = create_job(client, company)
@@ -109,13 +108,14 @@ def test_neural_upload_suggestions_are_owner_only_and_not_automatically_applied(
     response = client.post("/api/v1/profiles/me/cv", headers=candidate, files={"file": ("cv.pdf", b"%PDF-1.4", "application/pdf")})
     assert response.status_code == 200, response.text
     profile = response.json()
-    assert profile["cv_entity_review"] == suggestions
+    assert profile["cv_entity_review"] == {} and profile["cv_guidance"]["method"] == "profile-coach-rules-v1"
     assert not any(skill.lower() == "duckdb" for skill in profile["skills"])
     visible = client.get(f"/api/v1/profiles/candidates/{user['id']}", headers=company).json()
     assert visible["cv_entity_review"] == {} and "Estoy aprendiendo DuckDB." not in str(visible["cv_entity_review"])
-    # An explicit profile edit is required to incorporate a neural skill.
+    assert visible["cv_guidance"] == {} and visible["cv_skill_context"] == []
+    # An explicit profile edit is required to declare another skill.
     profile["skills"].append("DuckDB")
     saved = client.put("/api/v1/profiles/me", headers=candidate, json=profile)
     assert saved.status_code == 200, saved.text
     assert "duckdb" in [skill.lower() for skill in saved.json()["skills"]]
-    assert saved.json()["cv_entity_review"] == suggestions
+    assert saved.json()["cv_entity_review"] == {}

@@ -57,7 +57,7 @@ def test_course_and_project_sections_do_not_become_hidden_professional_skills():
     p = profile()
     p.preferences = {"cv_skill_context": result.skill_context}
     rows = requirement_rows(p, job())
-    assert [row["status"] for row in rows] == ["partial", "partial"]
+    assert [row["status"] for row in rows] == ["unknown", "partial"]
     assert rows[1]["score"] == 70 and rows[1]["related_months"] == 0
 
 
@@ -148,7 +148,7 @@ def test_recommendation_api_exposes_context_recomputes_experience_and_preserves_
     assert saved.status_code == 200, saved.text
     endpoint = f"/api/v1/matching/jobs/{created['id']}"
     first = client.get(endpoint, headers=candidate).json()
-    assert first["version"] == "contextual-match-v5" and len(first["section_scores"]) == 3
+    assert first["version"] == "contextual-match-v6" and len(first["section_scores"]) == 3
     assert all("excerpt" not in row for row in first["requirements"])
     assert abs(sum(row["points"] for row in first["components"]) - first["overall_score"]) < .02
     assert client.get(endpoint, headers=company).status_code == 403

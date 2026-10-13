@@ -262,8 +262,10 @@ def upload_cv(
     profile.cv_text = analysis.clean_text
     profile.cv_filename = safe_name
     profile.cv_uploaded_at = datetime.utcnow()
-    profile.preferences = {**(profile.preferences or {}), "cv_skill_context": getattr(analysis, "skill_context", []),
-                           "cv_entity_review": getattr(analysis, "entity_review", {})}
+    from app.domain.services.skill_context import CONTEXT_VERSION
+    profile.preferences = {**{key: value for key, value in (profile.preferences or {}).items() if key != "cv_entity_review"},
+                           "cv_skill_context": getattr(analysis, "skill_context", []), "cv_context_version": CONTEXT_VERSION,
+                           "cv_source_text": raw_text[:30000]}
     profile.profession = analysis.profession or profile.profession
     profile.skills = normalize_skills([*(profile.skills or []), *analysis.skills])
     profile.experience = analysis.experience or profile.experience

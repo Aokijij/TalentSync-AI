@@ -41,9 +41,8 @@ def validated_entities(text, rows):
                   "score": round(score, 3), "excerpt": text[max(0, start - 100):min(len(text), end + 100)]}
         if entity["kind"] == "skill":
             from app.domain.services.skill_context import skill_mentions
-            clause_end = text.find("\n", end)
-            states = {item["state"] for item in skill_mentions(text[:clause_end if clause_end >= 0 else len(text)], [entity["text"]])}
-            entity["context"] = next((state for state in ("negated", "learning", "project", "applied", "declared") if state in states), "declared")
+            mentions = [item for item in skill_mentions(text, [entity["text"]]) if item["start"] == start and item["end"] == end]
+            entity["context"] = mentions[0]["state"] if mentions else "unknown"
         if key not in entities or entity["score"] > entities[key]["score"]:
             entities[key] = entity
     return sorted(entities.values(), key=lambda item: (item["start"], item["kind"]))[:300]

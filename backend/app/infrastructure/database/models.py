@@ -208,11 +208,17 @@ class Profile(Base):
 
     @property
     def cv_skill_context(self):
-        return (self.preferences or {}).get("cv_skill_context", [])
+        from app.domain.services.skill_context import profile_skill_context
+        return profile_skill_context(self)
 
     @property
     def cv_entity_review(self):
-        return (self.preferences or {}).get("cv_entity_review", {})
+        return {}  # Retired candidate-facing diagnostic; kept for API compatibility.
+
+    @property
+    def cv_guidance(self):
+        from app.domain.services.career_guidance import career_guidance
+        return career_guidance(self)
 
 
 class Company(Base):

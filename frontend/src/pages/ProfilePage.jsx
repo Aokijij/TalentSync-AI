@@ -1,5 +1,6 @@
 import { EducationFields } from "../components/EducationFields.jsx";
-import { CvEntityReview } from "../components/CvEntityReview.jsx";
+import { CareerCoach } from "../components/CareerCoach.jsx";
+import { CvContextReview } from "../components/CvContextReview.jsx";
 import { isOngoing } from "../utils/profileStatus.js";
 import { experiencePeriod } from "../utils/experienceDates.js";
 import { ExperienceFields, MobilityFields } from "../components/ExperienceFields.jsx";
@@ -93,6 +94,29 @@ export function ProfilePage() {
   const [error, setError] = useState("");
   const [photoVersion, setPhotoVersion] = useState(0);
   const [uploadingCv, setUploadingCv] = useState(false);
+  const [coachTarget, setCoachTarget] = useState("");
+  useEffect(() => {
+    if (!coachTarget || !editing && coachTarget !== "profile-evidence") return;
+    const target = document.getElementById(coachTarget);
+    if (target) {
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+      (target.matches("input,textarea") ? target : target.querySelector("input,textarea,button"))?.focus({ preventScroll: true });
+    }
+    setCoachTarget("");
+  }, [coachTarget, editing]);
+  function editFromCoach(target) {
+    if (target === "profile-evidence" && editing) {
+      setMessage("Guarda los cambios del perfil antes de gestionar tus evidencias.");
+      return;
+    }
+    setPreviewMode(false);
+    setEditing(target !== "profile-evidence");
+    setCoachTarget(target);
+  }
+  function applyCoachDraft(index, draft) {
+    updateItem("experiences", index, "description", draft);
+    editFromCoach(`experience-description-${index}`);
+  }
   useEffect(() => {
     Promise.all([api.get("/profiles/me"), api.get("/auth/me")])
       .then(([profileResponse, accountResponse]) => {
@@ -139,7 +163,7 @@ export function ProfilePage() {
     form.append("file", file);
     setUploadingCv(true);
     setError("");
-    setMessage("Analizando PDF y preparando sugerencias para revisar...");
+    setMessage("Analizando PDF y preparando recomendaciones para tu hoja de vida...");
     try {
       const { data } = await api.post("/profiles/me/cv", form, { timeout: 190000 });
       setProfile(normalize(data));
@@ -315,7 +339,7 @@ export function ProfilePage() {
           </div>
         </section>
       ) : null}
-      {!previewMode && <CvEntityReview key={profile.cv_uploaded_at} review={profile.cv_entity_review} profile={profile} editing={editing} update={update} />}
+      {!previewMode && <CareerCoach key={profile.cv_uploaded_at} guidance={profile.cv_guidance} profile={profile} onEdit={editFromCoach} onApply={applyCoachDraft} />}
       {previewMode ? (
         <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
       ) : (
@@ -339,12 +363,13 @@ export function ProfilePage() {
                       value={profile.profession || ""}
                       onChange={(e) => update("profession", e.target.value)}
                       placeholder="Profesion"
+                      id="profile-profession"
                     />
                   ) : (
                     profile.profession || "Perfil profesional"
                   )}
                 </div>
-                <div className="mt-5 flex flex-wrap gap-2 text-sm text-[var(--muted)]">
+                <div id="profile-contact" className="mt-5 flex flex-wrap gap-2 text-sm text-[var(--muted)]">
                   <span className="flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)]/80 px-3 py-2">
                     <Mail size={15} className="text-[var(--muted)]" />
                     {email || "Correo no registrado"}
@@ -419,7 +444,7 @@ export function ProfilePage() {
               </p>
               {editing ? <p className="text-xs text-[var(--muted)]">Este resumen se actualiza automáticamente al guardar, sin repetir la lista de empresas.</p> : null}
             </Section>
-            <Section icon={Award} title="Experiencia laboral">
+            <Section id="profile-experiences" icon={Award} title="Experiencia laboral">
               <Items
                 type="experiences"
                 profile={profile}
@@ -428,7 +453,7 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
-            <Section icon={BookOpen} title="Formación académica">
+            <Section id="profile-educations" icon={BookOpen} title="Formación académica">
               <Items
                 type="educations"
                 profile={profile}
@@ -449,8 +474,8 @@ export function ProfilePage() {
               />
             </Section>
             <Section icon={BookOpen} title="Idiomas"><LanguagesEditor value={profile.languages} editing={editing} onChange={(value) => update("languages", value)} /></Section>
-            <Section icon={BriefcaseBusiness} title="Habilidades">
-              {!!profile.cv_skill_context?.filter((row) => ["learning", "negated", "project"].includes(row.state) && !profile.skills.includes(row.skill)).length && <details className="cv-context-review"><summary>Menciones del CV que necesitan revisión</summary><p>No se añadieron como habilidades dominadas. Revisa el contexto y añade una habilidad solo si corresponde a tu nivel actual.</p>{profile.cv_skill_context.filter((row) => ["learning", "negated", "project"].includes(row.state) && !profile.skills.includes(row.skill)).map((row, index) => <div key={index}><strong>{row.skill} · {row.state === "learning" ? "En aprendizaje" : row.state === "project" ? "Uso en proyecto" : "Falta de experiencia indicada"}</strong><p>{row.excerpt}</p></div>)}</details>}
+            <Section id="profile-skills" icon={BriefcaseBusiness} title="Habilidades">
+              <CvContextReview rows={profile.cv_skill_context} skills={profile.skills} />
               <div className="flex flex-wrap gap-2">
                 {profile.skills.map((item) => (
                   <span
@@ -600,13 +625,13 @@ export function ProfilePage() {
       </div>
         </article>
       )}
-      {!editing && <ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} />}
+      {!editing && <div id="profile-evidence"><ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} /></div>}
     </div>
   );
 }
-function Section({ icon: Icon, title, children }) {
+function Section({ id, icon: Icon, title, children }) {
   return (
-    <section>
+    <section id={id}>
       <h2 className="flex items-center gap-2 border-b border-[var(--line)] pb-3 font-bold text-[var(--ink)]">
         <Icon size={19} className="text-[var(--success)]" />
         {title}

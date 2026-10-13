@@ -1,5 +1,7 @@
 # Primera evaluación del extractor de entidades
 
+Nota de estado: el panel de detecciones neuronales se retiró del flujo del candidato. Este documento conserva la evaluación experimental; no describe la interfaz actual. El perfil ahora ofrece recomendaciones de claridad y una guía STAR.
+
 13 de octubre de 2026. Diagnóstico sobre 12 textos sintéticos, con respuestas esperadas explícitas: cuatro de desarrollo y ocho separados para evaluación. No son hojas de vida reales ni etiquetas revisadas por personas independientes. La muestra es pequeña y no representa la distribución de usuarios de TalentSync.
 
 El extractor anterior se compara con GLiNER multilingual v2.1, revisión `443d26d654e0324125a96bebd8e796c14ff2efe6`, con etiquetas `job title`, `employer`, `degree`, `university`, `technical skill`, `date` y umbral 0,5. Las etiquetas se eligieron usando los ejemplos de desarrollo; no se ajustaron al conjunto separado. El encoder y tokenizador provienen de mDeBERTa v3 base, revisión `a0484667b22365f84929a935b5e50a51f71f159d`.

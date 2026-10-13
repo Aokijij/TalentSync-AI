@@ -229,7 +229,7 @@ Cada intento conserva sus preguntas y soluciones solo en el servidor. Una edici�
 
 ## Extracción contextual y compatibilidad por requisito
 
-El motor `contextual-match-v5` compara cargos/profesión, funciones y conocimientos declarados por separado con el mismo modelo local. La formación y los idiomas mantienen sus señales específicas. En Recomendaciones → Compatibilidad y formación → Ver cumplimiento por requisito se muestra el respaldo de cada habilidad, su cumplimiento y la experiencia relacionada.
+El motor `contextual-match-v6` compara cargos/profesión, funciones y conocimientos declarados por separado con el mismo modelo local. La formación y los idiomas mantienen sus señales específicas. En Recomendaciones → Compatibilidad y formación → Ver cumplimiento por requisito se muestra el respaldo de cada habilidad, su cumplimiento y la experiencia relacionada.
 
 La extracción distingue menciones de uso, aprendizaje, proyectos y negación en español/inglés. Las menciones que solo aparecen en cursos, proyectos o aprendizaje no se incorporan automáticamente como habilidades dominadas. Mi perfil muestra su fragmento para revisión. Son reglas de contexto auditables combinadas con similitud semántica local; no es un nuevo modelo neuronal de extracción ni una garantía de precisión.
 
@@ -239,23 +239,16 @@ La experiencia mínima se lee del campo de la oferta o de un requisito numérico
 
 Una nueva carga conserva registros previos y enlaces aportados. El contexto original del CV se devuelve solo en el perfil propio; el desglose público de compatibilidad no incluye fragmentos del CV ni empleadores. La versión y el mes del cálculo invalidan cachés antiguas para periodos actuales. Los perfiles existentes se recalculan al consultar; no se modifican masivamente sus habilidades ni se reimportan sus CVs.
 
-## Extracción adicional de entidades del CV
+## Recomendaciones para mejorar la hoja de vida
 
-Se añadió GLiNER multilingüe como complemento local. Al cargar un PDF, **Mi perfil → Detecciones con IA para revisar** muestra cargos, empleadores, títulos, instituciones, fechas y habilidades mencionadas con sus fragmentos originales. En modo Editar puedes confirmar una habilidad, usar un cargo como profesión o seleccionar explícitamente un cargo/empresa y un título/institución para preparar registros. Completa las fechas y guarda el perfil para aplicar esos cambios. Las detecciones neuronales no se incorporan automáticamente ni elevan la compatibilidad sin esa confirmación. La revisión no aparece en el perfil de empresa ni en el PDF exportado.
+Mi perfil muestra «Haz más clara tu hoja de vida». Se presentan tres recomendaciones prioritarias y una opción para desplegar las demás: explicar el aporte de una experiencia, precisar fechas, completar formación, priorizar habilidades y revisar contactos distintos en el texto disponible del PDF. Los intervalos entre empleos solo se calculan con meses completos; explicarlos es opcional y no reduce la compatibilidad. Cada consejo lleva al campo correspondiente. Se recalculan al guardar el perfil, sin puntuación de empleabilidad.
 
-Preparación opcional, separada del entorno de matching:
+La guía STAR solicita situación, objetivo, acción y resultado. Une únicamente las respuestas del candidato y muestra una vista previa antes de añadirla al borrador de la experiencia. Admite resultados cualitativos; no inventa cifras, cargos ni logros. Es una herramienta guiada basada en reglas, no un modelo generativo de redacción. El cambio solo se conserva al pulsar Guardar. Una descripción modificada mientras se revisa el consejo no se sobrescribe con un borrador antiguo.
 
-```powershell
-backend/.venv/Scripts/python.exe scripts/local.py cv-runtime
-backend/.venv/Scripts/python.exe scripts/local.py cv-model-prepare
-backend/.venv/Scripts/python.exe scripts/local.py cv-model-check
-backend/.venv/Scripts/python.exe scripts/local.py cv-evaluate
-```
+`skill-context-v2` separa aprendizaje explícito, formación, proyectos, falta de experiencia y contexto por confirmar. Solo una frase explícita como «estoy aprendiendo» activa aprendizaje; «Educación», «Cursos», «Fundamentos de» y «Machine learning» no lo activan por sí solos. Se muestran el motivo y el fragmento de origen. Los encabezados de contacto, habilidades y tecnologías detienen el alcance de formación; los encabezados mezclados quedan como contexto incierto.
 
-`cv-runtime` reutiliza las bibliotecas base de backend/.venv y fija GLiNER/Transformers/tokenizador en .local/cv-runtime; no sustituye las dependencias del backend ni importa Sentence Transformers en ese proceso. `cv-model-prepare` descarga únicamente archivos públicos permitidos, de revisiones fijadas, y comprueba tamaños y huellas. Los pesos son safetensors, sin pickle ni código remoto. El modelo ocupa aproximadamente 1,16 GB, además de sus dependencias.
+Las importaciones antiguas se reinterpretan al consultar: si una etiqueta de aprendizaje solo estaba sustentada por el encabezado anterior, se marca contexto por confirmar. No se cambian habilidades declaradas ni se requiere volver a subir el CV para esta corrección. Las nuevas cargas conservan hasta 30.000 caracteres del texto original en las preferencias privadas para mantener el contexto; no se incluye ese campo en el perfil de empresa. Los motivos también se usan al recalcular la compatibilidad con versión v6.
 
-Después de comprobarlo, configura privadamente en .local/backend.env las rutas absolutas de `CV_ENTITY_MODEL_PATH` (.local/models/gliner_multi-v2.1) y `CV_ENTITY_PYTHON` (.local/cv-runtime/Scripts/python.exe), y reinicia el backend. Ambas vacías desactivan el complemento. Están configuradas en este entorno local. `verify` también comprueba la inferencia cuando están activadas; los tests ordinarios las desactivan.
+El panel anterior de detecciones neuronales se retiró y GLiNER ya no se ejecuta al cargar un CV. Los archivos y comandos experimentales (`cv-runtime`, `cv-model-prepare`, `cv-model-check`, `cv-evaluate`) siguen disponibles para investigación local; sus rutas `CV_ENTITY_MODEL_PATH` y `CV_ENTITY_PYTHON` están desactivadas en este entorno. La evaluación anterior está documentada en `EVALUACION_EXTRACCION_CV.md`. El modelo local de matching continúa activo.
 
-La inferencia usa un proceso separado con red bloqueada, sin claves de integraciones y sin guardar el texto en archivos auxiliares. Hay un único proceso de extracción simultáneo por instancia, un máximo de 30.000 caracteres y 120 segundos por ejecución. Si está ocupado, faltan pesos o falla, se conserva el análisis por reglas y se muestra que la extracción adicional no estuvo disponible. El modelo no interpreta automáticamente las relaciones entre empresas/cargos ni asigna fechas. Las puntuaciones internas no son probabilidades de que el campo sea correcto. El lector de entrada sigue admitiendo PDF; OCR y DOCX continúan pendientes.
-
-La comparación reproducible está descrita en `EVALUACION_EXTRACCION_CV.md`. Mide entidades sobre ejemplos sintéticos, sin afirmar precisión sobre CV reales ni mejora del ranking.
+La evolución hacia coaching de carrera se describe en `PLAN_COACH_CARRERA.md`. OCR, comparación visual con el PDF, borradores por vacante, redacción generativa y estadísticas de mercado aún no están implementados en este panel.
