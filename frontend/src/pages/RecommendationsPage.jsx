@@ -180,6 +180,7 @@ export function RecommendationsPage() {
       {!loading && !error && (
         <section className="surface-card">
           <div className="recommendation-list-heading">
+            <div className="recommendation-list-topline">
             <div className="flex items-center gap-3">
               <BriefcaseBusiness className="text-[var(--success)]" size={20} />
               <div>
@@ -190,6 +191,8 @@ export function RecommendationsPage() {
                   {rankingMode === "balanced" ? "Compatibilidad similar: priorizamos información clara y tus decisiones de personalización." : "Ordenadas por compatibilidad, teniendo en cuenta la confianza de la empresa."}
                 </p>
               </div>
+            </div>
+            <p className="recommendation-count" role="status" aria-live="polite"><strong>{filteredRecommendations.length}</strong><span>{filteredRecommendations.length === 1 ? "oferta recomendada" : "ofertas recomendadas"}<small>Con tus filtros actuales</small></span></p>
             </div>
             <div className="recommendation-filterbar">
               <label className="filter-field">Ordenar<select className="field-control" aria-label="Ordenar recomendaciones" value={rankingMode} onChange={(event) => { setRankingMode(event.target.value); setPage(1); }}><option value="balanced">Recomendadas</option><option value="compatibility">Mayor compatibilidad</option></select></label>
@@ -239,9 +242,9 @@ export function RecommendationsPage() {
                 >
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-[var(--ink)]">
+                      <h3 className="font-semibold text-[var(--ink)]"><Link className="recommendation-title-link" to={`/vacantes/${item.job_id}`} state={{ returnTo: "/recomendaciones" }}>
                         {job?.title ?? "Vacante"}
-                      </p>
+                      </Link></h3>
                       <span
                         className={`rounded-[var(--radius-md)] border px-2 py-1 text-xs font-semibold text-[var(--ink)] ${categoryTone}`}
                       >
@@ -294,6 +297,7 @@ export function RecommendationsPage() {
                     <div className="mt-3">
                       <Link
                         to={`/vacantes/${item.job_id}`}
+                        state={{ returnTo: "/recomendaciones" }}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline hover-lift"
                       >
                         Ver detalle
