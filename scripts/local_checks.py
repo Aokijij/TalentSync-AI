@@ -121,6 +121,8 @@ def validation_steps(env, node):
     ]
     if env.get("MATCH_MODEL_PATH"):
         steps.append(("local_model", [python, "-m", "scripts.local_model", "check"], local.ROOT / "backend"))
+    if env.get("CV_ENTITY_MODEL_PATH") and env.get("CV_ENTITY_PYTHON"):
+        steps.append(("cv_entity_model", [python, "-m", "scripts.cv_model", "check"], local.ROOT / "backend"))
     return steps
 
 

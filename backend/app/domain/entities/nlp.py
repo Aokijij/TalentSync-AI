@@ -15,3 +15,4 @@ class NLPResult:
     certifications: list[dict]
     embedding: list[float]
     skill_context: list[dict] = field(default_factory=list)
+    entity_review: dict = field(default_factory=dict)

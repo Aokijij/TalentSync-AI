@@ -262,7 +262,8 @@ def upload_cv(
     profile.cv_text = analysis.clean_text
     profile.cv_filename = safe_name
     profile.cv_uploaded_at = datetime.utcnow()
-    profile.preferences = {**(profile.preferences or {}), "cv_skill_context": getattr(analysis, "skill_context", [])}
+    profile.preferences = {**(profile.preferences or {}), "cv_skill_context": getattr(analysis, "skill_context", []),
+                           "cv_entity_review": getattr(analysis, "entity_review", {})}
     profile.profession = analysis.profession or profile.profession
     profile.skills = normalize_skills([*(profile.skills or []), *analysis.skills])
     profile.experience = analysis.experience or profile.experience

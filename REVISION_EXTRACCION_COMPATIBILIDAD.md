@@ -2,7 +2,7 @@
 
 Revisión del 13 de octubre de 2026, contrastada con el código y el entorno local de TalentSync. Este documento evalúa una mejora; no activa servicios externos ni modifica el motor de compatibilidad.
 
-Actualización posterior: se implementó `contextual-match-v5` con reglas de extracción contextual, estados por requisito, meses en cargos relacionados y similitud separada por cargos, funciones y conocimientos. Se conservan datos y documentos aportados al importar. El OCR, los formatos nuevos y un extractor neuronal de entidades siguen siendo propuestas pendientes. La tabla siguiente conserva el diagnóstico inicial; consulta `CONFIGURACION_LOCAL.md` para el comportamiento implementado y la escala de respaldo.
+Actualización posterior: se implementó `contextual-match-v5` con reglas de extracción contextual, estados por requisito, meses en cargos relacionados y similitud separada por cargos, funciones y conocimientos. Se conservan datos y documentos aportados al importar. Se añadió GLiNER multilingüe local para sugerencias de entidades con revisión explícita y una evaluación sintética reproducible (`EVALUACION_EXTRACCION_CV.md`). El OCR, los formatos nuevos, la evaluación humana con CV reales y la confirmación previa de toda la extracción por reglas siguen pendientes. La tabla siguiente conserva el diagnóstico inicial; consulta `CONFIGURACION_LOCAL.md` para el comportamiento implementado y la escala de respaldo.
 
 ## Conclusión
 

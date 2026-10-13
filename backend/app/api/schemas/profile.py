@@ -77,6 +77,7 @@ class ProfileResponse(ProfileBase):
     cv_uploaded_at: datetime | None = None
     photo_url: str | None = None
     cv_skill_context: list[dict] = Field(default_factory=list)
+    cv_entity_review: dict = Field(default_factory=dict)
 
     model_config = {"from_attributes": True}
 

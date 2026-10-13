@@ -98,6 +98,8 @@ def test_validation_includes_only_configured_model_and_local_commands(checks):
     steps = checks.validation_steps({"MATCH_MODEL_PATH": "configured-model"}, "node")
     assert steps[-1][0] == "local_model"
     assert all("http" not in str(command) and "deploy" not in str(command) for _, command, _ in steps)
+    steps = checks.validation_steps({"CV_ENTITY_MODEL_PATH": "cv-model", "CV_ENTITY_PYTHON": "cv-python"}, "node")
+    assert steps[-1][0] == "cv_entity_model"
 
 
 def test_verify_rejects_source_changes_during_the_checks(checks, monkeypatch):

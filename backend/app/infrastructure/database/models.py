@@ -210,6 +210,10 @@ class Profile(Base):
     def cv_skill_context(self):
         return (self.preferences or {}).get("cv_skill_context", [])
 
+    @property
+    def cv_entity_review(self):
+        return (self.preferences or {}).get("cv_entity_review", {})
+
 
 class Company(Base):
     __tablename__ = "companies"

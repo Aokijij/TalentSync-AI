@@ -48,6 +48,8 @@ def prepare_environment(*, testing=False):
                    "WORKFLOW_MAINTENANCE_ENABLED": "true",
                    "MODEL_MAINTENANCE_ENABLED": "true", "MATCH_MODEL_PATH": values.get("MATCH_MODEL_PATH", ""),
                    "MATCH_MODEL_CPU_THREADS": values.get("MATCH_MODEL_CPU_THREADS", "2"),
+                   "CV_ENTITY_MODEL_PATH": values.get("CV_ENTITY_MODEL_PATH", ""),
+                   "CV_ENTITY_PYTHON": values.get("CV_ENTITY_PYTHON", ""),
                    "GITHUB_PROJECT_ANALYSIS_ENABLED": values.get("GITHUB_PROJECT_ANALYSIS_ENABLED", "false"),
                    "CODEWARS_ENABLED": values.get("CODEWARS_ENABLED", "false"),
                    "WORKSPACE_DOMAIN": values.get("WORKSPACE_DOMAIN", ""),
@@ -68,7 +70,7 @@ def prepare_environment(*, testing=False):
                    "ADZUNA_APP_KEY": "", "JOOBLE_API_KEY": "", "STATIC_DIR": ""})
     if testing:
         # Tests must not depend on user integrations, weights or the demo database.
-        values.update({"DATABASE_URL": "sqlite://", "MATCH_MODEL_PATH": "",
+        values.update({"DATABASE_URL": "sqlite://", "MATCH_MODEL_PATH": "", "CV_ENTITY_MODEL_PATH": "", "CV_ENTITY_PYTHON": "",
                        "PUBLIC_LEARNING_REFRESH_ENABLED": "false",
                        "YOUTUBE_LEARNING_ENABLED": "false", "YOUTUBE_API_KEY": "", "YOUTUBE_LEARNING_DAILY_REQUESTS": "100",
                        "LEARN_ENABLED": "false", "LEARN_TENANT_ID": "", "LEARN_CLIENT_ID": "", "LEARN_CLIENT_SECRET": "",
@@ -85,7 +87,7 @@ def prepare_environment(*, testing=False):
 
 def main():
     parser = argparse.ArgumentParser(description="TalentSync: entorno local aislado")
-    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "seed-review", "seed-demo", "seed-scenarios", "seed-quality", "seed-education", "sync-education", "accounts", "admin-sso", "model-prepare", "model-check", "doctor", "verify", "rehearse"))
+    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "seed-review", "seed-demo", "seed-scenarios", "seed-quality", "seed-education", "sync-education", "accounts", "admin-sso", "model-prepare", "model-check", "cv-runtime", "cv-model-prepare", "cv-model-check", "cv-evaluate", "doctor", "verify", "rehearse"))
     parser.add_argument("options", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.options and args.command != "admin-sso":
@@ -115,6 +117,10 @@ def main():
         "admin-sso": ["-m", "scripts.admin_sso", *args.options],
         "model-prepare": ["-m", "scripts.local_model", "prepare"],
         "model-check": ["-m", "scripts.local_model", "check"],
+        "cv-runtime": [str(ROOT / "scripts/cv_runtime.py")],
+        "cv-model-prepare": ["-m", "scripts.cv_model", "prepare"],
+        "cv-model-check": ["-m", "scripts.cv_model", "check"],
+        "cv-evaluate": ["-m", "scripts.evaluate_cv_entities"],
     }
     if args.command == "accounts":
         account_file = LOCAL / "accounts.json"

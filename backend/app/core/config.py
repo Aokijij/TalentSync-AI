@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     cv_ocr_force_full_page: bool = False
     cv_docling_timeout_seconds: float = 120
     cv_docling_min_text_chars: int = 200
+    cv_entity_model_path: str = ""
+    cv_entity_python: str = ""
+    cv_entity_timeout_seconds: float = Field(default=120, ge=10, le=180)
     static_dir: str | None = None
     azure_storage_account_url: str | None = None
     azure_storage_container: str = "cvs"

@@ -20,9 +20,11 @@ def test_test_runner_ignores_active_models_integrations_and_demo_database(tmp_pa
     env_file.write_text(source, encoding="utf-8")
     prepare.__globals__.update(ROOT=tmp_path, LOCAL=local, ENV_FILE=env_file)
     monkeypatch.setenv("MATCH_MODEL_PATH", "C:/inherited-model")
+    monkeypatch.setenv("CV_ENTITY_MODEL_PATH", "C:/inherited-cv-model")
     testing = prepare(testing=True)
     assert testing["DATABASE_URL"] == "sqlite://"
     assert testing["MATCH_MODEL_PATH"] == ""
+    assert testing["CV_ENTITY_MODEL_PATH"] == testing["CV_ENTITY_PYTHON"] == ""
     assert testing["OAUTH_GOOGLE_CLIENT_ID"] == ""
     assert testing["WORKSPACE_DOMAIN"] == ""
     assert testing["ADMIN_SSO_PROVIDER"] == "workspace"

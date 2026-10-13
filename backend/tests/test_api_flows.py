@@ -44,6 +44,8 @@ def client(monkeypatch):
     monkeypatch.setattr(settings, "workflow_maintenance_enabled", False)
     monkeypatch.setattr(settings, "model_maintenance_enabled", False)
     monkeypatch.setattr(settings, "match_model_path", "")
+    monkeypatch.setattr(settings, "cv_entity_model_path", "")
+    monkeypatch.setattr(settings, "cv_entity_python", "")
     monkeypatch.setattr(limiter, "enabled", False)
     app = create_app()
     app.dependency_overrides[get_db] = test_database

@@ -238,3 +238,24 @@ Cada habilidad puede quedar cumplida con datos declarados (100), parcial por uso
 La experiencia mínima se lee del campo de la oferta o de un requisito numérico explícito. Se unen los meses de cargos relacionados sin duplicar periodos simultáneos. El total mide tiempo en esos cargos, no meses de uso probado de cada herramienta. Las fechas solo con año se muestran aproximadas; la falta de fechas no se interpreta como trabajo actual ni como experiencia suficiente. Si se exige un mínimo positivo, el tiempo relacionado ocupa el 20% de la señal de contexto, dentro de los pesos existentes.
 
 Una nueva carga conserva registros previos y enlaces aportados. El contexto original del CV se devuelve solo en el perfil propio; el desglose público de compatibilidad no incluye fragmentos del CV ni empleadores. La versión y el mes del cálculo invalidan cachés antiguas para periodos actuales. Los perfiles existentes se recalculan al consultar; no se modifican masivamente sus habilidades ni se reimportan sus CVs.
+
+## Extracción adicional de entidades del CV
+
+Se añadió GLiNER multilingüe como complemento local. Al cargar un PDF, **Mi perfil → Detecciones con IA para revisar** muestra cargos, empleadores, títulos, instituciones, fechas y habilidades mencionadas con sus fragmentos originales. En modo Editar puedes confirmar una habilidad, usar un cargo como profesión o seleccionar explícitamente un cargo/empresa y un título/institución para preparar registros. Completa las fechas y guarda el perfil para aplicar esos cambios. Las detecciones neuronales no se incorporan automáticamente ni elevan la compatibilidad sin esa confirmación. La revisión no aparece en el perfil de empresa ni en el PDF exportado.
+
+Preparación opcional, separada del entorno de matching:
+
+```powershell
+backend/.venv/Scripts/python.exe scripts/local.py cv-runtime
+backend/.venv/Scripts/python.exe scripts/local.py cv-model-prepare
+backend/.venv/Scripts/python.exe scripts/local.py cv-model-check
+backend/.venv/Scripts/python.exe scripts/local.py cv-evaluate
+```
+
+`cv-runtime` reutiliza las bibliotecas base de backend/.venv y fija GLiNER/Transformers/tokenizador en .local/cv-runtime; no sustituye las dependencias del backend ni importa Sentence Transformers en ese proceso. `cv-model-prepare` descarga únicamente archivos públicos permitidos, de revisiones fijadas, y comprueba tamaños y huellas. Los pesos son safetensors, sin pickle ni código remoto. El modelo ocupa aproximadamente 1,16 GB, además de sus dependencias.
+
+Después de comprobarlo, configura privadamente en .local/backend.env las rutas absolutas de `CV_ENTITY_MODEL_PATH` (.local/models/gliner_multi-v2.1) y `CV_ENTITY_PYTHON` (.local/cv-runtime/Scripts/python.exe), y reinicia el backend. Ambas vacías desactivan el complemento. Están configuradas en este entorno local. `verify` también comprueba la inferencia cuando están activadas; los tests ordinarios las desactivan.
+
+La inferencia usa un proceso separado con red bloqueada, sin claves de integraciones y sin guardar el texto en archivos auxiliares. Hay un único proceso de extracción simultáneo por instancia, un máximo de 30.000 caracteres y 120 segundos por ejecución. Si está ocupado, faltan pesos o falla, se conserva el análisis por reglas y se muestra que la extracción adicional no estuvo disponible. El modelo no interpreta automáticamente las relaciones entre empresas/cargos ni asigna fechas. Las puntuaciones internas no son probabilidades de que el campo sea correcto. El lector de entrada sigue admitiendo PDF; OCR y DOCX continúan pendientes.
+
+La comparación reproducible está descrita en `EVALUACION_EXTRACCION_CV.md`. Mide entidades sobre ejemplos sintéticos, sin afirmar precisión sobre CV reales ni mejora del ranking.

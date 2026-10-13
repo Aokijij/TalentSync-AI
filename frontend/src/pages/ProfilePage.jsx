@@ -1,4 +1,5 @@
 import { EducationFields } from "../components/EducationFields.jsx";
+import { CvEntityReview } from "../components/CvEntityReview.jsx";
 import { isOngoing } from "../utils/profileStatus.js";
 import { experiencePeriod } from "../utils/experienceDates.js";
 import { ExperienceFields, MobilityFields } from "../components/ExperienceFields.jsx";
@@ -91,6 +92,7 @@ export function ProfilePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [photoVersion, setPhotoVersion] = useState(0);
+  const [uploadingCv, setUploadingCv] = useState(false);
   useEffect(() => {
     Promise.all([api.get("/profiles/me"), api.get("/auth/me")])
       .then(([profileResponse, accountResponse]) => {
@@ -132,12 +134,14 @@ export function ProfilePage() {
   }
   async function upload(event) {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || uploadingCv) return;
     const form = new FormData();
     form.append("file", file);
-    setMessage("Analizando PDF...");
+    setUploadingCv(true);
+    setError("");
+    setMessage("Analizando PDF y preparando sugerencias para revisar...");
     try {
-      const { data } = await api.post("/profiles/me/cv", form);
+      const { data } = await api.post("/profiles/me/cv", form, { timeout: 190000 });
       setProfile(normalize(data));
       setEditing(true);
       setMessage(
@@ -145,6 +149,9 @@ export function ProfilePage() {
       );
     } catch (e) {
       setError(e.response?.data?.detail || "No fue posible procesar el PDF");
+    } finally {
+      setUploadingCv(false);
+      event.target.value = "";
     }
   }
   async function uploadPhoto(event) {
@@ -197,11 +204,12 @@ export function ProfilePage() {
           <div className="flex flex-wrap gap-2 lg:justify-end">
             <label className="button-secondary cursor-pointer hover-lift pressed focus-ring">
               <Upload size={16} />
-              Subir CV
+              {uploadingCv ? "Analizando CV…" : "Subir CV"}
               <input
                 className="hidden"
                 type="file"
                 accept="application/pdf"
+                disabled={uploadingCv}
                 onChange={upload}
               />
             </label>
@@ -224,6 +232,7 @@ export function ProfilePage() {
             <button
               className="button-primary w-auto hover-lift pressed focus-ring"
               type="button"
+              disabled={uploadingCv}
               onClick={() =>
                 editing ? save() : (setPreviewMode(false), setEditing(true))
               }
@@ -306,6 +315,7 @@ export function ProfilePage() {
           </div>
         </section>
       ) : null}
+      {!previewMode && <CvEntityReview key={profile.cv_uploaded_at} review={profile.cv_entity_review} profile={profile} editing={editing} update={update} />}
       {previewMode ? (
         <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
       ) : (

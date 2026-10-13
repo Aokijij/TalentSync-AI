@@ -1403,6 +1403,7 @@ class TextProcessor:
     def analyze_cv(self, text: str) -> NLPResult:
         from app.domain.services.skill_context import extraction_context
         from app.domain.services.skills import skill_key
+        from app.infrastructure.nlp.cv_entities import extract_entities
         clean = self.clean_text(text)
         experiences, educations, certifications = self.extract_resume_items(text)
         detected = self.extract_skills(text)
@@ -1428,6 +1429,7 @@ class TextProcessor:
             certifications=certifications,
             embedding=self.embed(clean),
             skill_context=context,
+            entity_review=extract_entities(text),
         )
 
     def analyze(self, text: str) -> NLPResult:
