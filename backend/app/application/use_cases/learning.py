@@ -9,10 +9,13 @@ from app.application.use_cases.jobs import get_job
 from app.application.use_cases.learning_resources import resources as catalog_resources
 from app.application.use_cases.matching import candidate_match
 from app.domain.services.career_learning import AREAS, profile_areas
+from app.domain.services.course_practices import (
+    course_practice,
+    practice_for_plan,
+    public_practice,
+)
 from app.domain.services.learning_activities import (
     InvalidActivity,
-    activities_for,
-    activity_key,
     evaluate,
     public_activity,
 )
@@ -89,15 +92,22 @@ def plans(db, user, resource_id=None, status=None):
             raise UseCaseError(status_code=404, detail="El recurso ya no está disponible para planes nuevos")
         if row is None:
             row = db.learning.new_plan(user_id=user.id, resource_id=resource_id, status=status)
+            row.progress = {"practice_spec": course_practice(resources[resource_id])}
             db.add(row)
         row.status = status
         row.completed_at = datetime.utcnow() if status == "completed" else None
         row.version = (row.version or 0) + 1
         record_event(db, "learning.plan_updated", "profile", user.profile.id, actor_user_id=user.id, details={"status": status})
         db.commit()
-    return [{"id": row.id, "resource": resources.get(row.resource_id), "status": row.status, "created_at": row.created_at, "completed_at": row.completed_at,
+    return [{"id": row.id, "resource": _plan_resource(resources.get(row.resource_id), row.progress or {}), "status": row.status, "created_at": row.created_at, "completed_at": row.completed_at,
              "version": row.version, "certificate": next((item for item in user.profile.certifications or [] if item.get("resource_id") == row.resource_id), None),
-             "skills_added": skill_set(resources.get(row.resource_id, {}).get("skills", [])) <= skill_set(user.profile.skills or []), "progress": {**(row.progress or {}), "activity_feedback": (row.progress or {}).get("activity_feedback", []) if row.status == "completed" else [], "published": bool((row.progress or {}).get("published")) and any(item.get("id") == (row.progress or {}).get("evidence_id") for item in user.profile.evidence or [])}} for row in db.learning.plans(user.id)]
+             "skills_added": skill_set(resources.get(row.resource_id, {}).get("skills", [])) <= skill_set(user.profile.skills or []), "progress": {**{key: value for key, value in (row.progress or {}).items() if key != "practice_spec"}, "activity_feedback": (row.progress or {}).get("activity_feedback", []) if row.status == "completed" else [], "published": bool((row.progress or {}).get("published")) and any(item.get("id") == (row.progress or {}).get("evidence_id") for item in user.profile.evidence or [])}} for row in db.learning.plans(user.id)]
+
+
+def _plan_resource(resource, progress):
+    if resource is None:
+        return None
+    return {**resource, "journey": {**resource["journey"], **public_practice(practice_for_plan(resource, progress))}}
 
 
 def leave_plan(db, user, resource_id, version):
@@ -137,6 +147,7 @@ def save_journey(db, user, resource_id, payload):
                       "attempt_number": 1, "skills": resource["skills"], "published": previous.get("published", False)}
             user.profile.preferences = {**(user.profile.preferences or {}), "learning_results": [*history, result][-100:]}
         row.progress = {"answers": {}, "activity_answers": {}, "activity_feedback": [], "submitted": False,
+                        "practice_spec": course_practice(resource),
                         "published": previous.get("published", False), "evidence_id": previous.get("evidence_id"),
                         "attempt_number": previous.get("attempt_number", 1) + 1}
         row.status, row.completed_at = "in_progress", None
@@ -154,9 +165,10 @@ def save_journey(db, user, resource_id, payload):
         raise UseCaseError(status_code=422, detail="La práctica contiene un paso desconocido")
     finish = payload.get("finish", False)
     activity_answers = payload.get("activity_answers")
+    practice = practice_for_plan(resource, previous)
     feedback = []
     if activity_answers is not None:
-        activities = activities_for(activity_key(resource))
+        activities = practice["activities"]
         if set(activity_answers) - {item["id"] for item in activities}:
             raise UseCaseError(status_code=422, detail="Actividad desconocida")
         if finish and set(activity_answers) != {item["id"] for item in activities}:
@@ -193,7 +205,7 @@ def save_journey(db, user, resource_id, payload):
     if not db.learning.claim_progress(row.id, user.id, payload["version"]):
         raise UseCaseError(status_code=409, detail="El plan cambió en otra pestaña. Actualiza para conservar el avance más reciente")
     now = datetime.utcnow()
-    row.progress = {"activity_answers": activity_answers if activity_answers is not None else previous.get("activity_answers"),
+    row.progress = {"practice_spec": practice, "activity_answers": activity_answers if activity_answers is not None else previous.get("activity_answers"),
                     "activity_feedback": feedback, "answers": answers, "published": publish or bool(previous.get("published")),
                     "submitted": finish and activity_answers is not None, "score": score, "passed": passed if finish else None,
                     "attempt_number": previous.get("attempt_number", 1),
@@ -201,7 +213,7 @@ def save_journey(db, user, resource_id, payload):
                     "evidence_id": evidence_id if publish else previous.get("evidence_id")}
     row.status, row.completed_at = ("completed", now) if finish else ("in_progress", None)
     if publish:
-        user.profile.evidence = [*existing, {"id": evidence_id, "title": resource["journey"]["lab_title"] if activity_answers is not None else resource["journey"]["title"], "kind": "project", "url": None,
+        user.profile.evidence = [*existing, {"id": evidence_id, "title": practice["lab_title"] if activity_answers is not None else resource["journey"]["title"], "kind": "project", "url": None,
             "skills": resource["skills"], "description": "\n\n".join(f"{step['title']}: {answers[step['id']]}" for step in steps),
             "verified": False, "add_to_profile": bool(payload.get("add_to_profile")), "source": "learning_practice", "created_at": now.isoformat()}]
     if finish:

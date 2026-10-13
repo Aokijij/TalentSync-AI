@@ -1,3 +1,4 @@
+import { RotateCcw } from "lucide-react";
 import { certificateCosts, courseModalities, enrollmentStatuses, learningLanguages, learningLevels } from "../utils/learningPresentation.js";
 
 export function LearningFilters({ value, onChange, resources = [] }) {
@@ -18,7 +19,7 @@ export function LearningFilters({ value, onChange, resources = [] }) {
   const activeCount = Object.values(value).filter((item) => item && item !== "all").length;
   const render = ([key, title, items]) => <label key={key} className="filter-field">{title}<select className="field-control" value={value[key] || "all"} onChange={(event) => change(key, event.target.value)}>{items.map(([id, label]) => <option value={id} key={id}>{label}</option>)}</select></label>;
   return <section className="learning-filter-panel" aria-label="Filtros de formación"><div className="learning-filter-primary"><label className="filter-field">Buscar formación<input className="field-control" value={value.query || ""} placeholder="Título, habilidad o proveedor" onChange={(event) => change("query", event.target.value)} /></label>{options.slice(0, 2).map(render)}</div>
-    {activeCount > 0 && <button className="mt-3 text-sm font-semibold text-[var(--accent)]" onClick={() => onChange({})}>Limpiar filtros ({activeCount})</button>}
+    {activeCount > 0 && <div className="filter-reset-row"><button type="button" className="filter-reset-button" onClick={() => onChange({})}><RotateCcw size={15} aria-hidden="true" />Limpiar filtros<span aria-label={`${activeCount} filtros activos`}>{activeCount}</span></button></div>}
     <details className="learning-extra-filters"><summary>Más filtros · nivel, idioma, modalidad y certificado</summary><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{options.slice(2).map(render)}</div></details>
   </section>;
 }

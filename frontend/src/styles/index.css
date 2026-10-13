@@ -479,7 +479,9 @@ html[data-theme="dark"] .role-company .button-primary { color: #251335; }
 .journey-workspace { display: grid; gap: 1.5rem; padding: clamp(1rem, 3vw, 2rem); border-radius: 20px; background: var(--surface); border: 1px solid var(--line); }
 .journey-heading { display: flex; align-items: start; gap: 1rem; }
 .journey-case { padding: 1.2rem; border-radius: 14px; background: var(--surface-subtle); border-left: 3px solid var(--accent); display: grid; gap: .6rem; font-size: .9rem; line-height: 1.7; }
-.journey-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; }
+.journey-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; list-style:none; margin:0; padding:0; }
+.journey-steps > li { list-style:none; min-width:0; }
+.journey-steps > li::marker { content:""; }
 .journey-steps button { width: 100%; height: 100%; display: flex; align-items: center; gap: .6rem; border-radius: 10px; border: 1px solid var(--line); padding: .7rem; text-align: left; font-size: .75rem; color: var(--muted); }
 .journey-steps button[aria-current="step"] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .journey-steps button span { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; border: 1px solid currentColor; }

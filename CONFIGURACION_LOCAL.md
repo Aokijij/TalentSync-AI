@@ -214,3 +214,14 @@ El 13 de octubre de 2026 se incorporó una muestra activa al catálogo local: se
 - El plan reconoce el certificado que ya aportaste y permite consultar o editar sus datos. Los recursos sin certificado anunciado se muestran como aprendizaje personal. TalentSync no valida certificados ni promete comprobar su autenticidad.
 - Cuando una empresa tiene permiso para ver el perfil completo, puede abrir los documentos aportados. La selección ciega conserva su restricción de identidad.
 - Microsoft Learn incorpora el idioma y nivel informados por la API, descripción limpia, duración y requisitos/unidades cuando el proveedor los entrega. Los campos ausentes remiten a la fuente; no se inventan temarios. Las fichas editoriales de YouTube conservan descripciones propias de TalentSync.
+
+
+## Prácticas adaptadas y controles de aprendizaje
+
+La selección de áreas está resumida por defecto; Cambiar área despliega opciones compactas. Los filtros de formación y vacantes incluyen un botón de restablecimiento con icono, y las señales de compatibilidad muestran ayuda al pasar el cursor, enfocarlas con el teclado o pulsar su icono.
+
+Añadir habilidades se ofrece en Mi perfil → Evidencias de mi experiencia. Los planes y resultados conservan sus enlaces al perfil, sin repetir esa acción ni añadir habilidades al entregar una práctica.
+
+Las prácticas complementarias se eligen por título, temario disponible, habilidades y descripción, con bancos locales por tema. El nivel determina la complejidad del cálculo; la duración amplía el caso, los pasos y los conceptos. La ficha muestra el nivel usado y el tiempo aproximado de práctica. Si no se puede identificar un tema específico, se indica que es una práctica de transferencia al área. No se presentan estos ejercicios como exámenes del proveedor ni como una cobertura completa de su curso.
+
+Cada intento conserva sus preguntas y soluciones solo en el servidor. Una edición de la ficha no cambia un intento empezado; al iniciar otro se usa la ficha actual. Los borradores anteriores a este cambio conservan el banco original hasta iniciar un nuevo intento.

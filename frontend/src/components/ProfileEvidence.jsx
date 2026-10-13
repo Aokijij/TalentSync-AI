@@ -43,7 +43,7 @@ function EvidenceCard({ row, busy, onRemove, onAddSkills }) {
         <p>Esta referencia fue aportada por ti. No equivale a una habilidad verificada.</p>
       </div>
     </details>
-    {!row.add_to_profile && skills.length > 0 && <button type="button" className="button-secondary button-sm self-start" disabled={busy} onClick={() => onAddSkills(row)}><Plus size={14} />Añadir habilidades a mi perfil</button>}
+    {!row.add_to_profile && skills.length > 0 && <button type="button" className="evidence-skills-action" disabled={busy} onClick={() => onAddSkills(row)}><span className="evidence-skills-action-icon"><Plus size={17} aria-hidden="true" /></span><span>Añadir habilidades<span>Incorporarlas a mi perfil como declaradas</span></span></button>}
     <footer className="evidence-card-actions">
       {row.url ? <a className="button-secondary button-sm" href={row.url} target="_blank" rel="noopener noreferrer">Abrir referencia<ExternalLink size={14} aria-hidden="true" /></a> : <span className="evidence-no-link">Sin enlace adjunto</span>}
       <button type="button" className="evidence-remove" disabled={busy} onClick={() => onRemove(row)} aria-label={`Retirar evidencia: ${row.title}`}><Trash2 size={15} aria-hidden="true" />Retirar</button>
