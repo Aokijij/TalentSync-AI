@@ -130,9 +130,9 @@ GitHub y Codewars se consultan desde **Mi perfil → Evidencias → Otras fuente
 
 La guía detallada para comenzar las dos integraciones está en [ACTIVAR_YOUTUBE_MICROSOFT.md](ACTIVAR_YOUTUBE_MICROSOFT.md).
 
-## 10. YouTube: preparado, desactivado por ahora
+## 10. YouTube: activado y comprobado localmente
 
-Cuando decidas activarlo:
+Para configurar de nuevo el conector:
 
 1. Crea o elige tu proyecto de Google Cloud.
 2. Habilita **YouTube Data API v3**.
@@ -148,9 +148,9 @@ YOUTUBE_LEARNING_DAILY_REQUESTS=100
 5. Reinicia el backend y recarga Administración → Catálogo educativo → Fuentes y conectores → YouTube.
 6. Consulta una lista pública. Revisa la muestra de vídeos y redacta una ficha propia antes de incorporarla.
 
-El límite local es por proceso y día UTC; consulta también la cuota real del proyecto de Google. No se descargan vídeos, no hay búsqueda masiva y no se atribuye una certificación a una lista. Por tu elección actual, el conector permanece desactivado hasta disponer del proyecto y la clave.
+El límite local es por proceso y día UTC; consulta también la cuota real del proyecto de Google. No se descargan vídeos, no hay búsqueda masiva y no se atribuye una certificación a una lista. El 13 de octubre de 2026 se activó en el entorno privado local y se comprobó una vista previa real de una lista pública. Las credenciales no se incluyen en esta guía ni en Git.
 
-## 11. Microsoft Learn: acceso autorizado pendiente
+## 11. Microsoft Learn: acceso comprobado localmente
 
 1. Registra una aplicación en Microsoft Entra y verifica que tiene acceso autorizado a Learn Platform API.
 2. Obtén el tenant, el identificador de aplicación y un secreto vigente.
@@ -166,7 +166,7 @@ LEARN_CLIENT_SECRET=secreto_privado
 4. Reinicia el backend. En Fuentes y conectores → Microsoft Learn, consulta módulos o rutas e importa una selección.
 5. Revisa el mapeo de habilidades antes de publicar. Completar un plan local no verifica credenciales de Microsoft.
 
-Este paso depende del acceso que Microsoft conceda a la aplicación. No crea ni requiere desplegar TalentSync en Azure. Conserva LEARN_ENABLED=false si no dispones de esa configuración.
+El 13 de octubre de 2026 se comprobó el acceso real de la aplicación: la primera página devolvió 19 módulos importables y una página siguiente. Las pruebas no incorporaron ni publicaron recursos. La configuración de otro entorno depende del acceso que Microsoft conceda a su aplicación. No crea ni requiere desplegar TalentSync en Azure. Conserva LEARN_ENABLED=false si no dispones de esa configuración.
 
 ## 12. Correo y acceso social opcionales
 

@@ -2,6 +2,8 @@
 
 Revisión: 13 de octubre de 2026. Los conectores están implementados. La activación real depende de tus credenciales y del acceso concedido por cada proveedor. No necesitas publicar TalentSync ni comprar un dominio para estas consultas desde el backend local.
 
+Estado local comprobado el 13 de octubre de 2026: YouTube respondió con una vista previa de una lista pública; Microsoft Learn devolvió 19 módulos importables y paginación. El catálogo se conservó sin cambios. Las credenciales están únicamente en el archivo privado local.
+
 ## 1. YouTube
 
 1. Entra en [Google Cloud Console](https://console.cloud.google.com/) con tu cuenta de Google.
