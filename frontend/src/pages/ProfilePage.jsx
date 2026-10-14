@@ -151,8 +151,10 @@ export function ProfilePage() {
       await refreshUser();
       setEditing(false);
       setMessage("Hoja de vida actualizada correctamente");
+      return data;
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, "No fue posible actualizar la hoja de vida"));
+      return null;
     }
   }
   async function upload(event) {
@@ -226,9 +228,9 @@ export function ProfilePage() {
         <span className="profile-mode"><span />{previewMode ? "Vista del documento" : editing ? "Editando tu perfil" : "Tu perfil guardado"}</span>
       </header>
       <section className="profile-toolbar print-hidden">
-        <ProfileCompletionRing profile={profile} compact />
+        <ProfileCompletionRing profile={profile} variant="bar" />
           <div className="profile-toolbar-actions">
-            <label className="button-secondary cursor-pointer hover-lift pressed focus-ring">
+            <label className="button-secondary cursor-pointer hover-lift pressed focus-ring" role="button" tabIndex={uploadingCv ? -1 : 0} aria-disabled={uploadingCv} onKeyDown={(event) => { if (!uploadingCv && ["Enter", " "].includes(event.key)) { event.preventDefault(); event.currentTarget.querySelector("input").click(); } }}>
               <Upload size={16} />
               {uploadingCv ? "Analizando CV…" : "Subir CV"}
               <input
@@ -341,7 +343,7 @@ export function ProfilePage() {
           </div>
         </section>
       ) : null}
-      {!previewMode && <CareerCoachWorkspace profile={profile} editing={editing} launch={coachLaunch} onEdit={editFromCoach} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />}
+      {!previewMode && <CareerCoachWorkspace profile={profile} editing={editing} launch={coachLaunch} onEdit={editFromCoach} onSave={save} onUpload={upload} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />}
       {!previewMode && <nav className="profile-section-nav print-hidden" aria-label="Secciones de mi perfil">{[["profile-experiences", "Experiencia"], ["profile-educations", "Formación"], ["profile-skills", "Habilidades"], ["profile-certifications", "Certificados"], ["profile-languages", "Idiomas"], ["preferencias", "Preferencias"]].map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}{!editing && <a href="#profile-evidence">Evidencias</a>}</nav>}
       {previewMode ? (
         <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />

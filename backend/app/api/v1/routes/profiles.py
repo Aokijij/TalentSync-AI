@@ -14,6 +14,7 @@ from app.api.schemas.career_coach import (
     DraftUpdate,
     VacancyDraft,
     WritingDecision,
+    WritingGeneration,
     WritingProposal,
 )
 from app.api.schemas.profile import (
@@ -45,6 +46,11 @@ def coach_writing(payload: WritingProposal, user=Depends(require_roles(UserRole.
 @router.put("/me/coach/writing/{proposal_id}")
 def coach_decide_writing(proposal_id: str, payload: WritingDecision, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
     return coach.decide_writing(db, user, proposal_id, payload.model_dump())
+
+
+@router.post("/me/coach/writing/generate")
+def coach_generate_writing(payload: WritingGeneration, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.generate_writing(db, user, payload.model_dump())
 
 
 @router.get("/me/coach/jobs")
@@ -91,7 +97,8 @@ def coach_reading(user=Depends(require_roles(UserRole.CANDIDATE)), reader=Depend
         raise
     except Exception:
         raise UseCaseError(status_code=422, detail="No fue posible leer este PDF") from None
-    return {"text": text[:30000], "pages": pages, "truncated": len(text) >= 30000 or not stored and pages > 20, "method": method, "has_text": bool(text.strip()), "note": "Esta vista muestra la lectura de TalentSync. Otros sistemas pueden interpretarlo de otra forma. El texto se limita a 30.000 caracteres; la lectura de documentos antiguos revisa hasta 20 páginas. El OCR de escaneos todavía no está disponible."}
+    from app.domain.services.career_coach import document_review
+    return {"text": text[:30000], "pages": pages, "truncated": len(text) >= 30000 or not stored and pages > 20, "method": method, "has_text": bool(text.strip()), "checks": document_review(profile, text[:30000]), "note": "Comparamos texto reconocible con tu perfil guardado. Estas comprobaciones pueden requerir revisión; no garantizan el resultado en otros sistemas. El texto se limita a 30.000 caracteres y la lectura de documentos antiguos a 20 páginas. Los PDF escaneados requieren OCR, todavía no disponible."}
 
 
 @router.get("/me/coach/export")

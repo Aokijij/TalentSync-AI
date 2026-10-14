@@ -22,6 +22,14 @@ class WritingDecision(BaseModel):
     text: str | None = Field(default=None, min_length=1, max_length=3000)
 
 
+class WritingGeneration(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    experience_index: int = Field(ge=0, le=99)
+    source_version: str = Field(min_length=64, max_length=64)
+    style: Literal["paragraph", "bullets"] = "paragraph"
+    result: str = Field(default="", max_length=700)
+
+
 class VacancyDraft(BaseModel):
     job_id: int = Field(gt=0)
 

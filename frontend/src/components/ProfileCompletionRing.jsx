@@ -66,11 +66,18 @@ export function getProfileCompletion(profile) {
   };
 }
 
-export function ProfileCompletionRing({ profile, compact = false }) {
+export function ProfileCompletionRing({ profile, compact = false, variant = "ring" }) {
   const result = getProfileCompletion(profile);
   const radius = 48;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (result.percentage / 100) * circumference;
+
+  if (variant === "bar") return <div className="profile-completion">
+    <div className="profile-completion-label"><span>Información de tu perfil</span><strong>{result.percentage}%</strong></div>
+    <div className="profile-completion-track" role="progressbar" aria-label="Información completada del perfil" aria-valuemin={0} aria-valuemax={100} aria-valuenow={result.percentage}><span style={{ width: `${result.percentage}%` }} /></div>
+    <p>{result.percentage === 100 ? "Tus campos están completos. Mantenlos actualizados." : `Puedes completar: ${result.missing.slice(0, 2).join(", ").toLowerCase()}.`}</p>
+    <small>Orientativo; no mide tu compatibilidad con una vacante.</small>
+  </div>;
 
   return (
     <div

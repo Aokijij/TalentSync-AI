@@ -13,6 +13,7 @@ from app.domain.services.career_coach import (
     star_text,
     vacancy_projection,
 )
+from app.domain.services.career_writing import rewrite_experience
 
 
 def owner_profile(user):
@@ -91,6 +92,26 @@ def decide_writing(db, user, proposal_id, payload):
     user.profile.experiences = records
     db.add(user.profile)
     proposal["status"] = "applied" if applying else "undone"
+    save(db, row, data)
+    return proposal
+
+
+def generate_writing(db, user, payload):
+    row, data = state(db, user, locked=True)
+    profile = user.profile
+    if payload["source_version"] != fingerprint(snapshot(profile)):
+        raise UseCaseError(status_code=409, detail="Tu perfil cambió. Actualiza y vuelve a generar la propuesta")
+    index = payload["experience_index"]
+    if index >= len(profile.experiences or []):
+        raise UseCaseError(status_code=404, detail="Experiencia no encontrada")
+    record = deepcopy(profile.experiences[index])
+    try:
+        generated = rewrite_experience(record, style=payload["style"], result=payload["result"])
+    except ValueError as error:
+        raise UseCaseError(status_code=422, detail=str(error)) from None
+    proposal = {"id": uuid4().hex, "index": index, "record": record, "before": record.get("description") or "", "after": generated.pop("text"),
+                "status": "prepared", "created_at": datetime.utcnow().isoformat() + "Z", **generated}
+    data["writing"] = [proposal, *data.get("writing", [])][:20]
     save(db, row, data)
     return proposal
 

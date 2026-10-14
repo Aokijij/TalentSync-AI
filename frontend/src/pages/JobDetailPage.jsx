@@ -46,9 +46,15 @@ export function JobDetailPage() {
     let active = true;
     setCoachDraftId("");
     setCoachDrafts([]);
-    if (user?.role === "candidate") api.get("/profiles/me/coach").then(({ data }) => { if (active) setCoachDrafts((data.drafts || []).filter((row) => row.confirmed && row.job_id === Number(jobId))); }).catch(() => { if (active) setCoachDrafts([]); });
+    if (user?.role === "candidate") api.get("/profiles/me/coach").then(({ data }) => {
+      if (!active) return;
+      const drafts = (data.drafts || []).filter((row) => row.confirmed && row.job_id === Number(jobId));
+      setCoachDrafts(drafts);
+      const selected = new URLSearchParams(routeLocation.search).get("coachDraft");
+      if (drafts.some((row) => row.id === selected)) setCoachDraftId(selected);
+    }).catch(() => { if (active) setCoachDrafts([]); });
     return () => { active = false; };
-  }, [user?.role, jobId]);
+  }, [user?.role, jobId, routeLocation.search]);
 
   useEffect(() => {
     api.get(`/jobs/${jobId}`).then(({ data }) =>

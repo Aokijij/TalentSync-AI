@@ -37,11 +37,34 @@ def vacancy_projection(profile, job):
     missing = [skill for skill in job.skills or [] if skill_key(skill) not in known]
     # An aspiration never changes a formal role or invents use of a tool.
     intro = f"{facts['profession'] or 'Candidato'}."
+    roles = list(dict.fromkeys(str(item.get("role") or "").strip() for item in facts.get("experiences") or [] if item.get("role")))
+    if roles:
+        intro += " Mi trayectoria incluye experiencia como " + ", ".join(roles[:2]) + "."
     if supported:
-        intro += " Habilidades declaradas relacionadas con esta vacante: " + ", ".join(supported[:8]) + "."
-    else:
-        intro += " Revisa tus experiencias y explica qué aportes reales se relacionan con esta vacante."
+        intro += " Mis conocimientos relacionados con esta oportunidad incluyen " + ", ".join(supported[:8]) + "."
     return {"profile": facts, "intro": intro, "supported_skills": supported, "questions": [f"¿Puedes respaldar {skill} con una experiencia o un proyecto real? Si no, consérvala como una brecha de formación." for skill in missing[:8]]}
+
+
+def document_review(profile, text):
+    """Explain concrete import checks without rating a candidate or an ATS."""
+    source = re.sub(r"\s+", " ", fold(text))
+    def present(value):
+        needle = re.sub(r"\s+", " ", fold(value)).strip()
+        return bool(needle) and needle in source
+    experiences = profile.experiences or []
+    studies = profile.educations or []
+    matched_jobs = sum(present(item.get("role")) and present(item.get("company")) for item in experiences)
+    matched_studies = sum(present(item.get("degree")) and present(item.get("institution")) for item in studies)
+    skills = [skill for skill in profile.skills or [] if re.search(r"(?<!\w)" + re.escape(fold(skill)) + r"(?!\w)", source)]
+    possible_phones = re.findall(r"(?<!\d)(?:\+?\d[\d ()-]{6,}\d)(?!\d)", fold(text))
+    phone = any(7 <= len(re.sub(r"\D", "", value)) <= 15 and not re.search(r"(?:19|20)\d{2}\s*[-–]\s*(?:19|20)\d{2}", value) for value in possible_phones)
+    contact = bool(re.search(r"[\w.+-]+@[\w.-]+\.[a-z]{2,}", source)) and phone
+    return [
+        {"title": "Datos de contacto", "ok": contact, "detail": "Encontramos un correo y un posible teléfono. Comprueba que sean los que quieres compartir." if contact else "No encontramos un correo y un teléfono claros. Revisa tus datos de contacto.", "target": "profile-contact", "action": "Revisar contacto"},
+        {"title": "Experiencia laboral", "ok": bool(experiences) and matched_jobs == len(experiences), "detail": f"Coinciden cargo y empresa en {matched_jobs} de {len(experiences)} experiencias del perfil. Comprueba también las fechas." if experiences else "No hay experiencias guardadas para comparar. Puedes añadir empleos, prácticas o mostrar proyectos en tus evidencias.", "target": "profile-experiences", "action": "Revisar experiencia"},
+        {"title": "Formación", "ok": bool(studies) and matched_studies == len(studies), "detail": f"Coinciden título e institución en {matched_studies} de {len(studies)} estudios guardados. Revisa si están terminados o en curso." if studies else "Revisa si tu formación se importó al perfil; también puedes registrar estudios en curso.", "target": "profile-educations", "action": "Revisar formación"},
+        {"title": "Habilidades", "ok": bool(skills), "detail": "También aparecen en el documento: " + ", ".join(skills[:6]) + ". Una mención no demuestra dominio." if skills else "No encontramos coincidencias claras con tus habilidades guardadas. Revisa si faltan o si usan otros nombres.", "target": "profile-skills", "action": "Revisar habilidades"},
+    ]
 
 
 def select_jobs(jobs, search="", sector="", location="", now=None, recent_days=90):
