@@ -72,6 +72,14 @@ export function ProfileCompletionRing({ profile, compact = false, variant = "rin
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (result.percentage / 100) * circumference;
 
+  if (variant === "summary") return <div className="profile-summary-progress">
+    <div className="profile-summary-circle" role="progressbar" aria-label="Información completada del perfil" aria-valuemin={0} aria-valuemax={100} aria-valuenow={result.percentage}>
+      <svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r={radius} fill="none" stroke="var(--line)" strokeWidth="7" /><circle cx="56" cy="56" r={radius} fill="none" stroke="var(--accent)" strokeWidth="7" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} /></svg>
+      <strong>{result.percentage}%</strong>
+    </div>
+    <div><strong>Tu perfil profesional</strong><p>{result.completed} de {result.total} apartados incluidos</p><small>{result.percentage === 100 ? "Mantén tu información actualizada." : "Completa lo que sea relevante para tu trayectoria."}</small></div>
+  </div>;
+
   if (variant === "bar") return <div className="profile-completion">
     <div className="profile-completion-label"><span>Información de tu perfil</span><strong>{result.percentage}%</strong></div>
     <div className="profile-completion-track" role="progressbar" aria-label="Información completada del perfil" aria-valuemin={0} aria-valuemax={100} aria-valuenow={result.percentage}><span style={{ width: `${result.percentage}%` }} /></div>

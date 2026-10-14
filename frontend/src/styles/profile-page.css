@@ -53,3 +53,34 @@ html[data-theme="dark"] .profile-page .button-primary { color:#082f49; }
 .profile-completion p { font-size:.72rem; line-height:1.5; color:var(--muted); }
 .profile-completion small { display:block; font-size:.65rem; line-height:1.5; color:var(--muted); margin-top:.2rem; }
 @media(max-width:800px) { .profile-completion { max-width:none; width:100%; } }
+
+/* The profile presents the person first; tools and extra sections are optional. */
+.profile-page-heading h1 { font-size:1.5rem; margin:0; letter-spacing:-.025em; }
+.profile-page { --profile-shadow:none; }
+.profile-toolbar { position:static; padding:.9rem 1.2rem; background:var(--surface); }
+.profile-summary-progress { display:flex; align-items:center; gap:1rem; min-width:0; }
+.profile-summary-circle { position:relative; width:76px; height:76px; flex-shrink:0; }
+.profile-summary-circle svg { display:block; width:100%; height:100%; transform:rotate(-90deg); }
+.profile-summary-circle > strong { position:absolute; inset:0; display:grid; place-items:center; font-size:1.2rem; line-height:1; font-variant-numeric:tabular-nums; color:var(--ink-strong); }
+.profile-summary-progress > div:last-child > strong { font-size:.9rem; color:var(--ink-strong); }
+.profile-summary-progress p { color:var(--muted); font-size:.76rem; margin:.25rem 0; }
+.profile-summary-progress small { display:block; color:var(--muted); font-size:.68rem; max-width:32ch; line-height:1.5; }
+.profile-identity { border-radius:1rem; padding:1.5rem; background:var(--surface); }
+.profile-identity .profile-eyebrow { display:none; }
+.profile-identity .profile-name { margin:0 0 .35rem; font-size:1.65rem; }
+.profile-identity #profile-contact { margin-top:1rem; }
+.profile-identity #profile-contact > span { border-color:transparent; background:var(--surface-subtle); padding:.45rem .6rem; }
+.profile-section-nav { border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; padding:0 0 .5rem; gap:.4rem; }
+.profile-section-nav button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; border:1px solid transparent; border-radius:.6rem; padding:.6rem .9rem; font-size:.82rem; font-weight:650; color:var(--muted); }
+.profile-section-nav button:hover { color:var(--accent); background:var(--surface-subtle); }
+.profile-section-nav button[aria-pressed=true] { border-color:var(--line); background:var(--surface); color:var(--accent); }
+.profile-content-grid { display:block; margin-top:0; }
+.profile-main-sections { grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); align-items:start; }
+.profile-main-sections > section:first-child { grid-column:1/-1; }
+.profile-side-sections { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; }
+.profile-side-sections #profile-skills { grid-column:1/-1; }
+.profile-view-preferences .profile-side-sections { grid-template-columns:1fr; max-width:900px; }
+.profile-section { padding:1.2rem; }
+.profile-section-heading { font-size:.92rem; }
+.profile-page .experience-entry { background:transparent; padding:.8rem .9rem; }
+@media(max-width:800px) { .profile-main-sections, .profile-side-sections { grid-template-columns:1fr; } .profile-main-sections > section:first-child, .profile-side-sections #profile-skills { grid-column:auto; } .profile-summary-progress { width:100%; } .profile-section-nav { flex-wrap:nowrap; overflow-x:auto; } .profile-section-nav button { white-space:nowrap; font-size:.76rem; padding:.6rem .75rem; } }

@@ -56,6 +56,10 @@ class SQLPractice(Protocol):
     def run(self, query: str, dataset: dict) -> dict: ...
 
 
+class CareerTextWriter(Protocol):
+    def generate(self, record: dict, *, style: str, result: str) -> dict: ...
+
+
 class InterviewConnectivity(Protocol):
     def configuration(self, room_id: str, user_id: int) -> dict: ...
 

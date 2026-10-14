@@ -182,6 +182,11 @@ def test_adaptation_never_infers_cloud_knowledge_or_changes_formal_titles():
 
 
 def test_generate_from_saved_experience_needs_no_star_form_and_keeps_apply_undo_guards(client):
+    from app.api.deps import get_career_writer
+    class Writer:
+        def generate(self, record, *, style, result):
+            return {"text": "Mi trabajo se centró en atender pacientes y apoyar la elaboración de registros.", "idea": "¿Qué registro entregabas al equipo?"}
+    client.app.dependency_overrides[get_career_writer] = lambda: Writer()
     _, headers = candidate(client, "generated-coach", "Auxiliar de enfermería")
     profile = client.get("/api/v1/profiles/me", headers=headers).json()
     profile["experiences"][0]["description"] = "Atención a pacientes\nApoyo en la elaboración de registros"
@@ -191,7 +196,8 @@ def test_generate_from_saved_experience_needs_no_star_form_and_keeps_apply_undo_
     response = client.post(BASE + "/writing/generate", headers=headers, json=payload)
     assert response.status_code == 200, response.text
     row = response.json()
-    assert row["after"] == "Atendí a pacientes. Apoyé en la elaboración de registros."
+    assert row["after"] == "Mi trabajo se centró en atender pacientes y apoyar la elaboración de registros."
+    assert row["method"] == "local-ai" and row["questions"]
     assert client.get("/api/v1/profiles/me", headers=headers).json()["experiences"][0]["description"] == row["before"]
     assert client.put(BASE + f"/writing/{row['id']}", headers=headers, json={"action": "apply"}).status_code == 200
     assert client.post(BASE + "/writing/generate", headers=headers, json=payload).status_code == 409

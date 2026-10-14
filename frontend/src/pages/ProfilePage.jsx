@@ -4,7 +4,7 @@ import { CvContextReview } from "../components/CvContextReview.jsx";
 import { isOngoing } from "../utils/profileStatus.js";
 import { experiencePeriod } from "../utils/experienceDates.js";
 import { ExperienceFields, MobilityFields } from "../components/ExperienceFields.jsx";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
 import { useEffect, useState } from "react";
@@ -32,7 +32,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 import { AuthenticatedImage } from "../components/AuthenticatedImage.jsx";
 import { CurrencyInput } from "../components/CurrencyInput.jsx";
 import "../styles/profile-page.css";
-import { ProfileCompletionRing, getProfileCompletion } from "../components/ProfileCompletionRing.jsx";
+import { ProfileCompletionRing } from "../components/ProfileCompletionRing.jsx";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { getResumePalette, getResumePalettes } from "../constants/resumePalettes.js";
 import {
@@ -82,6 +82,9 @@ const normalize = (data) => ({
 export function ProfilePage() {
   const { refreshUser } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [profileTab, setProfileTab] = useState("trajectory");
+  const [allSkills, setAllSkills] = useState(false);
   const { confirm } = useFeedback();
   const [profile, setProfile] = useState(null);
   const [email, setEmail] = useState("");
@@ -94,20 +97,21 @@ export function ProfilePage() {
   const [photoVersion, setPhotoVersion] = useState(0);
   const [uploadingCv, setUploadingCv] = useState(false);
   const [coachTarget, setCoachTarget] = useState("");
-  const [coachLaunch] = useState(() => {
-    const params = new URLSearchParams(location.search);
-    return params.get("coach") === "vacancy" ? { tab: "vacancy", jobId: params.get("job") } : null;
-  });
   useEffect(() => {
-    if (!coachTarget || !editing && coachTarget !== "profile-evidence") return;
+    const params = new URLSearchParams(location.search), job = params.get("job");
+    if (params.get("coach") === "vacancy" && /^\d+$/.test(job || "")) navigate(`/vacantes/${job}?preparar=1`, { replace: true });
+  }, [location.search, navigate]);
+  useEffect(() => {
+    if (!coachTarget || !editing && !["profile-evidence", "preferencias"].includes(coachTarget)) return;
     const target = document.getElementById(coachTarget);
     if (target) {
       target.scrollIntoView({ block: "center", behavior: "smooth" });
       (target.matches("input,textarea") ? target : target.querySelector("input,textarea,button"))?.focus({ preventScroll: true });
     }
     setCoachTarget("");
-  }, [coachTarget, editing]);
+  }, [coachTarget, editing, profileTab]);
   function editFromCoach(target) {
+    setProfileTab(target === "profile-evidence" ? "evidence" : target === "preferencias" ? "preferences" : ["profile-skills", "profile-languages", "profile-certifications"].includes(target) ? "details" : "trajectory");
     if (target === "profile-evidence" && editing) {
       setMessage("Guarda los cambios del perfil antes de gestionar tus evidencias.");
       return;
@@ -125,7 +129,13 @@ export function ProfilePage() {
       })
       .catch(() => setError("No fue posible cargar el perfil"));
   }, []);
-  useEffect(() => { if (profile && location.hash === "#preferencias") document.getElementById("preferencias")?.scrollIntoView({ block: "start" }); }, [Boolean(profile), location.hash]);
+  useEffect(() => {
+    if (!profile || !location.hash) return;
+    const target = location.hash.slice(1);
+    if (["profile-skills", "profile-languages", "profile-certifications"].includes(target)) { setProfileTab("details"); setEditing(true); setCoachTarget(target); }
+    else if (target === "preferencias") { setProfileTab("preferences"); setCoachTarget(target); }
+    else if (["evidencias", "profile-evidence"].includes(target)) { setProfileTab("evidence"); setCoachTarget("profile-evidence"); }
+  }, [Boolean(profile), location.hash]);
   const update = (key, value) => setProfile((p) => ({ ...p, [key]: value }));
   const updateItem = (key, index, field, value) =>
     update(
@@ -224,11 +234,11 @@ export function ProfilePage() {
   return (
     <div className={`profile-page space-y-6 ${editing ? "profile-is-editing" : ""}`}>
       <header className="profile-page-heading">
-        <div><p className="profile-eyebrow">TU TRAYECTORIA, TU PRÓXIMO PASO</p><h1>Mi perfil profesional</h1><p>Presenta lo que sabes y encuentra cómo seguir avanzando.</p></div>
+        <div><h1>Mi perfil</h1></div>
         <span className="profile-mode"><span />{previewMode ? "Vista del documento" : editing ? "Editando tu perfil" : "Tu perfil guardado"}</span>
       </header>
       <section className="profile-toolbar print-hidden">
-        <ProfileCompletionRing profile={profile} variant="bar" />
+        <ProfileCompletionRing profile={profile} variant="summary" />
           <div className="profile-toolbar-actions">
             <label className="button-secondary cursor-pointer hover-lift pressed focus-ring" role="button" tabIndex={uploadingCv ? -1 : 0} aria-disabled={uploadingCv} onKeyDown={(event) => { if (!uploadingCv && ["Enter", " "].includes(event.key)) { event.preventDefault(); event.currentTarget.querySelector("input").click(); } }}>
               <Upload size={16} />
@@ -270,7 +280,6 @@ export function ProfilePage() {
             </button>
           </div>
       </section>
-      <p className="profile-upload-note print-hidden">Importa tu PDF para completar los campos. El original es privado; puedes revisarlo en el Coach o reemplazarlo con otra carga.</p>
       {(message || error) && (
         <p
           className={`rounded-[var(--radius-lg)] border px-4 py-3 text-sm ${error ? "border-[var(--error)] bg-[var(--error)]/10 text-[var(--error)]" : "border-[var(--success)] bg-[var(--success)]/10 text-[var(--success)]"}`}
@@ -343,12 +352,7 @@ export function ProfilePage() {
           </div>
         </section>
       ) : null}
-      {!previewMode && <CareerCoachWorkspace profile={profile} editing={editing} launch={coachLaunch} onEdit={editFromCoach} onSave={save} onUpload={upload} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />}
-      {!previewMode && <nav className="profile-section-nav print-hidden" aria-label="Secciones de mi perfil">{[["profile-experiences", "Experiencia"], ["profile-educations", "Formación"], ["profile-skills", "Habilidades"], ["profile-certifications", "Certificados"], ["profile-languages", "Idiomas"], ["preferencias", "Preferencias"]].map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}{!editing && <a href="#profile-evidence">Evidencias</a>}</nav>}
-      {previewMode ? (
-        <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
-      ) : (
-        <article className="profile-document">
+      {!previewMode && (
           <header className="profile-identity">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[var(--accent)] to-[var(--success)]" />
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -436,13 +440,18 @@ export function ProfilePage() {
                   </span>
                 </div>
               </div>
-              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${getProfileCompletion(profile).percentage === 100 ? "bg-[var(--success)]/20 text-[var(--success)]" : "bg-[var(--warning)]/15 text-[var(--warning)]"}`}>
-                {getProfileCompletion(profile).percentage === 100 ? "Perfil listo para comparar" : `${getProfileCompletion(profile).percentage}% completo`}
-              </span>
+
             </div>
           </header>
-          <div className="profile-content-grid">
-            <div className="profile-main-sections">
+      )}
+      {!previewMode && <CareerCoachWorkspace profile={profile} editing={editing} onEdit={editFromCoach} onSave={save} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />}
+      {!previewMode && <nav className="profile-section-nav print-hidden" aria-label="Información de mi perfil">{[["trajectory", "Trayectoria"], ["details", "Habilidades y cursos"], ["preferences", "Preferencias"], ["evidence", "Evidencias"]].map(([key, label]) => <button type="button" key={key} aria-pressed={profileTab === key} onClick={() => setProfileTab(key)}>{label}</button>)}</nav>}
+      {previewMode ? (
+        <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
+      ) : (
+        <article className="profile-document">
+          <div className={`profile-content-grid profile-view-${profileTab}`}>
+            {profileTab === "trajectory" && <div className="profile-main-sections">
             <Section icon={UserRound} title="Resumen profesional">
               <p className="text-sm leading-6 text-[var(--muted)]">
                 {profile.experience || "Agrega tu profesión, experiencia, formación y habilidades. Al guardar construiremos un resumen breve de tu trayectoria."}
@@ -467,8 +476,9 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
-            </div>
-            <aside className="profile-side-sections">
+            </div>}
+            {["details", "preferences"].includes(profileTab) && <aside className="profile-side-sections">
+            {profileTab === "details" && <>
             <Section id="profile-certifications" icon={CheckCircle2} title="Cursos y certificaciones">
               <Items
                 type="certifications"
@@ -482,7 +492,7 @@ export function ProfilePage() {
             <Section id="profile-skills" icon={BriefcaseBusiness} title="Habilidades">
               <CvContextReview rows={profile.cv_skill_context} skills={profile.skills} />
               <div className="flex flex-wrap gap-2">
-                {profile.skills.map((item) => (
+                {(editing || allSkills ? profile.skills : profile.skills.slice(0, 12)).map((item) => (
                   <span
                     key={item}
                     className="profile-skill"
@@ -507,6 +517,7 @@ export function ProfilePage() {
                   </span>
                 ))}
               </div>
+              {!editing && profile.skills.length > 12 && <button type="button" className="button-secondary button-sm" aria-expanded={allSkills} onClick={() => setAllSkills((value) => !value)}>{allSkills ? "Ver menos habilidades" : `Ver las ${profile.skills.length} habilidades`}</button>}
               {editing && (
                 <div className="mt-4 flex gap-2">
                   <input
@@ -529,7 +540,8 @@ export function ProfilePage() {
                 </div>
               )}
             </Section>
-            <div id="preferencias" className="scroll-mt-44"><Section icon={BriefcaseBusiness} title="Preferencias laborales">
+            </>}
+            {profileTab === "preferences" && <div id="preferencias" className="scroll-mt-44"><Section icon={BriefcaseBusiness} title="Preferencias laborales">
               {editing ? (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm font-semibold text-[var(--muted)]">
@@ -625,12 +637,13 @@ export function ProfilePage() {
                   </p>
                 </div>
               )}
-            <MobilityFields value={profile.mobility || {}} editing={editing} onChange={(value) => update("mobility", value)} /></Section></div>
-            </aside>
+            <MobilityFields value={profile.mobility || {}} editing={editing} onChange={(value) => update("mobility", value)} /></Section></div>}
+            </aside>}
       </div>
         </article>
       )}
-      {!editing && <div id="profile-evidence"><ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} /></div>}
+      {!previewMode && profileTab === "evidence" && editing && <p className="surface-card p-5 text-sm text-[var(--muted)]">Guarda tus cambios para gestionar las evidencias de tu perfil.</p>}
+      {!previewMode && profileTab === "evidence" && !editing && <div id="profile-evidence"><ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} /></div>}
     </div>
   );
 }
@@ -833,7 +846,7 @@ function ResumePreview({ profile, name, email, photoVersion }) {
           {profile.languages?.length ? <ResumeSection title="Idiomas" compact>{profile.languages.map((item, index) => <p className="resume-compact-item capitalize" key={index}><b>{item.name}</b><br />{languageLevelLabel(item.level)}</p>)}</ResumeSection> : null}
           <ResumeSection title="Habilidades" compact>
             <div className="resume-skills">
-              {profile.skills.map((item) => (
+              {(editing || allSkills ? profile.skills : profile.skills.slice(0, 12)).map((item) => (
                 <span key={item} className="resume-skill">
                   {item}
                 </span>

@@ -47,6 +47,8 @@ def prepare_environment(*, testing=False):
                    "SESSION_AUTH_ENABLED": "true", "LOCAL_MAIL_ENABLED": "true",
                    "WORKFLOW_MAINTENANCE_ENABLED": "true",
                    "MODEL_MAINTENANCE_ENABLED": "true", "MATCH_MODEL_PATH": values.get("MATCH_MODEL_PATH", ""),
+                   "CAREER_WRITER_MODEL": values.get("CAREER_WRITER_MODEL", ""),
+                   "CAREER_WRITER_EXECUTABLE": values.get("CAREER_WRITER_EXECUTABLE", ""),
                    "MATCH_MODEL_CPU_THREADS": values.get("MATCH_MODEL_CPU_THREADS", "2"),
                    "CV_ENTITY_MODEL_PATH": values.get("CV_ENTITY_MODEL_PATH", ""),
                    "CV_ENTITY_PYTHON": values.get("CV_ENTITY_PYTHON", ""),
@@ -71,6 +73,7 @@ def prepare_environment(*, testing=False):
     if testing:
         # Tests must not depend on user integrations, weights or the demo database.
         values.update({"DATABASE_URL": "sqlite://", "MATCH_MODEL_PATH": "", "CV_ENTITY_MODEL_PATH": "", "CV_ENTITY_PYTHON": "",
+                       "CAREER_WRITER_MODEL": "", "CAREER_WRITER_EXECUTABLE": "",
                        "PUBLIC_LEARNING_REFRESH_ENABLED": "false",
                        "YOUTUBE_LEARNING_ENABLED": "false", "YOUTUBE_API_KEY": "", "YOUTUBE_LEARNING_DAILY_REQUESTS": "100",
                        "LEARN_ENABLED": "false", "LEARN_TENANT_ID": "", "LEARN_CLIENT_ID": "", "LEARN_CLIENT_SECRET": "",

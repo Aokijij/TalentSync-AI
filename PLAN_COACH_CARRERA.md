@@ -4,13 +4,13 @@
 
 ## Primera entrega implementada
 
-Actualización de implementación: el módulo compartido «Coach de Carrera» ya está disponible para todos los candidatos en Mi perfil. Incluye historial privado de propuestas con antes/después y deshacer, versiones por vacante seleccionables al postularse, copia profesional de lo enviado, PDF original frente a texto extraído y radar de demanda observado con enlaces al catálogo. Se prueba con perfiles de distintas profesiones; no depende de una cuenta ni de un CV concreto. Consulta `CONFIGURACION_LOCAL.md` para límites y uso. Los apartados siguientes conservan la arquitectura de evolución, incluyendo generación con IA y OCR que aún no se han activado.
+Actualización del 14 de octubre: la ayuda está distribuida entre Mi perfil (sugerencias y redacción), Mi desarrollo (Qué aprender) y cada vacante (preparación opcional de la presentación). El perfil muestra primero la trayectoria y mantiene las herramientas plegadas. Se retiraron el lector técnico del PDF y las descargas por vacante de la interfaz. La exportación general respeta el diseño seleccionado.
 
-Se sustituyó la lista de entidades detectadas por recomendaciones priorizadas de claridad y consistencia. Cada consejo enlaza con el campo a revisar. La experiencia de uso ahora genera una propuesta desde el texto guardado, con resultado adicional opcional, comparación editable y deshacer. El generador es local y conservador: transforma expresiones reconocidas sin aportar hechos. Un modelo de lenguaje generativo continúa pendiente. La vista del PDF prioriza comprobaciones accionables y la formación muestra primero tres habilidades por aprender; los detalles técnicos quedan desplegables.
+La redacción ya usa Qwen2.5-1.5B-Instruct cuantizado, ejecutado localmente con llama.cpp, sin API de pago. Genera un borrador y una pregunta para concretar el aporte; se compara, edita, aplica y deshace. Se filtran afirmaciones promocionales no respaldadas y se rechazan números y herramientas nuevos reconocibles. La revisión humana sigue siendo necesaria. Las propuestas se prueban con profesiones diferentes y no dependen de una cuenta concreta. Consulta `CONFIGURACION_LOCAL.md` para preparación reproducible, hashes, límites y operación. Los apartados siguientes describen la evolución deseada, incluyendo OCR y una evaluación más amplia con CV anonimizados.
 
 Se corrigió el contexto de habilidades: formación y aprendizaje actual son estados diferentes. Cada mención tiene fragmento, motivo y, cuando existe, expresión explícita. Las etiquetas antiguas sin respaldo se presentan como contexto incierto. La importación no ejecuta GLiNER. No se penalizan periodos sin empleo ni se validan certificados.
 
-## Siguiente entrega propuesta: redacción asistida y adaptación por vacante
+## Criterios para evolucionar la redacción asistida y la adaptación por vacante
 
 El generador de texto debe recibir únicamente hechos confirmados, el campo seleccionado y, opcionalmente, los requisitos de una vacante. Primero pregunta por la información que falta: qué hizo la persona, alcance real, herramientas usadas y resultado comprobable. Si no hay cifras, redacta un resultado cualitativo. Devuelve una propuesta por campo con su origen, preguntas pendientes y comparación antes/después; no completa datos desconocidos.
 

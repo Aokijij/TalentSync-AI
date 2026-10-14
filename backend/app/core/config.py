@@ -88,6 +88,9 @@ class Settings(BaseSettings):
     workflow_maintenance_enabled: bool = False
     model_maintenance_enabled: bool = False
     match_model_path: str = ""
+    career_writer_model: str = ""
+    career_writer_executable: str = ""
+    career_writer_timeout_seconds: float = Field(default=90, ge=10, le=120)
     match_model_cpu_threads: int = Field(default=2, ge=1, le=8)
     periodic_maintenance_interval_hours: int = 24
     periodic_maintenance_initial_delay_seconds: int = 90

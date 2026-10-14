@@ -15,6 +15,7 @@ import {
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import { OfferConditions } from "../components/OfferConditions.jsx";
+import { CareerCoachTools } from "../components/CareerCoachTools.jsx";
 import { OfferFeedback } from "../components/OfferFeedback.jsx";
 import { salaryLabel } from "../utils/offerQuality.js";
 
@@ -42,6 +43,9 @@ export function JobDetailPage() {
   const [availableJobs, setAvailableJobs] = useState([]);
   const [companyId, setCompanyId] = useState(null);
   const [coachDrafts, setCoachDrafts] = useState([]), [coachDraftId, setCoachDraftId] = useState("");
+  const [showPreparation, setShowPreparation] = useState(false);
+  useEffect(() => { setShowPreparation(new URLSearchParams(routeLocation.search).get("preparar") === "1"); }, [jobId, routeLocation.search]);
+  useEffect(() => { if (showPreparation) document.getElementById("vacancy-preparation")?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [showPreparation, job]);
   useEffect(() => {
     let active = true;
     setCoachDraftId("");
@@ -314,7 +318,7 @@ export function JobDetailPage() {
           <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="mb-3 font-semibold">Idiomas y nivel mínimo</h2><LanguagesEditor value={job.languages || []} editing={false} required /></div>
           {user?.role === "candidate" ? (
             <>
-              {!alreadyApplied && <div className="mt-5 rounded-lg border border-[var(--line)] p-3"><Link className="text-sm font-semibold text-[var(--accent)]" to={`/perfil?coach=vacancy&job=${job.id}`}>Preparar mi versión para esta vacante →</Link>{job.source_kind !== "external" && <label className="mt-3 block text-sm">Versión que enviaré<select className="field-control mt-1" value={coachDraftId} onChange={(event) => setCoachDraftId(event.target.value)}><option value="">Mi perfil habitual</option>{coachDrafts.map((row) => <option key={row.id} value={row.id}>{row.job_title} · {row.created_at.slice(0, 10)} · versión {row.revision}</option>)}</select></label>}</div>}
+              {!alreadyApplied && job.source_kind !== "external" && <div className="mt-5 space-y-3"><button type="button" className="button-secondary w-full" aria-expanded={showPreparation} onClick={() => setShowPreparation((value) => !value)}>Personalizar mi presentación (opcional)</button>{coachDrafts.length > 0 && <label className="block text-sm">Presentación que enviaré<select className="field-control mt-1" value={coachDraftId} onChange={(event) => setCoachDraftId(event.target.value)}><option value="">Mi perfil habitual</option>{coachDrafts.map((row) => <option key={row.id} value={row.id}>{row.created_at.slice(0, 10)} · presentación revisada</option>)}</select></label>}</div>}
               {job.source_kind === "external" && job.external_url ? (
                 <div className="mt-8 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
                   <p className="text-sm leading-5 text-[var(--muted)]">
@@ -335,7 +339,7 @@ export function JobDetailPage() {
                   Ya estás postulado a esta vacante
                 </div>
               ) : (
-                <button onClick={() => job.application_questions?.length ? setShowQuestions(true) : apply()} className="button-primary mt-8 w-full">
+                <button id="job-apply-action" onClick={() => job.application_questions?.length ? setShowQuestions(true) : apply()} className="button-primary mt-8 w-full">
                   <Send size={16} />
                   Postularme
                 </button>
@@ -354,6 +358,7 @@ export function JobDetailPage() {
           ) : null}
         </aside>
       </section>
+      {user?.role === "candidate" && !alreadyApplied && showPreparation && job.source_kind !== "external" && <section id="vacancy-preparation" className="scroll-mt-6"><CareerCoachTools key={job.id} context="vacancy" job={job} onDraftSaved={(saved) => { setCoachDrafts((rows) => [saved, ...rows.filter((row) => row.id !== saved.id)]); setCoachDraftId(saved.id); }} onDone={() => { setShowPreparation(false); document.getElementById("job-apply-action")?.focus(); document.getElementById("job-apply-action")?.scrollIntoView({ block: "center", behavior: "smooth" }); }} /></section>}
       {!isOwnCompanyJob && similarJobs.length ? (
         <section className="surface-card p-6">
           <div>

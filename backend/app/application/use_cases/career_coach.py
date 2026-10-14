@@ -13,7 +13,7 @@ from app.domain.services.career_coach import (
     star_text,
     vacancy_projection,
 )
-from app.domain.services.career_writing import rewrite_experience
+from app.domain.services.career_writing import validate_generated_text
 
 
 def owner_profile(user):
@@ -96,19 +96,25 @@ def decide_writing(db, user, proposal_id, payload):
     return proposal
 
 
-def generate_writing(db, user, payload):
-    row, data = state(db, user, locked=True)
-    profile = user.profile
+def generate_writing(db, user, payload, *, writer=None):
+    profile = owner_profile(user)
     if payload["source_version"] != fingerprint(snapshot(profile)):
         raise UseCaseError(status_code=409, detail="Tu perfil cambió. Actualiza y vuelve a generar la propuesta")
     index = payload["experience_index"]
     if index >= len(profile.experiences or []):
         raise UseCaseError(status_code=404, detail="Experiencia no encontrada")
     record = deepcopy(profile.experiences[index])
+    if not str(record.get("description") or "").strip():
+        raise UseCaseError(status_code=422, detail="Escribe primero una frase sobre lo que hiciste en esta experiencia")
+    if writer is None:
+        raise UseCaseError(status_code=503, detail="La IA local todavía no está preparada. No se conectará una API de pago")
     try:
-        generated = rewrite_experience(record, style=payload["style"], result=payload["result"])
+        generated = validate_generated_text(writer.generate(record, style=payload["style"], result=payload["result"]), record, payload["result"])
     except ValueError as error:
         raise UseCaseError(status_code=422, detail=str(error)) from None
+    row, data = state(db, user, locked=True)
+    if payload["source_version"] != fingerprint(snapshot(user.profile)):
+        raise UseCaseError(status_code=409, detail="Editaste el perfil mientras se preparaba la propuesta. Genera otra con tu información actualizada")
     proposal = {"id": uuid4().hex, "index": index, "record": record, "before": record.get("description") or "", "after": generated.pop("text"),
                 "status": "prepared", "created_at": datetime.utcnow().isoformat() + "Z", **generated}
     data["writing"] = [proposal, *data.get("writing", [])][:20]

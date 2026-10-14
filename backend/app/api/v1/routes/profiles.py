@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import Response
 
 from app.api.deps import (
+    get_career_writer,
     get_current_user,
     get_image_storage,
     get_resume_exporter,
@@ -49,8 +50,8 @@ def coach_decide_writing(proposal_id: str, payload: WritingDecision, user=Depend
 
 
 @router.post("/me/coach/writing/generate")
-def coach_generate_writing(payload: WritingGeneration, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
-    return coach.generate_writing(db, user, payload.model_dump())
+def coach_generate_writing(payload: WritingGeneration, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work), writer=Depends(get_career_writer)):
+    return coach.generate_writing(db, user, payload.model_dump(), writer=writer)
 
 
 @router.get("/me/coach/jobs")
@@ -116,7 +117,8 @@ def coach_export(draft_id: str | None = None, application_id: int | None = None,
             raise UseCaseError(status_code=404, detail="Versión enviada no encontrada")
         saved = application.coach_snapshot
         values = {**saved["profile"], "experience": saved["intro"]}
-    values.update(resume_style="minimal", resume_color="default", evidence=[])
+    profile = coach.owner_profile(user)
+    values.update(resume_style=profile.resume_style or "classic", resume_color=profile.resume_color or "default", evidence=[])
     pdf_user = SimpleNamespace(name=user.name, email=user.email, profile=SimpleNamespace(**values))
     return Response(exporter(pdf_user), media_type="application/pdf", headers={"Content-Disposition": 'attachment; filename="perfil-simple.pdf"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
