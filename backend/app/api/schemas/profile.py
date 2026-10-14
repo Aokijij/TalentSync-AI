@@ -84,6 +84,7 @@ class ProfileResponse(ProfileBase):
 
 
 class CandidateProfileResponse(ProfileResponse):
+    submitted_version: str | None = None
     name: str
     email: str | None = None
     identity_hidden: bool = False

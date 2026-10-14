@@ -10,18 +10,108 @@ from app.api.deps import (
     get_unit_of_work,
     require_roles,
 )
+from app.api.schemas.career_coach import (
+    DraftUpdate,
+    VacancyDraft,
+    WritingDecision,
+    WritingProposal,
+)
 from app.api.schemas.profile import (
     CandidateProfileResponse,
     ProfileResponse,
     ProfileUpdate,
 )
+from app.application.errors import UseCaseError
 from app.application.ports.services import ImageStorage, ResumeReader, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
+from app.application.use_cases import career_coach as coach
 from app.application.use_cases import profiles as use_cases
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
 
 router = APIRouter()
+
+
+@router.get("/me/coach")
+def coach_overview(user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.overview(db, user)
+
+
+@router.post("/me/coach/writing")
+def coach_writing(payload: WritingProposal, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.prepare_writing(db, user, payload.model_dump())
+
+
+@router.put("/me/coach/writing/{proposal_id}")
+def coach_decide_writing(proposal_id: str, payload: WritingDecision, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.decide_writing(db, user, proposal_id, payload.model_dump())
+
+
+@router.get("/me/coach/jobs")
+def coach_jobs(search: str = "", user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.jobs(db, search[:160])
+
+
+@router.post("/me/coach/drafts")
+def coach_prepare_draft(payload: VacancyDraft, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.prepare_draft(db, user, payload.job_id)
+
+
+@router.put("/me/coach/drafts/{draft_id}")
+def coach_update_draft(draft_id: str, payload: DraftUpdate, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.update_draft(db, user, draft_id, payload.model_dump())
+
+
+@router.get("/me/coach/radar")
+def coach_radar(search: str = "", sector: str = "", location: str = "", user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.radar(db, user, search[:160], sector[:120], location[:120])
+
+
+@router.get("/me/coach/pdf")
+def coach_pdf(user=Depends(require_roles(UserRole.CANDIDATE)), reader=Depends(get_resume_reader)):
+    return Response(reader.original(coach.owner_profile(user)), media_type="application/pdf", headers={"Content-Disposition": 'inline; filename="cv-original.pdf"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@router.get("/me/coach/reading")
+def coach_reading(user=Depends(require_roles(UserRole.CANDIDATE)), reader=Depends(get_resume_reader)):
+    from io import BytesIO
+
+    from pypdf import PdfReader
+    profile = coach.owner_profile(user)
+    try:
+        pdf = PdfReader(BytesIO(reader.original(profile)))
+        pages = len(pdf.pages)
+        text = (profile.preferences or {}).get("cv_source_text")
+        stored = bool(text)
+        method = "Texto usado en tu última importación"
+        if not text:
+            text = "\n\n".join(page.extract_text() or "" for page in pdf.pages[:20])
+            method = "Lectura digital local del PDF guardado"
+    except UseCaseError:
+        raise
+    except Exception:
+        raise UseCaseError(status_code=422, detail="No fue posible leer este PDF") from None
+    return {"text": text[:30000], "pages": pages, "truncated": len(text) >= 30000 or not stored and pages > 20, "method": method, "has_text": bool(text.strip()), "note": "Esta vista muestra la lectura de TalentSync. Otros sistemas pueden interpretarlo de otra forma. El texto se limita a 30.000 caracteres; la lectura de documentos antiguos revisa hasta 20 páginas. El OCR de escaneos todavía no está disponible."}
+
+
+@router.get("/me/coach/export")
+def coach_export(draft_id: str | None = None, application_id: int | None = None, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work), exporter=Depends(get_resume_exporter)):
+    from types import SimpleNamespace
+
+    from app.domain.services.career_coach import snapshot
+    values = snapshot(coach.owner_profile(user))
+    if draft_id:
+        draft = coach.own_draft(db, user, draft_id)
+        values = {**draft["profile"], "experience": draft["intro"]}
+    if application_id:
+        application = db.applications.get(application_id)
+        if application is None or application.user_id != user.id or not application.coach_snapshot:
+            raise UseCaseError(status_code=404, detail="Versión enviada no encontrada")
+        saved = application.coach_snapshot
+        values = {**saved["profile"], "experience": saved["intro"]}
+    values.update(resume_style="minimal", resume_color="default", evidence=[])
+    pdf_user = SimpleNamespace(name=user.name, email=user.email, profile=SimpleNamespace(**values))
+    return Response(exporter(pdf_user), media_type="application/pdf", headers={"Content-Disposition": 'attachment; filename="perfil-simple.pdf"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @router.get("/me", response_model=ProfileResponse)

@@ -20,13 +20,14 @@ import { Pagination } from "../components/Pagination.jsx";
 export function LearningPage() {
   const { user } = useAuth();
   const { confirm } = useFeedback();
-  const [filters, setFilters] = useState({});
+  const location = useLocation();
+  const [filters, setFilters] = useState(() => ({ query: new URLSearchParams(location.search).get("search") || "" }));
   const [planSelection, setPlanSelection] = useState(null);
   const [coursePage, setCoursePage] = useState(1);
   function chooseArea(next) { setArea(next); setFilters({}); setCoursePage(1); }
-  const location = useLocation();
   const challenge = useRef(null);
-  const [area, setArea] = useState("recommended"), [tab, setTab] = useState(location.hash === "#mi-plan" ? "plan" : location.hash === "#resultados" ? "passport" : location.hash === "#cursos" ? "courses" : "challenges");
+  const [area, setArea] = useState(new URLSearchParams(location.search).has("search") ? "all" : "recommended"), [tab, setTab] = useState(location.hash === "#mi-plan" ? "plan" : location.hash === "#resultados" ? "passport" : location.hash === "#cursos" ? "courses" : "challenges");
+  useEffect(() => { const search = new URLSearchParams(location.search).get("search"); if (search) { setFilters({ query: search }); setArea("all"); setTab("courses"); setCoursePage(1); } }, [location.search]);
   const [catalog, setCatalog] = useState(null), [plans, setPlans] = useState([]), [passport, setPassport] = useState(null);
   const [attempt, setAttempt] = useState(null), [answers, setAnswers] = useState({}), [step, setStep] = useState(0);
   const [error, setError] = useState(""), [message, setMessage] = useState(""), [busy, setBusy] = useState(false), [now, setNow] = useState(Date.now());

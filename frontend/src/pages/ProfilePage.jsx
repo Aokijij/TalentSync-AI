@@ -1,5 +1,6 @@
 import { EducationFields } from "../components/EducationFields.jsx";
 import { CareerCoach } from "../components/CareerCoach.jsx";
+import { CareerCoachWorkspace } from "../components/CareerCoachWorkspace.jsx";
 import { CvContextReview } from "../components/CvContextReview.jsx";
 import { isOngoing } from "../utils/profileStatus.js";
 import { experiencePeriod } from "../utils/experienceDates.js";
@@ -95,6 +96,10 @@ export function ProfilePage() {
   const [photoVersion, setPhotoVersion] = useState(0);
   const [uploadingCv, setUploadingCv] = useState(false);
   const [coachTarget, setCoachTarget] = useState("");
+  const [coachLaunch, setCoachLaunch] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("coach") === "vacancy" ? { tab: "vacancy", jobId: params.get("job") } : null;
+  });
   useEffect(() => {
     if (!coachTarget || !editing && coachTarget !== "profile-evidence") return;
     const target = document.getElementById(coachTarget);
@@ -113,9 +118,9 @@ export function ProfilePage() {
     setEditing(target !== "profile-evidence");
     setCoachTarget(target);
   }
-  function applyCoachDraft(index, draft) {
-    updateItem("experiences", index, "description", draft);
-    editFromCoach(`experience-description-${index}`);
+  function startCoachWriting(index) {
+    if (editing) { setMessage("Guarda tus ediciones para preparar una propuesta sobre esa versión del perfil."); return; }
+    setCoachLaunch({ tab: "writing", index, nonce: Date.now() });
   }
   useEffect(() => {
     Promise.all([api.get("/profiles/me"), api.get("/auth/me")])
@@ -339,7 +344,7 @@ export function ProfilePage() {
           </div>
         </section>
       ) : null}
-      {!previewMode && <CareerCoach key={profile.cv_uploaded_at} guidance={profile.cv_guidance} profile={profile} onEdit={editFromCoach} onApply={applyCoachDraft} />}
+      {!previewMode && <><CareerCoach key={profile.cv_uploaded_at} guidance={profile.cv_guidance} onEdit={editFromCoach} onStartWriting={startCoachWriting} /><CareerCoachWorkspace profile={profile} editing={editing} launch={coachLaunch} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} /></>}
       {previewMode ? (
         <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
       ) : (

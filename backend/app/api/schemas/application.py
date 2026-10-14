@@ -17,6 +17,7 @@ class ScreeningAnswer(BaseModel):
 
 class ApplicationCreate(BaseModel):
     job_id: int
+    coach_draft_id: str | None = Field(default=None, min_length=32, max_length=32)
     screening_answers: list[ScreeningAnswer] = Field(default_factory=list, max_length=10)
 
 
@@ -39,6 +40,7 @@ ApplicationStatusUpdate.model_rebuild()
 
 
 class ApplicationResponse(BaseModel):
+    coach_draft_id: str | None = None
     version: int = 1
     response_due_at: datetime | None = None
     released_at: datetime | None = None

@@ -10,6 +10,24 @@ MAX_CV_BYTES = 5 * 1024 * 1024
 
 
 class ResumeReader:
+    def original(self, profile):
+        if not profile.cv_filename:
+            raise UseCaseError(status_code=404, detail="Todavía no has subido un PDF")
+        if settings.azure_storage_account_url:
+            try:
+                content = self._blob_container().download_blob(f"users/{profile.user_id}/cv.pdf").readall()
+            except Exception:
+                raise UseCaseError(status_code=404, detail="No se encontró tu PDF original") from None
+        else:
+            root = Path(settings.upload_dir).resolve()
+            target = (root / f"user_{profile.user_id}_{Path(profile.cv_filename).name}").resolve()
+            if not target.is_relative_to(root) or not target.is_file() or target.stat().st_size > MAX_CV_BYTES:
+                raise UseCaseError(status_code=404, detail="No se encontró tu PDF original")
+            content = target.read_bytes()
+        if len(content) > MAX_CV_BYTES or not content.startswith(b"%PDF-"):
+            raise UseCaseError(status_code=422, detail="El archivo guardado no es un PDF válido de hasta 5 MB")
+        return content
+
     def storage_available(self) -> bool:
         if settings.azure_storage_account_url:
             try:

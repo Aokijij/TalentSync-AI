@@ -4,6 +4,8 @@
 
 ## Primera entrega implementada
 
+Actualización de implementación: el módulo compartido «Coach de Carrera» ya está disponible para todos los candidatos en Mi perfil. Incluye historial privado de propuestas con antes/después y deshacer, versiones por vacante seleccionables al postularse, copia profesional de lo enviado, PDF original frente a texto extraído y radar de demanda observado con enlaces al catálogo. Se prueba con perfiles de distintas profesiones; no depende de una cuenta ni de un CV concreto. Consulta `CONFIGURACION_LOCAL.md` para límites y uso. Los apartados siguientes conservan la arquitectura de evolución, incluyendo generación con IA y OCR que aún no se han activado.
+
 Se sustituyó la lista de entidades detectadas por recomendaciones priorizadas de claridad y consistencia. Cada consejo enlaza con el campo a revisar. La guía STAR permite redactar con situación, objetivo, acción y resultado aportados por el candidato; muestra el texto antes de incorporarlo al borrador. No es aún redacción generativa con IA.
 
 Se corrigió el contexto de habilidades: formación y aprendizaje actual son estados diferentes. Cada mención tiene fragmento, motivo y, cuando existe, expresión explícita. Las etiquetas antiguas sin respaldo se presentan como contexto incierto. La importación no ejecuta GLiNER. No se penalizan periodos sin empleo ni se validan certificados.

@@ -88,12 +88,15 @@ def apply_to_job(
         job, payload.get("screening_answers", [])
     )
     first_stage = (job.pipeline_stages or [{"id": "submitted"}])[0]["id"]
+    from app.application.use_cases.career_coach import application_snapshot
+    coach_snapshot = application_snapshot(db, current_user, job, payload["coach_draft_id"]) if payload.get("coach_draft_id") else {}
     application = db.applications.new(
         user_id=current_user.id,
         job_id=payload["job_id"],
         pipeline_stage=first_stage,
         screening_answers=answers,
         screening_adjustment=screening_adjustment,
+        coach_snapshot=coach_snapshot,
     )
     db.add(application)
     db.flush()

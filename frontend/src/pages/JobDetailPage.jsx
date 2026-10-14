@@ -41,6 +41,14 @@ export function JobDetailPage() {
   const [answers, setAnswers] = useState({});
   const [availableJobs, setAvailableJobs] = useState([]);
   const [companyId, setCompanyId] = useState(null);
+  const [coachDrafts, setCoachDrafts] = useState([]), [coachDraftId, setCoachDraftId] = useState("");
+  useEffect(() => {
+    let active = true;
+    setCoachDraftId("");
+    setCoachDrafts([]);
+    if (user?.role === "candidate") api.get("/profiles/me/coach").then(({ data }) => { if (active) setCoachDrafts((data.drafts || []).filter((row) => row.confirmed && row.job_id === Number(jobId))); }).catch(() => { if (active) setCoachDrafts([]); });
+    return () => { active = false; };
+  }, [user?.role, jobId]);
 
   useEffect(() => {
     api.get(`/jobs/${jobId}`).then(({ data }) =>
@@ -119,6 +127,7 @@ export function JobDetailPage() {
     try {
       await api.post("/applications", {
         job_id: Number(jobId),
+        coach_draft_id: coachDraftId || null,
         screening_answers: Object.entries(answers)
           .filter(([, answer]) => String(answer).trim())
           .map(([question_id, answer]) => ({ question_id, answer: String(answer).trim() })),
@@ -299,6 +308,7 @@ export function JobDetailPage() {
           <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="mb-3 font-semibold">Idiomas y nivel mínimo</h2><LanguagesEditor value={job.languages || []} editing={false} required /></div>
           {user?.role === "candidate" ? (
             <>
+              {!alreadyApplied && <div className="mt-5 rounded-lg border border-[var(--line)] p-3"><Link className="text-sm font-semibold text-[var(--accent)]" to={`/perfil?coach=vacancy&job=${job.id}`}>Preparar mi versión para esta vacante →</Link>{job.source_kind !== "external" && <label className="mt-3 block text-sm">Versión que enviaré<select className="field-control mt-1" value={coachDraftId} onChange={(event) => setCoachDraftId(event.target.value)}><option value="">Mi perfil habitual</option>{coachDrafts.map((row) => <option key={row.id} value={row.id}>{row.job_title} · {row.created_at.slice(0, 10)} · versión {row.revision}</option>)}</select></label>}</div>}
               {job.source_kind === "external" && job.external_url ? (
                 <div className="mt-8 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
                   <p className="text-sm leading-5 text-[var(--muted)]">

@@ -221,6 +221,14 @@ class Profile(Base):
         return career_guidance(self)
 
 
+class CareerCoachState(Base):
+    __tablename__ = "career_coach_states"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
+    content: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    __mapper_args__ = {"version_id_col": version}
+
+
 class Company(Base):
     __tablename__ = "companies"
 
@@ -433,6 +441,7 @@ class Application(Base):
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
     released_at: Mapped[datetime | None] = mapped_column(DateTime)
     candidate_feedback: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    coach_snapshot: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
     __mapper_args__ = {"version_id_col": version}
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), nullable=False)
@@ -462,6 +471,10 @@ class Application(Base):
     @property
     def job_title(self) -> str | None:
         return self.job.title if self.job else None
+
+    @property
+    def coach_draft_id(self):
+        return (self.coach_snapshot or {}).get("draft_id")
 
     @property
     def company_name(self) -> str | None:

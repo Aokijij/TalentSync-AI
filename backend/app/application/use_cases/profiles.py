@@ -74,6 +74,7 @@ def build_professional_summary(profile: Profile, fallback: str | None = None) ->
 
 
 def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_id: int | None = None) -> dict:
+    application = None
     candidate = db.users.get(user_id)
     if (
         candidate is None
@@ -88,7 +89,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
         if not company or not job or job.company_id != company.id or application is None:
             raise UseCaseError(status_code=403, detail="El perfil debe pertenecer a una postulación de esta vacante")
         if identity_hidden(job, application):
-            profile = candidate.profile
+            profile = _submitted_profile(candidate.profile, application)
             # Do not include CV text, names of employers/schools, descriptions or contact data.
             # Identity visibility is scoped to this process, even if another job revealed it.
             return {
@@ -107,7 +108,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
             status_code=403,
             detail="Solo puedes ver el perfil completo de candidatos que se postularon a tus vacantes",
         )
-    profile = candidate.profile
+    profile = _submitted_profile(candidate.profile, application)
     return {
         "id": profile.id,
         "user_id": profile.user_id,
@@ -135,7 +136,18 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
         "photo_url": profile.photo_url,
         "resume_style": profile.resume_style,
         "resume_color": profile.resume_color,
+        "submitted_version": (getattr(application, "coach_snapshot", None) or {}).get("draft_id") if application else None,
     }
+
+
+def _submitted_profile(profile, application):
+    from types import SimpleNamespace
+    saved = (getattr(application, "coach_snapshot", None) or {}) if application else {}
+    if not saved.get("profile"):
+        return profile
+    return SimpleNamespace(**{**saved["profile"], "experience": saved["intro"], "id": profile.id, "user_id": profile.user_id,
+                              "cv_text": None, "cv_filename": None, "cv_uploaded_at": None, "photo_url": None,
+                              "resume_style": "minimal", "resume_color": "default", "preferences": {}})
 
 
 def update_my_profile(

@@ -97,6 +97,7 @@ export function CandidateDetailPage() {
 
   return (
     <div className="space-y-6">
+      {candidate.submitted_version && <p className="surface-card p-4 text-sm text-[var(--muted)]">Estás viendo la versión del perfil enviada para esta vacante. Los cambios posteriores del perfil principal se mantienen separados. La compatibilidad base se calcula con el perfil actual registrado.</p>}
       <button
         type="button"
         onClick={() => navigate(location.state?.returnTo || (jobId ? `/empresa/talento?job=${jobId}&audience=applied&min=0` : "/empresa/talento"))}
