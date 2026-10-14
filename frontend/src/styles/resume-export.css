@@ -25,6 +25,11 @@
 .thumbnail-modern { border-left:4px solid #4338ca; }
 .thumbnail-modern i { background:#e0e7ff; }
 .thumbnail-minimal i { background:#fff; border-bottom:1px solid #334155; }
+.thumbnail-classic { border-left:10px solid #0c4a6e; }
+.thumbnail-classic i { background:#fff; border-bottom:2px solid #64748b; height:6px; }
+.thumbnail-modern { border-left:1px solid #cbd5e1; }
+.thumbnail-modern i { background:#4338ca; height:12px; }
+.thumbnail-minimal b { background:#1e293b; height:2px; }
 .resume-color-picker { margin:1.3rem 0; }
 .resume-color-picker > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.45rem; }
 .resume-color-picker button { display:flex; gap:.5rem; align-items:center; border:1px solid var(--line); border-radius:.55rem; padding:.45rem; background:var(--surface); }

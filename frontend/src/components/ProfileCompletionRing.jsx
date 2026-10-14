@@ -66,18 +66,18 @@ export function getProfileCompletion(profile) {
   };
 }
 
-export function ProfileCompletionRing({ profile, compact = false, variant = "ring" }) {
+export function ProfileCompletionRing({ profile, compact = false, variant = "ring", onReview }) {
   const result = getProfileCompletion(profile);
   const radius = 48;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (result.percentage / 100) * circumference;
 
   if (variant === "summary") return <div className="profile-summary-progress">
-    <div className="profile-summary-circle" role="progressbar" aria-label="Información completada del perfil" aria-valuemin={0} aria-valuemax={100} aria-valuenow={result.percentage}>
+    <button type="button" className={`profile-summary-circle ${result.percentage === 100 ? "is-complete" : ""}`} onClick={onReview} aria-haspopup="dialog" aria-label={`Perfil completado al ${result.percentage}%. Ver apartados pendientes`}>
       <svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r={radius} fill="none" stroke="var(--line)" strokeWidth="7" /><circle cx="56" cy="56" r={radius} fill="none" stroke="var(--accent)" strokeWidth="7" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} /></svg>
       <strong>{result.percentage}%</strong>
-    </div>
-    <div><strong>Tu perfil profesional</strong><p>{result.completed} de {result.total} apartados incluidos</p><small>{result.percentage === 100 ? "Mantén tu información actualizada." : "Completa lo que sea relevante para tu trayectoria."}</small></div>
+    </button>
+    <div><strong>{result.percentage === 100 ? "Tu perfil está completo" : "Sigue completando tu perfil"}</strong><p>{result.completed} de {result.total} apartados incluidos</p><button type="button" className="profile-missing-link" onClick={onReview}>{result.percentage === 100 ? "Ver mis apartados" : `Te falta: ${result.missing[0].toLocaleLowerCase("es")}${result.missing.length > 1 ? ` y ${result.missing.length - 1} más` : ""}`}<span aria-hidden="true"> →</span></button></div>
   </div>;
 
   if (variant === "bar") return <div className="profile-completion">

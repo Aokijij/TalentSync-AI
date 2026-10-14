@@ -12,7 +12,7 @@ from app.domain.services.requirement_analysis import (
 )
 from app.domain.services.work_preferences import effective_preferences, location_fit
 
-MATCH_VERSION = "contextual-match-v6"
+MATCH_VERSION = "contextual-match-v7"
 
 
 def weighted_coverage(profile, job):
@@ -27,7 +27,7 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
                getattr(job, "skill_requirements", []), getattr(job, "languages", []), getattr(job, "required_study_fields", []),
                getattr(job, "required_education_level", None), job.salary, job.modality, job.location, job.sector,
                (getattr(job, "quality_details", None) or {}).get("experience_years"),
-               (getattr(profile, "preferences", None) or {}).get("cv_skill_context", []), date.today().strftime("%Y-%m")]
+               (getattr(profile, "preferences", None) or {}).get("cv_skill_context", []), (getattr(profile, "preferences", None) or {}).get("writing_contexts", []), date.today().strftime("%Y-%m")]
     return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
 
 
@@ -46,7 +46,7 @@ def preference_alignment(profile, job):
     return {"score": score, "checks": checks, "unmet_conditions": [row["label"] for row in checks if row["required"] and row["matches"] is False], "unknown_conditions": [row["label"] for row in checks if row["matches"] is None]}
 
 
-def explain(profile, job, *, context, skills, language, education, certifications, confidence, percentage, text_method="lexical-hashing-v1", section_scores=None, experience_details=None, requirement_details=None):
+def explain(profile, job, *, context, skills, language, education, certifications, confidence, percentage, text_method="lexical-hashing-v1", section_scores=None, experience_details=None, requirement_details=None, retained_writing_context=False):
     if education is None and certifications is None:
         components = [{"key": "skills", "label": "Habilidades", "score": skills, "weight": .6},
                       {"key": "context", "label": "Contexto profesional", "score": context, "weight": .3 if language is not None else .4}]
@@ -56,6 +56,11 @@ def explain(profile, job, *, context, skills, language, education, certification
                       for key, label, score, weight in [("skills", "Habilidades", skills, .45), ("context", "Contexto profesional", context, .25),
                           ("education", "Formación", education if education is not None else context, .20),
                           ("certifications", "Certificaciones", certifications if certifications is not None else skills, .10)]]
+        if certifications is None:
+            components[0]["weight"] += components.pop()["weight"]
+        if education is None:
+            components[1]["weight"] += components[2]["weight"]
+            components.pop(2)
     if language is not None:
         components.append({"key": "languages", "label": "Idiomas", "score": language, "weight": .1})
     rows = requirement_details if requirement_details is not None else requirement_rows(profile, job)
@@ -65,7 +70,7 @@ def explain(profile, job, *, context, skills, language, education, certification
         component["points"] = round(component["score"] * component["weight"] * factor, 3)
     return {"version": MATCH_VERSION, "input_version": input_version(profile, job, text_method), "score_type": "compatibility_index",
             "notice": "Índice de afinidad con los datos registrados; no es una probabilidad de contratación.",
-            "text_method": text_method, "components": components, "requirements": rows, "section_scores": section_scores or [],
+            "text_method": text_method, "components": components, "requirements": rows, "section_scores": section_scores or [], "retained_writing_context": retained_writing_context,
             "experience_requirement": experience_details or relevant_experience(profile, job),
             "context_notice": "Se comparan cargos, funciones y conocimientos por separado. Cuando se pide experiencia mínima, los meses relacionados aportan el 20% de la señal de contexto; no son una señal adicional al total.",
             "unmet_essential_skills": [row["skill"] for row in rows if row.get("essential") and not row["covered"]],

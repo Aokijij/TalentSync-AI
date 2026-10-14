@@ -50,8 +50,19 @@ def test_export_includes_only_owner_evidence_when_selected(client):
         db.commit()
     included = text(client.post("/api/v1/profiles/me/export", headers=headers, json={"sections": ["evidence"]}))
     omitted = text(client.post("/api/v1/profiles/me/export", headers=headers, json={"sections": []}))
-    assert "Muestras de trabajo" in included and "Análisis documentado de pedidos" in included
+    assert "muestras de trabajo" in included.lower() and "Análisis documentado de pedidos" in included
     assert "otra cuenta" not in included and "Proyecto del candidato" not in omitted
+
+
+@pytest.mark.parametrize("style", ["classic", "modern", "minimal"])
+def test_long_profiles_keep_last_skill_and_experience_across_pages(client, style):
+    _, headers = register(client, f"long-{style}", skills=[f"habilidad-marcador-{index}" for index in range(80)])
+    profile = client.get("/api/v1/profiles/me", headers=headers).json()
+    profile.update(resume_style=style, experiences=[{"role": f"Cargo marcador {index}", "company": "Organización de prueba", "start_date": "2020-01", "end_date": "2021-01", "description": "Preparación de entregables y documentación de actividades. " * 8} for index in range(12)])
+    response = client.post("/api/v1/profiles/me/export", headers=headers, json={"profile": profile})
+    contents = text(response)
+    assert "habilidad-marcador-79" in contents and "Cargo marcador 11" in contents
+    assert len(PdfReader(BytesIO(response.content)).pages) > 1
 
 
 def test_photo_is_owner_scoped_and_can_be_omitted(client, monkeypatch, tmp_path):

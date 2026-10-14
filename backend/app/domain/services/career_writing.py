@@ -7,6 +7,8 @@ import re
 
 from app.domain.services.skill_context import fold
 
+TECHNOLOGY_TERMS = {"excel", "sql", "python", "sap", "salesforce", "aws", "azure", "power bi", "power query", "react", "docker", "java", "javascript", "typescript", "jira", "tableau", "git", "html", "html5", "css", "css3", "php", "c++", "c#", ".net", "api", "apis", "api rest", "word", "powerpoint"}
+
 
 def validate_generated_text(generated, record, result=""):
     if "actions" in generated:
@@ -35,7 +37,7 @@ def validate_generated_text(generated, record, result=""):
         raise ValueError("La propuesta añadió una cifra sin respaldo. No se guardó ningún cambio")
     if not set(re.findall(r"(?<!\w)[-−]\d+(?:[.,]\d+)?", original)) <= set(re.findall(r"(?<!\w)[-−]\d+(?:[.,]\d+)?", text)):
         raise ValueError("La propuesta cambió el signo de una cifra. No se guardó ningún cambio")
-    tools = {"excel", "sql", "python", "sap", "salesforce", "aws", "azure", "power bi", "react", "docker", "java", "jira", "tableau"}
+    tools = set(TECHNOLOGY_TERMS)
     tools.update(fold(value) for value in re.findall(r"\b[A-Z]{2,}[A-Za-z0-9.+#-]*\b", text))
     for tool in tools:
         if re.search(r"(?<!\w)" + re.escape(tool) + r"(?!\w)", fold(text)) and not re.search(r"(?<!\w)" + re.escape(tool) + r"(?!\w)", source):
@@ -79,7 +81,9 @@ def validate_complete_rewrite(generated, record, result):
             anchors = {word[:5] for word in re.findall(r"\b[a-z]{5,}\b", fold(fact)) if word not in stop}
             target = fold(checked)
             coverage = sum(anchor in target for anchor in anchors) / max(1, len(anchors))
-            if anchors and coverage < .65 or len(checked) < len(fact) * .65:
+            technical = set(re.findall(r"\b[A-Z][A-Z0-9+#.]{1,}\b", fact))
+            technical.update(term for term in TECHNOLOGY_TERMS if re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)", fold(fact)))
+            if anchors and coverage < 1 or len(checked) < len(fact) * .65 or any(fold(term) not in target for term in technical):
                 raise ValueError("Incomplete responsibility")
             rewritten.append(checked.strip("•- ").rstrip("."))
         except ValueError:

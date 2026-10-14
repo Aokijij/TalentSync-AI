@@ -17,7 +17,10 @@ from app.domain.services.matching import (
     recommendation_reasons,
 )
 from app.domain.services.matching_text import professional_sections
-from app.domain.services.professions import certification_match, education_match
+from app.domain.services.professions import (
+    education_match,
+    required_certification_match,
+)
 from app.domain.services.reputation import company_health
 from app.domain.services.requirement_analysis import (
     relevant_experience,
@@ -25,13 +28,16 @@ from app.domain.services.requirement_analysis import (
     requirement_score,
 )
 from app.domain.services.skills import skill_set
+from app.domain.services.writing_context import (
+    original_context_profile,
+)
 
 
 def candidate_match(profile, job, *, nlp):
     return _candidate_match(profile, job, nlp=nlp)[0]
 
 
-def _candidate_match(profile, job, *, nlp):
+def _context_analysis(profile, job, nlp):
     sections = []
     pairs = professional_sections(profile, job)
     total = sum(item[4] for item in pairs) or 1
@@ -45,14 +51,38 @@ def _candidate_match(profile, job, *, nlp):
         sections.append({"key": key, "label": label, "score": round(score, 2), "weight": round(weight / total, 4), "has_candidate_data": bool(left)})
     raw_semantic = sum(row["score"] * row["weight"] for row in sections)
     context_score = professional_context_alignment(profile, job, raw_semantic)
+    return context_score, sections
+
+
+def _candidate_match(profile, job, *, nlp):
+    context_score, sections = _context_analysis(profile, job, nlp)
+    original = original_context_profile(profile)
+    retained_context = False
+    if original is not None:
+        source_score, source_sections = _context_analysis(original, job, nlp)
+        retained_context = source_score > context_score
+        if retained_context:
+            context_score, sections = source_score, source_sections
     rows = requirement_rows(profile, job)
+    if original is not None:
+        source_rows = {row["key"]: row for row in requirement_rows(original, job)}
+        for index, row in enumerate(rows):
+            source_row = source_rows[row["key"]]
+            if source_row["score"] > row["score"] and row["status"] != "not_met" and "contradictoria" not in row["reason"]:
+                rows[index] = {**source_row, "reason": source_row["reason"] + " Respaldada por el texto original de la propuesta aplicada."}
+                retained_context = True
     skill_score = requirement_score(rows)
     experience = relevant_experience(profile, job)
+    if original is not None:
+        source_experience = relevant_experience(original, job)
+        if source_experience["related_months"] > experience["related_months"]:
+            experience = source_experience
+            retained_context = True
     if experience["required_months"]:
         context_score = round(context_score * .8 + (experience["score"] or 0) * .2, 2)
     language_score = language_coverage(profile, job)
     education_score = education_match(profile, job)
-    certification_score = certification_match(profile, job)
+    certification_score = required_certification_match(profile, job)
     percentage = combined_match(context_score, skill_score, language_score, education_score, certification_score)
     confidence = 100.0
     if getattr(job, "source_kind", "internal") == "external":
@@ -62,7 +92,7 @@ def _candidate_match(profile, job, *, nlp):
         # TalentSync vacancy. Low data quality only lowers the score.
         percentage *= 0.75 + confidence / 400
         percentage = round(min(100.0, percentage), 2)
-    return (percentage, context_score, skill_score, language_score, confidence, education_score, certification_score), {"section_scores": sections, "experience_details": experience, "requirement_details": rows}
+    return (percentage, context_score, skill_score, language_score, confidence, education_score, certification_score), {"section_scores": sections, "experience_details": experience, "requirement_details": rows, "retained_writing_context": retained_context}
 
 
 def external_data_confidence(job) -> float:

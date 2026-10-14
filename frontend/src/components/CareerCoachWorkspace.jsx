@@ -4,13 +4,18 @@ import { ArrowRight, CheckCircle2, ChevronDown, Lightbulb, PencilLine, Search, S
 import { LearningSources } from "./LearningSources.jsx";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { COLOMBIA_LOCATIONS } from "../constants/colombianCities.js";
+import { Autocomplete } from "./Autocomplete.jsx";
+import { groupWritingHistory } from "../utils/writingHistory.js";
+import { experiencePeriod } from "../utils/experienceDates.js";
 import { skillName } from "../utils/skillNames.js";
 import { CareerCoach } from "./CareerCoach.jsx";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { formatLearningHours } from "../utils/learningPresentation.js";
 import "../styles/career-coach.css";
 
-const cities = [...new Set(Object.values(COLOMBIA_LOCATIONS).flat())].sort((a, b) => a.localeCompare(b, "es"));
+const popularCities = ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga", "Pereira"];
+const allCities = [...new Set(Object.values(COLOMBIA_LOCATIONS).flat())];
+const cities = [...popularCities.filter((city) => allCities.includes(city)), ...allCities.filter((city) => !popularCities.includes(city)).sort((a, b) => a.localeCompare(b, "es"))];
 const tabs = [["guidance", "Sugerencias", Lightbulb], ["writing", "Mejorar un texto", PencilLine]];
 const learningLink = (course) => `/aprendizaje?search=${encodeURIComponent(course.title)}#cursos`;
 
@@ -61,7 +66,7 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
         <div><h4>Texto actual</h4><blockquote>{row.before || "Sin descripción"}</blockquote></div>
         <label><span className="coach-proposal-label">Propuesta para tu perfil</span><textarea className="field-control" rows={6} maxLength={3000} disabled={row.status !== "prepared" || busy} value={texts[row.id] ?? row.after} onChange={(event) => setTexts((value) => ({ ...value, [row.id]: event.target.value }))} /></label>
       </div>
-      {!!row.changes?.length && <p>{row.changes.join(" ")}</p>}
+      {!!row.changes?.length && <p>{row.changes.join(" ")}</p>}<p className="writing-context-note">Al aplicar la propuesta generada conservamos su contexto original. Si corriges el texto manualmente, tu corrección reemplaza ese respaldo. La redacción no añade habilidades ni garantiza subir la compatibilidad.</p>
       {!!row.questions?.length && <aside className="coach-writing-idea"><strong>Una idea para concretar tu aporte</strong>{row.questions.map((question) => <p key={question}>{question}</p>)}<small>Si recuerdas ese dato, añádelo al resultado opcional y genera otra propuesta.</small></aside>}
       {row.status === "prepared" && <div className="coach-actions"><button className="button-primary" type="button" disabled={disabled || !(texts[row.id] ?? row.after).trim()} onClick={() => act(async () => { await api.put(`/profiles/me/coach/writing/${row.id}`, { action: "apply", text: texts[row.id] ?? row.after }); setMessage("Texto guardado en tu experiencia. Puedes deshacer este cambio."); }, true)}><CheckCircle2 size={16} />Usar este texto en mi perfil</button><span className="coach-help">Puedes editarlo antes de guardar.</span></div>}
       {row.status === "applied" && <div className="coach-actions"><span className="coach-success"><CheckCircle2 size={16} />Guardado en tu perfil</span><button className="button-secondary" type="button" disabled={disabled} onClick={() => act(async () => { await api.put(`/profiles/me/coach/writing/${row.id}`, { action: "undo" }); setMessage("Recuperaste tu texto anterior."); }, true)}><Undo2 size={15} />Deshacer este cambio</button></div>}
@@ -96,13 +101,13 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
             {!experience?.description?.trim() && <button className="button-secondary" type="button" onClick={() => onEdit(`experience-description-${index}`)}>Escribir mi experiencia primero</button>}
           </form>}
           {proposal && writingCard(proposal, true)}
-          {!!data?.writing?.filter((row) => row.id !== proposalId).length && <details className="coach-history"><summary>Mis propuestas anteriores ({data.writing.filter((row) => row.id !== proposalId).length})</summary>{data.writing.filter((row) => row.id !== proposalId).map((row) => <details className="coach-record" key={row.id}><summary>{row.record.role || "Experiencia"} · {{ prepared: "Por revisar", applied: "Guardada", undone: "Deshecha" }[row.status]}</summary>{writingCard(row)}</details>)}</details>}
+          {!!data?.writing?.filter((row) => row.id !== proposalId).length && <section className="writing-history"><header><h4>Propuestas por experiencia</h4><p>Abre una experiencia para comparar sus versiones, de la más reciente a la anterior.</p></header>{groupWritingHistory(data.writing.filter((row) => row.id !== proposalId)).map((group) => <details className="writing-history-group" key={group.key}><summary><span><strong>{group.record.role || "Experiencia"}</strong><small>{group.record.company || "Empresa sin indicar"} · {experiencePeriod(group.record)}</small></span><b>{group.rows.length} {group.rows.length === 1 ? "versión" : "versiones"}</b><ChevronDown size={17} /></summary><div className="writing-history-versions">{group.rows.map((row, version) => <details className="writing-history-version" key={row.id}><summary><span>Versión {group.rows.length - version}<small>{row.created_at ? new Date(row.created_at).toLocaleString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Fecha no disponible"}</small></span><b className={`writing-status status-${row.status}`}>{{ prepared: "Por revisar", applied: "Aplicada", undone: "Deshecha" }[row.status]}</b><ChevronDown size={15} /></summary>{writingCard(row)}</details>)}</div></details>)}</section>}
         </>}
         {tab === "radar" && <>
           <h3>Encuentra tu próximo aprendizaje</h3><p>Elige una habilidad que piden las ofertas y encuentra formación para practicarla.</p>
           <form className="coach-learning-search" onSubmit={(event) => { event.preventDefault(); act(async () => { setRadar((await api.get("/profiles/me/coach/radar", { params: filters })).data); setMoreSkills(false); }); }}>
             <div className="learning-filter-heading"><SlidersHorizontal size={18} /><strong>Personaliza tu búsqueda</strong></div>
-            <div className="learning-filter-fields"><label>Cargo o profesión<input className="field-control" maxLength={160} value={filters.search} onChange={(event) => setFilters((value) => ({ ...value, search: event.target.value }))} placeholder="Ej. auxiliar contable" /></label><label>Sector<select className="field-control" value={filters.sector} onChange={(event) => setFilters((value) => ({ ...value, sector: event.target.value }))}><option value="">Todos los sectores</option>{filters.sector && !JOB_SECTORS.includes(filters.sector) && <option>{filters.sector}</option>}{JOB_SECTORS.map((sector) => <option key={sector}>{sector}</option>)}</select></label><label>Ciudad o ubicación<input className="field-control" list="learning-cities" maxLength={160} value={filters.location} onChange={(event) => setFilters((value) => ({ ...value, location: event.target.value }))} placeholder="Cualquier ubicación" /><datalist id="learning-cities">{cities.map((city) => <option key={city} value={city} />)}</datalist></label></div>
+            <div className="learning-filter-fields"><label>Cargo o profesión<input className="field-control" maxLength={160} value={filters.search} onChange={(event) => setFilters((value) => ({ ...value, search: event.target.value }))} placeholder="Ej. auxiliar contable" /></label><label>Sector<select className="field-control" value={filters.sector} onChange={(event) => setFilters((value) => ({ ...value, sector: event.target.value }))}><option value="">Todos los sectores</option>{filters.sector && !JOB_SECTORS.includes(filters.sector) && <option>{filters.sector}</option>}{JOB_SECTORS.map((sector) => <option key={sector}>{sector}</option>)}</select></label><Autocomplete label="Ciudad o ubicación" options={cities} value={filters.location} onChange={(location) => setFilters((value) => ({ ...value, location }))} placeholder="Buscar ciudad…" maxLength={120} /></div>
             <div className="learning-filter-actions"><small>Busca para actualizar las habilidades y sus cursos.</small><div><button type="button" className="learning-reset-button" disabled={busy} onClick={() => { const next = { search: "", sector: "", location: "" }; setFilters(next); act(async () => { setRadar((await api.get("/profiles/me/coach/radar", { params: next })).data); setSelectedSkill(""); }); }}><RotateCcw size={14} />Restablecer</button><button type="submit" className="button-primary" disabled={busy}><Search size={16} />Buscar habilidades</button></div></div>
           </form>
           {!radar && <p role="status">Buscando habilidades y formación…</p>}
@@ -115,7 +120,7 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
                 <section className="coach-learning-choice" aria-live="polite"><h4><span>2</span>{selected.declared ? "Sigue practicando" : "Elige cómo aprender"}</h4><h3>{skillName(selected.skill)}</h3><p>{selected.declared ? "Ya está en tu perfil. Estos recursos pueden ayudarte a profundizar." : "Que no aparezca en tu perfil no significa que no la conozcas. Puedes explorar un curso o revisar tus habilidades."}</p>
                   <div className="coach-learning-courses">{selected.courses.map((course) => <article key={course.id}><div><h5>{course.title}</h5><p>{course.provider}{course.hours ? ` · ${formatLearningHours(course.hours)} h estimadas` : ""}</p></div><Link className="coach-course-action" to={learningLink(course)}>Ver curso<ArrowUpRight size={16} /></Link></article>)}</div>
                   {!selected.courses.length && <p className="coach-empty-course">Todavía no hay un curso asociado. Puedes buscar esta habilidad en el catálogo de Cursos y prácticas.</p>}
-                  {!selected.declared && <button type="button" className="button-secondary button-sm" onClick={() => onEdit("profile-skills")}>Ya la conozco: revisar mi perfil</button>}
+                  {!selected.declared && <button type="button" className="learning-known-action" onClick={() => onEdit("profile-skills")}><span><CheckCircle2 size={20} /></span><span><strong>¿Ya sabes usar {skillName(selected.skill)}?</strong><small>Revisa tus habilidades y añádela a tu perfil</small></span><ArrowRight size={18} /></button>}
                 </section>
               </div>}
 

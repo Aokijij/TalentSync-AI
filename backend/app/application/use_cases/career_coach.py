@@ -11,6 +11,7 @@ from app.domain.services.career_coach import (
     star_text,
 )
 from app.domain.services.career_writing import validate_generated_text
+from app.domain.services.writing_context import remember_writing_context
 
 
 def owner_profile(user):
@@ -79,12 +80,14 @@ def decide_writing(db, user, proposal_id, payload):
     expected = proposal["record"] if applying else {**proposal["record"], "description": proposal["after"]}
     if index >= len(records) or records[index] != expected:
         raise UseCaseError(status_code=409, detail="La experiencia cambió; no se sobrescribió tu texto")
+    generated_text = proposal["after"]
     if applying and payload.get("text") is not None:
         proposal["after"] = payload["text"].strip()
         if not proposal["after"]:
             raise UseCaseError(status_code=422, detail="Escribe una propuesta antes de aplicarla")
     records[index]["description"] = proposal["after"] if applying else proposal["before"]
     user.profile.experiences = records
+    remember_writing_context(user.profile, proposal, applying and proposal["after"] == generated_text)
     db.add(user.profile)
     proposal["status"] = "applied" if applying else "undone"
     save(db, row, data)

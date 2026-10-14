@@ -3,6 +3,7 @@ import { RequirementSupport } from "../components/RequirementSupport.jsx";
 import { SearchPreferences } from "../components/SearchPreferences.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { readRecommendationSettings, saveRecommendationSetting } from "../utils/recommendationSettings.js";
+import { orderRecommendations } from "../utils/recommendationOrder.js";
 import { RecommendationControls } from "../components/RecommendationControls.jsx";
 import { useRecommendations } from "../hooks/useRecommendations.js";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -100,7 +101,7 @@ export function RecommendationsPage() {
   const enriched = useRecommendations(recommendations, minCompatibility, false);
   const filteredRecommendations = useMemo(
     () =>
-      (rankingMode === "compatibility" ? [...enriched].sort((a, b) => Number(!!a.discovery?.visibility_reduced) - Number(!!b.discovery?.visibility_reduced) || b.match_percentage - a.match_percentage || a.job_id - b.job_id) : enriched).filter((item) => {
+      orderRecommendations(enriched, rankingMode).filter((item) => {
         const job = jobsById.get(item.job_id);
         return job && meetsRequiredPreferences(item, respectPreferences) && searchJob(job, query) && visibleInterest(job, interests.byId, "all") && (sourceFilter === "all" || job.source_kind === sourceFilter);
       }),
@@ -200,7 +201,7 @@ export function RecommendationsPage() {
                   Lista de empleo recomendada
                 </h2>
                 <p className="text-sm text-[var(--muted)]">
-                  {rankingMode === "balanced" ? "Compatibilidad similar: priorizamos información clara y tus decisiones de personalización." : "Ordenadas por compatibilidad, teniendo en cuenta la confianza de la empresa."}
+                  {rankingMode === "balanced" ? "Afinidad con tu perfil, información de la oferta y tus preferencias." : "De mayor a menor porcentaje de compatibilidad."}
                 </p>
               </div>
             </div>
@@ -217,7 +218,7 @@ export function RecommendationsPage() {
                 </select>
               </label>
               <label className="filter-field">
-                Recomendar desde
+                Compatibilidad mínima
                 <select className="field-control" value={minCompatibility} onChange={(event) => changeMinimum(event.target.value)}>
                   {[0, 40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}
                 </select>
@@ -324,6 +325,7 @@ export function RecommendationsPage() {
                   </div>
 
                   <CompatibilityBar
+                    compact
                     value={item.match_percentage}
                     estimated={job?.source_kind === "external"}
                     confidence={item.data_confidence_percentage}

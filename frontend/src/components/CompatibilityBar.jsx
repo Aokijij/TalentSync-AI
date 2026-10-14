@@ -1,4 +1,4 @@
-export function CompatibilityBar({ value, estimated = false, confidence }) {
+export function CompatibilityBar({ value, estimated = false, confidence, compact = false }) {
   const percentage = Number(value ?? 0);
   const safe = Number.isFinite(percentage)
     ? Math.max(0, Math.min(100, percentage))
@@ -20,6 +20,7 @@ export function CompatibilityBar({ value, estimated = false, confidence }) {
           ? "var(--warning)"
           : "var(--error)";
 
+  if (compact) return <section className="recommendation-match" aria-label={`Compatibilidad ${safe.toFixed(0)} por ciento`}><div><span>{estimated ? "Afinidad estimada" : "Compatibilidad"}</span><strong>{safe.toFixed(0)}<small>%</small></strong></div><div className="recommendation-match-track" role="progressbar" aria-label="Compatibilidad" aria-valuenow={safe} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${safe}%`, backgroundColor: color }} /></div><p>{label}{estimated ? ` · Datos ${Number(confidence ?? 0).toFixed(0)}%` : ""}</p></section>;
   return (
     <section
       className="surface-card p-4"

@@ -89,3 +89,24 @@ def certification_match(profile, job):
         alias_match = any(alias in text for alias in aliases.get(normalized, ()))
         if normalized in text or (tokens and all(token in text for token in tokens)) or alias_match: related += 1
     return round(min(100.0, related / max(1, min(len(skills), 4)) * 100), 2)
+
+
+def required_certification_match(profile, job):
+    """Only explicitly requested, identifiable credentials affect the score."""
+    requirements = str(getattr(job, "requirements", "") or "")
+    clauses = re.split(r"[\n;.!?]", requirements)
+    requested = []
+    for clause in clauses:
+        value = normalize(clause)
+        match = re.search(r"\b(?:certificacion(?:es)?|certificad[oa]s?|certification|certified)\b", value)
+        if not match or re.search(r"\b(?:no|sin|opcional|deseable|preferible|ofrecemos|brindamos|optional|preferred)\b", value):
+            continue
+        suffix = value[match.end():].strip()
+        stop = set("en de del la el los las con vigente vigentes valida valido requerida requerido obligatoria obligatorio actualizada actualizado es son indispensable necesaria necesario y o para contar tener contar certificacion certificaciones".split())
+        terms = {term for term in suffix.split() if len(term) > 1 and term not in stop}
+        if terms:
+            requested.append(terms)
+    if not requested:
+        return None
+    certificates = [set(normalize(item.get("name", "")).split()) for item in getattr(profile, "certifications", None) or []]
+    return round(sum(any(terms <= certificate for certificate in certificates) for terms in requested) / len(requested) * 100, 2)
