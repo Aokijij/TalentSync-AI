@@ -253,6 +253,8 @@ El panel anterior de detecciones neuronales se retiró y GLiNER ya no se ejecuta
 
 ## Coach de Carrera para todos los candidatos
 
+Las recomendaciones y las herramientas se reúnen en un único panel. «Tu siguiente paso» abre los consejos del perfil guardado; «Mejorar esta experiencia» selecciona el registro en Redacción y muestra su descripción actual. La navegación por secciones permite ir directamente a experiencia, formación, habilidades, certificados, idiomas, preferencias y evidencias. Los formularios del Coach comparten los controles del perfil y las pestañas admiten flechas, Inicio y Fin con teclado.
+
 El mismo módulo aparece en Mi perfil para cualquier candidato y profesión. No contiene reglas ligadas a una cuenta de demostración. La migración `0041_career_coach` añade un historial privado por usuario y una copia del perfil utilizado en las postulaciones que seleccionan una versión revisada. Ejecuta `scripts/local.py setup` para actualizar únicamente la base local aislada.
 
 - **Redacción:** selección de experiencia, preguntas STAR, propuesta editable, comparación antes/después y deshacer con control de cambios. Se muestran las últimas 20 propuestas.

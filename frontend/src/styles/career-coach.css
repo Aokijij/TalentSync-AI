@@ -27,3 +27,49 @@
 .coach-demand-grid article { border:1px solid var(--line); border-radius:.7rem; padding:.9rem; }
 .coach-demand-grid a { display:block; margin:.6rem 0; color:var(--accent); font-size:.8rem; text-decoration:underline; text-underline-offset:3px; }
 @media(max-width:750px) { .coach-columns, .coach-pdf-columns { grid-template-columns:1fr; } .coach-workspace-body { padding:0 .8rem .8rem; } }
+
+/* Advice and tools share one workspace and one visual hierarchy. */
+.coach-workspace { border-radius:1.1rem; overflow:hidden; box-shadow:0 6px 24px rgb(0 0 0 / 3%); }
+.coach-workspace > summary { padding:1.25rem 1.4rem; list-style:none; color:var(--ink-strong); gap:1rem; background:linear-gradient(110deg,color-mix(in srgb,var(--accent) 6%,var(--surface)),var(--surface) 70%); }
+.coach-workspace > summary::-webkit-details-marker { display:none; }
+.coach-workspace-brand { display:flex; align-items:center; gap:.85rem; min-width:0; }
+.coach-brand-icon { display:grid; place-items:center; width:46px; height:46px; border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line)); border-radius:.85rem; background:var(--surface); color:var(--accent); flex-shrink:0; }
+.coach-workspace > summary strong { font-size:1.2rem; letter-spacing:-.025em; line-height:1.5; }
+.coach-workspace > summary .coach-eyebrow { color:var(--accent); font-size:.6rem; font-weight:750; letter-spacing:.12em; margin:0; }
+.coach-summary-end { display:flex; align-items:center; gap:.85rem; flex-shrink:0; font-size:.7rem; color:var(--muted); }
+.coach-summary-end > span { border:1px solid var(--line); background:var(--surface); border-radius:2rem; padding:.4rem .65rem; }
+.coach-disclosure-icon { transition:transform .15s; }
+.coach-workspace[open] .coach-disclosure-icon { transform:rotate(180deg); }
+.coach-workspace-body { padding:0 1.4rem 1.4rem; }
+.coach-tabs { padding:.8rem 0; margin:0 0 1.1rem; flex-wrap:nowrap; overflow-x:auto; gap:.35rem; }
+.coach-tabs button { color:var(--muted); background:transparent; border-color:transparent; border-radius:.65rem; white-space:nowrap; font-size:.76rem; font-weight:650; padding:.65rem .8rem; min-height:42px; flex-shrink:0; }
+.coach-tabs button:hover { color:var(--accent); background:var(--surface-hover); }
+.coach-tabs button[aria-selected=true] { color:var(--accent); background:color-mix(in srgb,var(--accent) 9%,var(--surface)); border-color:color-mix(in srgb,var(--accent) 30%,var(--line)); }
+.coach-workspace #coach-panel { outline-offset:4px; border-radius:.5rem; }
+.coach-workspace #coach-panel:focus-visible { outline:2px solid var(--accent); }
+.coach-workspace h3 { font-size:1.05rem; color:var(--ink-strong); letter-spacing:-.02em; }
+.coach-workspace h4 { color:var(--ink-strong); font-size:.85rem; }
+.coach-workspace p { font-size:.82rem; max-width:90ch; }
+.coach-workspace .field-control { min-width:0; min-height:46px; padding:.7rem .8rem; border:1px solid var(--line); border-radius:.65rem; color:var(--ink-strong); background:var(--surface); font-size:.83rem; font-weight:400; line-height:1.6; }
+.coach-workspace .field-control:focus { outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent); outline-offset:2px; border-color:var(--accent); }
+.coach-workspace .field-control::placeholder { color:var(--muted); opacity:.85; }
+.coach-workspace textarea { resize:vertical; min-height:108px; }
+.coach-form { border:1px solid var(--line); border-radius:.85rem; background:var(--surface-subtle); padding:1.1rem; margin-top:1.1rem; }
+.coach-form blockquote { background:var(--surface); border-radius:.6rem; border-left:3px solid color-mix(in srgb,var(--accent) 45%,var(--line)); color:var(--muted); line-height:1.7; }
+.coach-field-title { display:flex; gap:.5rem; align-items:center; margin:.2rem 0 .6rem; }
+.coach-field-title > span { display:grid; place-items:center; width:23px; height:23px; border-radius:50%; color:var(--accent); background:color-mix(in srgb,var(--accent) 10%,var(--surface)); font-size:.7rem; }
+.coach-record { background:var(--surface-subtle); border-radius:.8rem; padding:1rem; }
+.coach-record > summary { color:var(--ink-strong); line-height:1.6; }
+.coach-notice { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:.6rem; padding:.85rem; }
+.coach-workspace .career-coach { max-width:none; margin:0; padding:0; border:0; border-radius:0; background:transparent; }
+.coach-workspace .career-coach > header h3 { margin:.3rem 0; font-size:1.1rem; }
+.coach-workspace .career-coach-list { grid-template-columns:repeat(3,minmax(0,1fr)); gap:.75rem; margin-top:1.15rem; align-items:stretch; }
+.coach-workspace .career-coach-list > article { display:flex; flex-direction:column; border-radius:.85rem; padding:1rem; background:var(--surface-subtle); }
+.coach-workspace .career-coach-item-heading > span { display:inline-block; font-size:.64rem; background:var(--surface); border:1px solid var(--line); border-radius:2rem; padding:.25rem .5rem; }
+.coach-workspace .career-coach-item-heading h3 { font-size:.88rem; line-height:1.5; margin:.7rem 0 .2rem; }
+.coach-workspace .career-coach-list article > p { font-size:.76rem; margin:.5rem 0 1rem; }
+.career-coach-item-actions { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:auto; }
+.coach-workspace .career-coach-item-actions button { font-size:.72rem; min-height:38px; padding:.5rem .65rem; }
+.coach-workspace .career-coach footer { margin-top:1.1rem; font-size:.68rem; }
+@media(max-width:950px) { .coach-workspace .career-coach-list { grid-template-columns:1fr; } .coach-workspace .career-coach-list > article { padding:1rem; } }
+@media(max-width:600px) { .coach-workspace > summary { padding:1rem; align-items:flex-start; } .coach-workspace-body { padding:0 1rem 1rem; } .coach-summary-end > span { display:none; } .coach-brand-icon { width:38px; height:38px; } .coach-workspace > summary strong { font-size:1.05rem; } .coach-workspace > summary small { line-height:1.5; } .coach-form { padding:.85rem; } .coach-search { align-items:stretch; } .coach-search button { width:100%; } .coach-pdf-columns iframe, .coach-pdf-columns pre { height:24rem; } }

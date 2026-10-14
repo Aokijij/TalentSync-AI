@@ -1,5 +1,4 @@
 import { EducationFields } from "../components/EducationFields.jsx";
-import { CareerCoach } from "../components/CareerCoach.jsx";
 import { CareerCoachWorkspace } from "../components/CareerCoachWorkspace.jsx";
 import { CvContextReview } from "../components/CvContextReview.jsx";
 import { isOngoing } from "../utils/profileStatus.js";
@@ -12,7 +11,6 @@ import { useEffect, useState } from "react";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import { languageLevelLabel } from "../constants/languages.js";
 import {
-  Award,
   BookOpen,
   BriefcaseBusiness,
   CheckCircle2,
@@ -33,7 +31,7 @@ import {
 import { api, getApiErrorMessage } from "../api/client.js";
 import { AuthenticatedImage } from "../components/AuthenticatedImage.jsx";
 import { CurrencyInput } from "../components/CurrencyInput.jsx";
-import { PageHeader } from "../components/PageHeader.jsx";
+import "../styles/profile-page.css";
 import { ProfileCompletionRing, getProfileCompletion } from "../components/ProfileCompletionRing.jsx";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { getResumePalette, getResumePalettes } from "../constants/resumePalettes.js";
@@ -96,7 +94,7 @@ export function ProfilePage() {
   const [photoVersion, setPhotoVersion] = useState(0);
   const [uploadingCv, setUploadingCv] = useState(false);
   const [coachTarget, setCoachTarget] = useState("");
-  const [coachLaunch, setCoachLaunch] = useState(() => {
+  const [coachLaunch] = useState(() => {
     const params = new URLSearchParams(location.search);
     return params.get("coach") === "vacancy" ? { tab: "vacancy", jobId: params.get("job") } : null;
   });
@@ -117,10 +115,6 @@ export function ProfilePage() {
     setPreviewMode(false);
     setEditing(target !== "profile-evidence");
     setCoachTarget(target);
-  }
-  function startCoachWriting(index) {
-    if (editing) { setMessage("Guarda tus ediciones para preparar una propuesta sobre esa versión del perfil."); return; }
-    setCoachLaunch({ tab: "writing", index, nonce: Date.now() });
   }
   useEffect(() => {
     Promise.all([api.get("/profiles/me"), api.get("/auth/me")])
@@ -219,18 +213,21 @@ export function ProfilePage() {
   }
   if (!profile)
     return (
-      <p className="text-sm text-[var(--muted)]">Cargando hoja de vida...</p>
+      <section className="surface-card p-6" aria-live="polite">
+        <h1 className="font-bold text-[var(--ink-strong)]">Mi perfil profesional</h1>
+        <p className="mt-3 text-sm text-[var(--muted)]" role={error ? "alert" : "status"}>{error || "Cargando tu hoja de vida…"}</p>
+        {error && <button type="button" className="button-secondary mt-4" onClick={() => window.location.reload()}>Volver a cargar</button>}
+      </section>
     );
   return (
-    <div className="space-y-6">
-      <PageHeader
-        kicker="Perfil profesional"
-        title="Mi hoja de vida"
-        description="Personaliza tu presentación y mantén tu experiencia clara para recibir mejores recomendaciones."
-      />
-      <section className="surface-card print-hidden sticky top-3 z-30 flex flex-col gap-4 p-4 shadow-lg lg:flex-row lg:items-center lg:justify-between">
+    <div className={`profile-page space-y-6 ${editing ? "profile-is-editing" : ""}`}>
+      <header className="profile-page-heading">
+        <div><p className="profile-eyebrow">TU TRAYECTORIA, TU PRÓXIMO PASO</p><h1>Mi perfil profesional</h1><p>Presenta lo que sabes y encuentra cómo seguir avanzando.</p></div>
+        <span className="profile-mode"><span />{previewMode ? "Vista del documento" : editing ? "Editando tu perfil" : "Tu perfil guardado"}</span>
+      </header>
+      <section className="profile-toolbar print-hidden">
         <ProfileCompletionRing profile={profile} compact />
-          <div className="flex flex-wrap gap-2 lg:justify-end">
+          <div className="profile-toolbar-actions">
             <label className="button-secondary cursor-pointer hover-lift pressed focus-ring">
               <Upload size={16} />
               {uploadingCv ? "Analizando CV…" : "Subir CV"}
@@ -271,7 +268,7 @@ export function ProfilePage() {
             </button>
           </div>
       </section>
-      <p className="print-hidden -mt-3 px-2 text-xs leading-5 text-[var(--muted)]">Al subir un PDF, TalentSync extrae la información y guarda el archivo original de forma privada para que puedas reemplazarlo después. El archivo temporal del análisis se elimina; un nuevo CV reemplaza el anterior.</p>
+      <p className="profile-upload-note print-hidden">Importa tu PDF para completar los campos. El original es privado; puedes revisarlo en el Coach o reemplazarlo con otra carga.</p>
       {(message || error) && (
         <p
           className={`rounded-[var(--radius-lg)] border px-4 py-3 text-sm ${error ? "border-[var(--error)] bg-[var(--error)]/10 text-[var(--error)]" : "border-[var(--success)] bg-[var(--success)]/10 text-[var(--success)]"}`}
@@ -344,12 +341,13 @@ export function ProfilePage() {
           </div>
         </section>
       ) : null}
-      {!previewMode && <><CareerCoach key={profile.cv_uploaded_at} guidance={profile.cv_guidance} onEdit={editFromCoach} onStartWriting={startCoachWriting} /><CareerCoachWorkspace profile={profile} editing={editing} launch={coachLaunch} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} /></>}
+      {!previewMode && <CareerCoachWorkspace profile={profile} editing={editing} launch={coachLaunch} onEdit={editFromCoach} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />}
+      {!previewMode && <nav className="profile-section-nav print-hidden" aria-label="Secciones de mi perfil">{[["profile-experiences", "Experiencia"], ["profile-educations", "Formación"], ["profile-skills", "Habilidades"], ["profile-certifications", "Certificados"], ["profile-languages", "Idiomas"], ["preferencias", "Preferencias"]].map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}{!editing && <a href="#profile-evidence">Evidencias</a>}</nav>}
       {previewMode ? (
         <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
       ) : (
-        <article className="mx-auto max-w-7xl overflow-visible rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
-          <header className="relative overflow-hidden rounded-t-[var(--radius-2xl)] border-b border-[var(--line)] bg-gradient-to-br from-[var(--accent)]/10 via-[var(--surface)] to-[var(--success)]/10 p-6 sm:p-8">
+        <article className="profile-document">
+          <header className="profile-identity">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[var(--accent)] to-[var(--success)]" />
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
@@ -359,7 +357,7 @@ export function ProfilePage() {
                     <input className="field-control input-lg mt-1" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nombres y apellidos" />
                   </label>
                 ) : (
-                  <h1 className="text-3xl font-bold text-[var(--ink)]">{name || "Candidato"}</h1>
+                  <><p className="profile-eyebrow">PRESENTACIÓN PROFESIONAL</p><h2 className="profile-name">{name || "Candidato"}</h2></>
                 )}
                 <div className={`${editing ? "" : "mt-1"} text-xl font-bold text-[var(--ink)]`}>
                   {editing ? (
@@ -367,7 +365,7 @@ export function ProfilePage() {
                       className="field-control input-md max-w-xl"
                       value={profile.profession || ""}
                       onChange={(e) => update("profession", e.target.value)}
-                      placeholder="Profesion"
+                      placeholder="Profesión" aria-label="Profesión"
                       id="profile-profession"
                     />
                   ) : (
@@ -425,7 +423,7 @@ export function ProfilePage() {
                     <Phone size={15} className="text-[var(--muted)]" />
                     {editing ? (
                       <input
-                        className="border-b bg-transparent"
+                        className="field-control profile-phone-input"
                         value={profile.phone || ""}
                         onChange={(e) => update("phone", e.target.value)}
                         placeholder="Teléfono"
@@ -441,15 +439,15 @@ export function ProfilePage() {
               </span>
             </div>
           </header>
-          <div className="grid gap-8 p-6 sm:p-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.9fr)]">
-            <div className="space-y-8">
+          <div className="profile-content-grid">
+            <div className="profile-main-sections">
             <Section icon={UserRound} title="Resumen profesional">
               <p className="text-sm leading-6 text-[var(--muted)]">
                 {profile.experience || "Agrega tu profesión, experiencia, formación y habilidades. Al guardar construiremos un resumen breve de tu trayectoria."}
               </p>
               {editing ? <p className="text-xs text-[var(--muted)]">Este resumen se actualiza automáticamente al guardar, sin repetir la lista de empresas.</p> : null}
             </Section>
-            <Section id="profile-experiences" icon={Award} title="Experiencia laboral">
+            <Section id="profile-experiences" icon={BriefcaseBusiness} title="Experiencia laboral">
               <Items
                 type="experiences"
                 profile={profile}
@@ -468,8 +466,8 @@ export function ProfilePage() {
               />
             </Section>
             </div>
-            <aside className="space-y-8 rounded-[var(--radius-xl)] bg-[var(--surface-subtle)] p-5 sm:p-6 xl:sticky xl:top-28 xl:self-start">
-            <Section icon={CheckCircle2} title="Certificaciones">
+            <aside className="profile-side-sections">
+            <Section id="profile-certifications" icon={CheckCircle2} title="Cursos y certificaciones">
               <Items
                 type="certifications"
                 profile={profile}
@@ -478,20 +476,20 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
-            <Section icon={BookOpen} title="Idiomas"><LanguagesEditor value={profile.languages} editing={editing} onChange={(value) => update("languages", value)} /></Section>
+            <Section id="profile-languages" icon={BookOpen} title="Idiomas"><LanguagesEditor value={profile.languages} editing={editing} onChange={(value) => update("languages", value)} /></Section>
             <Section id="profile-skills" icon={BriefcaseBusiness} title="Habilidades">
               <CvContextReview rows={profile.cv_skill_context} skills={profile.skills} />
               <div className="flex flex-wrap gap-2">
                 {profile.skills.map((item) => (
                   <span
                     key={item}
-                    className="rounded-full border border-[var(--line)] bg-[var(--surface)]/10 px-3 py-1.5 text-sm font-semibold text-[var(--muted)]"
+                    className="profile-skill"
                   >
                     {item}
                     {editing && (
                       <button
                         type="button"
-                        className="ml-2 text-[var(--error)]"
+                        className="profile-skill-remove" aria-label={`Quitar habilidad ${item}`}
                         onClick={() =>
                           update(
                             "skills",
@@ -636,12 +634,12 @@ export function ProfilePage() {
 }
 function Section({ id, icon: Icon, title, children }) {
   return (
-    <section id={id}>
-      <h2 className="flex items-center gap-2 border-b border-[var(--line)] pb-3 font-bold text-[var(--ink)]">
-        <Icon size={19} className="text-[var(--success)]" />
+    <section id={id} className="profile-section">
+      <h2 className="profile-section-heading">
+        <span className="profile-section-icon"><Icon size={18} /></span>
         {title}
       </h2>
-      <div className="mt-4 space-y-3">{children}</div>
+      <div className="profile-section-body space-y-3">{children}</div>
     </section>
   );
 }
@@ -690,7 +688,7 @@ function Items({ type, profile, editing, update, updateItem }) {
       {profile[type].map((item, index) => (
         <div
           key={index}
-          className="rounded-[var(--radius-lg)] border border-[var(--line)] p-4"
+          className="profile-certification-entry"
         >
           {editing ? (
             <div className="grid gap-3 sm:grid-cols-2">
