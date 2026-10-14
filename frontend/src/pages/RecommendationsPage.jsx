@@ -14,11 +14,14 @@ import {
   Send,
   Sparkles,
   TrendingUp,
+  Building2,
+  MapPin,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { api } from "../api/client.js";
 import { getRecommendations } from "../api/recommendations.js";
+import "../styles/recommendations.css";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { VacancyLearningPanel } from "../components/VacancyLearningPanel.jsx";
@@ -187,7 +190,7 @@ export function RecommendationsPage() {
       )}
 
       {!loading && !error && (
-        <section className="surface-card">
+        <section className="recommendation-results">
           <div className="recommendation-list-heading">
             <div className="recommendation-list-topline">
             <div className="flex items-center gap-3">
@@ -222,7 +225,7 @@ export function RecommendationsPage() {
             </div>
           </div>
 
-          <div className="divide-y divide-[var(--line)]">
+          <div className="recommendation-cards">
             {visibleRecommendations.map((item) => {
               const job = jobsById.get(item.job_id);
               const applied = appliedJobIds.has(item.job_id);
@@ -247,9 +250,10 @@ export function RecommendationsPage() {
               return (
                 <article
                   key={item.id}
-                  className="grid gap-5 p-5 lg:grid-cols-[1fr_240px_180px] lg:items-center"
+                  className="recommendation-card"
                 >
-                  <div>
+                  <div className="recommendation-card-copy">
+                    <p className="recommendation-card-company"><Building2 size={14} />{job?.company_name || "Empresa"}{job?.location && <span><MapPin size={13} />{job.location}</span>}</p>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold text-[var(--ink)]"><Link className="recommendation-title-link" to={`/vacantes/${item.job_id}`} state={{ returnTo: "/recomendaciones" }}>
                         {job?.title ?? "Vacante"}
@@ -285,19 +289,20 @@ export function RecommendationsPage() {
                       {(
                         <button
                           type="button"
+                          aria-expanded={isExpanded}
                           onClick={() =>
                             setExpandedReasons((prev) => ({
                               ...prev,
                               [item.id]: !isExpanded,
                             }))
                           }
-                          className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--success)] hover:underline hover-lift"
+                          className="recommendation-insight-button"
                         >
                           <TrendingUp
                             size={14}
                             className="text-[var(--success)]"
                           />
-                          {isExpanded ? "Ver menos" : "Compatibilidad y formación"}
+                          {isExpanded ? "Ocultar detalle" : "Ver compatibilidad y formación"}
                         </button>
                       )}
                     </div>
@@ -324,19 +329,19 @@ export function RecommendationsPage() {
                     confidence={item.data_confidence_percentage}
                   />
 
-                  <div className="flex items-center justify-end">
+                  <div className="recommendation-card-apply">
                     <button
                       type="button"
                       disabled={applied}
                       onClick={() => apply(job)}
-                      className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--success)] px-3 py-2 text-sm font-semibold text-white hover:bg-[var(--success)]/90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="button-primary"
                     >
-                      <Send size={16} className="text-white" />
+                      <Send size={16}  />
                       {applied ? "Enviada" : "Postularme"}
                     </button>
                   </div>
                   {isExpanded ? (
-                    <div className="grid gap-6 border-t border-[var(--line)] pt-5 lg:col-span-3 lg:grid-cols-2">
+                    <div className="recommendation-card-details grid gap-6 border-t border-[var(--line)] pt-5 lg:grid-cols-2">
                       <p className="lg:col-span-2 text-xs text-[var(--muted)]">{item.discovery?.notice}</p>
                       <MatchBreakdown
                         details={item.match_details}

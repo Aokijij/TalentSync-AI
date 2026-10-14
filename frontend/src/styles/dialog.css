@@ -1,0 +1,6 @@
+.profile-coach-dialog { width:min(1050px,calc(100vw - 2rem)); max-height:calc(100dvh - 3rem); padding:0; border:1px solid var(--line); border-radius:1.2rem; background:var(--surface); color:var(--ink); margin:auto; overflow:auto; box-shadow:0 24px 80px #0006; }
+.profile-coach-dialog::backdrop { background:#020617b3; backdrop-filter:blur(4px); }
+.profile-coach-dialog > header { display:flex; align-items:center; justify-content:space-between; gap:1rem; position:sticky; top:0; z-index:2; padding:1rem 1.3rem; background:var(--surface); border-bottom:1px solid var(--line); }
+.profile-coach-dialog > header > div { display:flex; align-items:center; gap:.7rem; font-weight:750; }
+.profile-coach-dialog > header svg { color:var(--accent); flex-shrink:0; }
+@media(max-width:700px) { .profile-coach-dialog { width:calc(100vw - 1rem); max-height:calc(100dvh - 1rem); } }

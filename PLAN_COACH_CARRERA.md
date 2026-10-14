@@ -18,9 +18,13 @@ Cada propuesta queda asociada a una versión del perfil. El candidato puede edit
 
 Para una vacante, la plataforma muestra requisitos que ya tienen respaldo y los que conviene aclarar. Sugiere editar la experiencia o las habilidades habituales, sin crear otra versión del perfil ni de la postulación. Administrar servidores no permite afirmar experiencia en AWS. La compatibilidad se recalcula con datos confirmados; mejorar la redacción por sí solo no acredita una habilidad.
 
-## Lectura del PDF y exportación simple
+## Exportación diseñada y lectura del PDF
 
-Comparar el PDF privado con su texto original extraído y marcar secciones incompletas o mezcladas. El texto normalizado usado por el matching no sustituye esa vista. Reutilizar la exportación de perfil existente para ofrecer un PDF simple de una columna y permitir comprobar qué se pudo extraer de él. Medir orden de lectura, contactos y cobertura de campos con ejemplos revisados.
+Actualización del 14 de octubre: «Diseñar y exportar» permite elegir secciones, foto, estilo y color y revisar el PDF exacto antes de descargarlo. Se genera con fuentes Unicode, paginación y tres diseños mediante ReportLab; no depende del antiguo renderizador HTML de vista previa. Las opciones de exportación no alteran los datos guardados. La lectura técnica del documento permanece como diagnóstico privado, fuera del flujo principal del candidato.
+
+Las menciones del CV ahora ofrecen confirmar una habilidad declarada, explorar formación y descartar/recuperar, conservando el fragmento original. Los consejos por vacante se abren desde su barra lateral en un modal. La navegación a una vacante similar reinicia las consultas y el estado completo de esa pantalla. «Qué aprender» dispone de filtros visibles, acciones compactas y fuentes presentadas en tarjetas; Recomendaciones separa visualmente cada oportunidad. La cabecera del perfil reúne el acceso a ideas y la barra de edición/exportación permanece visible al desplazarse.
+
+Como evolución del diagnóstico, comparar el PDF privado con su texto original extraído y marcar secciones incompletas o mezcladas. El texto normalizado usado por el matching no sustituye esa vista. Medir orden de lectura, contactos y cobertura de campos de la exportación diseñada con ejemplos revisados.
 
 El visor requiere lectura autenticada del archivo, límites de tamaño/páginas y manejo de PDF sin texto. Para escaneos habrá que añadir OCR local y mostrar sus limitaciones. No debe llamarse «pasa cualquier ATS»: distintos parsers tienen comportamientos distintos. [Greenhouse documenta problemas con columnas, tablas, gráficos y encabezados](https://support.greenhouse.io/hc/en-us/articles/200989175-Unsuccessful-resume-parse).
 

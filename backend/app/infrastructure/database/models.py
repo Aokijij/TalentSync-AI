@@ -212,6 +212,10 @@ class Profile(Base):
         return profile_skill_context(self)
 
     @property
+    def cv_mention_decisions(self):
+        return (self.preferences or {}).get("cv_mention_decisions", {})
+
+    @property
     def cv_entity_review(self):
         return {}  # Retired candidate-facing diagnostic; kept for API compatibility.
 

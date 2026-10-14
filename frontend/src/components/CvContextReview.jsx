@@ -1,11 +1,29 @@
-const labels = { learning: "Aprendizaje indicado explícitamente", negated: "Falta de experiencia indicada", project: "Mencionada en proyectos", training: "Mencionada en formación", unknown: "Contexto por confirmar" };
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Check, BookOpen, X, ScanText, Undo2 } from "lucide-react";
+import { getApiErrorMessage } from "../api/client.js";
 
-export function CvContextReview({ rows = [], skills = [] }) {
+const labels = { learning: "Mencionada como aprendizaje", negated: "El texto indica falta de experiencia", project: "Mencionada en un proyecto", training: "Mencionada en formación", unknown: "Falta confirmar el contexto" };
+export function CvContextReview({ rows = [], skills = [], decisions = {}, disabled, onDecision }) {
+  const [busy, setBusy] = useState(""), [message, setMessage] = useState(""), [error, setError] = useState("");
   const declared = new Set(skills.map((skill) => skill.toLocaleLowerCase()));
-  const review = rows.filter((row) => labels[row.state] && !declared.has(row.skill.toLocaleLowerCase()));
-  if (!review.length) return null;
-  return <details className="cv-context-review"><summary>Menciones del CV para confirmar ({review.length})</summary>
-    <p>El contexto del documento no demuestra dominio. «En formación» no significa que estés aprendiendo actualmente.</p>
-    {review.map((row, index) => <div key={`${row.skill}-${index}`}><strong>{row.skill} · {labels[row.state]}</strong><p>{row.reason || "Revisa la mención antes de incorporarla a tu perfil."}</p><blockquote>{row.excerpt}</blockquote>{row.cue && <small>Expresión detectada: «{row.cue}»</small>}</div>)}
-  </details>;
+  const unique = [...new Map(rows.filter((row) => labels[row.state]).map((row) => [row.skill.toLocaleLowerCase(), row])).values()];
+  const review = unique.filter((row) => !declared.has(row.skill.toLocaleLowerCase()) && decisions[row.skill] !== "dismissed");
+  const dismissed = unique.filter((row) => decisions[row.skill] === "dismissed");
+  async function decide(skill, action) {
+    setBusy(skill); setError("");
+    try { await onDecision(skill, action); setMessage(action === "confirm" ? `${skill} se añadió a tus habilidades declaradas.` : action === "dismiss" ? "Mención descartada. Puedes recuperarla abajo." : "Mención recuperada para revisar."); }
+    catch (failure) { setError(getApiErrorMessage(failure)); }
+    finally { setBusy(""); }
+  }
+  if (!review.length && !dismissed.length && !message) return null;
+  return <section className="cv-mentions"><header><ScanText size={19} /><div><h3>Completa tus habilidades</h3><p>{review.length ? `${review.length} menciones de tu CV por revisar` : "Has revisado las menciones disponibles"}</p></div></header>
+    <p>Elige solo las que realmente conoces. Confirmarlas las añade a tu perfil como habilidades declaradas.</p>
+    {disabled && <p className="cv-mention-notice">Guarda tus cambios del perfil para confirmar o descartar menciones.</p>}
+    {message && <p role="status" className="cv-mention-notice">{message}</p>}{error && <p role="alert" className="text-[var(--error)]">{error}</p>}
+    {review.map((row) => <article key={row.skill}><div className="cv-mention-heading"><strong>{row.skill}</strong><span>{labels[row.state]}</span></div><details><summary>Ver dónde aparece en mi CV</summary><blockquote>{row.excerpt}</blockquote><p>{row.reason}</p></details>
+      <div className="cv-mention-actions"><button type="button" className="button-secondary button-sm" disabled={disabled || !!busy} onClick={() => decide(row.skill, "confirm")}><Check size={15} />La conozco</button><Link to={`/aprendizaje?search=${encodeURIComponent(row.skill)}#cursos`}><BookOpen size={15} />Ver formación</Link><button type="button" disabled={disabled || !!busy} onClick={() => decide(row.skill, "dismiss")} aria-label={`Descartar mención de ${row.skill}`}><X size={15} />Descartar</button></div>
+    </article>)}
+    {!!dismissed.length && <details className="cv-dismissed"><summary>Descartadas ({dismissed.length})</summary>{dismissed.map((row) => <div key={row.skill}><span>{row.skill}</span><button type="button" disabled={disabled || !!busy} onClick={() => decide(row.skill, "restore")}><Undo2 size={14} />Recuperar</button></div>)}</details>}
+  </section>;
 }

@@ -1,0 +1,2 @@
+const names = { sql: "SQL", python: "Python", excel: "Excel", git: "Git", "power bi": "Power BI", "api rest": "API REST", fastapi: "FastAPI", javascript: "JavaScript", typescript: "TypeScript", html: "HTML", html5: "HTML5", css: "CSS", css3: "CSS3", aws: "AWS", java: "Java", react: "React", nodejs: "Node.js" };
+export const skillName = (value) => names[value.toLocaleLowerCase()] || value.charAt(0).toLocaleUpperCase() + value.slice(1);

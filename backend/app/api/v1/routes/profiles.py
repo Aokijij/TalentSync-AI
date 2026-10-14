@@ -21,6 +21,7 @@ from app.api.schemas.profile import (
     ProfileResponse,
     ProfileUpdate,
 )
+from app.api.schemas.resume_export import CvMentionDecision, ResumeExport
 from app.application.errors import UseCaseError
 from app.application.ports.services import ImageStorage, ResumeReader, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
@@ -104,6 +105,28 @@ def coach_retired_export(user=Depends(require_roles(UserRole.CANDIDATE))):
 @router.get("/me", response_model=ProfileResponse)
 def get_my_profile(current_user: User = Depends(get_current_user)) -> Profile:
     return use_cases.get_my_profile(current_user=current_user)
+
+
+@router.patch("/me/cv-mentions", response_model=ProfileResponse)
+def decide_cv_mention(payload: CvMentionDecision, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis)):
+    return use_cases.decide_cv_mention(db, user, payload.skill, payload.action, nlp=nlp)
+
+
+@router.post("/me/export", response_class=Response)
+def preview_resume_export(payload: ResumeExport, user=Depends(require_roles(UserRole.CANDIDATE)), exporter=Depends(get_resume_exporter)):
+    from types import SimpleNamespace
+
+    from app.domain.services.career_coach import snapshot
+    profile = coach.owner_profile(user)
+    values = {**snapshot(profile), "resume_style": profile.resume_style, "resume_color": profile.resume_color,
+              "photo_filename": profile.photo_filename, "evidence": getattr(profile, "evidence", [])}
+    name = user.name
+    if payload.profile:
+        values.update(payload.profile.model_dump(exclude={"name"}))
+        name = payload.profile.name or name
+    document_user = SimpleNamespace(name=name, email=user.email, profile=SimpleNamespace(**values))
+    return Response(exporter(document_user, sections=payload.sections, include_photo=payload.include_photo), media_type="application/pdf", headers={
+        "Content-Disposition": 'inline; filename="vista-previa-hoja-de-vida.pdf"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @router.get("/candidates/{user_id}", response_model=CandidateProfileResponse)

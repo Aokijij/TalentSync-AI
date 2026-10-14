@@ -225,4 +225,8 @@ get_job_catalog = get_jooble_job_catalog
 
 def get_resume_exporter():
     from app.infrastructure.resume_pdf import resume_pdf
-    return resume_pdf
+    def export(user, **options):
+        filename = getattr(user.profile, "photo_filename", None)
+        photo = get_image_storage().read("profile_photos", filename) if filename and options.get("include_photo", True) else None
+        return resume_pdf(user, photo=photo, **options)
+    return export

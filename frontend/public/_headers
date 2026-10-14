@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; connect-src 'self' https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io; font-src 'self' data: https://fonts.gstatic.com; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: blob: https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; connect-src 'self' https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io; font-src 'self' data: https://fonts.gstatic.com; form-action 'self'; frame-ancestors 'none'; frame-src 'self' blob:; img-src 'self' data: blob: https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  BookOpen,
+  Globe2,
   Building2,
   CalendarDays,
-  CheckCircle2,
   CircleDollarSign,
   Clock3,
   MapPin,
@@ -18,11 +19,13 @@ import { OfferConditions } from "../components/OfferConditions.jsx";
 import { VacancyCvAdvice } from "../components/VacancyCvAdvice.jsx";
 import { OfferFeedback } from "../components/OfferFeedback.jsx";
 import { salaryLabel } from "../utils/offerQuality.js";
+import { loadVacancyData } from "../utils/vacancyRequests.js";
 
 import { api, apiFileUrl } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
-import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
+import { languageLevelLabel } from "../constants/languages.js";
+import "../styles/job-detail.css";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { StructuredJobText } from "../components/StructuredJobText.jsx";
 import { formatRelativeTime } from "../utils/dates.js";
@@ -30,6 +33,10 @@ import { cleanExternalLocation, externalPortal } from "../utils/externalPortal.j
 
 export function JobDetailPage() {
   const { jobId } = useParams();
+  return <JobDetailContent key={jobId} jobId={jobId} />;
+}
+
+function JobDetailContent({ jobId }) {
   const routeLocation = useLocation();
   const { user } = useAuth();
   const [job, setJob] = useState(null);
@@ -43,50 +50,15 @@ export function JobDetailPage() {
   const [availableJobs, setAvailableJobs] = useState([]);
   const [companyId, setCompanyId] = useState(null);
   useEffect(() => {
-    api.get(`/jobs/${jobId}`).then(({ data }) =>
-      setJob({
-        ...data,
-        location:
-          data.source_kind === "external"
-            ? cleanExternalLocation(data.location)
-            : data.location,
-      }),
-    );
-    api
-      .get("/jobs")
-      .then(({ data }) =>
-        setAvailableJobs(
-          data.map((item) => ({
-            ...item,
-            location:
-              item.source_kind === "external"
-                ? cleanExternalLocation(item.location)
-                : item.location,
-          })),
-        ),
-      )
-      .catch(() => setAvailableJobs([]));
-    if (user?.role === "candidate") {
-      api
-        .post(`/jobs/${jobId}/match`)
-        .then(({ data }) => setMatch(data))
-        .catch(() => setMatch(null));
-      api
-        .get("/applications/me")
-        .then(({ data }) =>
-          setAlreadyApplied(
-            data.some(
-              (application) => Number(application.job_id) === Number(jobId),
-            ),
-          ),
-        )
-        .catch(() => setAlreadyApplied(false));
-    }
-    if (user?.role === "company") {
-      api.get("/companies/me").then(({ data }) => setCompanyId(data.id)).catch(() => setCompanyId(null));
-    } else {
-      setCompanyId(null);
-    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+    return loadVacancyData(api, { jobId, role: user?.role }, {
+      job: (data) => setJob({ ...data, location: data.source_kind === "external" ? cleanExternalLocation(data.location) : data.location }),
+      catalog: (data) => setAvailableJobs(data.map((item) => ({ ...item, location: item.source_kind === "external" ? cleanExternalLocation(item.location) : item.location }))),
+      match: setMatch,
+      applications: (data) => setAlreadyApplied(data.some((item) => Number(item.job_id) === Number(jobId))),
+      company: (data) => setCompanyId(data?.id ?? null),
+      error: () => setErrorMessage("No pudimos cargar esta vacante. Vuelve a intentarlo."),
+    });
   }, [jobId, user?.role]);
 
   const isOwnCompanyJob = user?.role === "company" && Number(companyId) === Number(job?.company_id);
@@ -136,7 +108,7 @@ export function JobDetailPage() {
   if (!job)
     return (
       <div className="surface-card p-8 text-[var(--muted)]">
-        Cargando vacante...
+        {errorMessage || "Cargando vacante…"}
       </div>
     );
   return (
@@ -208,7 +180,7 @@ export function JobDetailPage() {
           ) : null}
         </div>
       </section>
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="job-detail-grid grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="surface-card space-y-6 p-6">
           <OfferConditions job={job} />
           {job.source_kind === "external" ? (
@@ -275,28 +247,14 @@ export function JobDetailPage() {
             </div>
           </div>
         </div>
-        <aside className="surface-card p-5">
-          <h2 className="text-lg font-semibold">
-            {job.source_kind === "external"
-              ? "Señales detectadas en el resumen"
-              : "Habilidades relacionadas"}
-          </h2>
-          <div className="mt-4 space-y-3">
-            {(job.skills || []).map((skill) => (
-              <p className="flex items-center gap-2 text-sm" key={skill}>
-                <CheckCircle2 size={16} className="text-[var(--accent)]" />
-                {skill}
-              </p>
-            ))}
-            {!job.skills?.length ? (
-              <p className="text-sm leading-6 text-[var(--muted)]">
-                La información disponible no permite identificar habilidades concretas.
-                Verifica el anuncio original antes de valorar esta oportunidad.
-              </p>
-            ) : null}
-          </div>
-          {(job.required_education_level || job.required_study_fields?.length) ? <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="font-semibold">Formación requerida</h2><p className="mt-2 text-sm text-[var(--muted)]">Nivel: {{ technical: "Técnico", technologist: "Tecnólogo", university: "Profesional universitario", postgraduate: "Posgrado" }[job.required_education_level] || "No especificado"}</p>{job.required_study_fields?.length ? <div className="mt-3 flex flex-wrap gap-2">{job.required_study_fields.map((field) => <span key={field} className="rounded-lg border border-[var(--line)] px-2 py-1 text-xs">{field}</span>)}</div> : null}<p className="mt-2 text-xs leading-5 text-[var(--muted)]">También se reconocen títulos equivalentes del mismo campo profesional.</p></div> : null}
-          <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="mb-3 font-semibold">Idiomas y nivel mínimo</h2><LanguagesEditor value={job.languages || []} editing={false} required /></div>
+        <aside className="job-detail-sidebar">
+          <section className="job-requirements-card"><header><span><BriefcaseBusiness size={19} /></span><div><small>ANTES DE POSTULARTE</small><h2>Lo que busca esta oferta</h2></div></header>
+            <div className="job-requirement-group"><h3>{job.source_kind === "external" ? "Habilidades identificadas" : "Habilidades relacionadas"}</h3><div className="job-skill-chips">{(job.skills || []).map((skill) => <span key={skill}>{skill}</span>)}</div>{!job.skills?.length && <p>Consulta los requisitos en la descripción de la oferta.</p>}</div>
+            {(job.required_education_level || job.required_study_fields?.length) ? <div className="job-requirement-group"><h3><BookOpen size={16} />Formación requerida</h3><p className="job-requirement-value">{{ technical: "Técnico", technologist: "Tecnólogo", university: "Profesional universitario", postgraduate: "Posgrado" }[job.required_education_level] || "Nivel no especificado"}</p>{!!job.required_study_fields?.length && <div className="job-skill-chips">{job.required_study_fields.map((field) => <span key={field}>{field}</span>)}</div>}<small>Se reconocen títulos equivalentes del mismo campo.</small></div> : null}
+            <div className="job-requirement-group"><h3><Globe2 size={16} />Idiomas</h3>{job.languages?.length ? <div className="job-language-list">{job.languages.map((language) => <p key={language.name}><strong>{language.name}</strong><span>{languageLevelLabel(language.level)}</span></p>)}</div> : <p>No se especifica un requisito de idioma.</p>}</div>
+          </section>
+          {user?.role === "candidate" && <VacancyCvAdvice key={jobId} jobId={jobId} />}
+          {user?.role === "candidate" && <section className="job-apply-card"><h2>{alreadyApplied ? "Tu postulación" : "¿Te interesa esta oportunidad?"}</h2><p>{alreadyApplied ? "Puedes consultar su avance desde Postulaciones." : "Revisa los requisitos y envía tu perfil cuando estés listo."}</p>
           {user?.role === "candidate" ? (
             <>
               {job.source_kind === "external" && job.external_url ? (
@@ -336,9 +294,9 @@ export function JobDetailPage() {
               ) : null}
             </>
           ) : null}
+          </section>}
         </aside>
       </section>
-      {user?.role === "candidate" && <VacancyCvAdvice key={job.id} jobId={job.id} />}
       {!isOwnCompanyJob && similarJobs.length ? (
         <section className="surface-card p-6">
           <div>

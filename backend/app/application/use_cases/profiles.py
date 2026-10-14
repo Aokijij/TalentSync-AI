@@ -30,6 +30,32 @@ def get_my_profile(current_user: User) -> Profile:
     return current_user.profile
 
 
+def decide_cv_mention(db, user, skill, action, *, nlp):
+    from app.domain.services.skill_context import profile_skill_context
+    from app.domain.services.skills import skill_key
+    profile = user.profile
+    if profile is None:
+        raise UseCaseError(status_code=404, detail="Completa primero tu perfil")
+    db.profiles.lock_owner(user.id)
+    db.refresh(profile)
+    key = skill_key(skill)
+    mention = next((row for row in profile_skill_context(profile) if skill_key(row.get("skill", "")) == key), None)
+    if mention is None:
+        raise UseCaseError(status_code=404, detail="Esta mención ya no está disponible. Actualiza tu perfil")
+    decisions = dict((profile.preferences or {}).get("cv_mention_decisions", {}))
+    if action == "restore":
+        decisions.pop(key, None)
+    elif action == "confirm":
+        profile.skills = normalize_skills([*(profile.skills or []), mention["skill"]])
+        decisions[key] = "confirmed"
+        profile.embedding = nlp.embed(" ".join(filter(None, [profile.profession, profile.experience, " ".join(profile.skills)])))
+    else:
+        decisions[key] = "dismissed"
+    profile.preferences = {**(profile.preferences or {}), "cv_mention_decisions": decisions}
+    db.add(profile); db.commit(); db.refresh(profile)
+    return profile
+
+
 def build_professional_summary(profile: Profile, fallback: str | None = None) -> str | None:
     """Build a short CV overview without repeating employer names."""
     profession = (profile.profession or "").strip()

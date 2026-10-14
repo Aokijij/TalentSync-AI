@@ -1,11 +1,10 @@
 import { EducationFields } from "../components/EducationFields.jsx";
 import { CareerCoachWorkspace } from "../components/CareerCoachWorkspace.jsx";
 import { CoachDialog } from "../components/CoachDialog.jsx";
-import { ResumePreview } from "../components/ResumePreview.jsx";
+import { ResumeExportDialog } from "../components/ResumeExportDialog.jsx";
 import { CvContextReview } from "../components/CvContextReview.jsx";
 import { ExperienceFields, MobilityFields } from "../components/ExperienceFields.jsx";
 import { useLocation } from "react-router-dom";
-import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
 import { useEffect, useState } from "react";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
@@ -15,13 +14,10 @@ import {
   CheckCircle2,
   Download,
   Edit3,
-  Eye,
-  ImagePlus,
   Mail,
   MapPin,
   Phone,
   Plus,
-  Palette,
   Save,
   Sparkles,
   Trash2,
@@ -29,12 +25,11 @@ import {
   UserRound,
 } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
-import { AuthenticatedImage } from "../components/AuthenticatedImage.jsx";
 import { CurrencyInput } from "../components/CurrencyInput.jsx";
 import "../styles/profile-page.css";
 import { ProfileCompletionRing } from "../components/ProfileCompletionRing.jsx";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
-import { getResumePalette, getResumePalettes } from "../constants/resumePalettes.js";
+import { getResumePalette } from "../constants/resumePalettes.js";
 import {
   COLOMBIA_LOCATIONS,
   COLOMBIAN_DEPARTMENTS,
@@ -84,12 +79,11 @@ export function ProfilePage() {
   const location = useLocation();
   const [coachOpen, setCoachOpen] = useState(false);
   const [allSkills, setAllSkills] = useState(false);
-  const { confirm } = useFeedback();
   const [profile, setProfile] = useState(null);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [editing, setEditing] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [skill, setSkill] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -114,7 +108,6 @@ export function ProfilePage() {
       setMessage("Guarda los cambios del perfil antes de gestionar tus evidencias.");
       return;
     }
-    setPreviewMode(false);
     setEditing(target !== "profile-evidence");
     setCoachTarget(target);
   }
@@ -195,31 +188,15 @@ export function ProfilePage() {
     setError("");
     try {
       const { data } = await api.post("/profiles/me/photo", form);
-      setProfile(normalize(data));
+      setProfile((current) => ({ ...current, photo_url: data.photo_url }));
       setPhotoVersion((current) => current + 1);
       setEditing(true);
       setMessage("Foto agregada. Guarda el perfil para conservar los demás cambios.");
+      return true;
     } catch (requestError) {
       setError(requestError.response?.data?.detail || "No fue posible guardar la foto");
+      return false;
     }
-  }
-  async function exportPdf() {
-    setError("");
-    try {
-      // Export the visible draft, including the selected style and palette.
-      if (editing) {
-        if (!await confirm({ title: "Guardar y exportar", description: "Se guardarán los cambios que ves, incluidos el estilo y el color, antes de generar el PDF.", confirmLabel: "Guardar y descargar" })) return;
-        const { data } = await api.put("/profiles/me", { ...profile, name, mobility: { ...profile.mobility, commuting_cities: (profile.mobility?.commuting_cities || []).map((value) => value.trim()).filter(Boolean) } });
-        setProfile(normalize(data)); setEditing(false); await refreshUser();
-      }
-      const { data } = await api.get("/profiles/me/export", { responseType: "blob" });
-      const url = URL.createObjectURL(data), anchor = document.createElement("a");
-      anchor.href = url; anchor.download = `${String(name || "Candidato").replace(/[\\/:*?"<>|]/g, " ")} - HV.pdf`;
-      document.body.append(anchor); anchor.click(); anchor.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
-      setMessage("PDF generado. Revisa las descargas de tu navegador.");
-      window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { message: "PDF generado. Revisa las descargas de tu navegador." } }));
-    } catch (failure) { setError(getApiErrorMessage(failure, "No se pudo generar el PDF")); }
   }
   if (!profile)
     return (
@@ -233,7 +210,7 @@ export function ProfilePage() {
     <div className={`profile-page space-y-6 ${editing ? "profile-is-editing" : ""}`}>
       <header className="profile-page-heading">
         <div><h1>Mi perfil</h1></div>
-        <span className="profile-mode"><span />{previewMode ? "Vista del documento" : editing ? "Editando tu perfil" : "Tu perfil guardado"}</span>
+        <div className="profile-heading-actions"><button type="button" className="profile-coach-launch" aria-haspopup="dialog" onClick={() => setCoachOpen(true)}><span><Sparkles size={22} /></span><span><strong>Ideas para mejorar tu hoja de vida</strong><small>Tu ayuda de redacción, a un clic</small></span></button><span className="profile-mode"><span />{editing ? "Editando tu perfil" : "Tu perfil guardado"}</span></div>
       </header>
       <section className="profile-toolbar print-hidden">
         <ProfileCompletionRing profile={profile} variant="summary" />
@@ -252,25 +229,17 @@ export function ProfilePage() {
             <button
               className="button-secondary"
               type="button"
-              onClick={() => setPreviewMode((current) => !current)}
-            >
-              <Eye size={16} />
-              {previewMode ? "Volver al editor" : "Vista previa"}
-            </button>
-            <button
-              className="button-secondary"
-              type="button"
-              onClick={exportPdf}
+              onClick={() => setExportOpen(true)}
             >
               <Download size={16} />
-              Exportar PDF
+              Diseñar y exportar
             </button>
             <button
               className="button-primary w-auto hover-lift pressed focus-ring"
               type="button"
               disabled={uploadingCv}
               onClick={() =>
-                editing ? save() : (setPreviewMode(false), setEditing(true))
+                editing ? save() : setEditing(true)
               }
             >
               {editing ? <Save size={16} /> : <Edit3 size={16} />}
@@ -285,72 +254,7 @@ export function ProfilePage() {
           {error || message}
         </p>
       )}
-      {previewMode ? (
-        <section className="surface-card print-hidden p-5">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex items-center gap-4">
-            {profile.photo_url ? (
-              <AuthenticatedImage
-                src={`${profile.photo_url}?v=${photoVersion}`}
-                alt="Foto de perfil"
-                className="h-20 w-20 rounded-2xl object-cover ring-2 ring-[var(--line)]"
-                fallback={<span className="grid h-20 w-20 place-items-center rounded-2xl bg-[var(--surface-subtle)] text-[var(--muted)]"><ImagePlus size={28} /></span>}
-              />
-            ) : (
-              <span className="grid h-20 w-20 place-items-center rounded-2xl bg-[var(--surface-subtle)] text-[var(--muted)]">
-                <ImagePlus size={28} />
-              </span>
-            )}
-            <div>
-              <h2 className="font-bold">Presentación de la hoja de vida</h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">Agrega una foto y elige el diseño que mejor te represente.</p>
-              <label className="button-secondary button-sm mt-3 cursor-pointer">
-                <ImagePlus size={15} /> Cambiar foto
-                <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} />
-              </label>
-            </div>
-          </div>
-          <div className="space-y-4 lg:w-72 lg:shrink-0">
-          <label className="block text-sm font-semibold text-[var(--muted)]">
-            <span className="mb-1 flex items-center gap-2"><Palette size={16} /> Estilo</span>
-            <select
-              className="field-control"
-              value={profile.resume_style}
-              onChange={(event) => {
-                const nextStyle = event.target.value;
-                setProfile((current) => ({ ...current, resume_style: nextStyle, resume_color: getResumePalette(nextStyle, current.resume_color).id }));
-                setEditing(true);
-              }}
-            >
-              <option value="classic">Clásico profesional</option>
-              <option value="modern">Moderno</option>
-              <option value="minimal">Minimalista</option>
-            </select>
-          </label>
-          <fieldset>
-            <legend className="text-sm font-semibold text-[var(--muted)]">Color del diseño</legend>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {getResumePalettes(profile.resume_style).map((palette) => (
-                <button
-                  key={palette.id}
-                  type="button"
-                  aria-label={`Color ${palette.label}`}
-                  aria-pressed={profile.resume_color === palette.id}
-                  title={palette.label}
-                  className={`grid h-10 w-10 place-items-center rounded-full border-2 outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${profile.resume_color === palette.id ? "border-[var(--accent)]" : "border-[var(--line)]"}`}
-                  onClick={() => { update("resume_color", palette.id); setEditing(true); }}
-                >
-                  <span className="grid h-7 w-7 place-items-center rounded-full text-white" style={{ backgroundColor: palette.swatch }}>{profile.resume_color === palette.id ? <CheckCircle2 size={17} /> : null}</span>
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-xs text-[var(--muted)]">{getResumePalette(profile.resume_style, profile.resume_color).label} · Vista actualizada · guarda para conservar tu elección.</p>
-          </fieldset>
-          </div>
-          </div>
-        </section>
-      ) : null}
-      {!previewMode && (
+      {(
           <header className="profile-identity">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[var(--accent)] to-[var(--success)]" />
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -442,13 +346,11 @@ export function ProfilePage() {
             </div>
           </header>
       )}
-      {!previewMode && <div className="profile-help-action"><button type="button" className="button-secondary" onClick={() => setCoachOpen(true)} aria-haspopup="dialog"><Sparkles size={18} />Ideas para mejorar tu hoja de vida</button><span>Revisa sugerencias o mejora un texto cuando lo necesites.</span></div>}
-      <CoachDialog open={coachOpen && !previewMode} onClose={() => setCoachOpen(false)}>
+      <ResumeExportDialog open={exportOpen} onClose={() => setExportOpen(false)} profile={profile} name={name} photoVersion={photoVersion} onPhoto={uploadPhoto} />
+      <CoachDialog open={coachOpen} onClose={() => setCoachOpen(false)}>
         <CareerCoachWorkspace active={coachOpen} profile={profile} editing={editing} onEdit={editFromCoach} onSave={save} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />
       </CoachDialog>
-      {previewMode ? (
-        <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
-      ) : (
+      {(
         <article className="profile-document">
           <div className="profile-content-grid">
             <div className="profile-main-sections">
@@ -489,7 +391,7 @@ export function ProfilePage() {
             </Section>
             <Section id="profile-languages" icon={BookOpen} title="Idiomas"><LanguagesEditor value={profile.languages} editing={editing} onChange={(value) => update("languages", value)} /></Section>
             <Section id="profile-skills" icon={BriefcaseBusiness} title="Habilidades">
-              <CvContextReview rows={profile.cv_skill_context} skills={profile.skills} />
+              <CvContextReview rows={profile.cv_skill_context} skills={profile.skills} decisions={profile.cv_mention_decisions} disabled={editing} onDecision={async (skill, action) => { const { data } = await api.patch("/profiles/me/cv-mentions", { skill, action }); setProfile(normalize(data)); await refreshUser(); }} />
               <div className="flex flex-wrap gap-2">
                 {(editing || allSkills ? profile.skills : profile.skills.slice(0, 12)).map((item) => (
                   <span
@@ -640,8 +542,8 @@ export function ProfilePage() {
       </div>
         </article>
       )}
-      {!previewMode && editing && <p className="surface-card p-5 text-sm text-[var(--muted)]">Guarda tus cambios para gestionar las evidencias de tu perfil.</p>}
-      {!previewMode && !editing && <div id="profile-evidence"><ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} /></div>}
+      {editing && <p className="surface-card p-5 text-sm text-[var(--muted)]">Guarda tus cambios para gestionar las evidencias de tu perfil.</p>}
+      {!editing && <div id="profile-evidence"><ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} /></div>}
     </div>
   );
 }

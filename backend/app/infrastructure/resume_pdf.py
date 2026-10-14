@@ -1,65 +1,144 @@
-"""Private, paginated CV download. No browser print dialog or remote service."""
+"""Private, designed CVs. Preview and download use the same PDF bytes."""
+import re
+from functools import lru_cache
 from io import BytesIO
-from textwrap import wrap
+from pathlib import Path
+from xml.sax.saxutils import escape
 
-from pypdf import PdfWriter
-from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+import reportlab
+from PIL import Image as PillowImage
+from PIL import ImageOps
+from reportlab.lib import colors
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import (
+    HRFlowable,
+    Image,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
+
+from app.application.errors import UseCaseError
+
+SECTIONS = {"contact", "summary", "experiences", "educations", "certifications", "skills", "languages", "evidence", "preferences"}
+PALETTES = {"forest": "#166534", "wine": "#881337", "slate": "#334155", "navy": "#1e3a8a", "blue": "#1d4ed8", "teal": "#0f766e", "rose": "#be185d"}
 
 
-def resume_pdf(user):
+def date_label(value):
+    value = str(value or "")
+    if re.fullmatch(r"\d{4}-(?:0[1-9]|1[0-2])", value):
+        year, month = value.split("-")
+        return f"{['ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.', 'jul.', 'ago.', 'sep.', 'oct.', 'nov.', 'dic.'][int(month) - 1]} {year}"
+    return value
+
+
+@lru_cache(maxsize=1)
+def fonts():
+    folder = Path(reportlab.__file__).parent / "fonts"
+    for name, filename in [("Resume", "Vera.ttf"), ("ResumeBold", "VeraBd.ttf")]:
+        pdfmetrics.registerFont(TTFont(name, str(folder / filename)))
+    pdfmetrics.registerFontFamily("Resume", normal="Resume", bold="ResumeBold", italic="Resume", boldItalic="ResumeBold")
+
+
+def resume_pdf(user, *, sections=None, include_photo=True, photo=None):
+    fonts()
     profile = user.profile
-    colors = {"forest": "0.086 0.396 0.204", "wine": "0.533 0.075 0.216", "slate": "0.2 0.255 0.333", "navy": "0.118 0.227 0.541", "blue": "0.114 0.306 0.847", "teal": "0.059 0.463 0.431", "rose": "0.745 0.094 0.365"}
-    defaults = {"classic": "0.047 0.29 0.431", "modern": "0.263 0.22 0.792", "minimal": "0.059 0.09 0.165"}
-    accent = colors.get(profile.resume_color, defaults.get(profile.resume_style, defaults["classic"]))
-    writer = PdfWriter()
-    regular = writer._add_object(DictionaryObject({NameObject("/Type"): NameObject("/Font"), NameObject("/Subtype"): NameObject("/Type1"), NameObject("/BaseFont"): NameObject("/Helvetica"), NameObject("/Encoding"): NameObject("/WinAnsiEncoding")}))
-    bold = writer._add_object(DictionaryObject({NameObject("/Type"): NameObject("/Font"), NameObject("/Subtype"): NameObject("/Type1"), NameObject("/BaseFont"): NameObject("/Helvetica-Bold"), NameObject("/Encoding"): NameObject("/WinAnsiEncoding")}))
+    included = SECTIONS if sections is None else set(sections) & SECTIONS
     layout = profile.resume_style or "classic"
-    decorations = [f"{accent} RG 2 w 48 805 m 547 805 l S"] if layout == "minimal" else [f"{accent} rg 32 48 {5 if layout == 'modern' else 2} 754 re f"]
-    commands, y = list(decorations), 790
+    accent = colors.HexColor(PALETTES.get(profile.resume_color, {"classic": "#0c4a6e", "modern": "#4338ca", "minimal": "#0f172a"}.get(layout, "#0c4a6e")))
+    ink, muted, line = [colors.HexColor(value) for value in ("#172a3a", "#526477", "#dce4eb")]
+    base = ParagraphStyle("CVBody", parent=getSampleStyleSheet()["Normal"], fontName="Resume", fontSize=9, leading=14, textColor=ink, spaceAfter=7, splitLongWords=True)
+    heading = ParagraphStyle("CVHeading", parent=base, fontName="ResumeBold", fontSize=12, leading=16, textColor=accent, spaceBefore=15, spaceAfter=6, keepWithNext=True)
+    role = ParagraphStyle("CVRole", parent=base, fontName="ResumeBold", fontSize=10, leading=15, spaceBefore=8, spaceAfter=3, keepWithNext=True)
+    meta = ParagraphStyle("CVMeta", parent=base, fontSize=8, leading=12, textColor=muted, spaceAfter=6)
+    inverse = layout == "classic"
+    name_style = ParagraphStyle("CVName", parent=base, fontName="ResumeBold", fontSize=23 if layout != "minimal" else 21, leading=29, textColor=colors.white if inverse else ink, spaceAfter=7)
+    profession_style = ParagraphStyle("CVProfession", parent=base, fontSize=11, leading=16, textColor=colors.white if inverse else accent, spaceAfter=7)
+    contact_style = ParagraphStyle("CVContact", parent=meta, textColor=colors.HexColor("#e0f2fe") if inverse else muted, leading=13, spaceAfter=0)
 
-    def flush():
-        page = writer.add_blank_page(width=595, height=842)
-        page[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"): DictionaryObject({NameObject("/F1"): regular, NameObject("/F2"): bold})})
-        stream = DecodedStreamObject()
-        stream.set_data("\n".join(commands).encode("ascii"))
-        page[NameObject("/Contents")] = writer._add_object(stream)
+    def paragraph(value, style=base):
+        return Paragraph(escape(str(value or "")).replace("\n", "<br/>"), style)
 
-    def text(value, size=10, heading=False):
-        nonlocal y, commands
-        for paragraph in str(value or "").splitlines():
-            for line in wrap(paragraph, width=88 if size <= 11 else 65 if size <= 15 else 36, break_long_words=True):
-                if y < 55:
-                    flush(); commands = list(decorations); y = 790
-                encoded = line.encode("cp1252", errors="replace").hex()
-                commands.append(f"BT /F{2 if heading else 1} {size} Tf {accent if heading else '0.12 0.16 0.22'} rg 1 0 0 1 48 {y} Tm <{encoded}> Tj ET")
-                y -= size + 5
-        y -= 7
+    identity = [paragraph(user.name, name_style)]
+    if profile.profession and len(profile.profession) <= 250:
+        identity.append(paragraph(profile.profession, profession_style))
+    if "contact" in included:
+        contact = [user.email, getattr(profile, "phone", None), ", ".join(filter(None, [getattr(profile, "location", None), getattr(profile, "department", None)]))]
+        contact_text = " · ".join(str(value) for value in contact if value)
+        if len(contact_text) <= 450:
+            identity.append(paragraph(contact_text, contact_style))
+    photo_flowable = None
+    if include_photo and photo:
+        try:
+            with PillowImage.open(BytesIO(photo)) as original:
+                if original.width * original.height > 20_000_000:
+                    raise ValueError("Photo too large to decode")
+                image = ImageOps.fit(ImageOps.exif_transpose(original).convert("RGB"), (320, 320))
+                image_data = BytesIO(); image.save(image_data, format="JPEG", quality=92)
+            image_data.seek(0)
+            photo_flowable = Image(image_data, width=76, height=76)
+        except (OSError, ValueError, PillowImage.DecompressionBombError):
+            raise UseCaseError(status_code=422, detail="No pudimos incluir la foto. Reemplázala o desactiva Foto para exportar") from None
+    header = Table([[identity, photo_flowable]] if photo_flowable else [[identity]], colWidths=[381, 118] if photo_flowable else [499])
+    header.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 18), ("RIGHTPADDING", (0, 0), (-1, -1), 18),
+        ("TOPPADDING", (0, 0), (-1, -1), 20), ("BOTTOMPADDING", (0, 0), (-1, -1), 20),
+        ("BACKGROUND", (0, 0), (-1, -1), accent if inverse else colors.HexColor("#f1f5f9") if layout == "modern" else colors.white),
+        ("LINEBELOW", (0, 0), (-1, -1), 2 if layout != "minimal" else .7, accent),
+    ]))
+    story = [header, Spacer(1, 6)]
+    if profile.profession and len(profile.profession) > 250:
+        story.append(paragraph(profile.profession))
+    if "contact" in included and len(contact_text) > 450:
+        story.append(paragraph(contact_text, meta))
 
-    text(user.name, 20 if layout == "minimal" else 28 if layout == "modern" else 25, True)
-    text(profile.profession, 14, True)
-    text(" · ".join(str(value) for value in [user.email, profile.phone, profile.location] if value))
-    if profile.experience:
-        text("Perfil profesional", 14, True); text(profile.experience)
-    for title, key, fields in [
-        ("Experiencia laboral", "experiences", ["role", "company"]),
-        ("Formación académica", "educations", ["degree", "institution"]),
-        ("Cursos y certificaciones", "certifications", ["name", "issuer"]),
-        ("Muestras de trabajo", "evidence", ["title"]),
-    ]:
+    def section(title):
+        rule = HRFlowable(width="100%", thickness=.5, color=line, spaceAfter=7)
+        rule.keepWithNext = True
+        story.extend([paragraph(title, heading), rule])
+
+    if "summary" in included and profile.experience:
+        section("Perfil profesional"); story.append(paragraph(profile.experience))
+    for title, key, fields in [("Experiencia laboral", "experiences", ["role", "company"]), ("Formación académica", "educations", ["degree", "institution"]), ("Cursos y certificaciones", "certifications", ["name", "issuer"]), ("Muestras de trabajo", "evidence", ["title"])]:
         items = getattr(profile, key, None) or []
-        if items:
-            text(title, 14, True)
-            for item in items:
-                text(" · ".join(str(item.get(field) or "") for field in fields if item.get(field)), 11, True)
-                ongoing_label = "En curso" if key == "educations" else "Actualidad"
-                text(" – ".join(str(value) for value in [item.get("start_date") or item.get("start_year"), ongoing_label if item.get("is_current") else item.get("end_date") or item.get("end_year")] if value))
-                text(item.get("description") or "")
-    if profile.skills:
-        text("Habilidades", 14, True); text(" · ".join(profile.skills))
-    if profile.languages:
-        text("Idiomas", 14, True)
-        text(" · ".join(f"{item.get('name', item.get('language', ''))}: {item.get('level', '')}" for item in profile.languages))
-    flush()
-    output = BytesIO(); writer.write(output)
+        if key not in included or not items:
+            continue
+        section(title)
+        for item in items:
+            story.append(paragraph(" · ".join(str(item.get(field) or "") for field in fields if item.get(field)), role))
+            ongoing = "En curso" if key == "educations" else "Actualidad"
+            dates = [item.get("start_date") or item.get("start_year"), ongoing if item.get("is_current") else item.get("end_date") or item.get("end_year") or item.get("year")]
+            if any(dates):
+                story.append(paragraph(" - ".join(date_label(value) for value in dates if value), meta))
+            if item.get("description"):
+                story.append(paragraph(item["description"]))
+    if "educations" in included and not getattr(profile, "educations", None) and profile.education:
+        section("Formación académica"); story.append(paragraph(profile.education))
+    if "skills" in included and profile.skills:
+        section("Habilidades"); story.append(paragraph(" · ".join(profile.skills)))
+    if "languages" in included and profile.languages:
+        section("Idiomas"); story.append(paragraph(" · ".join(f"{item.get('name', item.get('language', ''))}: {'Nativo' if item.get('level') == 'NATIVE' else item.get('level', '')}" for item in profile.languages)))
+    if "preferences" in included:
+        labels = {"remote": "Remoto", "hybrid": "Híbrido", "onsite": "Presencial", "immediate": "Inmediata", "two_weeks": "En 15 días", "one_month": "En 30 días", "negotiable": "Fecha acordada"}
+        values = [getattr(profile, "preferred_sector", None), labels.get(getattr(profile, "preferred_modality", None)), labels.get(getattr(profile, "availability", None))]
+        if any(values):
+            section("Preferencias laborales"); story.append(paragraph(" · ".join(filter(None, values))))
+    output = BytesIO()
+
+    def page_details(canvas, doc):
+        canvas.saveState()
+        if layout == "modern":
+            canvas.setFillColor(accent); canvas.rect(24, 40, 4, 762, fill=1, stroke=0)
+        canvas.setStrokeColor(line); canvas.line(48, 35, 547, 35)
+        canvas.setFont("Resume", 7); canvas.setFillColor(muted)
+        canvas.drawString(48, 23, "Hoja de vida"); canvas.drawRightString(547, 23, f"Página {doc.page}")
+        canvas.restoreState()
+
+    document = SimpleDocTemplate(output, pagesize=(595, 842), leftMargin=48, rightMargin=48, topMargin=40, bottomMargin=49,
+                                 title=f"Hoja de vida - {user.name}", author=user.name, pageCompression=1)
+    document.build(story, onFirstPage=page_details, onLaterPages=page_details)
     return output.getvalue()
