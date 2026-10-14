@@ -48,3 +48,10 @@ Priorizar fechas imposibles, empleos marcados como actuales por error, contactos
 - Relevancia de recomendaciones y resultados de postulaciones con suficiente muestra y sin atribuir causalidad a una mera mejora del texto.
 
 La orientación de redacción se apoya en describir hechos y resultados, coherente con la [guía de Harvard para preparar un CV](https://careerservices.fas.harvard.edu/resources/create-a-strong-resume/). Ninguna guía garantiza obtener entrevistas ni superar todos los filtros.
+
+
+## Radar y diseños iniciales implementados (14 de octubre)
+
+Las tres vistas del radar laboral están disponibles en Mi desarrollo. La participación es voluntaria y se excluye la propia cuenta. Los mínimos de publicación son 20 perfiles elegibles o 20 empresas por grupo salarial comparable; las demostraciones identificables no cuentan. Ver `RADAR_MERCADO_PROPUESTA.md` para las reglas implementadas. No se atribuye dominio a las habilidades declaradas ni se inventan estadísticas cuando falta muestra.
+
+Los PDF recuperan las composiciones originales de las referencias del usuario: clásico con cabecera oscura y lateral claro, moderno con cabecera blanca y lateral de color, minimalista con nombre serif y una columna. La vista previa y la descarga usan los mismos bytes. Guardar diseño persiste únicamente estilo, color y opciones de exportación, conservando las ediciones de texto pendientes.

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, Eye, RefreshCw } from "lucide-react";
+import { Download, Eye, RefreshCw, Save, PencilLine } from "lucide-react";
 import { CoachDialog } from "./CoachDialog.jsx";
 import { ResumeDesignControls } from "./ResumeDesignControls.jsx";
 import { api, getApiErrorMessage } from "../api/client.js";
@@ -7,9 +7,10 @@ import { getResumePalette } from "../constants/resumePalettes.js";
 import { exportSections, resumeExportPayload } from "../utils/resumeExport.js";
 import "../styles/resume-export.css";
 
-export function ResumeExportDialog({ open, onClose, profile, name, photoVersion, onPhoto }) {
-  const [sections, setSections] = useState(() => exportSections.map(([key]) => key));
-  const [includePhoto, setIncludePhoto] = useState(true), [style, setStyle] = useState(profile.resume_style), [color, setColor] = useState(profile.resume_color);
+export function ResumeExportDialog({ open, onClose, profile, name, photoVersion, onPhoto, onDesignSaved, onEdit }) {
+  const [sections, setSections] = useState(() => profile.resume_export_options?.sections || exportSections.map(([key]) => key));
+  const [includePhoto, setIncludePhoto] = useState(profile.resume_export_options?.include_photo ?? true), [style, setStyle] = useState(profile.resume_style), [color, setColor] = useState(profile.resume_color);
+  const [saving, setSaving] = useState(false), [message, setMessage] = useState("");
   const [preview, setPreview] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [retry, setRetry] = useState(0);
   const payload = useMemo(() => resumeExportPayload(profile, name, { sections, includePhoto, style, color }), [profile, name, sections, includePhoto, style, color]);
   const signature = JSON.stringify(payload) + photoVersion;
@@ -37,9 +38,16 @@ export function ResumeExportDialog({ open, onClose, profile, name, photoVersion,
     anchor.download = `${String(name || "Candidato").replace(/[\\/:*?"<>|]/g, " ")} - HV.pdf`;
     document.body.append(anchor); anchor.click(); anchor.remove();
   }
+  async function saveDesign() {
+    setSaving(true); setMessage("");
+    try { const { data } = await api.patch("/profiles/me/resume-design", { style, color, sections, include_photo: includePhoto }); onDesignSaved?.(data); setMessage("Diseño guardado para tus próximas exportaciones."); }
+    catch (failure) { setMessage(getApiErrorMessage(failure)); }
+    finally { setSaving(false); }
+  }
   return <CoachDialog open={open} onClose={onClose} title="Diseña y exporta tu hoja de vida" className="resume-export-dialog">
     <div className="resume-export-workspace"><aside className="resume-export-options"><p>Elige qué compartir. Los cambios de esta ventana se aplican al PDF; tu perfil conserva su información.</p>
       <ResumeDesignControls profile={profile} photoVersion={photoVersion} style={style} color={color} onStyle={(next) => { setStyle(next); setColor(getResumePalette(next, color).id); }} onColor={setColor} onPhoto={onPhoto} />
+      <div className="resume-design-actions"><button type="button" className="button-secondary" disabled={saving} onClick={saveDesign}><Save size={15} />{saving ? "Guardando…" : "Guardar mi diseño"}</button>{onEdit && <button type="button" className="button-secondary" onClick={() => { onClose(); onEdit(); }}><PencilLine size={15} />Editar textos</button>}{message && <p role="status">{message}</p>}</div>
       <fieldset className="resume-section-picker"><legend>¿Qué quieres incluir?</legend><label><input type="checkbox" checked={includePhoto} onChange={(event) => setIncludePhoto(event.target.checked)} />Foto de perfil</label>{exportSections.map(([key, label]) => <label key={key}><input type="checkbox" checked={sections.includes(key)} onChange={(event) => setSections((items) => event.target.checked ? [...items, key] : items.filter((value) => value !== key))} />{label}</label>)}</fieldset>
     </aside><section className="resume-export-preview"><header><span><Eye size={17} />Vista previa del PDF</span><small>Este es el documento que descargarás</small></header>
       {busy && <div role="status" className="resume-preview-placeholder"><RefreshCw size={25} className="animate-spin" /><p>Actualizando tu documento…</p></div>}

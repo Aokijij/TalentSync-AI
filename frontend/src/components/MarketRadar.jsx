@@ -1,0 +1,80 @@
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { BarChart3, UsersRound, CircleDollarSign, Search, RotateCcw, ShieldCheck, ArrowRight, BookOpen, Check, SlidersHorizontal } from "lucide-react";
+import { api, getApiErrorMessage } from "../api/client.js";
+import { useFeedback } from "../contexts/FeedbackContext.jsx";
+import { Autocomplete } from "./Autocomplete.jsx";
+import { CareerCoachWorkspace } from "./CareerCoachWorkspace.jsx";
+import { COLOMBIA_LOCATIONS } from "../constants/colombianCities.js";
+import { JOB_SECTORS } from "../constants/jobSectors.js";
+import { CONTRACTS, LEVELS } from "../utils/offerQuality.js";
+import { skillName } from "../utils/skillNames.js";
+import "../styles/market-radar.css";
+
+const cities = [...new Set(Object.values(COLOMBIA_LOCATIONS).flat())].sort((a, b) => a.localeCompare(b, "es"));
+const defaults = { family: "", level: "", location: "", search: "", sector: "", modality: "" };
+const tabs = [["demand", "Habilidades", BarChart3], ["peers", "Perfiles comparables", UsersRound], ["salary", "Salarios", CircleDollarSign]];
+const modalityLabel = { remote: "Remoto", hybrid: "Híbrido", onsite: "Presencial" };
+const employmentLabel = { full_time: "Tiempo completo", part_time: "Tiempo parcial", contract: "Contrato", temporary: "Temporal", internship: "Prácticas" };
+const money = (value) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(value);
+
+export function MarketRadar() {
+  const { confirm } = useFeedback();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState(null), [report, setReport] = useState(null), [filters, setFilters] = useState(defaults), [tab, setTab] = useState("demand");
+  const [busy, setBusy] = useState(false), [saving, setSaving] = useState(false), [error, setError] = useState(""), [message, setMessage] = useState("");
+  const [participation, setParticipation] = useState({ family: "", level: "", confirm_real_profile: false }), [compare, setCompare] = useState("");
+  const request = useRef(null);
+  async function load(next) {
+    request.current?.abort(); const controller = new AbortController(); request.current = controller;
+    setBusy(true); setError("");
+    try { const { data } = await api.get("/profiles/me/market", { params: next, signal: controller.signal }); if (!controller.signal.aborted) { setReport(data); setCompare(""); } }
+    catch (failure) { if (!controller.signal.aborted) setError(getApiErrorMessage(failure)); }
+    finally { if (!controller.signal.aborted) setBusy(false); }
+  }
+  useEffect(() => {
+    let active = true;
+    api.get("/profiles/me").then(async ({ data }) => { if (!active) return; setProfile(data); const next = { ...defaults, location: data.location || "" }; setFilters(next); await load(next); }).catch((failure) => { if (active) setError(getApiErrorMessage(failure)); });
+    return () => { active = false; request.current?.abort(); };
+  }, []);
+  useEffect(() => { if (report?.participation) setParticipation({ family: report.participation.family || "", level: report.participation.level || "", confirm_real_profile: false }); }, [report?.participation]);
+  async function participate(enabled) {
+    setSaving(true); setError(""); setMessage("");
+    try { await api.put("/profiles/me/market/participation", { ...participation, enabled }); await load(report.filters); setMessage(enabled ? "Participación guardada. Solo se utilizan habilidades declaradas en estadísticas agregadas." : "Participación retirada. Tu perfil deja de formar parte de las comparaciones."); }
+    catch (failure) { setError(getApiErrorMessage(failure)); }
+    finally { setSaving(false); }
+  }
+  async function addSkill(skill) {
+    if (!await confirm({ title: `Añadir ${skillName(skill)} a tu perfil`, description: "Confirma que sabes usar esta habilidad. Se añadirá como declarada; no acredita dominio ni cambia tu experiencia laboral.", confirmLabel: "Sí, la conozco" })) return;
+    setSaving(true); setError("");
+    try { const { data } = await api.post("/profiles/me/market/skills", { skill, confirm: true }); setProfile(data); await load(report.filters); setMessage(`${skillName(skill)} se añadió a tus habilidades.`); }
+    catch (failure) { setError(getApiErrorMessage(failure)); }
+    finally { setSaving(false); }
+  }
+  const peer = report?.peers, salary = report?.salary;
+  return <section className="market-radar" aria-busy={busy}>
+    <header className="market-radar-heading"><span><BarChart3 size={24} /></span><div><p className="section-kicker">TU SIGUIENTE PASO</p><h2>Radar laboral</h2><p>Explora qué se pide, qué declaran perfiles comparables y qué salarios publican las ofertas.</p></div></header>
+    <form className="market-filters" onSubmit={(event) => { event.preventDefault(); load(filters); }}><div className="market-filter-main"><label>Área profesional<select className="field-control" value={filters.family} onChange={(event) => setFilters({ ...filters, family: event.target.value })}><option value="">Todas las áreas</option>{Object.entries(report?.families || {}).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label>Nivel<select className="field-control" value={filters.level} onChange={(event) => setFilters({ ...filters, level: event.target.value })}><option value="">Todos los niveles</option>{Object.entries(LEVELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><Autocomplete label="Ciudad" value={filters.location} options={cities} onChange={(location) => setFilters({ ...filters, location })} placeholder="Buscar ciudad…" maxLength={120} /></div>
+      <details className="market-extra-filters"><summary><SlidersHorizontal size={15} />Afinar las ofertas</summary><div className="market-filter-main"><label>Cargo (solo ofertas)<input className="field-control" maxLength={160} value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Ej. desarrollador frontend" /></label><label>Sector<select className="field-control" value={filters.sector} onChange={(event) => setFilters({ ...filters, sector: event.target.value })}><option value="">Todos los sectores</option>{JOB_SECTORS.map((sector) => <option key={sector}>{sector}</option>)}</select></label><label>Modalidad<select className="field-control" value={filters.modality} onChange={(event) => setFilters({ ...filters, modality: event.target.value })}><option value="">Todas</option>{Object.entries(modalityLabel).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label></div></details>
+      <footer><small>Área, nivel y ciudad definen el grupo; los filtros adicionales solo ajustan las ofertas. Aplica los cambios para actualizar.</small><div><button type="button" className="market-reset" disabled={busy} onClick={() => { setFilters(defaults); load(defaults); }}><RotateCcw size={14} />Restablecer</button><button type="submit" className="button-primary" disabled={busy}><Search size={15} />{busy ? "Consultando…" : "Explorar mercado"}</button></div></footer>
+    </form>
+    <nav className="market-tabs" aria-label="Vistas del radar">{tabs.map(([key, label, Icon]) => <button type="button" key={key} aria-pressed={tab === key} onClick={() => setTab(key)}><Icon size={17} />{label}</button>)}</nav>
+    {error && <p role="alert" className="market-feedback">{error}<button type="button" onClick={() => { if (profile) load(filters); else { api.get("/profiles/me").then(({ data }) => { setProfile(data); load(filters); }).catch((failure) => setError(getApiErrorMessage(failure))); } }}>Reintentar</button></p>}{message && <p role="status" className="market-feedback">{message}</p>}
+    {busy && <p role="status" className="market-loading">Actualizando el radar…</p>}
+    {!busy && report && profile && <><p className="market-date">Consulta del {new Date(report.as_of).toLocaleDateString("es-CO")} · Ofertas desde el {report.since} · Demos identificables excluidos</p>
+      {tab === "demand" && <CareerCoachWorkspace context="learning" profile={profile} externalRadar={report.demand} hideFilters onEdit={() => { navigate("/perfil#profile-skills"); }} />}
+      {tab === "peers" && <div className="market-panel"><header><h3>Habilidades en perfiles comparables</h3><p>Comparamos declaraciones de participantes voluntarios del área, nivel y ciudad seleccionados. Tu cuenta queda fuera del grupo.</p></header>
+        {peer.status !== "ready" ? <EmptyMarket title={peer.status === "choose_cohort" ? "Elige tu grupo de comparación" : "Aún estamos formando este grupo"} text={peer.note} footer={`Publicamos comparaciones a partir de ${peer.minimum_sample} participantes elegibles.`} /> : <><p className="market-sample"><UsersRound size={17} />{peer.sample} perfiles participantes</p><div className="market-peer-skills">{peer.skills.map((row) => <article key={row.skill}><header><strong>{skillName(row.skill)}</strong><span>{row.percentage}%</span></header><div className="market-peer-bar"><span style={{ width: `${row.percentage}%` }} /></div><p>{row.declared ? "Ya está declarada en tu perfil" : "No aparece entre tus habilidades declaradas"}</p><footer>{row.declared ? <span><Check size={14} />En mi perfil</span> : <button type="button" disabled={saving} onClick={() => addSkill(row.skill)}>La conozco<ArrowRight size={14} /></button>}<Link to={`/aprendizaje?search=${encodeURIComponent(row.skill)}#cursos`}><BookOpen size={14} />Ver formación</Link></footer></article>)}</div>{!peer.skills.length && <p className="market-note">El grupo es suficiente, pero no hay habilidades publicables con los umbrales de privacidad actuales.</p>}<p className="market-note">{peer.note}</p></>}
+        <details className="market-participation"><summary><ShieldCheck size={18} /><span>Tu participación es voluntaria<small>{report.participation.enabled ? "Participación activada" : "Tu perfil no está incluido"}</small></span></summary><div><p>Compartirás solo estadísticas de habilidades declaradas, área, nivel y ciudad. No mostramos nombres, CV ni datos de contacto. Puedes retirarte cuando quieras. Renueva tu elección cada 180 días.</p><div className="market-participation-fields"><label>Tu área actual<select className="field-control" value={participation.family} onChange={(event) => setParticipation({ ...participation, family: event.target.value })}><option value="">Elige tu área</option>{Object.entries(report.families).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label>Tu nivel actual<select className="field-control" value={participation.level} onChange={(event) => setParticipation({ ...participation, level: event.target.value })}><option value="">Elige tu nivel</option>{Object.entries(LEVELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label></div><p>Ciudad de tu perfil: <strong>{profile.location || "Sin indicar"}</strong> · <Link to="/perfil">Revisar mi perfil</Link></p><label className="market-consent"><input type="checkbox" checked={participation.confirm_real_profile} onChange={(event) => setParticipation({ ...participation, confirm_real_profile: event.target.checked })} />Confirmo que estos datos reflejan mi perfil real y acepto su uso en estadísticas agregadas.</label>{!report.email_verified && <p className="market-note">Tu correo deberá estar verificado para que tus datos entren en las estadísticas. <Link to="/seguridad">Revisar mi cuenta</Link></p>}<div className="market-participation-actions"><button type="button" className="button-primary" disabled={saving || !participation.family || !participation.level || !participation.confirm_real_profile || !profile.location} onClick={() => participate(true)}>{report.participation.enabled ? "Actualizar participación" : "Quiero participar"}</button>{report.participation.enabled && <button type="button" className="button-secondary" disabled={saving} onClick={() => participate(false)}>Retirar mi participación</button>}</div></div></details>
+      </div>}
+      {tab === "salary" && <div className="market-panel"><header><h3>Salarios publicados para tu búsqueda</h3><p>Referencias de mínimos fijos brutos en COP al mes. Cada grupo mantiene las mismas condiciones de contrato, modalidad y jornada.</p></header>
+        {salary.status !== "ready" ? <EmptyMarket title={salary.status === "choose_cohort" ? "Selecciona área, nivel y ciudad" : "Todavía no hay una referencia comparable"} text={salary.status === "choose_cohort" ? salary.note : "Necesitamos al menos 20 empresas con salario y condiciones completas dentro de un mismo grupo."} footer={salary.total_offers != null ? `${salary.eligible_offers} de ${salary.total_offers} ofertas tienen los datos necesarios; pueden pertenecer a grupos diferentes.` : ""} /> : <div className="market-salary-groups">{salary.groups.map((group) => { const key = JSON.stringify([group.modality, group.contract_type, group.employment_type, group.weekly_hours]); const delta = profile.desired_salary > 0 ? (profile.desired_salary / group.median - 1) * 100 : null; return <article key={key}><header><strong>{modalityLabel[group.modality] || group.modality}</strong><span>{group.sample} empresas · {group.offers} ofertas</span></header><p>{CONTRACTS[group.contract_type]} · {employmentLabel[group.employment_type] || group.employment_type} · {group.weekly_hours} h/semana</p><div className="market-salary-range"><div><small>Percentil 25</small><strong>{money(group.p25)}</strong></div><div><small>Mediana</small><strong>{money(group.median)}</strong></div><div><small>Percentil 75</small><strong>{money(group.p75)}</strong></div></div>{delta == null ? <Link className="market-profile-link" to="/perfil#preferencias">Registrar mi aspiración<ArrowRight size={14} /></Link> : <><label className="market-consent"><input type="checkbox" checked={compare === key} onChange={(event) => setCompare(event.target.checked ? key : "")} />Mi aspiración de {money(profile.desired_salary)} corresponde a un salario fijo bruto mensual y a estas condiciones.</label>{compare === key && <div className="market-salary-insight"><strong>{Math.abs(delta) < .5 ? "Tu aspiración coincide con esta mediana" : `Tu aspiración está un ${Math.abs(delta).toFixed(0)}% ${delta < 0 ? "por debajo" : "por encima"} de esta mediana`}</strong><p>Es una comparación con mínimos publicados, no una recomendación automática ni una garantía de oferta.</p><Link to="/perfil#preferencias">Revisar mi aspiración<ArrowRight size={14} /></Link></div>}</>}</article>; })}</div>}
+        <p className="market-note">{salary.note}</p><Link className="market-profile-link" to="/vacantes">Explorar las ofertas disponibles<ArrowRight size={15} /></Link>
+      </div>}
+    </>}
+  </section>;
+}
+
+function EmptyMarket({ title, text, footer }) {
+  return <div className="market-empty"><BarChart3 size={30} /><h4>{title}</h4><p>{text}</p>{footer && <small>{footer}</small>}</div>;
+}

@@ -4,7 +4,7 @@ import { CoachDialog } from "../components/CoachDialog.jsx";
 import { ResumeExportDialog } from "../components/ResumeExportDialog.jsx";
 import { CvContextReview } from "../components/CvContextReview.jsx";
 import { ExperienceFields, MobilityFields } from "../components/ExperienceFields.jsx";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
 import { useEffect, useState } from "react";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
@@ -70,6 +70,7 @@ const normalize = (data) => ({
   educations: data.educations || [],
   certifications: data.certifications || [],
   languages: data.languages || [],
+  resume_export_options: data.resume_export_options || {},
   resume_style: data.resume_style || "classic",
   resume_color: getResumePalette(data.resume_style, data.resume_color).id,
 });
@@ -347,9 +348,10 @@ export function ProfilePage() {
             </div>
           </header>
       )}
-      <ResumeExportDialog open={exportOpen} onClose={() => setExportOpen(false)} profile={profile} name={name} photoVersion={photoVersion} onPhoto={uploadPhoto} />
+      <ResumeExportDialog open={exportOpen} onClose={() => setExportOpen(false)} profile={profile} name={name} photoVersion={photoVersion} onPhoto={uploadPhoto} onDesignSaved={(design) => setProfile((current) => ({ ...current, ...design }))} onEdit={() => editFromCoach("profile-experiences")} />
       <CoachDialog open={completionOpen} onClose={() => setCompletionOpen(false)} title="Qué puedes completar en tu perfil" className="profile-completion-dialog"><div className="profile-completion-body"><p>Este indicador revisa información incluida; no mide tu compatibilidad. Completa solo lo que corresponda a tu trayectoria.</p>{getProfileCompletion(profile).missing.length ? <ul>{getProfileCompletion(profile).missing.map((label) => <li key={label}><span><Plus size={16} />{label}</span><button type="button" onClick={() => { setCompletionOpen(false); const target = { "Título profesional": "profile-profession", "Teléfono, ciudad y departamento": "profile-contact", "6 habilidades específicas": "profile-skills", "Resumen profesional de 120 caracteres": "profile-experiences", "2 experiencias completas": "profile-experiences", "Formación académica completa": "profile-educations", "Curso o certificación": "profile-certifications", "Idioma con nivel": "profile-languages", "Preferencias laborales completas": "preferencias" }[label]; if (target) editFromCoach(target); else document.querySelector('.profile-toolbar input[type="file"]')?.click(); }}>Completar <span aria-hidden="true">→</span></button></li>)}</ul> : <div className="profile-completion-success"><CheckCircle2 size={28} /><strong>Tienes información en los diez apartados</strong><p>Mantenla actualizada y revisa que refleje tu experiencia real.</p></div>}</div></CoachDialog>
       <CoachDialog open={coachOpen} onClose={() => setCoachOpen(false)}>
+        <Link className="profile-radar-link" to="/aprendizaje#radar-laboral">Explorar mi radar laboral →</Link>
         <CareerCoachWorkspace active={coachOpen} profile={profile} editing={editing} onEdit={editFromCoach} onSave={save} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />
       </CoachDialog>
       {(

@@ -1,32 +1,27 @@
-# Propuesta: Radar laboral en Mi desarrollo
+# Radar laboral implementado
 
-Esta es una propuesta de siguiente funcionalidad, no un panel ya activado. El objetivo es orientar decisiones de aprendizaje y presentación profesional con datos comparables, sin calificar a la persona ni sobrecargar Mi perfil.
+Disponible en **Mi desarrollo → Radar laboral**, con acceso desde la ayuda del perfil. Conserva el enlace `#que-aprender` y admite `#radar-laboral`. Los cálculos son locales, sin API de IA ni servicios de pago.
 
-## Ubicación y recorrido
+## Tres vistas
 
-Reutilizar la pestaña «Qué aprender» de **Mi desarrollo** y evolucionarla a **Radar laboral**, conservando sus cursos y navegación. Presentar tres vistas internas: «Qué piden las ofertas», «Perfiles comparables» y «Salarios publicados». Cargo, ubicación y nivel se eligen una sola vez y se conservan al cambiar de vista. El perfil solo tendría un enlace compacto «Ver mi posición en el mercado», junto a la ayuda de carrera; no otro dashboard permanente.
+- **Habilidades:** demanda observada en ofertas activas de los últimos 90 días. Muestra conteos, periodo, fuentes, ofertas consultadas y recursos del catálogo. Con menos de cinco ofertas oculta porcentajes. Elimina duplicados por empresa, cargo y ciudad y demos identificables por fuente, título, empresa, descripción o dominio reservado.
+- **Perfiles comparables:** participantes voluntarios del área, nivel declarado y ciudad seleccionados. Excluye la propia cuenta, correos no verificados, dominios reservados, duplicados, participaciones retiradas y elecciones de más de 180 días. Requiere 20 participantes elegibles; por debajo del umbral no devuelve tamaño exacto ni habilidades. Publica solo habilidades mencionadas por al menos cinco personas y ausentes en al menos otras cinco, con porcentajes redondeados a cinco puntos. No afirma dominio ni devuelve nombres, correos, CV o integrantes. Texto, sector y modalidad no crean subgrupos privados. Los datos autodeclarados no son una muestra representativa de toda la ciudad.
+- **Salarios:** mínimos fijos brutos publicados en COP al mes, no remuneraciones pagadas. Requiere área, nivel, ciudad, unidades explícitas y al menos 20 empresas distintas dentro del mismo contrato, modalidad, jornada y horas semanales. Calcula primero la mediana por empresa y después mediana y percentiles 25–75 entre empresas. No infiere unidades ni horas ausentes. Muestra cobertura y explica la falta de muestra. La comparación privada con la aspiración se activa al confirmar que tiene las mismas unidades y condiciones; nunca la modifica automáticamente.
 
-La entrada muestra hasta tres observaciones con una acción cada una. Abrir una observación permite consultar muestra, periodo, filtros y origen. Una habilidad lleva a revisar/añadir una habilidad declarada o al curso correspondiente en el catálogo. Una referencia salarial permite revisar la aspiración con una explicación, sin cambiarla automáticamente. El radar no modifica el perfil ni la compatibilidad por sí solo.
+Los filtros se aplican al pulsar **Explorar mercado**. La clasificación de ofertas usa familias de cargos reconocibles y nivel explícitamente publicado. No clasifica candidatos por atributos protegidos. No promete «1.000 perfiles» ni sustituye una ciudad por otra.
 
-## Datos y mensajes
+## Participación y acciones
 
-- **Demanda:** «TypeScript aparece en 18 de 30 ofertas comparables». Usar vacantes activas, recientes, sin duplicados y de familias de cargo comparables. Esta primera vista amplía el radar de demanda que ya existe.
-- **Perfiles comparables:** «12 de 25 perfiles participantes declaran TypeScript». Se requiere participación voluntaria, agregación y exclusión de la cuenta consultante, cuentas de prueba, duplicados y datos demasiado antiguos. Mostrar habilidades declaradas, nunca afirmar que otras personas las dominan. Propuesta inicial: no publicar grupos de menos de 20 perfiles; revisar el umbral al evaluar privacidad y estabilidad. No mostrar nombres, CV, empresas previas ni listas de integrantes.
-- **Salarios:** mostrar mediana y rango central (percentiles 25–75) de ofertas comparables, con tamaño de muestra, fecha y proporción de ofertas que informan salario. La aspiración del candidato es una referencia privada. Solo comparar importes con moneda, periodicidad, jornada, modalidad y tipo de contratación compatibles; distinguir salario base de comisiones y de aspiraciones de otros candidatos. Propuesta inicial: mínimo de 20 ofertas válidas. Si faltan datos, indicar «Todavía no hay una muestra comparable».
+El panel de perfiles permite elegir área y nivel, confirmar datos reales y retirarse. Se guarda en preferencias privadas. Sin ciudad no se puede activar. Un correo pendiente puede guardar su elección, pero no cuenta hasta verificarlo. El consentimiento vigente se consulta en cada petición, sin caché privada que retrase una retirada.
 
-No sustituir una ciudad por todo el país silenciosamente. Cuando falte muestra, ofrecer ampliar ubicación o familia de cargo y explicar el cambio antes de recalcular. No usar edad, género, foto u otras características personales para formar los grupos.
+**La conozco** exige confirmación antes de añadir una habilidad declarada y normaliza duplicados. **Ver formación** abre el catálogo filtrado, sin inventar gratuidad o duración. El radar no cambia automáticamente experiencia, formación, aspiración ni compatibilidad.
 
-## Implementación por etapas
+La publicación guiada indica salario bruto mensual COP y admite horas semanales opcionales. Las ofertas antiguas sin unidades o jornada completas quedan fuera de salarios hasta que la empresa revise los datos. No se rellenan masivamente condiciones desconocidas.
 
-1. Ampliar la vista actual de demanda con comparación explícita de habilidades y enlaces al catálogo. Mantener periodo, fuentes y tamaño de muestra visibles.
-2. Completar los campos de salario publicados (moneda, periodicidad, jornada y componentes) y la clasificación de familia/nivel de cargo. Normalizar ubicaciones y fechas sin inferir datos ausentes.
-3. Crear agregados de ofertas actualizados diariamente por familia de cargo, ubicación y nivel. Consultarlos mediante un endpoint autenticado; evitar calcular el conjunto completo cada vez que alguien abre el perfil. Guardar fecha y versión del agregado para poder explicar cambios.
-4. Añadir la comparación de perfiles solo después de disponer de participación voluntaria, suficiente muestra real y pruebas de privacidad. Mantenerla separada de los datos de demanda y salarios.
+## Implementación y validación
 
-El entorno local revisado tiene 41 cuentas candidatas y 52 ofertas activas; incluye datos ficticios y de prueba. Estos números no son una muestra de mercado ni permiten afirmar una comparación con 1.000 candidatos. Antes de habilitar el benchmarking se debe identificar y excluir explícitamente esos registros, además de verificar los datos comparables disponibles.
+API candidata autenticada: `GET /profiles/me/market`, `PUT /profiles/me/market/participation`, `POST /profiles/me/market/skills`. Consultas SQL de campos necesarios, sin embeddings de vacantes, CV de competidores ni ejecución de modelos. Respuestas privadas con `Cache-Control: no-store`. Sin proveedores externos ni tareas de refresco nuevas.
 
-No requiere una API generativa de pago: los cálculos son agregaciones estadísticas locales y las observaciones pueden redactarse con plantillas transparentes. «Ver formación» debe respetar el coste y duración informados por el catálogo; no prometer cursos gratuitos o de dos horas sin respaldo.
+Pruebas de permisos, consentimiento/retirada, correo y dominios reservados, umbrales/supresión, grupos fijos, deduplicación/periodo, separación salarial, empresas independientes, unidades ausentes y habilidad explícita. Los datos ficticios para probar grupos suficientes viven solo en bases temporales de pruebas; no se cargan como mercado real.
 
-## Validación
-
-Comprobar que nadie pueda obtener datos individuales variando filtros, que los grupos pequeños no aparezcan, que no se mezclen periodos salariales, que se excluyan demos y duplicados, que las muestras y fechas sean reproducibles y que añadir una habilidad requiera una decisión explícita. Medir uso de las acciones y relevancia de la formación, sin atribuir más entrevistas al radar sin evidencia.
+El entorno local contiene demostraciones y puede mostrar **muestra insuficiente** hasta disponer de datos elegibles. Para crecimiento futuro: evaluar representatividad, abuso de múltiples cuentas y protección estadística más avanzada antes de ampliar filtros o afirmar precisión poblacional.

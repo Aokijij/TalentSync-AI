@@ -16,6 +16,10 @@ class QualityDetails(BaseModel):
     version: Literal[1] = 1
     salary_max: float | None = Field(default=None, ge=0, le=1_000_000_000, allow_inf_nan=False)
     variable_pay: str = Field(default="", max_length=500)
+    salary_currency: Literal["COP"] | None = None
+    salary_period: Literal["monthly"] | None = None
+    salary_basis: Literal["gross_base"] | None = None
+    weekly_hours: float | None = Field(default=None, ge=1, le=80, allow_inf_nan=False)
     contract_type: Literal["", "indefinite", "fixed_term", "services", "apprenticeship", "project"] = ""
     schedule: str = Field(default="", max_length=300)
     seniority: Literal["", "entry", "junior", "mid", "senior", "lead"] = ""

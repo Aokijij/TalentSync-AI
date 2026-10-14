@@ -16,21 +16,38 @@ from app.api.schemas.career_coach import (
     WritingGeneration,
     WritingProposal,
 )
+from app.api.schemas.market import MarketFilters, MarketParticipation, MarketSkill
 from app.api.schemas.profile import (
     CandidateProfileResponse,
     ProfileResponse,
     ProfileUpdate,
 )
-from app.api.schemas.resume_export import CvMentionDecision, ResumeExport
+from app.api.schemas.resume_export import CvMentionDecision, ResumeDesign, ResumeExport
 from app.application.errors import UseCaseError
 from app.application.ports.services import ImageStorage, ResumeReader, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import career_coach as coach
+from app.application.use_cases import market_radar
 from app.application.use_cases import profiles as use_cases
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
 
 router = APIRouter()
+
+
+@router.get("/me/market")
+def market_overview(filters: MarketFilters = Depends(), user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return market_radar.report(db, user, filters.model_dump())
+
+
+@router.put("/me/market/participation")
+def market_participation(payload: MarketParticipation, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return market_radar.participate(db, user, payload.model_dump())
+
+
+@router.post("/me/market/skills", response_model=ProfileResponse)
+def market_skill(payload: MarketSkill, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis)):
+    return market_radar.declare_skill(db, user, payload.model_dump(), nlp)
 
 
 @router.get("/me/coach")
@@ -127,6 +144,11 @@ def preview_resume_export(payload: ResumeExport, user=Depends(require_roles(User
     document_user = SimpleNamespace(name=name, email=user.email, profile=SimpleNamespace(**values))
     return Response(exporter(document_user, sections=payload.sections, include_photo=payload.include_photo), media_type="application/pdf", headers={
         "Content-Disposition": 'inline; filename="vista-previa-hoja-de-vida.pdf"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@router.patch("/me/resume-design")
+def save_resume_design(payload: ResumeDesign, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return use_cases.save_resume_design(db, user, payload.model_dump())
 
 
 @router.get("/candidates/{user_id}", response_model=CandidateProfileResponse)

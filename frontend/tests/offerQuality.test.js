@@ -21,3 +21,19 @@ test("candidate salary labels distinguish guaranteed minimum, range and missing 
   assert.equal(salaryLabel({ salary: 3500000 }), "$3.500.000 COP / mes");
   assert.equal(salaryLabel({ salary: 3500000, quality_details: { salary_max: 4500000 } }), "$3.500.000 – $4.500.000 COP / mes");
 });
+
+test("guided offers declare salary units and only explicit weekly hours", () => {
+  const draft = offerDraft();
+  assert.equal(offerPayload(draft).quality_details.weekly_hours, null);
+  draft.quality_details.weekly_hours = "37.5";
+  const details = offerPayload(draft).quality_details;
+  assert.equal(details.weekly_hours, 37.5);
+  assert.equal(details.salary_currency, "COP");
+  assert.equal(details.salary_period, "monthly");
+  assert.equal(details.salary_basis, "gross_base");
+  const legacy = offerDraft({ quality_details: { salary_currency: null, salary_period: null, salary_basis: null } });
+  assert.equal(offerPayload(legacy).quality_details.salary_currency, "COP");
+  assert.equal(offerPayload(legacy).quality_details.salary_period, "monthly");
+  assert.equal(offerPayload(legacy).quality_details.salary_basis, "gross_base");
+  assert.equal(offerPayload(legacy).quality_details.weekly_hours, null);
+});

@@ -19,11 +19,11 @@ const cities = [...popularCities.filter((city) => allCities.includes(city)), ...
 const tabs = [["guidance", "Sugerencias", Lightbulb], ["writing", "Mejorar un texto", PencilLine]];
 const learningLink = (course) => `/aprendizaje?search=${encodeURIComponent(course.title)}#cursos`;
 
-export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdit, onSave, context = "profile", active = true }) {
+export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdit, onSave, context = "profile", active = true, externalRadar, hideFilters = false }) {
   const [tab, setTab] = useState(context === "learning" ? "radar" : "guidance");
   const [data, setData] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [message, setMessage] = useState("");
   const [index, setIndex] = useState(0), [result, setResult] = useState(""), [style, setStyle] = useState("paragraph"), [texts, setTexts] = useState({}), [proposalId, setProposalId] = useState("");
-  const [filters, setFilters] = useState({ search: "", sector: profile.preferred_sector || "", location: "" }), [radar, setRadar] = useState(null), [radarView, setRadarView] = useState("learn"), [moreSkills, setMoreSkills] = useState(false);
+  const [filters, setFilters] = useState({ search: "", sector: profile.preferred_sector || "", location: "" }), [radar, setRadar] = useState(externalRadar ?? null), [radarView, setRadarView] = useState("learn"), [moreSkills, setMoreSkills] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState("");
   const [focusWriting, setFocusWriting] = useState(false);
   const reviewRef = useRef(null);
@@ -35,12 +35,13 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
     if (focusWriting && tab === "writing" && data) { document.getElementById("coach-experience")?.focus(); setFocusWriting(false); }
   }, [focusWriting, tab, data]);
   useEffect(() => {
-    if (tab !== "radar" || radar) return;
+    if (externalRadar !== undefined || tab !== "radar" || radar) return;
     let active = true;
     api.get("/profiles/me/coach/radar", { params: { sector: profile.preferred_sector || "" } }).then(({ data: response }) => { if (active) setRadar(response); })
       .catch((failure) => { if (active) setError(getApiErrorMessage(failure)); });
     return () => { active = false; };
-  }, [tab, profile.preferred_sector, radar]);
+  }, [tab, profile.preferred_sector, radar, externalRadar]);
+  useEffect(() => { if (externalRadar !== undefined) { setRadar(externalRadar); setSelectedSkill(""); setMoreSkills(false); } }, [externalRadar]);
   useEffect(() => { if (proposalId) reviewRef.current?.focus(); }, [proposalId, data]);
 
   function startWriting(experienceIndex) {
@@ -105,11 +106,11 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
         </>}
         {tab === "radar" && <>
           <h3>Encuentra tu próximo aprendizaje</h3><p>Elige una habilidad que piden las ofertas y encuentra formación para practicarla.</p>
-          <form className="coach-learning-search" onSubmit={(event) => { event.preventDefault(); act(async () => { setRadar((await api.get("/profiles/me/coach/radar", { params: filters })).data); setMoreSkills(false); }); }}>
+          {!hideFilters && <form className="coach-learning-search" onSubmit={(event) => { event.preventDefault(); act(async () => { setRadar((await api.get("/profiles/me/coach/radar", { params: filters })).data); setMoreSkills(false); }); }}>
             <div className="learning-filter-heading"><SlidersHorizontal size={18} /><strong>Personaliza tu búsqueda</strong></div>
             <div className="learning-filter-fields"><label>Cargo o profesión<input className="field-control" maxLength={160} value={filters.search} onChange={(event) => setFilters((value) => ({ ...value, search: event.target.value }))} placeholder="Ej. auxiliar contable" /></label><label>Sector<select className="field-control" value={filters.sector} onChange={(event) => setFilters((value) => ({ ...value, sector: event.target.value }))}><option value="">Todos los sectores</option>{filters.sector && !JOB_SECTORS.includes(filters.sector) && <option>{filters.sector}</option>}{JOB_SECTORS.map((sector) => <option key={sector}>{sector}</option>)}</select></label><Autocomplete label="Ciudad o ubicación" options={cities} value={filters.location} onChange={(location) => setFilters((value) => ({ ...value, location }))} placeholder="Buscar ciudad…" maxLength={120} /></div>
             <div className="learning-filter-actions"><small>Busca para actualizar las habilidades y sus cursos.</small><div><button type="button" className="learning-reset-button" disabled={busy} onClick={() => { const next = { search: "", sector: "", location: "" }; setFilters(next); act(async () => { setRadar((await api.get("/profiles/me/coach/radar", { params: next })).data); setSelectedSkill(""); }); }}><RotateCcw size={14} />Restablecer</button><button type="submit" className="button-primary" disabled={busy}><Search size={16} />Buscar habilidades</button></div></div>
-          </form>
+          </form>}
           {!radar && <p role="status">Buscando habilidades y formación…</p>}
           {radar && <>
             <div className="coach-learning-summary"><strong>{radar.sample} ofertas consultadas</strong><span>{radar.sample ? "Elige una habilidad y abre el curso que te interese." : "Prueba otra palabra, ubicación o sector."}</span></div>

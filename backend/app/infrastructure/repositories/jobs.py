@@ -1,13 +1,23 @@
 from datetime import datetime
 
 from sqlalchemy import or_
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload, load_only, selectinload
 
 from app.infrastructure.database.models import Company, Job, OfferFeedback
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class JobRepository(SqlAlchemyRepository[Job]):
+    def market_jobs(self, since):
+        return self._available(self.session.query(Job).options(
+            joinedload(Job.company).load_only(Company.name),
+            # Public statistics need neither embeddings nor selection data.
+            load_only(
+                Job.id, Job.company_id, Job.title, Job.description, Job.source_kind, Job.source_name,
+                Job.external_url, Job.status, Job.created_at, Job.expires_at, Job.sector, Job.location,
+                Job.skills, Job.salary, Job.modality, Job.employment_type, Job.quality_details),
+        )).filter(Job.created_at >= since).all()
+
     def offer_feedback_for(self, job_id):
         return self.session.query(OfferFeedback).filter_by(job_id=job_id).all()
 

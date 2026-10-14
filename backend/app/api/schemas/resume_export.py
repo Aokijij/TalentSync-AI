@@ -20,3 +20,11 @@ class CvMentionDecision(BaseModel):
     model_config = ConfigDict(extra="forbid")
     skill: str = Field(min_length=1, max_length=120)
     action: Literal["confirm", "dismiss", "restore"]
+
+
+class ResumeDesign(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    style: Literal["classic", "modern", "minimal"]
+    color: Literal["default", "forest", "wine", "slate", "navy", "blue", "teal", "rose"]
+    sections: list[ResumeSection] = Field(default_factory=lambda: list(ALL_SECTIONS), max_length=9)
+    include_photo: bool = True

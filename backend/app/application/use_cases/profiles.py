@@ -176,6 +176,18 @@ def _submitted_profile(profile, application):
                               "resume_style": "minimal", "resume_color": "default", "preferences": {}})
 
 
+def save_resume_design(db, user, payload):
+    from app.application.use_cases.career_coach import owner_profile
+
+    profile = owner_profile(user)
+    db.profiles.lock_owner(user.id); db.refresh(profile)
+    profile.resume_style, profile.resume_color = payload["style"], payload["color"]
+    options = {"sections": list(dict.fromkeys(payload["sections"])), "include_photo": payload["include_photo"]}
+    profile.preferences = {**(profile.preferences or {}), "resume_export_options": options}
+    db.add(profile); db.commit()
+    return {"resume_style": profile.resume_style, "resume_color": profile.resume_color, "resume_export_options": options}
+
+
 def update_my_profile(
     payload: dict[str, Any], current_user: User, db: UnitOfWork, *, nlp: TextAnalysis
 ) -> Profile:

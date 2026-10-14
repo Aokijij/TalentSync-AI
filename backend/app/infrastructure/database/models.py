@@ -216,6 +216,10 @@ class Profile(Base):
         return (self.preferences or {}).get("cv_mention_decisions", {})
 
     @property
+    def resume_export_options(self):
+        return (self.preferences or {}).get("resume_export_options", {})
+
+    @property
     def cv_entity_review(self):
         return {}  # Retired candidate-facing diagnostic; kept for API compatibility.
 
