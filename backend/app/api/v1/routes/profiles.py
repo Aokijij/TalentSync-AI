@@ -6,6 +6,7 @@ from app.api.deps import (
     get_current_user,
     get_image_storage,
     get_resume_exporter,
+    get_resume_previews,
     get_resume_reader,
     get_text_analysis,
     get_unit_of_work,
@@ -31,6 +32,7 @@ from app.application.use_cases import market_radar
 from app.application.use_cases import profiles as use_cases
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
+from app.domain.services.resume_filename import resume_disposition, resume_filename
 
 router = APIRouter()
 
@@ -68,6 +70,11 @@ def coach_decide_writing(proposal_id: str, payload: WritingDecision, user=Depend
 @router.post("/me/coach/writing/generate")
 def coach_generate_writing(payload: WritingGeneration, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work), writer=Depends(get_career_writer)):
     return coach.generate_writing(db, user, payload.model_dump(), writer=writer)
+
+
+@router.delete("/me/coach/writing/{proposal_id}")
+def coach_delete_writing(proposal_id: str, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.delete_writing(db, user, proposal_id)
 
 
 @router.get("/me/coach/jobs/{job_id}/advice")
@@ -143,12 +150,27 @@ def preview_resume_export(payload: ResumeExport, user=Depends(require_roles(User
         name = payload.profile.name or name
     document_user = SimpleNamespace(name=name, email=user.email, profile=SimpleNamespace(**values))
     return Response(exporter(document_user, sections=payload.sections, include_photo=payload.include_photo), media_type="application/pdf", headers={
-        "Content-Disposition": 'inline; filename="vista-previa-hoja-de-vida.pdf"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+        "Content-Disposition": resume_disposition(name, inline=True), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @router.patch("/me/resume-design")
 def save_resume_design(payload: ResumeDesign, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
     return use_cases.save_resume_design(db, user, payload.model_dump())
+
+
+@router.post("/me/export/preview")
+def create_named_preview(payload: ResumeExport, user=Depends(require_roles(UserRole.CANDIDATE)), exporter=Depends(get_resume_exporter), previews=Depends(get_resume_previews)):
+    from urllib.parse import quote
+
+    response = preview_resume_export(payload, user, exporter)
+    filename = resume_filename(payload.profile.name if payload.profile and payload.profile.name else user.name)
+    token = previews.put(user.id, response.body, filename)
+    return {"url": f"/api/v1/profiles/me/export/preview/{token}/{quote(filename)}", "filename": filename}
+
+
+@router.get("/me/export/preview/{token}/{filename}", response_class=Response)
+def read_named_preview(token: str, filename: str, user=Depends(require_roles(UserRole.CANDIDATE)), previews=Depends(get_resume_previews)):
+    return Response(previews.get(user.id, token, filename), media_type="application/pdf", headers={"Content-Disposition": resume_disposition(filename.removesuffix(" - TalentSync - Hoja de vida.pdf"), inline=True), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @router.get("/candidates/{user_id}", response_model=CandidateProfileResponse)
@@ -218,5 +240,5 @@ def get_profile_photo(
 @router.get("/me/export", response_class=Response)
 def export_resume(current_user: User = Depends(require_roles(UserRole.CANDIDATE)), exporter=Depends(get_resume_exporter)):
     return Response(exporter(current_user), media_type="application/pdf", headers={
-        "Content-Disposition": 'attachment; filename="hoja-de-vida-talentsync.pdf"',
+        "Content-Disposition": resume_disposition(current_user.name),
         "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})

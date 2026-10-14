@@ -19,3 +19,14 @@ test("slow responses from a previous similar vacancy cannot replace the new vaca
   assert.ok(calls.slice(0, 4).every((call) => call.signal.aborted));
   cancelB();
 });
+
+test("cancelled match calculations are quiet while genuine failures use the inline handler", async () => {
+  for (const cancelled of [true, false]) {
+    let failures = 0;
+    const client = { get: async () => ({ data: [] }), post: async (url, body, options) => { assert.equal(options.__quiet, true); throw Object.assign(new Error("failed"), { code: cancelled ? "ERR_CANCELED" : "ERR_NETWORK" }); } };
+    const stop = loadVacancyData(client, { jobId: 3, role: "candidate" }, { job() {}, catalog() {}, applications() {}, match() {}, matchError() { failures++; }, error() { assert.fail("Not a vacancy load error"); } });
+    await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    assert.equal(failures, cancelled ? 0 : 1);
+    stop();
+  }
+});

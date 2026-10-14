@@ -25,3 +25,8 @@ API candidata autenticada: `GET /profiles/me/market`, `PUT /profiles/me/market/p
 Pruebas de permisos, consentimiento/retirada, correo y dominios reservados, umbrales/supresión, grupos fijos, deduplicación/periodo, separación salarial, empresas independientes, unidades ausentes y habilidad explícita. Los datos ficticios para probar grupos suficientes viven solo en bases temporales de pruebas; no se cargan como mercado real.
 
 El entorno local contiene demostraciones y puede mostrar **muestra insuficiente** hasta disponer de datos elegibles. Para crecimiento futuro: evaluar representatividad, abuso de múltiples cuentas y protección estadística más avanzada antes de ampliar filtros o afirmar precisión poblacional.
+
+
+## Demostración solicitada
+
+Se añadió un origen separado de demostración y el generador `seed-radar`. Contiene 72 perfiles completos, 24 empresas y 72 ofertas no publicadas, repartidas en tres grupos de 24: desarrollo junior e intermedio en Medellín y datos junior en Bogotá. Las habilidades se solapan parcialmente; los salarios varían por empresa y nivel. El panel muestra un aviso permanente, etiquetas de ejemplo y un selector de escenarios. No presenta estos datos como mercado real ni publica oportunidades ficticias para postularse. Si la primera consulta real está vacía y hay escenarios, abre la demostración identificada; no amplía filtros reales silenciosamente. Ambos orígenes conservan sus filtros y umbrales separados. La vista de habilidades muestra además todas las habilidades del perfil, incluso sin ofertas coincidentes.

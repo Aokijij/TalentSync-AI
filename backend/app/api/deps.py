@@ -230,3 +230,8 @@ def get_resume_exporter():
         photo = get_image_storage().read("profile_photos", filename) if filename and options.get("include_photo", True) else None
         return resume_pdf(user, photo=photo, **options)
     return export
+
+
+def get_resume_previews():
+    from app.infrastructure.resume_previews import resume_previews
+    return resume_previews

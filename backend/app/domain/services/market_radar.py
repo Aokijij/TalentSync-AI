@@ -4,6 +4,7 @@ import re
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 from statistics import median
+from types import SimpleNamespace
 from urllib.parse import urlparse
 
 from app.domain.services.career_coach import demand_report
@@ -11,7 +12,7 @@ from app.domain.services.personalization import synthetic_email
 from app.domain.services.professions import PROFESSION_GROUPS
 from app.domain.services.requirement_analysis import ROLE_FAMILIES
 from app.domain.services.skill_context import fold
-from app.domain.services.skills import skill_set
+from app.domain.services.skills import skill_key, skill_set
 from app.domain.services.work_preferences import city_key
 
 MINIMUM_SAMPLE = 20
@@ -38,9 +39,11 @@ def synthetic_job(job):
 def selected_jobs(jobs, filters, now):
     result, seen = [], set()
     words = fold(filters.get("search", "")).split()
+    demo = filters.get("dataset") == "demo"
     for job in sorted(jobs, key=lambda item: (item.created_at, item.id), reverse=True):
         details = job.quality_details or {}
-        if (job.status != "active" or job.created_at < now - timedelta(days=90) or job.expires_at and job.expires_at < now or synthetic_job(job)):
+        if (job.status != ("draft" if demo else "active") or job.created_at < now - timedelta(days=90) or job.expires_at and job.expires_at < now
+                or (getattr(job, "source_name", "") != "radar-demo" if demo else synthetic_job(job))):
             continue
         if filters.get("family") and filters["family"] not in families_for(job.title):
             continue
@@ -66,6 +69,7 @@ def peer_report(profile, candidates, filters, now):
     if not all(filters.get(key) for key in ("family", "level", "location")):
         return {"status": "choose_cohort", "minimum_sample": MINIMUM_SAMPLE, "skills": [], "note": "Elige área, nivel y ciudad para ver un grupo comparable."}
     cohort, used = [], set()
+    demo = filters.get("dataset") == "demo"
     for row in candidates:
         consent = row.participation or {}
         date = consent.get("updated_at", "")
@@ -73,8 +77,9 @@ def peer_report(profile, candidates, filters, now):
             recent = datetime.fromisoformat(date.replace("Z", "+00:00")).replace(tzinfo=None) >= now - timedelta(days=180)
         except (ValueError, TypeError, AttributeError):
             recent = False
-        if (row.user_id == profile.user_id or row.user_id in used or not row.email_verified or synthetic_email(row.email)
-                or row.email.lower().endswith((".invalid", ".localhost")) or not consent.get("enabled") or not consent.get("confirmed_real") or not recent
+        if (row.user_id == profile.user_id or row.user_id in used or not row.email_verified
+                or (not getattr(row, "is_demo", False) if demo else getattr(row, "is_demo", False) or synthetic_email(row.email) or row.email.lower().endswith((".invalid", ".localhost")))
+                or not consent.get("enabled") or (not demo and not consent.get("confirmed_real")) or not recent
                 or consent.get("family") != filters["family"] or consent.get("level") != filters["level"] or city_key(row.location) != city_key(filters["location"])):
             continue
         used.add(row.user_id); cohort.append(row)
@@ -123,8 +128,18 @@ def salary_report(jobs, filters):
 def market_report(profile, jobs, candidates, courses, filters, now=None):
     now = now or datetime.utcnow()
     selected = selected_jobs(jobs, filters, now)
-    demand = demand_report(profile, selected, courses, now=now)
+    demo = filters.get("dataset") == "demo"
+    demand_jobs = [SimpleNamespace(**{key: getattr(job, key, None) for key in ("id", "company_id", "company_name", "title", "created_at", "expires_at", "sector", "location", "skills", "source_name")}, status="active") for job in selected] if demo else selected
+    demand = demand_report(profile, demand_jobs, courses, now=now)
+    observed = {row["skill"]: row for row in demand["skills"]}
+    demand["own_skills"] = [observed.get(skill, {"skill": skill, "count": 0, "percentage": None, "declared": True,
+        "courses": [{key: course.get(key) for key in ("id", "title", "provider", "hours", "url")} for course in courses if skill in skill_set(course.get("skills", []))][:3]}) for skill in sorted({skill_key(value) for value in profile.skills or []})]
     demand["note"] = "Ofertas publicadas activas de los últimos 90 días, sin duplicados por empresa, cargo y ubicación. Se excluyen demos identificables. La demanda observada no representa todo el mercado."
-    return {"as_of": now.isoformat() + "Z", "since": (now - timedelta(days=90)).date().isoformat(), "filters": filters, "demand": demand,
-            "peers": peer_report(profile, candidates, filters, now), "salary": salary_report(selected, filters), "families": FAMILIES,
+    peers, salary = peer_report(profile, candidates, filters, now), salary_report(selected, filters)
+    if demo:
+        demand.update(jobs=[], note="Demostración con ofertas ficticias variadas. Los conteos sirven para probar el radar; no describen demanda real ni son vacantes para postularse.", sources={"Escenarios de demostración": len(selected)})
+        peers["note"] = "Comparación de perfiles ficticios creados para probar la plataforma. Las habilidades declaradas y porcentajes son de ejemplo." if peers["status"] == "ready" else peers["note"]
+        salary["note"] = "Salarios simulados en COP al mes para recorrer el radar. No representan remuneraciones del mercado. Cada grupo conserva contrato, modalidad y horas iguales."
+    return {"dataset": "demo" if demo else "real", "as_of": now.isoformat() + "Z", "since": (now - timedelta(days=90)).date().isoformat(), "filters": filters, "demand": demand,
+            "peers": peers, "salary": salary, "families": FAMILIES,
             "aspiration": profile.desired_salary, "participation": (profile.preferences or {}).get("market_participation", {})}

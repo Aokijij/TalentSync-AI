@@ -19,6 +19,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from app.domain.services.professions import EDUCATION_LEVEL_LABELS
+from app.domain.services.resume_filename import resume_filename
 from app.infrastructure.resume_pdf import date_label, portrait
 
 PALETTES = {
@@ -152,7 +154,8 @@ def build_resume(user, included, include_photo, photo):
                 if date:
                     main.append(p(date, meta))
             if secondary and item.get(secondary):
-                main.append(p(item[secondary], company, timeline=True))
+                label = EDUCATION_LEVEL_LABELS.get(item.get("level")) if key == "educations" else None
+                main.append(p(" · ".join(filter(None, [item[secondary], label])), company, timeline=True))
             if item.get("description"):
                 main.append(p(item["description"], timeline_body, timeline=True))
             main.append(Spacer(1, 8))
@@ -238,6 +241,6 @@ def build_resume(user, included, include_photo, photo):
             page.merge_page(main_pages[index])
         if index < len(side_pages):
             page.merge_page(side_pages[index])
-    writer.add_metadata({"/Title": f"Hoja de vida - {user.name}", "/Author": user.name})
+    writer.add_metadata({"/Title": resume_filename(user.name).removesuffix(".pdf"), "/Author": user.name})
     output = BytesIO(); writer.write(output)
     return output.getvalue()

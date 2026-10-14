@@ -21,7 +21,8 @@ import { OfferFeedback } from "../components/OfferFeedback.jsx";
 import { salaryLabel } from "../utils/offerQuality.js";
 import { loadVacancyData } from "../utils/vacancyRequests.js";
 
-import { api, apiFileUrl } from "../api/client.js";
+import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
+import { CompanyScore } from "../components/CompanyScore.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { languageLevelLabel } from "../constants/languages.js";
@@ -41,6 +42,7 @@ function JobDetailContent({ jobId }) {
   const { user } = useAuth();
   const [job, setJob] = useState(null);
   const [match, setMatch] = useState(null);
+  const [matchError, setMatchError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [alreadyApplied, setAlreadyApplied] = useState(false);
@@ -55,6 +57,7 @@ function JobDetailContent({ jobId }) {
       job: (data) => setJob({ ...data, location: data.source_kind === "external" ? cleanExternalLocation(data.location) : data.location }),
       catalog: (data) => setAvailableJobs(data.map((item) => ({ ...item, location: item.source_kind === "external" ? cleanExternalLocation(item.location) : item.location }))),
       match: setMatch,
+      matchError: (failure) => setMatchError(getApiErrorMessage(failure, "No pudimos calcular la compatibilidad de esta oferta.")),
       applications: (data) => setAlreadyApplied(data.some((item) => Number(item.job_id) === Number(jobId))),
       company: (data) => setCompanyId(data?.id ?? null),
       error: () => setErrorMessage("No pudimos cargar esta vacante. Vuelve a intentarlo."),
@@ -121,6 +124,7 @@ function JobDetailContent({ jobId }) {
         {user?.role === "company" ? "Volver a mis vacantes" : "Volver a vacantes"}
       </Link>
       <section className="surface-card p-6">
+        {matchError && <div className="vacancy-match-notice" role="status"><p>{matchError}</p><button type="button" onClick={async () => { setMatchError(""); try { setMatch((await api.post(`/jobs/${jobId}/match`, {}, { __quiet: true })).data); } catch (failure) { setMatchError(getApiErrorMessage(failure, "La compatibilidad aún no está disponible.")); } }}>Volver a calcular</button></div>}
         <div className={match ? "grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]" : "block"}>
           <div>
             {user?.role === "candidate" || user?.role === "admin" ? (
@@ -235,7 +239,7 @@ function JobDetailContent({ jobId }) {
               <div className="min-w-0 flex-1">
                 <p className="section-kicker">Conoce a la empresa</p>
                 <h2 className="mt-1 text-lg font-bold">{job.company_name}</h2>
-                {job.source_kind !== "external" && job.employer_trust ? <p className="mt-2 text-sm text-[var(--muted)]">Confianza en la plataforma: {job.employer_trust.score == null ? "sin observaciones suficientes" : `${job.employer_trust.score}/100 · ${job.employer_trust.measured_processes} procesos medidos`}. {job.employer_trust.visibility_reduced ? "Visibilidad reducida por incidencias o plazos incumplidos." : ""}</p> : null}
+                {job.source_kind !== "external" && <CompanyScore value={job.employer_trust?.score} />}
                 <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
                   {job.source_kind === "external"
                     ? `Empresa con una oportunidad publicada en ${externalPortal(job)}.`

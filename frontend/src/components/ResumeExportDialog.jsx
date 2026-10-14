@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Download, Eye, RefreshCw, Save, PencilLine } from "lucide-react";
 import { CoachDialog } from "./CoachDialog.jsx";
 import { ResumeDesignControls } from "./ResumeDesignControls.jsx";
-import { api, getApiErrorMessage } from "../api/client.js";
+import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
 import { getResumePalette } from "../constants/resumePalettes.js";
 import { exportSections, resumeExportPayload } from "../utils/resumeExport.js";
+import { resumeFilename } from "../utils/resumeFilename.js";
 import "../styles/resume-export.css";
 
 export function ResumeExportDialog({ open, onClose, profile, name, photoVersion, onPhoto, onDesignSaved, onEdit }) {
@@ -20,9 +21,10 @@ export function ResumeExportDialog({ open, onClose, profile, name, photoVersion,
     const controller = new AbortController(); let active = true, url;
     setBusy(true); setError(""); setPreview(null);
     const timer = setTimeout(() => {
-      api.post("/profiles/me/export", payload, { responseType: "blob", signal: controller.signal, __quiet: true }).then(({ data }) => {
+      api.post("/profiles/me/export/preview", payload, { signal: controller.signal, __quiet: true }).then(async ({ data: resource }) => {
+        const { data } = await api.get(apiFileUrl(resource.url), { responseType: "blob", signal: controller.signal });
         if (!active) return;
-        url = URL.createObjectURL(data); setPreview({ url, signature });
+        url = URL.createObjectURL(data); setPreview({ url, signature, viewUrl: localStorage.getItem("talentsync_token") ? url : apiFileUrl(resource.url) });
       }).catch(async (failure) => {
         if (!active) return;
         // JSON errors also arrive as Blob when requesting a PDF.
@@ -35,7 +37,7 @@ export function ResumeExportDialog({ open, onClose, profile, name, photoVersion,
   function download() {
     if (busy || !currentPreview) return;
     const anchor = document.createElement("a"); anchor.href = currentPreview;
-    anchor.download = `${String(name || "Candidato").replace(/[\\/:*?"<>|]/g, " ")} - HV.pdf`;
+    anchor.download = resumeFilename(name);
     document.body.append(anchor); anchor.click(); anchor.remove();
   }
   async function saveDesign() {
@@ -52,7 +54,7 @@ export function ResumeExportDialog({ open, onClose, profile, name, photoVersion,
     </aside><section className="resume-export-preview"><header><span><Eye size={17} />Vista previa del PDF</span><small>Este es el documento que descargarás</small></header>
       {busy && <div role="status" className="resume-preview-placeholder"><RefreshCw size={25} className="animate-spin" /><p>Actualizando tu documento…</p></div>}
       {error && <div role="alert" className="resume-preview-placeholder"><p>{error}</p><button type="button" className="button-secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></div>}
-      {currentPreview && !busy && <iframe title="Vista previa exacta de tu hoja de vida" src={currentPreview} />}
+      {currentPreview && !busy && <iframe title="Vista previa exacta de tu hoja de vida" src={`${preview.viewUrl}#toolbar=0&navpanes=0`} />}
       <footer><p>Revisa el contenido y las páginas antes de descargar.</p><button type="button" className="button-primary" disabled={busy || !currentPreview} onClick={download}><Download size={17} />Descargar este PDF</button></footer>
     </section></div>
   </CoachDialog>;

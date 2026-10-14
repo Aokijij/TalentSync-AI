@@ -19,7 +19,8 @@ PROFESSION_GROUPS = {
     "legal": ("derecho", "ciencias juridicas", "abogacia"),
     "education": ("educacion", "pedagogia", "licenciatura", "docencia"),
 }
-LEVEL_RANK = {"technical": 1, "technologist": 2, "university": 3, "postgraduate": 4}
+LEVEL_RANK = {"secondary": .5, "technical": 1, "technologist": 2, "university": 3, "postgraduate": 4}
+EDUCATION_LEVEL_LABELS = {"secondary": "Bachillerato", "technical": "Técnico", "technologist": "Tecnólogo", "university": "Profesional universitario", "postgraduate": "Posgrado"}
 
 
 def normalize(value):
@@ -66,8 +67,8 @@ def education_match(profile, job):
     field_score = 100.0 if not fields else min(100.0, sum(any(fields_are_related(entry, field) for entry in entries) for field in fields) / len(fields) * 100)
     level_score = 100.0
     if required_level:
-        completed = [str(item.get("degree", "")) for item in (getattr(profile, "educations", None) or []) if not is_ongoing(item)] if getattr(profile, "educations", None) else entries
-        best = max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in completed), default=0)
+        records = getattr(profile, "educations", None) or []
+        best = max((LEVEL_RANK.get(item.get("level") or infer_education_level(item.get("degree", "")), 0) for item in records if not is_ongoing(item)), default=0) if records else max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in entries), default=0)
         level_score = min(100.0, best / LEVEL_RANK[required_level] * 100)
     return round(field_score * .7 + level_score * .3, 2)
 

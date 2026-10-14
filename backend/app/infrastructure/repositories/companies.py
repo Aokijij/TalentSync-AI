@@ -1,14 +1,26 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.infrastructure.database.models import Company, CompanyFollower, CompanyMember
+from app.infrastructure.database.models import (
+    Company,
+    CompanyFollower,
+    CompanyMember,
+    Job,
+)
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class CompanyRepository(SqlAlchemyRepository[Company]):
+    @staticmethod
+    def _scored(query):
+        return query.options(selectinload(Company.jobs).selectinload(Job.applications), selectinload(Company.incidents))
+
+    def get(self, entity_id):
+        return self._scored(self.session.query(Company)).filter(Company.id == entity_id).first()
+
     def find_by_owner(self, owner_id: int) -> Company | None:
         return (
-            self.session.query(Company)
+            self._scored(self.session.query(Company))
             .filter(or_(Company.owner_user_id == owner_id, Company.id.in_(
                 self.session.query(CompanyMember.company_id).filter(CompanyMember.user_id == owner_id, CompanyMember.active.is_(True))
             )))
@@ -68,7 +80,7 @@ class CompanyRepository(SqlAlchemyRepository[Company]):
         return self._scope(self.session.query(Company), scope).count()
 
     def list_owned(self, owner_id: int | None) -> list[Company]:
-        query = self.session.query(Company)
+        query = self._scored(self.session.query(Company))
         if owner_id is not None:
             query = query.filter(or_(Company.owner_user_id == owner_id, Company.id.in_(
                 self.session.query(CompanyMember.company_id).filter(CompanyMember.user_id == owner_id, CompanyMember.active.is_(True))

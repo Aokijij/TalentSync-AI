@@ -10,7 +10,7 @@
 .recommendation-filterbar .filter-field { font-size:.72rem; }
 .recommendation-filterbar .field-control { min-height:40px; font-size:.8rem; border-radius:.6rem; }
 .recommendation-cards { border:1px solid var(--line); border-radius:1rem; background:var(--surface); overflow:hidden; }
-.recommendation-card { display:grid; grid-template-columns:minmax(0,1fr) 150px 125px; align-items:center; gap:1.25rem; padding:1.35rem 1.45rem; border-bottom:1px solid var(--line); transition:background .15s; }
+.recommendation-card { display:grid; grid-template-columns:minmax(0,1fr) 235px 140px; align-items:center; gap:1.5rem; padding:1.6rem 1.45rem; border-bottom:1px solid var(--line); transition:background .15s; }
 .recommendation-card:last-child { border-bottom:0; }
 .recommendation-card:hover { background:color-mix(in srgb,var(--accent) 2%,var(--surface)); }
 .recommendation-card-copy { min-width:0; }
@@ -29,8 +29,12 @@
 .recommendation-match > p { font-size:.68rem; color:var(--muted); }
 .recommendation-card-apply { display:flex; justify-content:flex-end; }
 .recommendation-card-apply button { width:100%; min-height:40px; font-size:.77rem; border-radius:.65rem; padding:.55rem .6rem; }
+.recommendation-card>.surface-card { padding:16px; border-radius:24px; background:var(--surface); box-shadow:none; }
+.recommendation-card-apply .button-success { background:var(--success); color:#061c18; border:1px solid var(--success); font-weight:700; }
+.recommendation-card-apply .button-success:hover { filter:brightness(1.08); }
+.recommendation-card-apply .button-success:disabled { opacity:.6; }
 .recommendation-card-details { grid-column:1/-1; }
 .recommendation-insight-button { display:inline-flex; align-items:center; gap:.4rem; min-height:30px; color:var(--accent); font-size:.71rem; font-weight:650; }
 .recommendation-insight-button:hover { text-decoration:underline; }
-@media(max-width:900px) { .recommendation-card { grid-template-columns:minmax(0,1fr) 125px; padding:1.15rem; gap:.7rem 1.3rem; } .recommendation-card-copy { grid-row:1/3; } .recommendation-card-apply { grid-column:2; } }
-@media(max-width:600px) { .recommendation-card { grid-template-columns:minmax(0,1fr) 125px; gap:.7rem 1.2rem; } .recommendation-card-copy { grid-column:1/-1; grid-row:1; } .recommendation-match { grid-column:1; grid-row:2; max-width:180px; } .recommendation-card-apply { grid-column:2; grid-row:2; } .recommendation-card-details { grid-template-columns:1fr; } .recommendation-match strong { font-size:1.35rem; } }
+@media(max-width:900px) { .recommendation-card { grid-template-columns:minmax(0,1fr) 210px; padding:1.15rem; gap:.7rem 1.3rem; } .recommendation-card-copy { grid-row:1/3; } .recommendation-card-apply { grid-column:2; } }
+@media(max-width:600px) { .recommendation-card { grid-template-columns:minmax(0,1fr) 125px; gap:.7rem 1.2rem; } .recommendation-card-copy { grid-column:1/-1; grid-row:1; } .recommendation-match { grid-column:1; grid-row:2; max-width:235px; } .recommendation-card-apply { grid-column:2; grid-row:2; } .recommendation-card-details { grid-template-columns:1fr; } .recommendation-match strong { font-size:1.35rem; } }

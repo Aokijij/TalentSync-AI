@@ -94,6 +94,17 @@ def decide_writing(db, user, proposal_id, payload):
     return proposal
 
 
+def delete_writing(db, user, proposal_id):
+    row, data = state(db, user, locked=True)
+    proposals = data.get("writing", [])
+    if not any(item["id"] == proposal_id for item in proposals):
+        raise UseCaseError(status_code=404, detail="Propuesta no encontrada")
+    data["writing"] = [item for item in proposals if item["id"] != proposal_id]
+    # Removing history never undoes accepted text or its confirmed context.
+    save(db, row, data)
+    return {"removed": True}
+
+
 def generate_writing(db, user, payload, *, writer=None):
     profile = owner_profile(user)
     if payload["source_version"] != fingerprint(snapshot(profile)):

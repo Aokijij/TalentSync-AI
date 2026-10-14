@@ -10,8 +10,10 @@ from app.domain.services.skills import normalize_skills
 
 def report(db, user, filters):
     now = datetime.utcnow()
-    result = market_report(owner_profile(user), db.jobs.market_jobs(now - timedelta(days=90)),
-                           db.profiles.market_participants(filters["family"], filters["level"]), resources(db), filters, now)
+    demo = filters.get("dataset") == "demo"
+    result = market_report(owner_profile(user), db.jobs.market_jobs(now - timedelta(days=90), demo=demo),
+                           db.profiles.market_participants(filters["family"], filters["level"], demo=demo), resources(db), filters, now)
+    result["demo_available"] = bool(db.jobs.market_jobs(now - timedelta(days=90), demo=True)) if not demo else True
     result["email_verified"] = user.email_verified
     return result
 

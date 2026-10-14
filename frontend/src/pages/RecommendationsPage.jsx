@@ -325,7 +325,6 @@ export function RecommendationsPage() {
                   </div>
 
                   <CompatibilityBar
-                    compact
                     value={item.match_percentage}
                     estimated={job?.source_kind === "external"}
                     confidence={item.data_confidence_percentage}
@@ -336,7 +335,7 @@ export function RecommendationsPage() {
                       type="button"
                       disabled={applied}
                       onClick={() => apply(job)}
-                      className="button-primary"
+                      className="button-success"
                     >
                       <Send size={16}  />
                       {applied ? "Enviada" : "Postularme"}

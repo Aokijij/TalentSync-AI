@@ -1,0 +1,1 @@
+export const EDUCATION_LEVELS = { secondary: "Bachillerato", technical: "Técnico", technologist: "Tecnólogo", university: "Profesional universitario", postgraduate: "Posgrado (especialización, maestría o doctorado)" };

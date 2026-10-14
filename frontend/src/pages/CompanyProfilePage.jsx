@@ -11,6 +11,8 @@ import { Link, useParams } from "react-router-dom";
 
 import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
+import { CompanyScore } from "../components/CompanyScore.jsx";
+import "../styles/company-public.css";
 
 export function CompanyProfilePage() {
   const { companyId } = useParams();
@@ -22,26 +24,28 @@ export function CompanyProfilePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setError("");
+    let active = true;
+    setError(""); setCompany(null); setJobs([]);
     Promise.all([api.get(`/companies/${companyId}`), api.get("/jobs")])
       .then(([companyResponse, jobsResponse]) => {
+        if (!active) return;
         setCompany(companyResponse.data);
         setJobs(
           jobsResponse.data.filter(
-            (job) => Number(job.company_id) === Number(companyId),
+            (job) => Number(job.company_id) === Number(companyId) && job.status === "active",
           ),
         );
       })
       .catch((requestError) =>
-        setError(getApiErrorMessage(requestError, "No fue posible cargar la empresa")),
+        active && setError(getApiErrorMessage(requestError, "No fue posible cargar la empresa")),
       );
 
     if (user?.role === "candidate") {
       api
         .get(`/companies/${companyId}/follow`)
-        .then(({ data }) => setFollow(data))
+        .then(({ data }) => { if (active) setFollow(data); })
         .catch((requestError) =>
-          setError(
+          active && setError(
             getApiErrorMessage(
               requestError,
               "No fue posible cargar tus preferencias de seguimiento",
@@ -49,6 +53,7 @@ export function CompanyProfilePage() {
           ),
         );
     }
+    return () => { active = false; };
   }, [companyId, user?.role]);
 
   async function toggleFollow() {
@@ -89,55 +94,11 @@ export function CompanyProfilePage() {
   if (!company) return <p className="text-[var(--muted)]">Cargando empresa…</p>;
 
   return (
-    <div className="space-y-6">
-      <section
-        className="relative min-h-80 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] company-profile-cover shadow-soft"
-        style={
-          company.cover_url
-            ? {
-                backgroundImage: `linear-gradient(90deg, rgba(2, 12, 30, .9), rgba(2, 20, 40, .42)), url(${apiFileUrl(company.cover_url)})`,
-                backgroundPosition: "center",
-                backgroundSize: "cover",
-              }
-            : undefined
-        }
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-        <div className="relative flex min-h-80 flex-col justify-end gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
-            <span className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-3xl border-4 border-white bg-white text-4xl font-black text-violet-900 shadow-2xl">
-              {company.logo_url ? (
-                <img src={apiFileUrl(company.logo_url)} alt={`Logo de ${company.name}`} className="h-full w-full object-contain p-2" />
-              ) : (
-                <Building2 size={42} />
-              )}
-            </span>
-            <div className="pb-1 text-white">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] !text-violet-200">Perfil de empresa</p>
-              <h1 className="mt-2 text-4xl font-bold tracking-tight !text-white">{company.name}</h1>
-              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-200">
-                {company.sector ? <span>{company.sector}</span> : null}
-                {company.size ? <span className="inline-flex items-center gap-1.5"><UsersRound size={15} />{company.size}</span> : null}
-                {company.location ? <span className="inline-flex items-center gap-1.5"><MapPin size={15} />{company.location}</span> : null}
-                {company.website ? <a className="inline-flex items-center gap-1.5 font-semibold text-violet-200 hover:underline" href={company.website} target="_blank" rel="noreferrer">Visitar sitio web <ExternalLink size={14} /></a> : null}
-              </div>
-            </div>
-          </div>
-          {user?.role === "candidate" ? (
-            <div className="min-w-64 rounded-2xl border border-white/20 bg-slate-950/55 p-4 text-white backdrop-blur-md">
-              <label className="text-xs font-bold uppercase tracking-wide text-slate-200">
-                Avísame desde
-                <select className="field-control input-sm ml-2 w-24 !border-white/20 !bg-white/10 !text-white" value={follow.min_match} onChange={(event) => updateMinimum(event.target.value)}>
-                  {[50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}
-                </select>
-              </label>
-              <button type="button" className={follow.is_following ? "button-secondary mt-3 w-full !border-white/30 !bg-white/10 !text-white" : "button-primary mt-3 w-full"} onClick={toggleFollow}>
-                <BellRing size={16} />
-                {follow.is_following ? "Dejar de seguir" : "Seguir empresa"}
-              </button>
-            </div>
-          ) : null}
-        </div>
+    <div className="company-public space-y-6">
+      <section className="company-public-hero">
+        <div className="company-public-cover" style={company.cover_url ? { backgroundImage: `linear-gradient(90deg,#07172bd9,#07172b55), url(${apiFileUrl(company.cover_url)})` } : undefined}><p>CONOCE A TU PRÓXIMO EQUIPO</p></div>
+        <div className="company-public-identity"><div className="company-public-logo">{company.logo_url ? <img src={apiFileUrl(company.logo_url)} alt={`Logo de ${company.name}`} /> : <Building2 size={40} />}</div><div><p className="section-kicker">PERFIL DE EMPRESA</p><h1>{company.name}</h1><div className="company-public-facts">{company.sector && <span><BriefcaseBusiness size={15} />{company.sector}</span>}{company.location && <span><MapPin size={15} />{company.location}</span>}{company.size && <span><UsersRound size={15} />{company.size} personas</span>}</div>{company.website && <a href={company.website} target="_blank" rel="noreferrer">Visitar sitio web<ExternalLink size={14} /></a>}</div><aside><CompanyScore value={company.platform_score} /><span className="company-public-job-count"><BriefcaseBusiness size={15} />{jobs.length} vacantes activas</span></aside></div>
+        {user?.role === "candidate" && <footer className="company-public-follow"><div><BellRing size={21} /><span><strong>Recibe sus próximas oportunidades</strong><small>Elige la compatibilidad mínima para los avisos.</small></span></div><label>A partir de<select className="field-control" value={follow.min_match} onChange={(event) => updateMinimum(event.target.value)}>{[50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}</select></label><button type="button" className={follow.is_following ? "button-secondary" : "button-primary"} onClick={toggleFollow}><BellRing size={16} />{follow.is_following ? "Dejar de seguir" : "Seguir empresa"}</button></footer>}
       </section>
       {message ? <p className="rounded-xl border border-[var(--success)] bg-[var(--success)]/10 px-4 py-3 text-sm text-[var(--success)]">{message}</p> : null}
       {error ? <p className="rounded-xl border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)]">{error}</p> : null}

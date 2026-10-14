@@ -114,13 +114,13 @@ def test_writing_uses_supplied_facts_and_never_saves_or_crosses_company_access(c
     assert blank["proposals"] == [] and len(blank["questions"]) == 3
 
 
-def test_discovery_promotes_quality_only_within_affinity_and_trust_tiers():
+def test_discovery_clarity_can_advance_nearby_affinity_without_overriding_trust():
     def row(identifier, match, quality, *, reduced=False):
         return SimpleNamespace(job_id=identifier, match_percentage=match, personalization={"enabled": False},
-                               discovery={"quality_bonus": (quality - 50) / 10, "affinity_band": min(9, int(match // 10)), "visibility_reduced": reduced})
+                               discovery={"quality_bonus": (quality - 50) * .25, "affinity_band": min(9, int(match // 10)), "visibility_reduced": reduced})
     low_quality, clear = row(1, 77, 10), row(2, 74, 100)
     stronger, reduced = row(3, 80, 10), row(4, 99, 100, reduced=True)
-    assert [item.job_id for item in sorted([low_quality, clear, stronger, reduced], key=discovery_key)] == [3, 2, 1, 4]
+    assert [item.job_id for item in sorted([low_quality, clear, stronger, reduced], key=discovery_key)] == [2, 3, 1, 4]
     assert low_quality.match_percentage == 77 and clear.match_percentage == 74
     external = discovery_signals(SimpleNamespace(source_kind="external"), 74)
     assert external["quality_score"] is None and external["quality_bonus"] == 0

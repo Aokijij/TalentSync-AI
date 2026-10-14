@@ -7,7 +7,7 @@ export function loadVacancyData(client, { jobId, role }, handlers) {
   client.get(`/jobs/${jobId}`, { signal: controller.signal }).then(accept(handlers.job)).catch(fallback(handlers.error));
   client.get("/jobs", { signal: controller.signal }).then(accept(handlers.catalog)).catch(fallback(() => handlers.catalog([])));
   if (role === "candidate") {
-    client.post(`/jobs/${jobId}/match`, {}, { signal: controller.signal }).then(accept(handlers.match)).catch(fallback(() => handlers.match(null)));
+    client.post(`/jobs/${jobId}/match`, {}, { signal: controller.signal, __quiet: true }).then(accept(handlers.match)).catch((failure) => { if (active && failure.code !== "ERR_CANCELED") { handlers.match(null); handlers.matchError?.(failure); } });
     client.get("/applications/me", { signal: controller.signal }).then(accept(handlers.applications)).catch(fallback(() => handlers.applications([])));
   }
   if (role === "company") client.get("/companies/me", { signal: controller.signal }).then(accept(handlers.company)).catch(fallback(() => handlers.company(null)));

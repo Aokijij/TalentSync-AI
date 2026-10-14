@@ -277,6 +277,10 @@ class Company(Base):
         return f"/api/v1/companies/{self.id}/logo" if self.logo_filename else None
 
     @property
+    def platform_score(self):
+        return None if self.is_external else company_health(self)["score"]
+
+    @property
     def cover_url(self) -> str | None:
         return f"/api/v1/companies/{self.id}/cover" if self.cover_filename else None
 

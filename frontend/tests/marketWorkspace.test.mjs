@@ -12,7 +12,7 @@ async function component(path, name) {
   const compiled = await build({ entryPoints: [fileURLToPath(new URL(path, import.meta.url))], bundle: true, write: false, platform: "node", format: "cjs", jsx: "automatic", packages: "external", loader: { ".css": "empty" },
     plugins: [{ name: "isolated-render", setup(builder) {
       builder.onResolve({ filter: /api\/client\.js$/ }, () => ({ path: "api", namespace: "test" }));
-      builder.onLoad({ filter: /.*/, namespace: "test" }, () => ({ contents: "export const api = {}; export const getApiErrorMessage = () => 'Error';", loader: "js" }));
+      builder.onLoad({ filter: /.*/, namespace: "test" }, () => ({ contents: "export const api = {}; export const apiFileUrl = value => value; export const getApiErrorMessage = () => 'Error';", loader: "js" }));
     } }] });
   const module = { exports: {} };
   new Function("require", "module", "exports", compiled.outputFiles[0].text)(require, module, module.exports);
@@ -20,6 +20,8 @@ async function component(path, name) {
 }
 const Workspace = await component("../src/components/CareerCoachWorkspace.jsx", "CareerCoachWorkspace");
 const Export = await component("../src/components/ResumeExportDialog.jsx", "ResumeExportDialog");
+const Education = await component("../src/components/EducationFields.jsx", "EducationFields");
+const Score = await component("../src/components/CompanyScore.jsx", "CompanyScore");
 test("market demand uses the filtered report and avoids a second search form", () => {
   const radar = { sample: 7, skills: [{ skill: "typescript", count: 5, declared: false, courses: [] }], jobs: [], sources: {}, note: "Solo ofertas reales", since: "2026-07-16", as_of: "2026-10-14", small_sample: false };
   const html = renderToStaticMarkup(createElement(MemoryRouter, null, createElement(Workspace, { profile: { skills: [] }, context: "learning", externalRadar: radar, hideFilters: true })));
@@ -35,4 +37,27 @@ test("saved export selections restore without exposing omitted contact or trigge
   assert.match(html, /type="checkbox" checked=""\/>Resumen profesional/);
   assert.doesNotMatch(html, /type="checkbox" checked=""\/>Datos de contacto/);
   assert.match(html, /disabled=""[^>]*>.*?Descargar este PDF/);
+});
+
+test("both skill groups remain available when no offers match", () => {
+  const radar = { sample: 0, own_skills: [{ skill: "python", declared: true, count: 0, courses: [] }], skills: [], jobs: [], sources: {}, note: "Sin muestra", since: "2026-07-16", as_of: "2026-10-14", small_sample: true };
+  const html = renderToStaticMarkup(createElement(MemoryRouter, null, createElement(Workspace, { profile: { skills: ["python"] }, context: "learning", externalRadar: radar, hideFilters: true })));
+  assert.match(html, /Solicitadas que aún no tengo/);
+  assert.match(html, /Ya en mi perfil/);
+  assert.match(html, /No hay ofertas con estos filtros/);
+});
+
+test("education uses explicit level choices independently of the title", () => {
+  const html = renderToStaticMarkup(createElement(Education, { items: [{ degree: "Desarrollo de sistemas", level: "technologist" }], editing: true }));
+  assert.match(html, /Nivel de formación/);
+  assert.match(html, /value="technologist" selected=""/);
+  assert.match(html, /Técnico/);
+  assert.match(html, /Profesional universitario/);
+});
+test("company score presents a score or its absence without reasons", () => {
+  const html = renderToStaticMarkup(createElement(Score, { value: 48.5 }));
+  assert.match(html, /48,5/);
+  assert.match(html, /Puntuación en TalentSync/);
+  assert.doesNotMatch(html, /incidencias|plazos|Visibilidad reducida/);
+  assert.match(renderToStaticMarkup(createElement(Score, { value: null })), /Sin puntuación todavía/);
 });

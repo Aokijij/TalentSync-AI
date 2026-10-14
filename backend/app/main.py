@@ -92,7 +92,11 @@ def create_app() -> FastAPI:
     async def security_headers(request: Request, call_next):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
+        if request.method == "GET" and request.url.path.startswith("/api/v1/profiles/me/export/preview/") and response.status_code == 200 and response.headers.get("content-type", "").startswith("application/pdf"):
+            origins = [origin for origin in settings.cors_origins if origin.startswith(("http://", "https://")) and not any(char in origin for char in " ;'\n\r")]
+            response.headers["Content-Security-Policy"] = "frame-ancestors 'self' " + " ".join(origins)
+        else:
+            response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "camera=(self), microphone=(self), geolocation=()"
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"

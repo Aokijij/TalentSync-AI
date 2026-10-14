@@ -148,7 +148,7 @@ def test_recommendation_api_exposes_context_recomputes_experience_and_preserves_
     assert saved.status_code == 200, saved.text
     endpoint = f"/api/v1/matching/jobs/{created['id']}"
     first = client.get(endpoint, headers=candidate).json()
-    assert first["version"] == "contextual-match-v7" and len(first["section_scores"]) == 3
+    assert first["version"] == "contextual-match-v8" and len(first["section_scores"]) == 3
     assert all("excerpt" not in row for row in first["requirements"])
     assert abs(sum(row["points"] for row in first["components"]) - first["overall_score"]) < .02
     assert client.get(endpoint, headers=company).status_code == 403

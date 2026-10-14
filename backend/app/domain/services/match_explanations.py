@@ -12,7 +12,7 @@ from app.domain.services.requirement_analysis import (
 )
 from app.domain.services.work_preferences import effective_preferences, location_fit
 
-MATCH_VERSION = "contextual-match-v7"
+MATCH_VERSION = "contextual-match-v8"
 
 
 def weighted_coverage(profile, job):

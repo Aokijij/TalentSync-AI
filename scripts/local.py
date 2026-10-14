@@ -90,7 +90,7 @@ def prepare_environment(*, testing=False):
 
 def main():
     parser = argparse.ArgumentParser(description="TalentSync: entorno local aislado")
-    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "seed-review", "seed-demo", "seed-scenarios", "seed-quality", "seed-education", "sync-education", "accounts", "admin-sso", "model-prepare", "model-check", "cv-runtime", "cv-model-prepare", "cv-model-check", "cv-evaluate", "doctor", "verify", "rehearse"))
+    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "seed-review", "seed-demo", "seed-scenarios", "seed-quality", "seed-radar", "seed-education", "sync-education", "accounts", "admin-sso", "model-prepare", "model-check", "cv-runtime", "cv-model-prepare", "cv-model-check", "cv-evaluate", "doctor", "verify", "rehearse"))
     parser.add_argument("options", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.options and args.command != "admin-sso":
@@ -115,6 +115,7 @@ def main():
         "seed-demo": ["-m", "scripts.seed_rich_demo"],
         "seed-scenarios": ["-m", "scripts.seed_scenarios"],
         "seed-quality": ["-m", "scripts.seed_offer_quality"],
+        "seed-radar": ["-m", "scripts.seed_market_radar"],
         "seed-education": ["-m", "scripts.seed_education_catalog"],
         "sync-education": ["-m", "scripts.sync_education_sources"],
         "admin-sso": ["-m", "scripts.admin_sso", *args.options],

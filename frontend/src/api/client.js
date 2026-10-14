@@ -48,7 +48,7 @@ api.interceptors.response.use(
       localStorage.removeItem("talentsync_token");
       window.dispatchEvent(new CustomEvent("talentsync:session-expired"));
     }
-    if (!["get", "head", "options"].includes(method) && !config.__quiet) window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { error: true, message: getApiErrorMessage(error, "No se pudo guardar el cambio. Intenta de nuevo.") } }));
+    if (shouldNotifyMutation(config) && error.code !== "ERR_CANCELED") window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { error: true, message: getApiErrorMessage(error, "No se pudo guardar el cambio. Intenta de nuevo.") } }));
     return Promise.reject(error);
   },
 );

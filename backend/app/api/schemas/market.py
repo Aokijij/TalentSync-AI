@@ -7,6 +7,7 @@ MarketLevel = Literal["", "entry", "junior", "mid", "senior", "lead"]
 
 
 class MarketFilters(BaseModel):
+    dataset: Literal["real", "demo"] = "real"
     search: str = Field(default="", max_length=160)
     family: MarketFamily = ""
     level: MarketLevel = ""
