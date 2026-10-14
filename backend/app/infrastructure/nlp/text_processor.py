@@ -1393,12 +1393,18 @@ class TextProcessor:
         encoder = matching_encoder()
         return encoder.method if encoder else "lexical-hashing-v1"
 
-    def matching_similarity(self, left, right, stored_job_embedding):
+    def prepare_matching(self, texts):
+        from app.infrastructure.nlp.matching_encoder import matching_encoder
+        encoder = matching_encoder()
+        if encoder:
+            encoder.prepare(texts)
+
+    def matching_similarity(self, left, right, stored_job_embedding=None):
         from app.infrastructure.nlp.matching_encoder import matching_encoder
         encoder = matching_encoder()
         if encoder:
             return encoder.similarity(left, right)
-        return self.similarity_percentage(self.embed(left), stored_job_embedding)
+        return self.similarity_percentage(self.embed(left), stored_job_embedding if stored_job_embedding is not None else self.embed(right))
 
     def analyze_cv(self, text: str) -> NLPResult:
         from app.domain.services.skill_context import extraction_context

@@ -20,10 +20,12 @@ def test_local_inference_uses_files_and_no_network_provider(tmp_path, monkeypatc
         from pathlib import Path
         assert "private description" in Path(path).read_text(encoding="utf-8")
         observed.append(Path(path))
-        return SimpleNamespace(returncode=0, stdout=json.dumps({"text": "Texto revisable", "idea": "¿Qué entregaste?"}).encode(), stderr=b"")
+        schema = json.loads(command[command.index("-j") + 1])
+        assert schema["properties"]["actions"]["minItems"] == 1
+        return SimpleNamespace(returncode=0, stdout=json.dumps({"actions": [{"index": 0, "text": "Texto revisable"}], "idea": "¿Qué entregaste?"}).encode(), stderr=b"")
     monkeypatch.setattr(subprocess, "run", run)
     writer = LocalCareerWriter(str(model), str(executable))
-    assert writer.generate({"description": "private description"}, style="paragraph", result="")["text"] == "Texto revisable"
+    assert writer.generate({"description": "private description"}, style="paragraph", result="")["actions"][0]["text"] == "Texto revisable"
     assert not observed[0].exists()
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: (_ for _ in ()).throw(subprocess.TimeoutExpired("local", 10)))
     with pytest.raises(UseCaseError) as error:

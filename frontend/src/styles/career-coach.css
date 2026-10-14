@@ -162,3 +162,20 @@ html[data-theme="dark"] .coach-workspace .button-primary { color:#082f49; }
 .coach-writing-idea { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:.7rem; background:var(--surface); padding:1rem; margin:1rem 0; }
 .coach-writing-idea > strong { font-size:.85rem; color:var(--ink-strong); }
 .coach-writing-idea small { color:var(--muted); font-size:.74rem; line-height:1.6; }
+.coach-learning-browser { display:grid; grid-template-columns:minmax(210px,.75fr) minmax(0,1.5fr); gap:1.5rem; margin-top:1.2rem; align-items:start; }
+.coach-learning-browser h4 { display:flex; align-items:center; gap:.6rem; margin-bottom:1rem; font-size:.85rem; }
+.coach-learning-browser h4 > span { display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:var(--surface-subtle); color:var(--accent); border:1px solid var(--line); }
+.coach-skill-list { display:grid; gap:.5rem; }
+.coach-skill-list button { display:flex; justify-content:space-between; align-items:center; gap:.75rem; width:100%; text-align:left; padding:1rem; border:1px solid var(--line); border-radius:.75rem; color:var(--ink); background:var(--surface); }
+.coach-skill-list button[aria-pressed=true] { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 9%,var(--surface)); }
+.coach-skill-list strong { display:block; font-size:.9rem; text-transform:capitalize; }
+.coach-skill-list small { display:block; margin-top:.3rem; color:var(--muted); font-size:.75rem; }
+.coach-learning-choice { min-width:0; border-left:1px solid var(--line); padding-left:1.5rem; }
+.coach-learning-choice > h3 { font-size:1.35rem; text-transform:capitalize; margin-top:.5rem; }
+.coach-learning-courses { display:grid; margin:1rem 0; }
+.coach-learning-courses article { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 0; border-bottom:1px solid var(--line); }
+.coach-learning-courses h5 { font-weight:700; line-height:1.5; font-size:.88rem; }
+.coach-learning-courses p { font-size:.75rem; margin:.3rem 0 0; }
+.coach-learning-courses a { white-space:nowrap; flex-shrink:0; }
+.coach-empty-course { border:1px dashed var(--line); padding:1rem; border-radius:.75rem; }
+@media(max-width:750px) { .coach-learning-browser { grid-template-columns:1fr; } .coach-learning-choice { padding:1rem 0 0; border-left:0; border-top:1px solid var(--line); } .coach-learning-courses article { align-items:start; flex-direction:column; } }

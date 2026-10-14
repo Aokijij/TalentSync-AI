@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { CareerCoachWorkspace } from "./CareerCoachWorkspace.jsx";
 
-export function CareerCoachTools({ context, job, onDraftSaved, onDone }) {
+export function CareerCoachTools({ context = "learning" }) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null), [error, setError] = useState("");
   useEffect(() => {
@@ -16,6 +16,6 @@ export function CareerCoachTools({ context, job, onDraftSaved, onDone }) {
   if (!profile) return <p role="status" className="p-4 text-sm text-[var(--muted)]">Cargando tu información…</p>;
   return <>
     {context === "learning" && <p className="text-sm text-[var(--muted)]">Usamos tus habilidades registradas para orientarte. <Link className="text-[var(--accent)] underline" to="/perfil#profile-skills">Actualizar mis habilidades</Link></p>}
-    <CareerCoachWorkspace profile={profile} editing={false} context={context} vacancyJob={job} onDraftSaved={onDraftSaved} onDone={onDone} onEdit={(target) => navigate(`/perfil#${target}`)} />
+    <CareerCoachWorkspace profile={profile} editing={false} context={context} onEdit={(target) => navigate(`/perfil#${target}`)} />
   </>;
 }

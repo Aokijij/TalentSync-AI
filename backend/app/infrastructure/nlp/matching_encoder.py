@@ -57,10 +57,29 @@ class LocalMatchingEncoder:
                 vector = self.model.encode([text], normalize_embeddings=True, show_progress_bar=False)[0]
                 vector.setflags(write=False)
                 self._vectors[key] = vector
-                if len(self._vectors) > 512:
+                if len(self._vectors) > 2048:
                     self._vectors.popitem(last=False)
             self._vectors.move_to_end(key)
             return self._vectors[key]
+
+    def prepare(self, texts):
+        """Encode missing professional text in bounded batches, not per job pair."""
+        pending = OrderedDict()
+        with self._lock:
+            for text in texts:
+                text = text[:20000]
+                key = hashlib.sha256(text.encode()).digest()
+                if key not in self._vectors:
+                    pending[key] = text
+            items = list(pending.items())
+            for start in range(0, len(items), 32):
+                batch = items[start:start + 32]
+                vectors = self.model.encode([text for _, text in batch], batch_size=32, normalize_embeddings=True, show_progress_bar=False)
+                for (key, _), vector in zip(batch, vectors, strict=True):
+                    vector.setflags(write=False)
+                    self._vectors[key] = vector
+                    if len(self._vectors) > 2048:
+                        self._vectors.popitem(last=False)
 
     def similarity(self, left, right):
         return round(max(0, min(1, float(self._embedding(left) @ self._embedding(right)))) * 100, 2)

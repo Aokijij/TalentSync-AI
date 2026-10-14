@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { api } from "../api/client.js";
+import { getRecommendations } from "../api/recommendations.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { MetricCard } from "../components/MetricCard.jsx";
 import { Button } from "../components/Button.jsx";
@@ -60,8 +61,7 @@ export function CandidateDashboard() {
       jobsResponse,
       profileResponse,
     ] = await Promise.all([
-      api
-        .get("/recommendations/me/jobs", { params: { include_all: true } })
+      getRecommendations(user.id)
         .catch(() => ({ data: [] })),
       api.get("/applications/me").catch(() => ({ data: [] })),
       api.get("/jobs").catch(() => ({ data: [] })),

@@ -5,7 +5,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { readRecommendationSettings, saveRecommendationSetting } from "../utils/recommendationSettings.js";
 import { RecommendationControls } from "../components/RecommendationControls.jsx";
 import { useRecommendations } from "../hooks/useRecommendations.js";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -18,6 +18,7 @@ import {
 import { Link } from "react-router-dom";
 
 import { api } from "../api/client.js";
+import { getRecommendations } from "../api/recommendations.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { VacancyLearningPanel } from "../components/VacancyLearningPanel.jsx";
@@ -49,8 +50,16 @@ export function RecommendationsPage() {
   const [expandedReasons, setExpandedReasons] = useState({});
   const [page, setPage] = useState(1);
   const pageSize = 5;
+  const pendingLoad = useRef(null);
 
-  async function load(showLoading = true) {
+  function load(showLoading = true) {
+    // React development effects and simultaneous filter updates can share a
+    // request; do not start duplicate expensive calculations for this screen.
+    if (pendingLoad.current) return pendingLoad.current;
+    pendingLoad.current = fetchRecommendations(showLoading).finally(() => { pendingLoad.current = null; });
+    return pendingLoad.current;
+  }
+  async function fetchRecommendations(showLoading) {
     if (showLoading) setLoading(true);
     setError("");
     try {
@@ -60,7 +69,7 @@ export function RecommendationsPage() {
         jobsResponse,
         preferencesResponse,
       ] = await Promise.all([
-        api.get("/recommendations/me/jobs", { params: { include_all: true } }),
+        getRecommendations(user.id),
         api.get("/applications/me"),
         api.get("/jobs"),
         api.get("/matching/preferences"),
@@ -69,9 +78,8 @@ export function RecommendationsPage() {
       setApplications(applicationsResponse.data);
       setJobs(jobsResponse.data);
       setPreferences(preferencesResponse.data);
-    } catch (err) {
-      setError("No fue posible cargar las recomendaciones");
-      console.error("Failed to load recommendations:", err);
+    } catch {
+      setError("No pudimos cargar las recomendaciones. Puedes volver a intentarlo.");
     } finally {
       setLoading(false);
     }
@@ -153,7 +161,7 @@ export function RecommendationsPage() {
       <label className="block"><span className="sr-only">Buscar recomendaciones</span><input className="field-control" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por cargo, empresa, ciudad o habilidad" /></label>
       {error && (
         <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)]">
-          {error}
+          {error} <button type="button" className="ml-3 underline" onClick={() => load()}>Reintentar</button>
         </p>
       )}
 

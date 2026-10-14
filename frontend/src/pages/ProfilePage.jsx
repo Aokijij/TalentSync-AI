@@ -1,15 +1,14 @@
 import { EducationFields } from "../components/EducationFields.jsx";
 import { CareerCoachWorkspace } from "../components/CareerCoachWorkspace.jsx";
+import { CoachDialog } from "../components/CoachDialog.jsx";
+import { ResumePreview } from "../components/ResumePreview.jsx";
 import { CvContextReview } from "../components/CvContextReview.jsx";
-import { isOngoing } from "../utils/profileStatus.js";
-import { experiencePeriod } from "../utils/experienceDates.js";
 import { ExperienceFields, MobilityFields } from "../components/ExperienceFields.jsx";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
 import { useEffect, useState } from "react";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
-import { languageLevelLabel } from "../constants/languages.js";
 import {
   BookOpen,
   BriefcaseBusiness,
@@ -24,6 +23,7 @@ import {
   Plus,
   Palette,
   Save,
+  Sparkles,
   Trash2,
   Upload,
   UserRound,
@@ -82,8 +82,7 @@ const normalize = (data) => ({
 export function ProfilePage() {
   const { refreshUser } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const [profileTab, setProfileTab] = useState("trajectory");
+  const [coachOpen, setCoachOpen] = useState(false);
   const [allSkills, setAllSkills] = useState(false);
   const { confirm } = useFeedback();
   const [profile, setProfile] = useState(null);
@@ -98,20 +97,19 @@ export function ProfilePage() {
   const [uploadingCv, setUploadingCv] = useState(false);
   const [coachTarget, setCoachTarget] = useState("");
   useEffect(() => {
-    const params = new URLSearchParams(location.search), job = params.get("job");
-    if (params.get("coach") === "vacancy" && /^\d+$/.test(job || "")) navigate(`/vacantes/${job}?preparar=1`, { replace: true });
-  }, [location.search, navigate]);
-  useEffect(() => {
     if (!coachTarget || !editing && !["profile-evidence", "preferencias"].includes(coachTarget)) return;
     const target = document.getElementById(coachTarget);
-    if (target) {
-      target.scrollIntoView({ block: "center", behavior: "smooth" });
-      (target.matches("input,textarea") ? target : target.querySelector("input,textarea,button"))?.focus({ preventScroll: true });
-    }
-    setCoachTarget("");
-  }, [coachTarget, editing, profileTab]);
+    const frame = window.requestAnimationFrame(() => {
+      if (target) {
+        target.scrollIntoView({ block: "center", behavior: "smooth" });
+        (target.matches("input,textarea") ? target : target.querySelector("input,textarea,button"))?.focus({ preventScroll: true });
+      }
+      setCoachTarget("");
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [coachTarget, editing]);
   function editFromCoach(target) {
-    setProfileTab(target === "profile-evidence" ? "evidence" : target === "preferencias" ? "preferences" : ["profile-skills", "profile-languages", "profile-certifications"].includes(target) ? "details" : "trajectory");
+    setCoachOpen(false);
     if (target === "profile-evidence" && editing) {
       setMessage("Guarda los cambios del perfil antes de gestionar tus evidencias.");
       return;
@@ -132,9 +130,9 @@ export function ProfilePage() {
   useEffect(() => {
     if (!profile || !location.hash) return;
     const target = location.hash.slice(1);
-    if (["profile-skills", "profile-languages", "profile-certifications"].includes(target)) { setProfileTab("details"); setEditing(true); setCoachTarget(target); }
-    else if (target === "preferencias") { setProfileTab("preferences"); setCoachTarget(target); }
-    else if (["evidencias", "profile-evidence"].includes(target)) { setProfileTab("evidence"); setCoachTarget("profile-evidence"); }
+    if (["profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations"].includes(target)) { setEditing(true); setCoachTarget(target); }
+    else if (target === "preferencias") { setCoachTarget(target); }
+    else if (["evidencias", "profile-evidence"].includes(target)) { setCoachTarget("profile-evidence"); }
   }, [Boolean(profile), location.hash]);
   const update = (key, value) => setProfile((p) => ({ ...p, [key]: value }));
   const updateItem = (key, index, field, value) =>
@@ -444,14 +442,16 @@ export function ProfilePage() {
             </div>
           </header>
       )}
-      {!previewMode && <CareerCoachWorkspace profile={profile} editing={editing} onEdit={editFromCoach} onSave={save} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />}
-      {!previewMode && <nav className="profile-section-nav print-hidden" aria-label="Información de mi perfil">{[["trajectory", "Trayectoria"], ["details", "Habilidades y cursos"], ["preferences", "Preferencias"], ["evidence", "Evidencias"]].map(([key, label]) => <button type="button" key={key} aria-pressed={profileTab === key} onClick={() => setProfileTab(key)}>{label}</button>)}</nav>}
+      {!previewMode && <div className="profile-help-action"><button type="button" className="button-secondary" onClick={() => setCoachOpen(true)} aria-haspopup="dialog"><Sparkles size={18} />Ideas para mejorar tu hoja de vida</button><span>Revisa sugerencias o mejora un texto cuando lo necesites.</span></div>}
+      <CoachDialog open={coachOpen && !previewMode} onClose={() => setCoachOpen(false)}>
+        <CareerCoachWorkspace active={coachOpen} profile={profile} editing={editing} onEdit={editFromCoach} onSave={save} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />
+      </CoachDialog>
       {previewMode ? (
         <ResumePreview profile={profile} name={name} email={email} photoVersion={photoVersion} />
       ) : (
         <article className="profile-document">
-          <div className={`profile-content-grid profile-view-${profileTab}`}>
-            {profileTab === "trajectory" && <div className="profile-main-sections">
+          <div className="profile-content-grid">
+            <div className="profile-main-sections">
             <Section icon={UserRound} title="Resumen profesional">
               <p className="text-sm leading-6 text-[var(--muted)]">
                 {profile.experience || "Agrega tu profesión, experiencia, formación y habilidades. Al guardar construiremos un resumen breve de tu trayectoria."}
@@ -476,9 +476,8 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
-            </div>}
-            {["details", "preferences"].includes(profileTab) && <aside className="profile-side-sections">
-            {profileTab === "details" && <>
+            </div>
+            <aside className="profile-side-sections">
             <Section id="profile-certifications" icon={CheckCircle2} title="Cursos y certificaciones">
               <Items
                 type="certifications"
@@ -540,8 +539,7 @@ export function ProfilePage() {
                 </div>
               )}
             </Section>
-            </>}
-            {profileTab === "preferences" && <div id="preferencias" className="scroll-mt-44"><Section icon={BriefcaseBusiness} title="Preferencias laborales">
+            <div id="preferencias" className="scroll-mt-44"><Section icon={BriefcaseBusiness} title="Preferencias laborales">
               {editing ? (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm font-semibold text-[var(--muted)]">
@@ -637,13 +635,13 @@ export function ProfilePage() {
                   </p>
                 </div>
               )}
-            <MobilityFields value={profile.mobility || {}} editing={editing} onChange={(value) => update("mobility", value)} /></Section></div>}
-            </aside>}
+            <MobilityFields value={profile.mobility || {}} editing={editing} onChange={(value) => update("mobility", value)} /></Section></div>
+            </aside>
       </div>
         </article>
       )}
-      {!previewMode && profileTab === "evidence" && editing && <p className="surface-card p-5 text-sm text-[var(--muted)]">Guarda tus cambios para gestionar las evidencias de tu perfil.</p>}
-      {!previewMode && profileTab === "evidence" && !editing && <div id="profile-evidence"><ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} /></div>}
+      {!previewMode && editing && <p className="surface-card p-5 text-sm text-[var(--muted)]">Guarda tus cambios para gestionar las evidencias de tu perfil.</p>}
+      {!previewMode && !editing && <div id="profile-evidence"><ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} /></div>}
     </div>
   );
 }
@@ -778,167 +776,5 @@ function Items({ type, profile, editing, update, updateItem }) {
         </p>
       )}
     </>
-  );
-}
-
-const resumeStyles = {
-  classic: {
-    header: "bg-slate-950 text-white",
-    photo: "rounded-xl",
-  },
-  modern: {
-    header: "bg-white text-slate-950",
-    photo: "rounded-full",
-  },
-  minimal: {
-    header: "bg-white text-slate-950",
-    photo: "rounded-full",
-  },
-};
-
-function ResumePreview({ profile, name, email, photoVersion }) {
-  const style = resumeStyles[profile.resume_style] || resumeStyles.classic;
-  const palette = getResumePalette(profile.resume_style, profile.resume_color);
-  const location = [profile.location, profile.department]
-    .filter(Boolean)
-    .join(", ");
-  const initials = String(name || "Candidato")
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-  return (
-    <article
-      className={`resume-print-area resume-${profile.resume_style} mx-auto w-full max-w-6xl overflow-hidden bg-white text-slate-900 shadow-2xl`}
-      style={palette.variables}
-    >
-      <header className={`resume-header ${style.header}`}>
-        <div className="resume-identity">
-          {profile.photo_url ? (
-            <AuthenticatedImage
-              src={`${profile.photo_url}?v=${photoVersion}`}
-              alt=""
-              className={`resume-photo shrink-0 object-cover ${style.photo}`}
-              fallback={<span className={`resume-photo resume-monogram ${style.photo}`}>{initials}</span>}
-            />
-          ) : (
-            <span className={`resume-photo resume-monogram ${style.photo}`}>
-              {initials}
-            </span>
-          )}
-          <div className="min-w-0">
-            <p className="resume-eyebrow">Hoja de vida</p>
-            <p className="resume-name">{name}</p>
-            <p className="resume-profession">
-              {profile.profession || "Perfil profesional"}
-            </p>
-          </div>
-        </div>
-        <div className="resume-contact-list">
-          {email ? <span><Mail size={14} />{email}</span> : null}
-          {profile.phone ? <span><Phone size={14} />{profile.phone}</span> : null}
-          {location ? <span><MapPin size={14} />{location}</span> : null}
-        </div>
-      </header>
-      <div className="resume-body">
-        <aside className="resume-sidebar">
-          {profile.languages?.length ? <ResumeSection title="Idiomas" compact>{profile.languages.map((item, index) => <p className="resume-compact-item capitalize" key={index}><b>{item.name}</b><br />{languageLevelLabel(item.level)}</p>)}</ResumeSection> : null}
-          <ResumeSection title="Habilidades" compact>
-            <div className="resume-skills">
-              {(editing || allSkills ? profile.skills : profile.skills.slice(0, 12)).map((item) => (
-                <span key={item} className="resume-skill">
-                  {item}
-                </span>
-              ))}
-              {!profile.skills.length ? <span className="text-sm opacity-70">Sin habilidades registradas</span> : null}
-            </div>
-          </ResumeSection>
-          {profile.certifications?.length ? (
-            <ResumeSection title="Certificaciones" compact>
-              {profile.certifications.map((item, index) => (
-                <div key={`${item.name}-${index}`} className="resume-compact-item">
-                  <p className="font-bold">{item.name}</p>
-                  <p className="opacity-70">
-                    {item.issuer}
-                    {item.year ? ` · ${item.year}` : ""}
-                  </p>
-                </div>
-              ))}
-            </ResumeSection>
-          ) : null}
-          {(profile.preferred_sector || profile.preferred_modality || profile.availability) ? (
-            <ResumeSection title="Preferencias" compact>
-              <div className="space-y-3 text-sm">
-                {profile.preferred_sector ? <p><b>Sector</b><span>{profile.preferred_sector}</span></p> : null}
-                {profile.preferred_modality ? <p><b>Modalidad</b><span>{modalityLabels[profile.preferred_modality] || profile.preferred_modality}</span></p> : null}
-                {profile.availability ? <p><b>Disponibilidad</b><span>{availabilityLabels[profile.availability] || profile.availability}</span></p> : null}
-              </div>
-            </ResumeSection>
-          ) : null}
-        </aside>
-        <main className="resume-main">
-          {profile.experience ? (
-            <ResumeSection title="Perfil profesional">
-              <p className="resume-summary">{profile.experience}</p>
-            </ResumeSection>
-          ) : null}
-          {profile.experiences?.length ? (
-            <ResumeSection title="Experiencia">
-              {profile.experiences.map((item, index) => (
-                <div
-                  key={`${item.company}-${index}`}
-                  className="resume-timeline-item break-inside-avoid"
-                >
-                  <div className="resume-item-heading">
-                    <div>
-                      <p className="resume-item-title">{item.role || "Cargo"}</p>
-                      <p className="resume-item-company">{item.company}</p>
-                    </div>
-                    <p className="resume-item-date">
-                      {experiencePeriod(item)}
-                    </p>
-                  </div>
-                  {item.description ? (
-                    <p className="resume-item-description">
-                      {item.description}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
-            </ResumeSection>
-          ) : null}
-          {profile.educations?.length ? (
-            <ResumeSection title="Formación">
-              {profile.educations.map((item, index) => (
-                <div
-                  key={`${item.degree}-${index}`}
-                  className="resume-education-item break-inside-avoid"
-                >
-                  <div>
-                    <p className="resume-item-title">{item.degree}</p>
-                    <p className="resume-item-company">{item.institution}</p>
-                  </div>
-                  <p className="resume-item-date">{item.start_year}{isOngoing(item) ? " – En curso" : item.end_year ? ` - ${item.end_year}` : ""}</p>
-                </div>
-              ))}
-            </ResumeSection>
-          ) : profile.education ? (
-            <ResumeSection title="Formación">
-              <p className="resume-summary">{profile.education}</p>
-            </ResumeSection>
-          ) : null}
-        </main>
-      </div>
-    </article>
-  );
-}
-
-function ResumeSection({ title, children, compact = false }) {
-  return (
-    <section className={compact ? "resume-section resume-section-compact" : "resume-section"}>
-      <h2>{title}</h2>
-      {children}
-    </section>
   );
 }

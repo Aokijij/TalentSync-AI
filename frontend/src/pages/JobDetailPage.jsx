@@ -15,7 +15,7 @@ import {
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import { OfferConditions } from "../components/OfferConditions.jsx";
-import { CareerCoachTools } from "../components/CareerCoachTools.jsx";
+import { VacancyCvAdvice } from "../components/VacancyCvAdvice.jsx";
 import { OfferFeedback } from "../components/OfferFeedback.jsx";
 import { salaryLabel } from "../utils/offerQuality.js";
 
@@ -42,24 +42,6 @@ export function JobDetailPage() {
   const [answers, setAnswers] = useState({});
   const [availableJobs, setAvailableJobs] = useState([]);
   const [companyId, setCompanyId] = useState(null);
-  const [coachDrafts, setCoachDrafts] = useState([]), [coachDraftId, setCoachDraftId] = useState("");
-  const [showPreparation, setShowPreparation] = useState(false);
-  useEffect(() => { setShowPreparation(new URLSearchParams(routeLocation.search).get("preparar") === "1"); }, [jobId, routeLocation.search]);
-  useEffect(() => { if (showPreparation) document.getElementById("vacancy-preparation")?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [showPreparation, job]);
-  useEffect(() => {
-    let active = true;
-    setCoachDraftId("");
-    setCoachDrafts([]);
-    if (user?.role === "candidate") api.get("/profiles/me/coach").then(({ data }) => {
-      if (!active) return;
-      const drafts = (data.drafts || []).filter((row) => row.confirmed && row.job_id === Number(jobId));
-      setCoachDrafts(drafts);
-      const selected = new URLSearchParams(routeLocation.search).get("coachDraft");
-      if (drafts.some((row) => row.id === selected)) setCoachDraftId(selected);
-    }).catch(() => { if (active) setCoachDrafts([]); });
-    return () => { active = false; };
-  }, [user?.role, jobId, routeLocation.search]);
-
   useEffect(() => {
     api.get(`/jobs/${jobId}`).then(({ data }) =>
       setJob({
@@ -137,7 +119,6 @@ export function JobDetailPage() {
     try {
       await api.post("/applications", {
         job_id: Number(jobId),
-        coach_draft_id: coachDraftId || null,
         screening_answers: Object.entries(answers)
           .filter(([, answer]) => String(answer).trim())
           .map(([question_id, answer]) => ({ question_id, answer: String(answer).trim() })),
@@ -318,7 +299,6 @@ export function JobDetailPage() {
           <div className="mt-6 border-t border-[var(--line)] pt-5"><h2 className="mb-3 font-semibold">Idiomas y nivel mínimo</h2><LanguagesEditor value={job.languages || []} editing={false} required /></div>
           {user?.role === "candidate" ? (
             <>
-              {!alreadyApplied && job.source_kind !== "external" && <div className="mt-5 space-y-3"><button type="button" className="button-secondary w-full" aria-expanded={showPreparation} onClick={() => setShowPreparation((value) => !value)}>Personalizar mi presentación (opcional)</button>{coachDrafts.length > 0 && <label className="block text-sm">Presentación que enviaré<select className="field-control mt-1" value={coachDraftId} onChange={(event) => setCoachDraftId(event.target.value)}><option value="">Mi perfil habitual</option>{coachDrafts.map((row) => <option key={row.id} value={row.id}>{row.created_at.slice(0, 10)} · presentación revisada</option>)}</select></label>}</div>}
               {job.source_kind === "external" && job.external_url ? (
                 <div className="mt-8 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
                   <p className="text-sm leading-5 text-[var(--muted)]">
@@ -358,7 +338,7 @@ export function JobDetailPage() {
           ) : null}
         </aside>
       </section>
-      {user?.role === "candidate" && !alreadyApplied && showPreparation && job.source_kind !== "external" && <section id="vacancy-preparation" className="scroll-mt-6"><CareerCoachTools key={job.id} context="vacancy" job={job} onDraftSaved={(saved) => { setCoachDrafts((rows) => [saved, ...rows.filter((row) => row.id !== saved.id)]); setCoachDraftId(saved.id); }} onDone={() => { setShowPreparation(false); document.getElementById("job-apply-action")?.focus(); document.getElementById("job-apply-action")?.scrollIntoView({ block: "center", behavior: "smooth" }); }} /></section>}
+      {user?.role === "candidate" && <VacancyCvAdvice key={job.id} jobId={job.id} />}
       {!isOwnCompanyJob && similarJobs.length ? (
         <section className="surface-card p-6">
           <div>

@@ -28,13 +28,3 @@ class WritingGeneration(BaseModel):
     source_version: str = Field(min_length=64, max_length=64)
     style: Literal["paragraph", "bullets"] = "paragraph"
     result: str = Field(default="", max_length=700)
-
-
-class VacancyDraft(BaseModel):
-    job_id: int = Field(gt=0)
-
-
-class DraftUpdate(BaseModel):
-    revision: int = Field(ge=1)
-    intro: str = Field(min_length=1, max_length=2000)
-    confirmed: Literal[True]

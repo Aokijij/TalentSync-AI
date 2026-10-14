@@ -49,11 +49,15 @@ def test_encoder_cache_is_bounded_versioned_and_does_not_store_text(tmp_path, mo
     assert encoder.similarity("private-profile", "vacancy") == 100
     assert encoder.similarity("private-profile", "vacancy") == 100
     assert len(calls) == 2
+    encoder.prepare(["private-profile", "vacancy", "one-new-section", "one-new-section"])
+    assert calls[-1] == ["one-new-section"] and len(calls) == 3
+    assert encoder.similarity("one-new-section", "vacancy") == 100
+    assert len(calls) == 3
     assert all(isinstance(key, bytes) and len(key) == 32 for key in encoder._vectors)
     assert "private-profile" not in str(encoder._vectors)
-    for index in range(513):
+    for index in range(2049):
         encoder._embedding(str(index))
-    assert len(encoder._vectors) == 512
+    assert len(encoder._vectors) == 2048
     assert not next(iter(encoder._vectors.values())).flags.writeable
     previous = encoder.method
     (tmp_path / "model.safetensors").write_bytes(b"changed-test-weights")

@@ -12,8 +12,6 @@ from app.api.deps import (
     require_roles,
 )
 from app.api.schemas.career_coach import (
-    DraftUpdate,
-    VacancyDraft,
     WritingDecision,
     WritingGeneration,
     WritingProposal,
@@ -54,19 +52,15 @@ def coach_generate_writing(payload: WritingGeneration, user=Depends(require_role
     return coach.generate_writing(db, user, payload.model_dump(), writer=writer)
 
 
-@router.get("/me/coach/jobs")
-def coach_jobs(search: str = "", user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
-    return coach.jobs(db, search[:160])
+@router.get("/me/coach/jobs/{job_id}/advice")
+def coach_vacancy_advice(job_id: int, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return coach.vacancy_advice(db, user, job_id)
 
 
 @router.post("/me/coach/drafts")
-def coach_prepare_draft(payload: VacancyDraft, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
-    return coach.prepare_draft(db, user, payload.job_id)
-
-
 @router.put("/me/coach/drafts/{draft_id}")
-def coach_update_draft(draft_id: str, payload: DraftUpdate, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
-    return coach.update_draft(db, user, draft_id, payload.model_dump())
+def coach_retired_preparation(user=Depends(require_roles(UserRole.CANDIDATE))):
+    raise UseCaseError(status_code=410, detail="Las presentaciones por vacante se retiraron. Consulta los consejos para tu hoja de vida en la vacante")
 
 
 @router.get("/me/coach/radar")
@@ -103,24 +97,8 @@ def coach_reading(user=Depends(require_roles(UserRole.CANDIDATE)), reader=Depend
 
 
 @router.get("/me/coach/export")
-def coach_export(draft_id: str | None = None, application_id: int | None = None, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work), exporter=Depends(get_resume_exporter)):
-    from types import SimpleNamespace
-
-    from app.domain.services.career_coach import snapshot
-    values = snapshot(coach.owner_profile(user))
-    if draft_id:
-        draft = coach.own_draft(db, user, draft_id)
-        values = {**draft["profile"], "experience": draft["intro"]}
-    if application_id:
-        application = db.applications.get(application_id)
-        if application is None or application.user_id != user.id or not application.coach_snapshot:
-            raise UseCaseError(status_code=404, detail="Versión enviada no encontrada")
-        saved = application.coach_snapshot
-        values = {**saved["profile"], "experience": saved["intro"]}
-    profile = coach.owner_profile(user)
-    values.update(resume_style=profile.resume_style or "classic", resume_color=profile.resume_color or "default", evidence=[])
-    pdf_user = SimpleNamespace(name=user.name, email=user.email, profile=SimpleNamespace(**values))
-    return Response(exporter(pdf_user), media_type="application/pdf", headers={"Content-Disposition": 'attachment; filename="perfil-simple.pdf"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+def coach_retired_export(user=Depends(require_roles(UserRole.CANDIDATE))):
+    raise UseCaseError(status_code=410, detail="Las versiones de PDF por vacante se retiraron. Puedes exportar tu hoja de vida desde Mi perfil")
 
 
 @router.get("/me", response_model=ProfileResponse)

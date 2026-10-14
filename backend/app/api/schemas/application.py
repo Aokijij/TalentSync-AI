@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.domain.entities.enums import ApplicationStatus
 
@@ -17,7 +17,14 @@ class ScreeningAnswer(BaseModel):
 
 class ApplicationCreate(BaseModel):
     job_id: int
-    coach_draft_id: str | None = Field(default=None, min_length=32, max_length=32)
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_retired_preparation(cls, values):
+        if isinstance(values, dict) and values.get("coach_draft_id"):
+            raise ValueError("Las presentaciones por vacante se retiraron; postúlate con tu perfil habitual")
+        return values
+
     screening_answers: list[ScreeningAnswer] = Field(default_factory=list, max_length=10)
 
 

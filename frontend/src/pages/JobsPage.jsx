@@ -25,6 +25,7 @@ import {
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import { api } from "../api/client.js";
+import { getRecommendations } from "../api/recommendations.js";
 import { useAuth } from "../hooks/useAuth.js";
 import {
   COLOMBIA_LOCATIONS,
@@ -63,6 +64,9 @@ export function JobsPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(true), [jobsError, setJobsError] = useState("");
+  const [matchesLoading, setMatchesLoading] = useState(user?.role === "candidate"), [matchesError, setMatchesError] = useState("");
+  const [matchRetry, setMatchRetry] = useState(0), [catalogRetry, setCatalogRetry] = useState(0);
   const [applications, setApplications] = useState([]);
   const [matches, setMatches] = useState({});
   const [matchConfidence, setMatchConfidence] = useState({});
@@ -96,54 +100,32 @@ export function JobsPage() {
   }, [filters, interestMode, minCompatibility, onlyMySkills, page, pageSize, query, searchParams, setSearchParams, showFilters]);
 
   useEffect(() => {
-    const requests = [
-      api.get("/jobs"),
-      api.get("/applications/me").catch(() => ({ data: [] })),
-    ];
-    if (user?.role === "candidate")
-      requests.push(
-        api
-          .get("/recommendations/me/jobs", { params: { include_all: true } })
-          .catch(() => ({ data: [] })),
-        api.get("/profiles/me").catch(() => ({ data: { skills: [] } })),
-      );
-    Promise.all(requests)
-      .then(([
-        jobsResponse,
-        applicationsResponse,
-        recommendationsResponse,
-        profileResponse,
-      ]) => {
-        setJobs(
-          jobsResponse.data.map((job) => ({
-            ...job,
-            location:
-              job.source_kind === "external"
-                ? cleanExternalLocation(job.location)
-                : job.location,
-          })),
-        );
-        setApplications(applicationsResponse.data);
-        setMatches(
-          Object.fromEntries(
-            (recommendationsResponse?.data ?? []).map((item) => [
-              item.job_id,
-              item.match_percentage,
-            ]),
-          ),
-        );
-        setMatchConfidence(
-          Object.fromEntries(
-            (recommendationsResponse?.data ?? []).map((item) => [
-              item.job_id,
-              item.data_confidence_percentage ?? 100,
-            ]),
-          ),
-        );
-        setProfileSkills(profileResponse?.data?.skills ?? []);
-      })
-      .catch(() => setJobs([]));
-  }, [user?.role]);
+    let active = true;
+    setJobsLoading(true); setJobsError("");
+    const requests = [api.get("/jobs"), api.get("/applications/me").catch(() => ({ data: [] })),
+      user?.role === "candidate" ? api.get("/profiles/me").catch(() => ({ data: { skills: [] } })) : Promise.resolve({ data: { skills: [] } })];
+    Promise.all(requests).then(([jobsResponse, applicationsResponse, profileResponse]) => {
+      if (!active) return;
+      setJobs(jobsResponse.data.map((job) => ({ ...job, location: job.source_kind === "external" ? cleanExternalLocation(job.location) : job.location })));
+      setApplications(applicationsResponse.data);
+      setProfileSkills(profileResponse.data.skills || []);
+    }).catch(() => { if (active) setJobsError("No pudimos cargar las vacantes."); })
+      .finally(() => { if (active) setJobsLoading(false); });
+    return () => { active = false; };
+  }, [user?.role, user?.id, catalogRetry]);
+
+  useEffect(() => {
+    if (user?.role !== "candidate") return;
+    let active = true;
+    setMatchesLoading(true); setMatchesError("");
+    getRecommendations(user.id).then(({ data }) => {
+      if (!active) return;
+      setMatches(Object.fromEntries(data.map((item) => [item.job_id, item.match_percentage])));
+      setMatchConfidence(Object.fromEntries(data.map((item) => [item.job_id, item.data_confidence_percentage ?? 100])));
+    }).catch(() => { if (active) setMatchesError("Las vacantes están disponibles, pero no pudimos calcular tu compatibilidad."); })
+      .finally(() => { if (active) setMatchesLoading(false); });
+    return () => { active = false; };
+  }, [user?.role, user?.id, matchRetry]);
 
   const applied = useMemo(
     () => new Set(applications.map((application) => application.job_id)),
@@ -250,7 +232,7 @@ export function JobsPage() {
               <p className="section-kicker">Mercado laboral</p>
               <h1 className="mt-1 text-2xl font-bold">Explorar vacantes</h1>
               <p className="text-sm text-[var(--muted)]">
-                {filteredJobs.length} oportunidades disponibles.
+                {jobsLoading ? "Cargando vacantes…" : matchesLoading && minCompatibility > 0 ? "Calculando los resultados de tu filtro…" : `${filteredJobs.length} oportunidades disponibles.`}
               </p>
             </div>
           </div>
@@ -290,6 +272,10 @@ export function JobsPage() {
 
       {user?.role === "candidate" && <><div className="discovery-navigation"><nav className="workspace-tabs" aria-label="Colecciones de vacantes">{[["all", "Todas"], ["saved", "Guardadas"], ["hidden", "Ocultas"]].map(([key, label]) => <button key={key} aria-pressed={interestMode === key} onClick={() => { setInterestMode(key); setPage(1); }}>{label}</button>)}</nav><InterestsToggle interests={interests} /></div>{!interests.enabled && interestMode !== "all" && <p className="text-sm text-[var(--muted)]">Activa el uso de tus decisiones con el interruptor para guardar y recuperar vacantes.</p>}</>}
 
+      {jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Buscando vacantes disponibles…</p>}
+      {jobsError && <p role="alert" className="surface-card p-4 text-sm">{jobsError} <button type="button" className="underline" onClick={() => setCatalogRetry((value) => value + 1)}>Reintentar</button></p>}
+      {matchesLoading && !jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Ya puedes explorar las ofertas. Estamos calculando tu compatibilidad…</p>}
+      {matchesError && <p role="alert" className="surface-card p-4 text-sm">{matchesError} <button type="button" className="underline" onClick={() => setMatchRetry((value) => value + 1)}>Reintentar compatibilidad</button>{minCompatibility > 0 && <button type="button" className="ml-3 underline" onClick={() => { setMinCompatibility(0); setPage(1); }}>Ver ofertas sin filtrar por compatibilidad</button>}</p>}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleJobs.map((job) => (
           <JobCard
@@ -299,11 +285,11 @@ export function JobsPage() {
             match={matches[job.id]}
             confidence={matchConfidence[job.id]}
             applied={applied.has(job.id)}
-            showMatch={user?.role === "candidate"}
+            showMatch={user?.role === "candidate" && Number.isFinite(matches[job.id])}
             returnTo={`${location.pathname}${location.search}`}
           />
         ))}
-        {!visibleJobs.length ? (
+        {!jobsLoading && !matchesLoading && !jobsError && !matchesError && !visibleJobs.length ? (
           <p className="surface-card col-span-full px-5 py-12 text-center text-[var(--muted)]">
             No encontramos vacantes con esos filtros.
           </p>

@@ -19,30 +19,11 @@ def snapshot(profile):
     return json.loads(json.dumps({key: getattr(profile, key, None) for key in PROFILE_FIELDS}, default=str))
 
 
-def job_version(job):
-    return fingerprint([job.title, job.description, job.requirements, job.skills, getattr(job, "quality_revision", 0)])
-
-
 def star_text(facts):
     values = [str(facts.get(key, "")).strip() for key in ("situation", "task", "action", "result")]
     if any(not value or re.search(r"\[[^\]]+\]", value) for value in values):
         raise ValueError("Completa los cuatro hechos con tus datos reales, sin marcadores pendientes")
     return " ".join(value if value[-1] in ".!?" else value + "." for value in values)
-
-
-def vacancy_projection(profile, job):
-    facts = snapshot(profile)
-    known = skill_set(facts["skills"])
-    supported = [skill for skill in job.skills or [] if skill_key(skill) in known]
-    missing = [skill for skill in job.skills or [] if skill_key(skill) not in known]
-    # An aspiration never changes a formal role or invents use of a tool.
-    intro = f"{facts['profession'] or 'Candidato'}."
-    roles = list(dict.fromkeys(str(item.get("role") or "").strip() for item in facts.get("experiences") or [] if item.get("role")))
-    if roles:
-        intro += " Mi trayectoria incluye experiencia como " + ", ".join(roles[:2]) + "."
-    if supported:
-        intro += " Mis conocimientos relacionados con esta oportunidad incluyen " + ", ".join(supported[:8]) + "."
-    return {"profile": facts, "intro": intro, "supported_skills": supported, "questions": [f"¿Puedes respaldar {skill} con una experiencia o un proyecto real? Si no, consérvala como una brecha de formación." for skill in missing[:8]]}
 
 
 def document_review(profile, text):

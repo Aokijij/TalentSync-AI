@@ -28,6 +28,14 @@ class JobRepository(SqlAlchemyRepository[Job]):
     def active(self) -> list[Job]:
         return self._available(self.session.query(Job)).all()
 
+    def active_for_matching(self) -> list[Job]:
+        # Trust is evaluated over all recent processes of each employer. Load
+        # those relationships in batches rather than once per recommended job.
+        return self._available(self.session.query(Job).options(
+            joinedload(Job.company).selectinload(Company.jobs).selectinload(Job.applications),
+            joinedload(Job.company).selectinload(Company.incidents),
+        )).all()
+
     def count_active(self) -> int:
         return self._available(self.session.query(Job)).count()
 

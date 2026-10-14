@@ -39,7 +39,7 @@ def _candidate_match(profile, job, *, nlp):
         if not left:
             score = 0
         elif hasattr(nlp, "matching_similarity"):
-            score = nlp.matching_similarity(left, right, nlp.embed(right))
+            score = nlp.matching_similarity(left, right, None if hasattr(nlp, "prepare_matching") else nlp.embed(right))
         else:
             score = nlp.similarity_percentage(nlp.embed(left), nlp.embed(right))
         sections.append({"key": key, "label": label, "score": round(score, 2), "weight": round(weight / total, 4), "has_candidate_data": bool(left)})
@@ -137,39 +137,35 @@ def upsert_recommendation(
 def refresh_user_recommendations(
     db: UnitOfWork, user: User, include_all: bool, *, nlp: TextAnalysis
 ) -> list[Recommendation]:
-    jobs = db.jobs.active()
+    jobs = db.jobs.active_for_matching() if hasattr(db.jobs, "active_for_matching") else db.jobs.active()
     existing = db.recommendations.for_user_active(user.id)
     cache_cutoff = datetime.utcnow() - timedelta(minutes=10)
     profile_updated = getattr(user.profile, "updated_at", None)
     if profile_updated and profile_updated > cache_cutoff:
         cache_cutoff = profile_updated
-    cache_is_fresh = len(existing) == len(jobs) and all(
-        item.created_at >= cache_cutoff and (getattr(item, "match_details", None) or {}).get("input_version") == input_version(user.profile, db.jobs.get(item.job_id), getattr(nlp, "match_method", "lexical-hashing-v1")) for item in existing
-    )
-    if cache_is_fresh:
-        recommendations = existing
-    else:
-        recommendations = sorted(
-            [
-                upsert_recommendation(
-                    db, user, job, nlp=nlp, commit_result=False
-                )
-                for job in jobs
-            ],
-            key=lambda item: item.match_percentage,
-            reverse=True,
-        )
-        # One transaction replaces hundreds of per-vacancy commits. This is the
-        # main latency reduction for candidate dashboards with a large catalog.
+    by_job = {item.job_id: item for item in existing}
+    job_map = {job.id: job for job in jobs}
+    method = getattr(nlp, "match_method", "lexical-hashing-v1")
+    stale = [job for job in jobs if job.id not in by_job
+             or by_job[job.id].created_at < cache_cutoff
+             or (getattr(by_job[job.id], "match_details", None) or {}).get("input_version") != input_version(user.profile, job, method)]
+    for start in range(0, len(stale), 128):
+        batch = stale[start:start + 128]
+        if hasattr(nlp, "prepare_matching"):
+            nlp.prepare_matching(text for job in batch for _, _, left, right, _ in professional_sections(user.profile, job) if left for text in (left, right))
+        for job in batch:
+            by_job[job.id] = upsert_recommendation(db, user, job, nlp=nlp, commit_result=False)
+    recommendations = sorted((by_job[job.id] for job in jobs), key=lambda item: item.match_percentage, reverse=True)
+    if stale:
         db.commit()
     if include_all:
-        return personalize(db, user, sorted(recommendations, key=lambda item: (company_health(db.jobs.get(item.job_id).company)["visibility_reduced"], -item.match_percentage)))
+        return personalize(db, user, sorted(recommendations, key=lambda item: (company_health(job_map[item.job_id].company)["visibility_reduced"], -item.match_percentage)))
     recommendations = sorted(
         (
             item
             for item in recommendations
             if is_relevant_candidate_recommendation(
-                item, user.profile, db.jobs.get(item.job_id)
+                item, user.profile, job_map[item.job_id]
             )
         ),
         key=lambda item: item.match_percentage,
@@ -179,7 +175,7 @@ def refresh_user_recommendations(
     diverse_recommendations: list[Recommendation] = []
     used_skill_tokens: set[str] = set()
     for recommendation in recommendations:
-        job = db.jobs.get(recommendation.job_id)
+        job = job_map[recommendation.job_id]
         job_tokens = skill_set((job.skills or [])[:8]) if job else set()
         overlap = len(job_tokens.intersection(used_skill_tokens))
         if overlap <= 3:

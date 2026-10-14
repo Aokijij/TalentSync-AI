@@ -83,4 +83,19 @@ html[data-theme="dark"] .profile-page .button-primary { color:#082f49; }
 .profile-section { padding:1.2rem; }
 .profile-section-heading { font-size:.92rem; }
 .profile-page .experience-entry { background:transparent; padding:.8rem .9rem; }
+.profile-content-grid { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(0,1fr); gap:1.25rem; }
+.profile-main-sections, .profile-side-sections { grid-template-columns:minmax(0,1fr); }
+.profile-side-sections #profile-skills { grid-column:auto; }
+.profile-help-action { display:flex; align-items:center; flex-wrap:wrap; gap:1rem; }
+.profile-help-action > span { color:var(--muted); font-size:.8rem; }
+.profile-coach-dialog { width:min(1050px,calc(100vw - 2rem)); max-height:calc(100dvh - 3rem); padding:0; border:1px solid var(--line); border-radius:1.2rem; background:var(--surface); color:var(--ink); margin:auto; overflow:auto; box-shadow:0 24px 80px #0006; }
+.profile-coach-dialog::backdrop { background:#020617b3; backdrop-filter:blur(4px); }
+.profile-coach-dialog > header { display:flex; align-items:center; justify-content:space-between; gap:1rem; position:sticky; top:0; z-index:2; padding:1rem 1.3rem; background:var(--surface); border-bottom:1px solid var(--line); }
+.profile-coach-dialog > header > div { display:flex; align-items:center; gap:.7rem; font-weight:750; }
+.profile-coach-dialog > header svg { color:var(--accent); flex-shrink:0; }
+.profile-coach-dialog .coach-workspace { border:0; border-radius:0; margin:0; }
+.profile-coach-dialog .coach-workspace-body { padding:1.3rem; }
+.profile-coach-dialog .coach-columns { align-items:start; }
+.profile-coach-dialog .coach-proposal textarea { min-height:260px; line-height:1.75; }
+@media(max-width:800px) { .profile-content-grid { grid-template-columns:1fr; } .profile-coach-dialog { width:calc(100vw - 1rem); max-height:calc(100dvh - 1rem); } .profile-help-action > span { display:none; } }
 @media(max-width:800px) { .profile-main-sections, .profile-side-sections { grid-template-columns:1fr; } .profile-main-sections > section:first-child, .profile-side-sections #profile-skills { grid-column:auto; } .profile-summary-progress { width:100%; } .profile-section-nav { flex-wrap:nowrap; overflow-x:auto; } .profile-section-nav button { white-space:nowrap; font-size:.76rem; padding:.6rem .75rem; } }

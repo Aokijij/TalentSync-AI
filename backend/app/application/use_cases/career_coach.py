@@ -7,11 +7,8 @@ from app.application.use_cases.learning_resources import resources
 from app.domain.services.career_coach import (
     demand_report,
     fingerprint,
-    job_version,
-    select_jobs,
     snapshot,
     star_text,
-    vacancy_projection,
 )
 from app.domain.services.career_writing import validate_generated_text
 
@@ -40,9 +37,7 @@ def state(db, user, *, locked=False):
 
 def overview(db, user):
     _, data = state(db, user)
-    submitted = [{"application_id": item.id, "job_id": item.job_id, "created_at": item.created_at.isoformat() + "Z", **deepcopy(item.coach_snapshot)}
-                 for item in db.applications.for_user(user.id) if item.coach_snapshot][:20]
-    return {**data, "submitted": submitted, "source_version": fingerprint(snapshot(user.profile)), "experiences": user.profile.experiences or []}
+    return {"writing": data.get("writing", []), "source_version": fingerprint(snapshot(user.profile)), "experiences": user.profile.experiences or []}
 
 
 def save(db, row, data):
@@ -129,55 +124,24 @@ def available_job(db, job_id):
     return job
 
 
-def prepare_draft(db, user, job_id):
+def vacancy_advice(db, user, job_id):
+    from app.domain.services.requirement_analysis import requirement_rows
+    profile = owner_profile(user)
     job = available_job(db, job_id)
-    row, data = state(db, user, locked=True)
-    projection = vacancy_projection(user.profile, job)
-    draft = {"id": uuid4().hex, "job_id": job.id, "job_title": job.title, "revision": 1, "confirmed": False,
-             "source_version": fingerprint(snapshot(user.profile)), "job_version": job_version(job),
-             "created_at": datetime.utcnow().isoformat() + "Z", **projection}
-    data["drafts"] = [draft, *data.get("drafts", [])][:20]
-    save(db, row, data)
-    return draft
-
-
-def own_draft(db, user, draft_id):
-    _, data = state(db, user)
-    draft = next((item for item in data.get("drafts", []) if item["id"] == draft_id), None)
-    if draft is None:
-        raise UseCaseError(status_code=404, detail="Versión no encontrada")
-    return draft
-
-
-def update_draft(db, user, draft_id, payload):
-    row, data = state(db, user, locked=True)
-    draft = next((item for item in data.get("drafts", []) if item["id"] == draft_id), None)
-    if draft is None:
-        raise UseCaseError(status_code=404, detail="Versión no encontrada")
-    if draft["revision"] != payload["revision"]:
-        raise UseCaseError(status_code=409, detail="La versión cambió; actualiza antes de guardar")
-    if draft["source_version"] != fingerprint(snapshot(user.profile)) or draft["job_version"] != job_version(available_job(db, draft["job_id"])):
-        raise UseCaseError(status_code=409, detail="El perfil o la vacante cambió; prepara una nueva versión")
-    draft.update(intro=payload["intro"].strip(), confirmed=True, revision=draft["revision"] + 1)
-    if not draft["intro"]:
-        raise UseCaseError(status_code=422, detail="La presentación no puede estar vacía")
-    save(db, row, data)
-    return draft
-
-
-def application_snapshot(db, user, job, draft_id):
-    draft = own_draft(db, user, draft_id)
-    if draft["job_id"] != job.id or not draft["confirmed"]:
-        raise UseCaseError(status_code=422, detail="Selecciona una versión revisada para esta vacante")
-    if draft["source_version"] != fingerprint(snapshot(user.profile)) or draft["job_version"] != job_version(job):
-        raise UseCaseError(status_code=409, detail="Tu perfil o la vacante cambió; prepara y revisa una nueva versión")
-    return {"draft_id": draft["id"], "job_title": draft["job_title"], "intro": draft["intro"], "profile": deepcopy(draft["profile"])}
+    rows = requirement_rows(profile, job)
+    supported = [row["skill"] for row in rows if row["covered"]]
+    review = [row["skill"] for row in rows if not row["covered"]]
+    items = []
+    if supported:
+        items.append({"key": "supported", "title": "Haz visible tu experiencia relacionada", "detail": f"Esta oferta pide {', '.join(supported[:6])}, que ya aparecen en tu perfil. En la experiencia donde las usaste, explica qué hiciste, con qué herramienta y qué entregaste. Mantén tus cargos y fechas reales.", "href": "/perfil#profile-experiences", "action": "Revisar mi experiencia"})
+    if review:
+        items.append({"key": "review", "title": "Aclara estos requisitos", "detail": f"No hay respaldo suficiente en tu perfil para {', '.join(review[:6])}. Si los conoces, añade una descripción real de dónde los aplicaste. Si todavía no los conoces, puedes buscar formación; no los añadas solo por aparecer en la oferta.", "href": "/perfil#profile-skills", "action": "Revisar mis habilidades"})
+    if not profile.experiences or not supported:
+        items.append({"key": "experience", "title": f"Conecta tu trayectoria con {job.title}", "detail": "Describe las funciones de tu experiencia que se relacionan con las responsabilidades del anuncio. Puedes incluir prácticas o proyectos reales, indicando su contexto. Un entregable concreto ayuda aunque no tengas cifras.", "href": "/perfil#profile-experiences", "action": "Completar mi experiencia"})
+    if job.required_education_level or job.required_study_fields:
+        items.append({"key": "education", "title": "Presenta tu formación con claridad", "detail": "Revisa la formación solicitada en esta oferta y comprueba que tu perfil indique el título, la institución y el estado real de tus estudios. No cambies el nombre oficial de tu título para hacerlo coincidir.", "href": "/perfil#profile-educations", "action": "Revisar mi formación"})
+    return {"job_id": job.id, "job_title": job.title, "items": items}
 
 
 def radar(db, user, search="", sector="", location=""):
     return demand_report(owner_profile(user), db.jobs.active(), resources(db), search, sector, location)
-
-
-def jobs(db, search=""):
-    matches = select_jobs(db.jobs.active(), search, recent_days=None)
-    return {"total": len(matches), "items": [{"id": job.id, "title": job.title, "location": job.location} for job in matches[:30]]}
