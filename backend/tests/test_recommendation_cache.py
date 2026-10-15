@@ -7,7 +7,7 @@ from app.application.use_cases import matching
 from app.infrastructure.database.models import Recommendation
 
 
-def test_cache_refreshes_only_changed_added_or_expired_jobs(client, monkeypatch):
+def test_cache_refreshes_changed_inputs_without_recalculating_unchanged_older_scores(client, monkeypatch):
     _, company = company_account(client, "cache-company")
     jobs = [create_job(client, company) for _ in range(3)]
     _, candidate = register(client, "cache-person", skills=["python"])
@@ -28,7 +28,7 @@ def test_cache_refreshes_only_changed_added_or_expired_jobs(client, monkeypatch)
         row.created_at = datetime.utcnow() - timedelta(minutes=11)
         db.commit()
     refreshed = client.get(endpoint, headers=candidate)
-    assert refreshed.status_code == 200 and calls == [jobs[1]["id"]]
+    assert refreshed.status_code == 200 and not calls
     calls.clear()
     extra = create_job(client, company)
     client.get(endpoint, headers=candidate).raise_for_status()

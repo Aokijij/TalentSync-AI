@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
 
 from app.domain.entities.enums import UserRole
 from app.infrastructure.database.models import Profile, User
@@ -14,6 +15,7 @@ class UserRepository(SqlAlchemyRepository[User]):
     def candidates_with_profiles(self) -> list[User]:
         return (
             self.session.query(User)
+            .options(joinedload(User.profile))
             .join(Profile)
             .filter(User.role == UserRole.CANDIDATE)
             .all()

@@ -1,3 +1,4 @@
+import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
 import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
 import { RequirementSupport } from "../components/RequirementSupport.jsx";
 import { SearchPreferences } from "../components/SearchPreferences.jsx";
@@ -37,6 +38,7 @@ import { pageItems, totalPages } from "../utils/pagination.js";
 export function RecommendationsPage() {
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
+  const refreshingMatches = useRecommendationUpdates(user.id, setRecommendations);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [preferences, setPreferences] = useState(null);
@@ -67,21 +69,12 @@ export function RecommendationsPage() {
     if (showLoading) setLoading(true);
     setError("");
     try {
-      const [
-        recommendationsResponse,
-        applicationsResponse,
-        jobsResponse,
-        preferencesResponse,
-      ] = await Promise.all([
-        getRecommendations(user.id),
-        api.get("/applications/me"),
-        api.get("/jobs"),
-        api.get("/matching/preferences"),
+      await Promise.all([
+        getRecommendations(user.id).then(({ data }) => setRecommendations(data)),
+        api.get("/applications/me").then(({ data }) => setApplications(data)),
+        api.get("/jobs").then(({ data }) => setJobs(data)),
+        api.get("/matching/preferences").then(({ data }) => setPreferences(data)),
       ]);
-      setRecommendations(recommendationsResponse.data);
-      setApplications(applicationsResponse.data);
-      setJobs(jobsResponse.data);
-      setPreferences(preferencesResponse.data);
     } catch {
       setError("No pudimos cargar las recomendaciones. Puedes volver a intentarlo.");
     } finally {
@@ -154,6 +147,7 @@ export function RecommendationsPage() {
 
   return (
     <div className="space-y-6">
+      {refreshingMatches && <p role="status" className="text-sm text-[var(--muted)]">Actualizando compatibilidades… Puedes seguir usando la plataforma.</p>}
       <PageHeader
         kicker="Recomendaciones"
         title="Empleos sugeridos para tu perfil"

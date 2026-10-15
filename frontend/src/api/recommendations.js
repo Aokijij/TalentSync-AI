@@ -1,6 +1,9 @@
 import { api } from "./client.js";
-import { createPendingLoader } from "../utils/pendingRequests.js";
+import { createProgressiveLoader } from "../utils/progressiveRequests.js";
 
-export const getRecommendations = createPendingLoader(() => api.get("/recommendations/me/jobs", {
-  params: { include_all: true }, timeout: 45000, __skipRetry: true,
+const feed = createProgressiveLoader(() => api.get("/recommendations/me/jobs/batch", {
+  params: { batch_size: 12 }, timeout: 20000, __skipRetry: true,
 }));
+export const getRecommendations = feed.load;
+export const subscribeRecommendations = feed.subscribe;
+window.addEventListener("talentsync:requests-canceled", feed.cancel);

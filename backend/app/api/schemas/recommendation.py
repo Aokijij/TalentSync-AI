@@ -23,6 +23,12 @@ class RecommendationResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class RecommendationBatch(BaseModel):
+    items: list[RecommendationResponse]
+    pending: int
+    total: int
+
+
 class RankedCandidate(BaseModel):
     professional_match_percentage: float | None = None
     location_fit: dict = Field(default_factory=dict)

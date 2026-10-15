@@ -9,7 +9,15 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+let sessionRequests = new AbortController();
+export function cancelPendingRequests() {
+  sessionRequests.abort();
+  sessionRequests = new AbortController();
+  window.dispatchEvent(new CustomEvent("talentsync:requests-canceled"));
+}
+
 api.interceptors.request.use((config) => {
+  config.signal = config.signal ? AbortSignal.any([config.signal, sessionRequests.signal]) : sessionRequests.signal;
   const csrf = document.cookie.split("; ").find((part) => part.startsWith("talentsync_csrf="))?.split("=")[1];
   if (csrf && !["get", "head", "options"].includes(String(config.method ?? "get").toLowerCase())) {
     config.headers["X-CSRF-Token"] = decodeURIComponent(csrf);
@@ -34,6 +42,7 @@ api.interceptors.response.use(
     const method = String(config.method ?? "get").toLowerCase();
     const retryable =
       method === "get" &&
+      error.code !== "ERR_CANCELED" && !config.signal?.aborted &&
       !config.__talentsyncRetried &&
       !config.__skipRetry &&
       (!error.response || [502, 503, 504].includes(status));

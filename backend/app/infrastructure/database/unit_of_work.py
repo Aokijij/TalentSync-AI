@@ -60,6 +60,16 @@ class SqlAlchemyUnitOfWork:
     def commit(self) -> None:
         self._write(self.session.commit)
 
+    def commit_retaining_state(self) -> None:
+        # Bulk scoring already loaded every field used by the response. Expiring
+        # all 360 jobs here caused thousands of reloads during serialization.
+        previous = self.session.expire_on_commit
+        self.session.expire_on_commit = False
+        try:
+            self.commit()
+        finally:
+            self.session.expire_on_commit = previous
+
     def _write(self, operation) -> None:
         try:
             operation()

@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.api.v1.router import api_router
 from app.application.errors import UseCaseError
@@ -78,6 +79,7 @@ def create_app() -> FastAPI:
         TrustedHostMiddleware,
         allowed_hosts=settings.allowed_hosts,
     )
+    app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=3)
 
     app.add_middleware(
         CORSMiddleware,

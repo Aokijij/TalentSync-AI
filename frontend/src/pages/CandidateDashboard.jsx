@@ -1,3 +1,4 @@
+import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { readRecommendationSettings } from "../utils/recommendationSettings.js";
 import { useRecommendations } from "../hooks/useRecommendations.js";
@@ -42,6 +43,7 @@ const candidateStatusLabel = {
 export function CandidateDashboard() {
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
+  const refreshingMatches = useRecommendationUpdates(user.id, setRecommendations);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [message, setMessage] = useState("");
@@ -55,22 +57,12 @@ export function CandidateDashboard() {
   const [profile, setProfile] = useState(null);
 
   async function load() {
-    const [
-      recommendationsResponse,
-      applicationsResponse,
-      jobsResponse,
-      profileResponse,
-    ] = await Promise.all([
-      getRecommendations(user.id)
-        .catch(() => ({ data: [] })),
-      api.get("/applications/me").catch(() => ({ data: [] })),
-      api.get("/jobs").catch(() => ({ data: [] })),
-      api.get("/profiles/me").catch(() => ({ data: null })),
+    await Promise.allSettled([
+      getRecommendations(user.id).then(({ data }) => setRecommendations(data)),
+      api.get("/applications/me").then(({ data }) => setApplications(data)),
+      api.get("/jobs").then(({ data }) => setJobs(data)),
+      api.get("/profiles/me").then(({ data }) => setProfile(data)),
     ]);
-    setRecommendations(recommendationsResponse.data);
-    setApplications(applicationsResponse.data);
-    setJobs(jobsResponse.data);
-    setProfile(profileResponse.data);
   }
 
   useEffect(() => {
@@ -190,6 +182,7 @@ export function CandidateDashboard() {
 
   return (
     <div className="space-y-6">
+      {refreshingMatches && <p role="status" className="text-sm text-[var(--muted)]">Actualizando compatibilidades… Puedes seguir usando la plataforma.</p>}
       <section className="page-hero">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">

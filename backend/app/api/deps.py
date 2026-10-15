@@ -24,6 +24,7 @@ from app.infrastructure.job_catalogs import (
     JoobleJobCatalog,
     JSearchJobCatalog,
 )
+from app.infrastructure.matching_gate import matching_slot
 from app.infrastructure.nlp.resumes import ResumeReader
 from app.infrastructure.nlp.text_processor import text_processor
 from app.infrastructure.security.accounts import AccountSecurity
@@ -140,6 +141,10 @@ def get_corporate_configuration():
 
 def get_text_analysis() -> TextAnalysis:
     return text_processor
+
+
+def get_matching_gate():
+    return matching_slot
 
 
 def get_interest_trainer():

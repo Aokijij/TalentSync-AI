@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
@@ -31,6 +31,28 @@ from app.domain.services.skills import skill_set
 from app.domain.services.writing_context import (
     original_context_profile,
 )
+
+_UNSET = object()
+
+
+def commit_scores(db):
+    if hasattr(db, "commit_retaining_state"):
+        db.commit_retaining_state()
+    else:
+        db.commit()
+
+
+def prepare_scores(nlp, pairs):
+    if hasattr(nlp, "prepare_matching"):
+        def texts():
+            for profile, job in pairs:
+                original = original_context_profile(profile)
+                for source in [profile, *([original] if original is not None else [])]:
+                    for _, _, left, right, _ in professional_sections(source, job):
+                        if left:
+                            yield left
+                            yield right
+        nlp.prepare_matching(texts())
 
 
 def candidate_match(profile, job, *, nlp):
@@ -110,6 +132,7 @@ def upsert_recommendation(
     *,
     nlp: TextAnalysis,
     commit_result: bool = True,
+    cached=_UNSET,
 ) -> Recommendation:
     if user.profile is None:
         raise ValueError("El candidato no tiene perfil profesional")
@@ -117,7 +140,7 @@ def upsert_recommendation(
         user.profile, job, nlp=nlp
     )
     percentage, context_score, skill_score, language_score, confidence, education_score, certification_score = scores
-    recommendation = db.recommendations.find_for_user_job(user.id, job.id)
+    recommendation = db.recommendations.find_for_user_job(user.id, job.id) if cached is _UNSET else cached
     if recommendation is None:
         recommendation = db.recommendations.new(
             user_id=user.id, job_id=job.id, match_percentage=percentage
@@ -165,29 +188,36 @@ def upsert_recommendation(
 
 
 def refresh_user_recommendations(
-    db: UnitOfWork, user: User, include_all: bool, *, nlp: TextAnalysis
+    db: UnitOfWork, user: User, include_all: bool, *, nlp: TextAnalysis,
+    batch_size: int | None = None, progress: dict | None = None,
 ) -> list[Recommendation]:
     jobs = db.jobs.active_for_matching() if hasattr(db.jobs, "active_for_matching") else db.jobs.active()
     existing = db.recommendations.for_user_active(user.id)
-    cache_cutoff = datetime.utcnow() - timedelta(minutes=10)
-    profile_updated = getattr(user.profile, "updated_at", None)
-    if profile_updated and profile_updated > cache_cutoff:
-        cache_cutoff = profile_updated
     by_job = {item.job_id: item for item in existing}
     job_map = {job.id: job for job in jobs}
     method = getattr(nlp, "match_method", "lexical-hashing-v1")
+    versions = {job.id: input_version(user.profile, job, method) for job in jobs}
     stale = [job for job in jobs if job.id not in by_job
-             or by_job[job.id].created_at < cache_cutoff
-             or (getattr(by_job[job.id], "match_details", None) or {}).get("input_version") != input_version(user.profile, job, method)]
-    for start in range(0, len(stale), 128):
-        batch = stale[start:start + 128]
-        if hasattr(nlp, "prepare_matching"):
-            nlp.prepare_matching(text for job in batch for _, _, left, right, _ in professional_sections(user.profile, job) if left for text in (left, right))
+             or (getattr(by_job[job.id], "match_details", None) or {}).get("input_version") != versions[job.id]]
+    # Inputs include the model version and current month (ongoing experience).
+    # Recalculate after a real change, rather than expiring every ten minutes or
+    # invalidating all scores when only the photo/design has been edited.
+    if batch_size is not None:
+        known = skill_set(user.profile.skills)
+        stale.sort(key=lambda job: (-len(known & skill_set(job.skills)), job.id))
+    selected = stale if batch_size is None else stale[:batch_size]
+    for start in range(0, len(selected), 24):
+        batch = selected[start:start + 24]
+        prepare_scores(nlp, ((user.profile, job) for job in batch))
         for job in batch:
-            by_job[job.id] = upsert_recommendation(db, user, job, nlp=nlp, commit_result=False)
-    recommendations = sorted((by_job[job.id] for job in jobs), key=lambda item: item.match_percentage, reverse=True)
-    if stale:
-        db.commit()
+            by_job[job.id] = upsert_recommendation(db, user, job, nlp=nlp, commit_result=False, cached=by_job.get(job.id))
+    if selected:
+        commit_scores(db)
+    remaining = len(stale) - len(selected)
+    if progress is not None:
+        progress.update(pending=remaining, total=len(jobs))
+    recommendations = sorted((row for job_id, row in by_job.items() if job_id in versions
+        and (row.match_details or {}).get("input_version") == versions[job_id]), key=lambda item: item.match_percentage, reverse=True)
     if include_all:
         return personalize(db, user, sorted(recommendations, key=lambda item: (company_health(job_map[item.job_id].company)["visibility_reduced"], -item.match_percentage)))
     recommendations = sorted(
@@ -217,17 +247,19 @@ def refresh_user_recommendations(
 
 
 def rank_candidates_for_job(
-    db: UnitOfWork, job: Job, *, nlp: TextAnalysis
+    db: UnitOfWork, job: Job, *, nlp: TextAnalysis, user_ids: set[int] | None = None,
 ) -> list[tuple[User, float]]:
-    users = db.users.candidates_with_profiles()
-    ranked: list[tuple[User, float]] = []
-    for user in users:
-        if user.profile:
-            recommendation = db.recommendations.find_for_user_job(user.id, job.id)
-            if (recommendation is None or recommendation.created_at < datetime.utcnow() - timedelta(minutes=10)
-                    or (recommendation.match_details or {}).get("input_version") != input_version(user.profile, job, getattr(nlp, "match_method", "lexical-hashing-v1"))):
-                recommendation = upsert_recommendation(db, user, job, nlp=nlp, commit_result=False)
-            percentage = recommendation.match_percentage
-            ranked.append((user, percentage))
-    db.commit()
-    return sorted(ranked, key=lambda item: item[1], reverse=True)
+    users = [user for user in db.users.candidates_with_profiles() if user_ids is None or user.id in user_ids]
+    method = getattr(nlp, "match_method", "lexical-hashing-v1")
+    existing = {row.user_id: row for row in db.recommendations.for_job(job.id)} if hasattr(db.recommendations, "for_job") else {
+        user.id: db.recommendations.find_for_user_job(user.id, job.id) for user in users}
+    stale = [user for user in users if user.profile and (existing.get(user.id) is None
+        or (existing[user.id].match_details or {}).get("input_version") != input_version(user.profile, job, method))]
+    for start in range(0, len(stale), 24):
+        batch = stale[start:start + 24]
+        prepare_scores(nlp, ((user.profile, job) for user in batch))
+        for user in batch:
+            existing[user.id] = upsert_recommendation(db, user, job, nlp=nlp, commit_result=False, cached=existing.get(user.id))
+    if stale:
+        commit_scores(db)
+    return sorted([(user, existing[user.id].match_percentage) for user in users if user.profile], key=lambda item: item[1], reverse=True)

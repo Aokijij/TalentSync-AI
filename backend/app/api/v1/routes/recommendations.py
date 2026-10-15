@@ -1,10 +1,16 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
+from app.api.deps import (
+    get_matching_gate,
+    get_text_analysis,
+    get_unit_of_work,
+    require_roles,
+)
 from app.api.schemas.notification import NotificationResponse
 from app.api.schemas.recommendation import (
     RankedCandidate,
     RankedCandidatePage,
+    RecommendationBatch,
     RecommendationResponse,
 )
 from app.application.ports.services import TextAnalysis
@@ -14,6 +20,15 @@ from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Recommendation, User
 
 router = APIRouter()
+
+
+@router.get("/me/jobs/batch", response_model=RecommendationBatch)
+def recommended_batch(
+    batch_size: int = Query(default=12, ge=1, le=24),
+    current_user=Depends(require_roles(UserRole.CANDIDATE)),
+    db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis), gate=Depends(get_matching_gate),
+):
+    return use_cases.my_recommended_jobs_batch(current_user, db, nlp=nlp, batch_size=batch_size, gate=gate)
 
 
 @router.get("/me/jobs", response_model=list[RecommendationResponse])

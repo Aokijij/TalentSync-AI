@@ -1,8 +1,9 @@
+import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
 import { salaryLabel } from "../utils/offerQuality.js";
 import { JobInterestButtons, InterestsToggle } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
 import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BriefcaseBusiness,
   CalendarDays,
@@ -72,6 +73,11 @@ export function JobsPage() {
   const [matchConfidence, setMatchConfidence] = useState({});
   const [profileSkills, setProfileSkills] = useState([]);
   const [onlyMySkills, setOnlyMySkills] = useState(() => searchParams.get("skills") === "1");
+  const updateMatches = useCallback((items) => {
+    setMatches(Object.fromEntries(items.map((item) => [item.job_id, item.match_percentage])));
+    setMatchConfidence(Object.fromEntries(items.map((item) => [item.job_id, item.data_confidence_percentage ?? 100])));
+  }, []);
+  const refreshingMatches = useRecommendationUpdates(user?.role === "candidate" ? user.id : null, updateMatches);
   const [minCompatibility, setMinCompatibility] = useState(() => Number(searchParams.get("match") || 0));
   const [query, setQuery] = useState(() => searchParams.get("q") || "");
   const [filters, setFilters] = useState(() => Object.fromEntries(
@@ -222,6 +228,7 @@ export function JobsPage() {
 
   return (
     <div className="space-y-6">
+      {refreshingMatches && <p role="status" className="text-sm text-[var(--muted)]">Actualizando compatibilidades… Las vacantes ya están disponibles.</p>}
       <section className="surface-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">

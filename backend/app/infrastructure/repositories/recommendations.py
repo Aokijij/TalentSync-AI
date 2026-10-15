@@ -7,6 +7,9 @@ from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class RecommendationRepository(SqlAlchemyRepository[Recommendation]):
+    def for_job(self, job_id):
+        return self.session.query(Recommendation).filter_by(job_id=job_id).all()
+
     def find_for_user_job(self, user_id: int, job_id: int) -> Recommendation | None:
         return (
             self.session.query(Recommendation)

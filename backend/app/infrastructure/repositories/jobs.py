@@ -173,7 +173,11 @@ class JobRepository(SqlAlchemyRepository[Job]):
         created_after: datetime | None = None,
         sort: str = "newest",
     ) -> list[Job]:
-        query = self.session.query(Job).options(joinedload(Job.company))
+        query = self.session.query(Job).options(
+            joinedload(Job.company).selectinload(Company.jobs).selectinload(Job.applications),
+            joinedload(Job.company).selectinload(Company.incidents),
+            selectinload(Job.applications),
+        )
         if status_filter:
             query = query.filter(Job.status == status_filter)
             if status_filter == "active":

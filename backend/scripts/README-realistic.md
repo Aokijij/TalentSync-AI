@@ -47,3 +47,25 @@ La lista de postulados incluye a todas las personas del proceso, cualquiera sea
 su compatibilidad. El umbral del 80% se aplica únicamente a las invitaciones.
 La contratación anónima sigue disponible; los nuevos datos usan nombres visibles
 porque las vacantes de prueba tienen esa opción desactivada.
+
+## Carga de datos y concurrencia
+
+SQLite de desarrollo usa WAL para que las consultas no bloqueen el cierre de
+sesión ni las escrituras breves. Las colecciones necesarias para listar las
+vacantes se cargan por lotes. Al guardar puntuaciones se conserva el estado ya
+cargado durante esa operación, evitando recargar cada vacante al serializar.
+
+Las pantallas del candidato usan `/recommendations/me/jobs/batch`: reciben las
+compatibilidades disponibles y el número pendiente. Cada solicitud calcula hasta
+12 vacantes por defecto (máximo 24), dando prioridad a habilidades relacionadas.
+El cliente muestra perfil, postulaciones y vacantes en cuanto llega cada respuesta;
+continúa con lotes pequeños mientras la vista esté abierta. Las vistas simultáneas
+comparten solicitudes por cuenta. Salir de la pantalla detiene su actualización;
+cerrar sesión cancela las solicitudes y descarta respuestas tardías.
+
+Las puntuaciones se reutilizan mientras su versión de entrada sea igual. Cambios
+en habilidades, experiencia, requisitos, modelo o mes de referencia invalidan
+los resultados afectados. Editar solo el diseño del CV o transcurrir diez minutos
+no obliga a repetir toda la inferencia. El endpoint de lista completa permanece
+disponible para clientes anteriores. La lista de postulados calcula únicamente
+las personas que pertenecen al proceso.

@@ -34,6 +34,22 @@ def my_recommended_jobs(
     )
 
 
+def my_recommended_jobs_batch(current_user, db, *, nlp, batch_size, gate):
+    progress = {}
+    with gate(current_user.id) as acquired:
+        try:
+            items = refresh_user_recommendations(db, current_user, include_all=True, nlp=nlp,
+                batch_size=batch_size if acquired else 0, progress=progress)
+        except UseCaseError as error:
+            if error.status_code != 409:
+                raise
+            # Another scorer committed this pair meanwhile. Its cache is now
+            # available; do not repeat inference or fail the whole page.
+            items = refresh_user_recommendations(db, current_user, include_all=True, nlp=nlp,
+                batch_size=0, progress=progress)
+    return {"items": items, **progress}
+
+
 def ranked_candidates(
     job_id: int,
     current_user: User,
@@ -50,7 +66,8 @@ def ranked_candidates(
     ensure_job_access(db, job, current_user)
     applied_ids = {user_id for (user_id,) in db.applications.candidate_ids(job.id)}
     ranked = []
-    for user, percentage in rank_candidates_for_job(db, job, nlp=nlp):
+    users = rank_candidates_for_job(db, job, nlp=nlp, user_ids=applied_ids) if audience == "applied" else rank_candidates_for_job(db, job, nlp=nlp)
+    for user, percentage in users:
         professional_percentage = percentage
         fit = location_fit(user.profile, job)
         percentage = round(percentage * fit["factor"], 2)
