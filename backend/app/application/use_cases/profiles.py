@@ -14,7 +14,10 @@ from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
-from app.domain.services.skill_levels import declared_skill_levels
+from app.domain.services.skill_levels import (
+    declared_skill_levels,
+    inferred_skill_levels,
+)
 from app.domain.services.skills import normalize_skills
 
 
@@ -44,10 +47,25 @@ def decide_cv_mention(db, user, skill, action, *, nlp):
     if mention is None:
         raise UseCaseError(status_code=404, detail="Esta mención ya no está disponible. Actualiza tu perfil")
     decisions = dict((profile.preferences or {}).get("cv_mention_decisions", {}))
+    if action == "delete":
+        if decisions.get(key) != "dismissed":
+            raise UseCaseError(status_code=409, detail="Descarta la mención antes de eliminarla")
+        from app.domain.services.skill_context import CONTEXT_VERSION
+        decisions.pop(key, None)
+        profile.preferences = {**(profile.preferences or {}), "cv_skill_context": [row for row in profile_skill_context(profile) if skill_key(row.get("skill", "")) != key], "cv_context_version": CONTEXT_VERSION, "cv_mention_decisions": decisions}
+        db.add(profile); db.commit(); db.refresh(profile)
+        return profile
     if action == "restore":
         decisions.pop(key, None)
     elif action == "confirm":
         profile.skills = normalize_skills([*(profile.skills or []), mention["skill"]])
+        suggestion = inferred_skill_levels((profile.preferences or {}).get("cv_source_text") or mention.get("excerpt", ""), [key])[key]
+        levels = declared_skill_levels(profile)
+        sources = dict((profile.preferences or {}).get("skill_level_sources", {}))
+        if key not in levels:
+            levels[key] = suggestion["level"]
+            sources[key] = suggestion
+        profile.preferences = {**(profile.preferences or {}), "skill_levels": levels, "skill_level_sources": sources}
         decisions[key] = "confirmed"
         profile.embedding = nlp.embed(" ".join(filter(None, [profile.profession, profile.experience, " ".join(profile.skills)])))
     else:
@@ -202,6 +220,12 @@ def update_my_profile(
     profile.skills = normalize_skills(payload["skills"])
     supplied_levels = payload.get("skill_levels")
     if supplied_levels is not None:
+        previous_levels = declared_skill_levels(profile)
+        sources = dict((profile.preferences or {}).get("skill_level_sources", {}))
+        for key, level in supplied_levels.items():
+            if previous_levels.get(key) != level:
+                sources[key] = {"source": "manual", "level": level, "excerpt": ""}
+        profile.preferences = {**(profile.preferences or {}), "skill_level_sources": {key: value for key, value in sources.items() if key in supplied_levels}}
         profile.preferences = {**(profile.preferences or {}), "skill_levels": supplied_levels}
     profile.preferences = {**(profile.preferences or {}), "skill_levels": declared_skill_levels(profile)}
     profile.languages = payload.get("languages", [])
@@ -324,6 +348,13 @@ def upload_cv(
                            "cv_source_text": raw_text[:30000]}
     profile.profession = analysis.profession or profile.profession
     profile.skills = normalize_skills([*(profile.skills or []), *analysis.skills])
+    levels = declared_skill_levels(profile)
+    sources = dict((profile.preferences or {}).get("skill_level_sources", {}))
+    for key, suggestion in inferred_skill_levels(raw_text, analysis.skills).items():
+        if key not in levels:
+            levels[key] = suggestion["level"]
+            sources[key] = suggestion
+    profile.preferences = {**(profile.preferences or {}), "skill_levels": levels, "skill_level_sources": sources}
     profile.experience = analysis.experience or profile.experience
     profile.education = analysis.education or profile.education
     if analysis.location:

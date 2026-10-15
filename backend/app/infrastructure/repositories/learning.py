@@ -51,6 +51,12 @@ class LearningRepository:
     def attempts(self, user_id):
         return self.session.query(AssessmentAttempt).filter_by(user_id=user_id).order_by(AssessmentAttempt.started_at.desc()).all()
 
+    def valid_foundations_for_users(self, user_ids, now):
+        from sqlalchemy.orm import load_only
+        if not user_ids:
+            return []
+        return self.session.query(AssessmentAttempt).options(load_only(AssessmentAttempt.user_id, AssessmentAttempt.skill, AssessmentAttempt.score, AssessmentAttempt.valid_until)).filter(AssessmentAttempt.user_id.in_(user_ids), AssessmentAttempt.passed.is_(True), AssessmentAttempt.valid_until >= now).all()
+
     def attempt(self, attempt_id):
         return self.session.get(AssessmentAttempt, attempt_id)
 

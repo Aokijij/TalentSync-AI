@@ -55,6 +55,8 @@ class RankedCandidate(BaseModel):
 
 
 class RankedCandidatePage(BaseModel):
+    pending: int = 0
+    pool_total: int = 0
     items: list[RankedCandidate]
     total: int
     limit: int

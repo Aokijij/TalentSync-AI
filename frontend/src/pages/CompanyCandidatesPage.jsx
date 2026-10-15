@@ -1,3 +1,4 @@
+import { loadCandidatePages } from "../utils/candidateRequests.js";
 import { experienceDuration } from "../utils/experienceDates.js";
 import { useEffect, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Flame, MessageSquareText, Minus, RefreshCw, Search, Send, UserRound, UsersRound } from "lucide-react";
@@ -16,6 +17,7 @@ export function CompanyCandidatesPage() {
   const [candidates, setCandidates] = useState([]);
   const [topCandidates, setTopCandidates] = useState([]);
   const [total, setTotal] = useState(0);
+  const [pending, setPending] = useState(0);
   const [page, setPage] = useState(1);
   const [audience, setAudience] = useState("invite");
   const [query, setQuery] = useState("");
@@ -34,19 +36,15 @@ export function CompanyCandidatesPage() {
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setLoading(true);
-      setError("");
+      setError(""); setPending(0);
       try {
-        const { data } = await api.get(`/recommendations/jobs/${jobId}/candidates-page`, {
+        await loadCandidatePages({ signal: controller.signal, request: () => api.get(`/recommendations/jobs/${jobId}/candidates-page`, {
           params: { audience, query: query.trim() || undefined, minimum_match: audience === "applied" ? 0 : 80, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
-          signal: controller.signal,
-        });
-        if (controller.signal.aborted) return;
-        setCandidates(data.items || []);
-        setTopCandidates(data.top_candidates || []);
-        setTotal(data.total || 0);
+          signal: controller.signal, __skipRetry: true,
+        }), onPage: (data) => { setCandidates(data.items || []); setTopCandidates(data.top_candidates || []); setTotal(data.total || 0); setPending(data.pending || 0); setLoading(false); } });
       } catch (requestError) {
         if (controller.signal.aborted) return;
-        setError(requestError?.response?.data?.detail || "No fue posible cargar los candidatos");
+        setPending(0); setError(requestError?.response?.data?.detail || "No fue posible cargar los candidatos");
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -90,6 +88,7 @@ export function CompanyCandidatesPage() {
         </div>
       </section>
 
+      {pending > 0 && <p role="status" className="surface-card p-4 text-sm text-[var(--muted)]">Actualizando compatibilidades: {pending} perfiles pendientes. Puedes revisar los resultados disponibles; el orden se actualizará al terminar.</p>}
       {error ? <p className="rounded-[var(--radius-md)] border border-[var(--error)] bg-[var(--error)]/10 px-3 py-2 text-sm text-[var(--error)]">{error}</p> : null}
       {message ? <p className="rounded-[var(--radius-md)] border border-[var(--success)] bg-[var(--success)]/10 px-3 py-2 text-sm text-[var(--success)]">{message}</p> : null}
 

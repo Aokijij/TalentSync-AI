@@ -684,7 +684,7 @@ def test_talent_search_and_invitations_start_at_fifty_percent(
     monkeypatch.setattr(
         recommendations,
         "rank_candidates_for_job",
-        lambda db, job, *, nlp: [(db.users.get(candidate["id"]), score)],
+        lambda db, job, *, nlp, **options: [(db.users.get(candidate["id"]), score)],
     )
     monkeypatch.setattr(
         recommendations,
@@ -726,7 +726,7 @@ def test_company_candidate_page_uses_eighty_percent_and_pagination_contract(
     monkeypatch.setattr(
         recommendations,
         "rank_candidates_for_job",
-        lambda db, job, *, nlp: [
+        lambda db, job, *, nlp, **options: [
             (db.users.get(first["id"]), 86),
             (db.users.get(second["id"]), 79),
         ],

@@ -54,11 +54,13 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         company_columns = {column["name"] for column in schema.get_columns("companies")}
         assert {"website", "sector", "size", "location", "mission", "values", "benefits", "logo_filename", "cover_filename"} <= company_columns
         application_columns = {column["name"] for column in schema.get_columns("applications")}
+        for table, expected in [("jobs", "ix_jobs_company_status_created"), ("applications", "ix_applications_job_status"), ("recommendations", "ix_recommendations_job_user"), ("notifications", "ix_notifications_action_type_read_user"), ("assessment_attempts", "ix_attempts_user_passed_valid")]:
+            assert expected in {index["name"] for index in schema.get_indexes(table)}
         assert {"purpose", "link_user_id", "link_session_id"} <= {column["name"] for column in schema.get_columns("oauth_attempts")}
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment", "interview_evaluations"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0041_career_coach"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0042_loading_indexes"
     finally:
         engine.dispose()
 

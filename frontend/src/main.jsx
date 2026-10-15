@@ -9,6 +9,9 @@ import { FeedbackProvider } from "./contexts/FeedbackContext.jsx";
 import "./styles/index.css";
 import "./styles/review-refinements.css";
 import "./styles/catalog-organization.css";
+import { loadAppFont } from "./utils/fontLoading.js";
+
+loadAppFont(document);
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>

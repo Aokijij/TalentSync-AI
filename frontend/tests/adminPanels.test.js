@@ -12,6 +12,7 @@ async function component(name) {
     entryPoints: [fileURLToPath(new URL(`../src/components/${name}.jsx`, import.meta.url))],
     bundle: true, write: false, platform: "node", format: "cjs", jsx: "automatic", packages: "external",
     plugins: [{ name: "no-api-in-render", setup(builder) {
+      builder.onLoad({ filter: /\.css$/ }, () => ({ contents: "", loader: "js" }));
       builder.onResolve({ filter: /api\/client\.js$/ }, () => ({ path: "api", namespace: "test" }));
       builder.onLoad({ filter: /.*/, namespace: "test" }, () => ({ contents: "export const api = {}; export const getApiErrorMessage = () => '';", loader: "js" }));
     } }],
@@ -43,4 +44,18 @@ test("course batch import starts with a documented example and preview before sa
   const html = renderToStaticMarkup(createElement(Panel, { onImported: () => {} }));
   for (const value of ["Descargar ejemplo", "Seleccionar archivo JSON", "Revisar antes de importar", "borradores", "Qué significa cada campo", "details.level"]) assert.ok(html.includes(value), value);
   assert.ok(!html.includes("Importar 1 borradores"));
+});
+
+test("skill editor has one accessible level selector and explains conservative CV defaults", async () => {
+  const Panel = await component("SkillLevelsEditor");
+  const html = renderToStaticMarkup(createElement(Panel, { editing: true, skills: ["python", "sql"], levels: { python: "learning" }, sources: { python: { source: "default", level: "learning" } }, onChange: () => {}, onRemove: () => {} }));
+  assert.equal((html.match(/role="radio"/g) || []).length, 5);
+  for (const value of ["Buscar habilidad", "Nivel de python", "El CV no indica un nivel claro", "Quitar habilidad python", "En aprendizaje"]) assert.ok(html.includes(value), value);
+  assert.ok(!html.includes("<select"));
+});
+
+test("discarded CV mentions expose deletion separately from recovery", async () => {
+  const Panel = await component("CvContextReview");
+  const html = renderToStaticMarkup(createElement(Panel, { rows: [{ skill: "sql", state: "learning", excerpt: "Aprendiendo SQL" }], decisions: { sql: "dismissed" }, onDecision: () => {} }));
+  assert.ok(html.includes("Eliminar mención descartada de sql") && html.includes("Recuperar"));
 });

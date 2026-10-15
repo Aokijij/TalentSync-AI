@@ -5,3 +5,9 @@ export function skillKey(value) {
 }
 export const skillLevelFor = (levels, skill) => levels?.[skillKey(skill)] || "unspecified";
 export function updateSkillLevel(levels, skill, level) { const next = { ...levels }; delete next[skillKey(skill)]; if (level !== "unspecified") next[skillKey(skill)] = level; return next; }
+
+export function addProfileSkill(profile, input) {
+  const value = input.trim(), key = skillKey(value);
+  if (!value || profile.skills.some((item) => skillKey(item) === key)) return profile;
+  return { ...profile, skills: [...profile.skills, value], skill_levels: { ...profile.skill_levels, [key]: profile.skill_levels?.[key] || "learning" } };
+}

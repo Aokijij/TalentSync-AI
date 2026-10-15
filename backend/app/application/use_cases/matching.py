@@ -255,18 +255,26 @@ def refresh_user_recommendations(
 
 def rank_candidates_for_job(
     db: UnitOfWork, job: Job, *, nlp: TextAnalysis, user_ids: set[int] | None = None,
+    batch_size: int | None = None, progress: dict | None = None,
 ) -> list[tuple[User, float]]:
-    users = [user for user in db.users.candidates_with_profiles() if user_ids is None or user.id in user_ids]
+    users = db.users.candidates_for_ids(user_ids) if user_ids is not None and hasattr(db.users, "candidates_for_ids") else [user for user in db.users.candidates_with_profiles() if user_ids is None or user.id in user_ids]
     method = getattr(nlp, "match_method", "lexical-hashing-v1")
     existing = {row.user_id: row for row in db.recommendations.for_job(job.id)} if hasattr(db.recommendations, "for_job") else {
         user.id: db.recommendations.find_for_user_job(user.id, job.id) for user in users}
+    versions = {user.id: input_version(user.profile, job, method) for user in users if user.profile}
     stale = [user for user in users if user.profile and (existing.get(user.id) is None
-        or (existing[user.id].match_details or {}).get("input_version") != input_version(user.profile, job, method))]
-    for start in range(0, len(stale), 24):
-        batch = stale[start:start + 24]
+        or (existing[user.id].match_details or {}).get("input_version") != versions[user.id])]
+    if batch_size is not None:
+        required = skill_set(job.skills)
+        stale.sort(key=lambda user: (-len(required & skill_set(user.profile.skills)), user.id))
+    selected = stale if batch_size is None else stale[:batch_size]
+    for start in range(0, len(selected), 24):
+        batch = selected[start:start + 24]
         prepare_scores(nlp, ((user.profile, job) for user in batch))
         for user in batch:
             existing[user.id] = upsert_recommendation(db, user, job, nlp=nlp, commit_result=False, cached=existing.get(user.id))
-    if stale:
+    if selected:
         commit_scores(db)
-    return sorted([(user, existing[user.id].match_percentage) for user in users if user.profile], key=lambda item: item[1], reverse=True)
+    if progress is not None:
+        progress.update(pending=len(stale) - len(selected), pool_total=len(users))
+    return sorted([(user, existing[user.id].match_percentage) for user in users if user.profile and user.id in existing and (existing[user.id].match_details or {}).get("input_version") == versions[user.id]], key=lambda item: item[1], reverse=True)

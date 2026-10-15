@@ -36,6 +36,14 @@ def ensure_job_access(db: UnitOfWork, job: Job, user: User) -> None:
         raise UseCaseError(status_code=403, detail="No puedes gestionar esta vacante")
 
 
+def company_job_choices(current_user, db, *, search, offset, limit):
+    company = owned_company(db, current_user)
+    if company is None:
+        raise UseCaseError(status_code=403, detail="No tienes una empresa asociada")
+    items, total = db.jobs.company_choices(company.id, search, offset, limit)
+    return {"items": items, "total": total, "offset": offset, "limit": limit, "company_id": company.id}
+
+
 def list_jobs(
     search: str | None,
     modality: str | None,

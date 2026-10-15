@@ -26,6 +26,11 @@ from app.domain.entities.records import Job, User
 router = APIRouter()
 
 
+@router.get("/mine/choices")
+def company_job_choices(search: str = Query(default="", max_length=120), offset: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=100), current_user=Depends(require_roles(UserRole.COMPANY)), db=Depends(get_unit_of_work)):
+    return use_cases.company_job_choices(current_user, db, search=search, offset=offset, limit=limit)
+
+
 @router.get("", response_model=list[JobResponse])
 def list_jobs(
     current_user=Depends(get_optional_user),

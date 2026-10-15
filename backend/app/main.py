@@ -92,7 +92,10 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
+        from time import perf_counter
+        started = perf_counter()
         response = await call_next(request)
+        response.headers["Server-Timing"] = f"app;dur={(perf_counter() - started) * 1000:.2f}"
         response.headers["X-Content-Type-Options"] = "nosniff"
         if request.method == "GET" and request.url.path.startswith("/api/v1/profiles/me/export/preview/") and response.status_code == 200 and response.headers.get("content-type", "").startswith("application/pdf"):
             origins = [origin for origin in settings.cors_origins if origin.startswith(("http://", "https://")) and not any(char in origin for char in " ;'\n\r")]

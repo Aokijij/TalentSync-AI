@@ -6,6 +6,7 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -211,6 +212,10 @@ class Profile(Base):
         return (self.preferences or {}).get("skill_levels", {})
 
     @property
+    def skill_level_sources(self):
+        return (self.preferences or {}).get("skill_level_sources", {})
+
+    @property
     def cv_skill_context(self):
         from app.domain.services.skill_context import profile_skill_context
         return profile_skill_context(self)
@@ -338,6 +343,7 @@ class CompanyFollower(Base):
 class Job(Base):
     __tablename__ = "jobs"
     __table_args__ = (
+        Index("ix_jobs_company_status_created", "company_id", "status", "created_at"),
         UniqueConstraint("source_name", "external_id", name="uq_job_external_source"),
     )
 
@@ -446,6 +452,7 @@ class Job(Base):
 class Application(Base):
     __tablename__ = "applications"
     __table_args__ = (
+        Index("ix_applications_job_status", "job_id", "status"),
         UniqueConstraint("user_id", "job_id", name="uq_application_user_job"),
     )
 
@@ -549,6 +556,7 @@ class Application(Base):
 class Recommendation(Base):
     __tablename__ = "recommendations"
     __table_args__ = (
+        Index("ix_recommendations_job_user", "job_id", "user_id"),
         UniqueConstraint("user_id", "job_id", name="uq_recommendation_user_job"),
     )
 
@@ -732,6 +740,7 @@ class LearningPlan(Base):
 
 class AssessmentAttempt(Base):
     __tablename__ = "assessment_attempts"
+    __table_args__ = (Index("ix_attempts_user_passed_valid", "user_id", "passed", "valid_until"),)
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     assessment_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
@@ -750,6 +759,7 @@ class AssessmentAttempt(Base):
 
 class Notification(Base):
     __tablename__ = "notifications"
+    __table_args__ = (Index("ix_notifications_action_type_read_user", "action_url", "type", "is_read", "user_id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(

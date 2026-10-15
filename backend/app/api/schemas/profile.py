@@ -88,6 +88,7 @@ class ProfileUpdate(ProfileBase):
 
 
 class ProfileResponse(ProfileBase):
+    skill_level_sources: dict = Field(default_factory=dict)
     id: int
     user_id: int
     cv_text: str | None = None

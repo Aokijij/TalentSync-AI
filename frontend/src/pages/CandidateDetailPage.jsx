@@ -56,8 +56,8 @@ export function CandidateDetailPage() {
     const controller = new AbortController();
     let cancelled = false;
     setError(""); setMatchError(""); setCandidate(null); setMatch(null); setApplication(null);
-    const profileRequest = api.get(`/profiles/candidates/${userId}`, { signal: controller.signal, params: jobId ? { job_id: jobId } : {} });
-    const matchRequest = jobId ? api.get(`/recommendations/jobs/${jobId}/candidates/${userId}/explanation`, { signal: controller.signal }).then(({ data }) => data).catch((failure) => { if (!cancelled) setMatchError(getApiErrorMessage(failure, "No pudimos cargar la explicación de compatibilidad.")); return null; }) : Promise.resolve(null);
+    const profileRequest = api.get(`/profiles/candidates/${userId}`, { signal: controller.signal, params: jobId ? { job_id: jobId } : {} }).then((response) => { if (!cancelled) setCandidate(response.data); return response; });
+    const matchRequest = jobId ? api.get(`/recommendations/jobs/${jobId}/candidates/${userId}/explanation`, { signal: controller.signal }).then(({ data }) => { if (!cancelled) setMatch(data); return data; }).catch((failure) => { if (!cancelled) setMatchError(getApiErrorMessage(failure, "No pudimos cargar la explicación de compatibilidad.")); return null; }) : Promise.resolve(null);
     const applicationRequest = jobId
       ? api.get(`/applications/jobs/${jobId}`, { signal: controller.signal }).then(({ data }) => data.find((item) => String(item.user_id) === String(userId))).catch(() => null)
       : Promise.resolve(null);
@@ -98,7 +98,7 @@ export function CandidateDetailPage() {
     return <p className="text-sm text-[var(--muted)]">Cargando perfil...</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="company-candidate-profile space-y-6">
       {candidate.submitted_version && <p className="surface-card p-4 text-sm text-[var(--muted)]">Estás viendo la versión del perfil enviada para esta vacante. Los cambios posteriores del perfil principal se mantienen separados. La compatibilidad base se calcula con el perfil actual registrado.</p>}
       <button
         type="button"
@@ -109,7 +109,7 @@ export function CandidateDetailPage() {
         Volver a candidatos recomendados
       </button>
       {candidate.identity_hidden && <aside className="identity-note"><ShieldCheck size={22} /><div><h2 className="font-bold">Perfil profesional en selección ciega</h2><p>La vacante oculta nombre, contacto y organizaciones de origen. La identidad se revela al avanzar a entrevista; puedes revisar habilidades, formación y trayectoria desde ahora.</p><Link to={`/procesos/${application?.id || ""}`} className="text-[var(--accent)]">Consultar el proceso →</Link></div></aside>}
-      <section className="surface-card overflow-hidden !p-0">
+      <section className="candidate-overview surface-card overflow-hidden !p-0">
         <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] via-cyan-300 to-[var(--success)]" />
         <div className="p-6 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -124,7 +124,7 @@ export function CandidateDetailPage() {
                 {candidate.profession || "Perfil profesional"}
               </p>
               {candidate.experience ? <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">{candidate.experience}</p> : null}
-              <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
+              <div className="candidate-contact mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                 {candidate.email && <span className="inline-flex items-center gap-1.5"><Mail size={15} />{candidate.email}</span>}
                 {candidate.phone && (
                   <span className="inline-flex items-center gap-1.5">
@@ -160,11 +160,12 @@ export function CandidateDetailPage() {
           ) : null}
         </div></div>
       </section>
+      {jobId && !match && !matchError && <section className="surface-card p-4 text-sm text-[var(--muted)]" role="status">Preparando la explicación de compatibilidad… Puedes revisar el perfil mientras termina.</section>}
       {match?.match_details && <CandidateMatchExplanation match={match} />}
       {matchError && <section className="surface-card p-4" role="alert"><p className="text-sm text-[var(--error)]">{matchError}</p><button type="button" className="button-secondary mt-3" onClick={() => setRetry((value) => value + 1)}>Reintentar explicación</button></section>}
-      <ApplicationAnswersModal application={showAnswers ? application : null} candidateName={candidate.name} onClose={() => setShowAnswers(false)} onSaved={(updated) => { setApplication(updated); setMatch((current) => current ? { ...current, screening_adjustment: updated.screening_adjustment, match_percentage: updated.adjusted_match_percentage } : current); }} />
+      <ApplicationAnswersModal application={showAnswers ? application : null} candidateName={candidate.name} onClose={() => setShowAnswers(false)} onSaved={(updated) => { setApplication(updated); setMatch((current) => current ? { ...current, screening_adjustment: updated.screening_adjustment, match_percentage: Math.max(0, Math.min(100, current.base_match_percentage + updated.screening_adjustment)) } : current); }} />
       <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
+        <div className="company-candidate-profile space-y-6">
           <Timeline
             title="Experiencia laboral"
             icon={BriefcaseBusiness}

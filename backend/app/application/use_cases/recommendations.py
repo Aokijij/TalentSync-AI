@@ -61,6 +61,7 @@ def ranked_candidates(
     minimum_match: float = 50,
     audience: str = "all",
     query: str | None = None,
+    batch_size: int | None = None, progress: dict | None = None,
 ) -> list[dict]:
     job = db.jobs.get(job_id)
     if job is None:
@@ -68,17 +69,20 @@ def ranked_candidates(
     ensure_job_access(db, job, current_user)
     applied_ids = {user_id for (user_id,) in db.applications.candidate_ids(job.id)}
     ranked = []
-    users = rank_candidates_for_job(db, job, nlp=nlp, user_ids=applied_ids) if audience == "applied" else rank_candidates_for_job(db, job, nlp=nlp)
+    users = rank_candidates_for_job(db, job, nlp=nlp, user_ids=applied_ids if audience == "applied" else None, batch_size=batch_size, progress=progress)
+    applications = {row.user_id: row for row in db.applications.for_job(job.id)}
+    user_ids = {user.id for user, _ in users}
+    invitations = db.notifications.pending_invitation_ids(user_ids, f"/vacantes/{job.id}")
+    foundations = {}
+    shared_ids = {user.id for user, _ in users if (user.privacy_preferences or {}).get("share_evidence", True)}
+    for row in db.learning.valid_foundations_for_users(shared_ids, datetime.utcnow()):
+        foundations.setdefault(row.user_id, []).append({"skill": row.skill, "score": row.score, "level": "fundamentals", "valid_until": row.valid_until})
     for user, percentage in users:
         professional_percentage = percentage
         fit = location_fit(user.profile, job)
         percentage = round(percentage * fit["factor"], 2)
         has_applied = user.id in applied_ids
-        application = (
-            db.applications.find_for_user_job(user.id, job.id)
-            if has_applied
-            else None
-        )
+        application = applications.get(user.id)
         if audience == "applied" and not has_applied:
             continue
         if audience == "invite" and (has_applied or percentage < minimum_match):
@@ -89,8 +93,7 @@ def ranked_candidates(
         hidden = current_user.role != UserRole.ADMIN and identity_hidden(job, application)
         gaps = [row for row in skill_gap(user.profile.skills, requirements_for(job)) if not row["covered"]]
         related = [{"skill": row["skill"], "foundations": row["foundations"]} for row in gaps if row["foundations"]]
-        validated = [{"skill": row.skill, "score": row.score, "level": "fundamentals", "valid_until": row.valid_until}
-                     for row in db.learning.attempts(user.id) if row.passed and row.valid_until and row.valid_until >= datetime.utcnow()] if (user.privacy_preferences or {}).get("share_evidence", True) else []
+        validated = foundations.get(user.id, [])
         candidate = dict(
                 user_id=user.id,
                 name=candidate_alias(job.id, user.id) if hidden else user.name,
@@ -108,10 +111,7 @@ def ranked_candidates(
                 experience_years=years,
                 experience_summary=None if hidden else summary,
                 has_applied=has_applied,
-                has_pending_invitation=db.notifications.find_unread(
-                    user.id, "candidate_invitation", f"/vacantes/{job.id}"
-                )
-                is not None,
+                has_pending_invitation=user.id in invitations,
                 application_id=application.id if application else None,
                 screening_answers=application.screening_answers if application and not hidden else [],
                 screening_adjustment=(application.screening_adjustment or 0)
@@ -151,6 +151,18 @@ def ranked_candidates(
             -candidate["match_percentage"],
         ),
     )
+
+
+def ranked_candidates_batch(job_id, current_user, db, *, nlp, gate, batch_size, **filters):
+    progress = {}
+    with gate(("company-job", job_id)) as acquired:
+        try:
+            items = ranked_candidates(job_id, current_user, db, nlp=nlp, batch_size=batch_size if acquired else 0, progress=progress, **filters)
+        except UseCaseError as error:
+            if error.status_code != 409:
+                raise
+            items = ranked_candidates(job_id, current_user, db, nlp=nlp, batch_size=0, progress=progress, **filters)
+    return items, progress
 
 
 def candidate_explanation(job_id, user_id, current_user, db, *, nlp):

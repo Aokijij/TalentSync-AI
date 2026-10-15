@@ -1,13 +1,21 @@
 from datetime import datetime
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import joinedload, load_only, selectinload
 
-from app.infrastructure.database.models import Company, Job, OfferFeedback
+from app.infrastructure.database.models import Application, Company, Job, OfferFeedback
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class JobRepository(SqlAlchemyRepository[Job]):
+    def company_choices(self, company_id, search, offset, limit):
+        query = self.session.query(Job).filter(Job.company_id == company_id, Job.status != "filled")
+        if search:
+            query = query.filter(Job.title.ilike(f"%{search.strip()}%"))
+        total = query.count()
+        count = select(func.count(Application.id)).where(Application.job_id == Job.id).correlate(Job).scalar_subquery()
+        rows = query.with_entities(Job.id, Job.title, Job.status, Job.skills, count.label("applications_count")).order_by(Job.created_at.desc(), Job.id.desc()).offset(offset).limit(limit).all()
+        return [dict(row._mapping) for row in rows], total
     def market_jobs(self, since, demo=False):
         query = self.session.query(Job).options(
             joinedload(Job.company).load_only(Company.name),

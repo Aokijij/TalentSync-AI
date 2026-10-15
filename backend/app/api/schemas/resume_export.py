@@ -19,7 +19,7 @@ class ResumeExport(BaseModel):
 class CvMentionDecision(BaseModel):
     model_config = ConfigDict(extra="forbid")
     skill: str = Field(min_length=1, max_length=120)
-    action: Literal["confirm", "dismiss", "restore"]
+    action: Literal["confirm", "dismiss", "restore", "delete"]
 
 
 class ResumeDesign(BaseModel):

@@ -75,6 +75,11 @@ class NotificationRepository(SqlAlchemyRepository[Notification]):
             .first()
         )
 
+    def pending_invitation_ids(self, user_ids, action_url):
+        if not user_ids:
+            return set()
+        return {row[0] for row in self.session.query(Notification.user_id).filter(Notification.user_id.in_(user_ids), Notification.type == "candidate_invitation", Notification.action_url == action_url, Notification.is_read.is_(False)).all()}
+
     def find_recent(
         self,
         user_id: int,

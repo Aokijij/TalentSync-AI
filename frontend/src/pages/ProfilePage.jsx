@@ -1,4 +1,5 @@
-import { skillLevels, skillLevelFor, updateSkillLevel } from "../utils/skillLevels.js";
+import { addProfileSkill } from "../utils/skillLevels.js";
+import { SkillLevelsEditor } from "../components/SkillLevelsEditor.jsx";
 import { EducationFields } from "../components/EducationFields.jsx";
 import { CareerCoachWorkspace } from "../components/CareerCoachWorkspace.jsx";
 import { CoachDialog } from "../components/CoachDialog.jsx";
@@ -81,7 +82,7 @@ export function ProfilePage() {
   const { refreshUser } = useAuth();
   const location = useLocation();
   const [coachOpen, setCoachOpen] = useState(false);
-  const [allSkills, setAllSkills] = useState(false);
+
   const [profile, setProfile] = useState(null);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -140,12 +141,7 @@ export function ProfilePage() {
       ),
     );
   const addSkill = () => {
-    const value = skill.trim();
-    if (
-      value &&
-      !profile.skills.some((item) => item.toLowerCase() === value.toLowerCase())
-    )
-      update("skills", [...profile.skills, value]);
+    setProfile((current) => addProfileSkill(current, skill));
     setSkill("");
   };
   async function save() {
@@ -239,7 +235,7 @@ export function ProfilePage() {
               Diseñar y exportar
             </button>
             <button
-              className="button-primary w-auto hover-lift pressed focus-ring"
+              className="profile-edit-action focus-ring"
               type="button"
               disabled={uploadingCv}
               onClick={() =>
@@ -247,7 +243,7 @@ export function ProfilePage() {
               }
             >
               {editing ? <Save size={16} /> : <Edit3 size={16} />}
-              {editing ? "Guardar" : "Editar"}
+              {editing ? "Guardar cambios" : "Editar perfil"}
             </button>
           </div>
       </section>
@@ -399,34 +395,7 @@ export function ProfilePage() {
             <Section id="profile-skills" icon={BriefcaseBusiness} title="Habilidades">
               <p className="mb-3 text-xs text-[var(--muted)]">Indica tu dominio actual de cada habilidad. Es una declaración de tu perfil; no una acreditación. Los niveles no se deducen de los años de experiencia.</p>
               <CvContextReview rows={profile.cv_skill_context} skills={profile.skills} decisions={profile.cv_mention_decisions} disabled={editing} onDecision={async (skill, action) => { const { data } = await api.patch("/profiles/me/cv-mentions", { skill, action }); setProfile(normalize(data)); await refreshUser(); }} />
-              <div className="flex flex-wrap gap-2">
-                {(editing || allSkills ? profile.skills : profile.skills.slice(0, 12)).map((item) => (
-                  <span
-                    key={item}
-                    className="profile-skill"
-                  >
-                    <span>{item}</span>
-                    {editing ? <select aria-label={`Nivel de ${item}`} className="profile-skill-level" value={skillLevelFor(profile.skill_levels, item)} onChange={(event) => update("skill_levels", updateSkillLevel(profile.skill_levels, item, event.target.value))}>{Object.entries(skillLevels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select> : skillLevelFor(profile.skill_levels, item) !== "unspecified" && <small>{skillLevels[skillLevelFor(profile.skill_levels, item)]}</small>}
-                    {editing && (
-                      <button
-                        type="button"
-                        className="profile-skill-remove" aria-label={`Quitar habilidad ${item}`}
-                        onClick={() =>
-                          update(
-                            "skills",
-                            profile.skills.filter(
-                              (current) => current !== item,
-                            ),
-                          )
-                        }
-                      >
-                        x
-                      </button>
-                    )}
-                  </span>
-                ))}
-              </div>
-              {!editing && profile.skills.length > 12 && <button type="button" className="button-secondary button-sm" aria-expanded={allSkills} onClick={() => setAllSkills((value) => !value)}>{allSkills ? "Ver menos habilidades" : `Ver las ${profile.skills.length} habilidades`}</button>}
+              <SkillLevelsEditor skills={profile.skills} levels={profile.skill_levels} sources={profile.skill_level_sources} editing={editing} onChange={(levels) => update("skill_levels", levels)} onRemove={(item) => update("skills", profile.skills.filter((value) => value !== item))} />
               {editing && (
                 <div className="mt-4 flex gap-2">
                   <input

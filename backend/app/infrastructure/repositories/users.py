@@ -21,6 +21,11 @@ class UserRepository(SqlAlchemyRepository[User]):
             .all()
         )
 
+    def candidates_for_ids(self, user_ids):
+        if not user_ids:
+            return []
+        return self.session.query(User).options(joinedload(User.profile)).join(Profile).filter(User.role == UserRole.CANDIDATE, User.id.in_(user_ids)).all()
+
     def count(self) -> int:
         return self.session.query(User).count()
 

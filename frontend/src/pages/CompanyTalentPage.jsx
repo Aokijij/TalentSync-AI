@@ -1,3 +1,4 @@
+import { loadCandidatePages } from "../utils/candidateRequests.js";
 import { experienceDuration } from "../utils/experienceDates.js";
 import { Pagination } from "../components/Pagination.jsx";
 import { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ export function CompanyTalentPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
+  const [jobSearch, setJobSearch] = useState(""), [jobOffset, setJobOffset] = useState(0), [jobTotal, setJobTotal] = useState(0), [selectedSnapshot, setSelectedSnapshot] = useState(null), [pending, setPending] = useState(0);
   const [selectedJobId, setSelectedJobId] = useState(searchParams.get("job") || "");
   const [candidates, setCandidates] = useState([]);
   const [page, setPage] = useState(Math.max(1, Math.min(100000, Math.floor(Number(searchParams.get("page"))) || 1))), [total, setTotal] = useState(0);
@@ -30,7 +32,7 @@ export function CompanyTalentPage() {
   const [invitation, setInvitation] = useState(null);
   const [sending, setSending] = useState(false);
   const [reviewApplication, setReviewApplication] = useState(null);
-  const selectedJob = jobs.find((job) => String(job.id) === selectedJobId);
+  const selectedJob = jobs.find((job) => String(job.id) === selectedJobId) || (String(selectedSnapshot?.id) === selectedJobId ? selectedSnapshot : null);
 
   useEffect(() => {
     const next = { audience, min: String(minMatch), page: String(page) };
@@ -40,39 +42,34 @@ export function CompanyTalentPage() {
   }, [audience, minMatch, query, selectedJobId, page, setSearchParams]);
 
   useEffect(() => {
-    let cancelled = false;
-    async function loadJobs() {
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
       try {
-        const [{ data: company }, { data: allJobs }] = await Promise.all([
-          api.get("/companies/me"),
-          api.get("/jobs", { params: { status: "" } }),
-        ]);
-        if (!cancelled) setJobs(allJobs.filter((job) => job.company_id === company.id && job.status !== "filled"));
-      } catch (requestError) {
-        if (!cancelled) setError(getApiErrorMessage(requestError, "No pudimos cargar tus vacantes. Intenta recargar la página."));
-      } finally {
-        if (!cancelled) setLoadingJobs(false);
-      }
-    }
-    loadJobs();
-    return () => { cancelled = true; };
-  }, []);
+        const { data } = await api.get("/jobs/mine/choices", { params: { search: jobSearch, offset: jobOffset, limit: 50 }, signal: controller.signal });
+        if (controller.signal.aborted) return;
+        setJobs((current) => jobOffset ? [...current, ...data.items] : data.items); setJobTotal(data.total);
+        if (selectedJobId && !data.items.some((job) => String(job.id) === selectedJobId) && !selectedSnapshot) {
+          const response = await api.get(`/jobs/${selectedJobId}`, { signal: controller.signal });
+          if (!controller.signal.aborted && response.data.company_id === data.company_id) setSelectedSnapshot(response.data);
+        }
+      } catch (failure) { if (!controller.signal.aborted) setError(getApiErrorMessage(failure, "No pudimos cargar tus vacantes.")); }
+      finally { if (!controller.signal.aborted) setLoadingJobs(false); }
+    }, 200);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [jobSearch, jobOffset]);
 
   useEffect(() => {
-    let cancelled = false;
-    setCandidates([]);
-    setMessage("");
-    setInvitation(null);
+    const controller = new AbortController();
+    setCandidates([]); setMessage(""); setInvitation(null); setPending(0);
     if (!selectedJobId) { setLoading(false); return; }
-    setError("");
-    setLoading(true);
-    const timer = setTimeout(() => api.get(`/recommendations/jobs/${selectedJobId}/candidates-page`, { params: { audience: audience === "new" ? "invite" : "applied", query, minimum_match: minMatch, limit: pageSize, offset: (page - 1) * pageSize } })
-      .then(({ data }) => { if (!cancelled) { setCandidates(data.items); setTotal(data.total); if (page > Math.max(1, Math.ceil(data.total / pageSize))) setPage(Math.max(1, Math.ceil(data.total / pageSize))); } })
-      .catch((requestError) => {
-        if (!cancelled) setError(getApiErrorMessage(requestError, "No pudimos cargar los candidatos. Pulsa Actualizar para volver a intentar."));
-      })
-      .finally(() => { if (!cancelled) setLoading(false); }), 250);
-    return () => { cancelled = true; clearTimeout(timer); };
+    setError(""); setLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        await loadCandidatePages({ signal: controller.signal, request: () => api.get(`/recommendations/jobs/${selectedJobId}/candidates-page`, { params: { audience: audience === "new" ? "invite" : "applied", query, minimum_match: minMatch, limit: pageSize, offset: (page - 1) * pageSize }, signal: controller.signal, __skipRetry: true }), onPage: (data) => { setCandidates(data.items); setTotal(data.total); setPending(data.pending || 0); setLoading(false); if (!data.pending && page > Math.max(1, Math.ceil(data.total / pageSize))) setPage(Math.max(1, Math.ceil(data.total / pageSize))); } });
+      } catch (failure) { if (!controller.signal.aborted) { setPending(0); setError(getApiErrorMessage(failure, "No pudimos cargar los candidatos. Pulsa Actualizar para volver a intentar.")); } }
+      finally { if (!controller.signal.aborted) setLoading(false); }
+    }, 250);
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [selectedJobId, refreshVersion, query, audience, minMatch, page]);
 
   const results = candidates;
@@ -106,17 +103,20 @@ export function CompanyTalentPage() {
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--accent)] text-sm font-bold text-white">1</span>
           <div><h2 className="text-xl font-bold">¿Para qué cargo buscas candidatos?</h2><p className="mt-1 text-sm text-[var(--muted)]">La búsqueda se hará únicamente para la vacante que elijas.</p></div>
         </div>
+        <label className="mt-4 block text-xs text-[var(--muted)]">Buscar entre mis vacantes<input className="field-control mt-2" placeholder="Nombre del cargo" value={jobSearch} onChange={(event) => { setJobSearch(event.target.value); setJobOffset(0); }} /></label>
         {loadingJobs ? <p className="mt-5 text-sm text-[var(--muted)]">Cargando tus vacantes…</p> : jobs.length ? (
           <div className="mt-5 sm:ml-12">
             <label className="block max-w-2xl text-sm font-semibold">Vacante
-              <select className="field-control mt-2" value={selectedJobId} disabled={sending} onChange={(event) => { setSelectedJobId(event.target.value); setQuery(""); setPage(1); }}>
+              <select className="field-control mt-2" value={selectedJobId} disabled={sending} onChange={(event) => { setSelectedSnapshot(jobs.find((job) => String(job.id) === event.target.value) || null); setSelectedJobId(event.target.value); setQuery(""); setPage(1); }}>
                 <option value="">Selecciona una vacante…</option>
+                {selectedJob && !jobs.some((job) => job.id === selectedJob.id) && <option value={selectedJob.id}>{selectedJob.title}</option>}
                 {jobs.map((job) => <option key={job.id} value={job.id}>{job.title}{job.status === "paused" ? " · Pausada" : ""}</option>)}
               </select>
             </label>
+            {jobs.length < jobTotal && <button type="button" className="button-secondary button-sm mt-3" onClick={() => setJobOffset(jobs.length)}>Cargar más vacantes ({jobTotal - jobs.length})</button>}
             {selectedJob ? <p className="mt-3 flex items-start gap-2 text-xs text-[var(--muted)]"><BriefcaseBusiness size={15} className="shrink-0" />{selectedJob.skills?.length ? `Buscamos experiencia en ${selectedJob.skills.slice(0, 3).join(", ")}${selectedJob.skills.length > 3 ? " y otras habilidades" : ""}.` : "Compararemos la experiencia y la formación con los requisitos del cargo."}</p> : null}
           </div>
-        ) : !error ? <div className="mt-5 sm:ml-12"><p className="text-sm text-[var(--muted)]">Publica una vacante para empezar a buscar personas para tu equipo.</p><Link className="button-primary mt-4" to="/empresa/vacantes">Gestionar vacantes <ArrowRight size={16} /></Link></div> : null}
+        ) : !error ? <div className="mt-5 sm:ml-12"><p className="text-sm text-[var(--muted)]">{jobSearch ? "No hay vacantes con ese nombre. Prueba otra búsqueda." : "Publica una vacante para empezar a buscar personas para tu equipo."}</p><Link className="button-primary mt-4" to="/empresa/vacantes">Gestionar vacantes <ArrowRight size={16} /></Link></div> : null}
       </section>
 
       {selectedJob ? (
@@ -125,6 +125,7 @@ export function CompanyTalentPage() {
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-sm font-bold text-[var(--accent)]">2</span>
             <div className="min-w-0"><h2 className="text-xl font-bold">Conoce a los candidatos</h2><p className="mt-1 text-sm text-[var(--muted)]">Para <strong className="text-[var(--ink-strong)]">{selectedJob.title}</strong>. Ordenados de mayor a menor coincidencia con el cargo.</p></div>
           </div>
+          {pending > 0 && <p role="status" className="text-sm text-[var(--muted)]">Actualizando {pending} compatibilidades pendientes. Los resultados disponibles se pueden revisar mientras termina.</p>}
           <div className="surface-card !p-4 sm:!p-5">
             <div className="flex flex-wrap gap-2 border-b border-[var(--line)] pb-4" role="group" aria-label="Tipo de candidatos">
               {[{ value: "new", label: "Personas para invitar" }, { value: "applied", label: "Ya se postularon" }].map((tab) => <button key={tab.value} type="button" aria-pressed={audience === tab.value} className={`${audience === tab.value ? "button-primary" : "button-secondary"} button-sm`} onClick={() => { setAudience(tab.value); setPage(1); }}>{tab.label}</button>)}

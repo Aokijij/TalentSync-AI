@@ -68,12 +68,14 @@ def ranked_candidates_page(
     minimum_match: float = Query(default=80, ge=0, le=100),
     limit: int = Query(default=10, ge=5, le=50),
     offset: int = Query(default=0, ge=0),
+    batch_size: int = Query(default=12, ge=1, le=24),
     current_user: User = Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)),
     db: UnitOfWork = Depends(get_unit_of_work),
     *,
     nlp: TextAnalysis = Depends(get_text_analysis),
+    gate=Depends(get_matching_gate),
 ) -> dict:
-    candidates = use_cases.ranked_candidates(
+    candidates, progress = use_cases.ranked_candidates_batch(
         job_id=job_id,
         current_user=current_user,
         db=db,
@@ -81,6 +83,7 @@ def ranked_candidates_page(
         minimum_match=minimum_match,
         audience=audience,
         query=query,
+        gate=gate, batch_size=batch_size,
     )
     return {
         "items": candidates[offset : offset + limit],
@@ -88,6 +91,7 @@ def ranked_candidates_page(
         "limit": limit,
         "offset": offset,
         "top_candidates": candidates[:5],
+        **progress,
     }
 
 
