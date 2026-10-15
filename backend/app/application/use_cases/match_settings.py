@@ -5,8 +5,18 @@ from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import get_job
 from app.application.use_cases.matching import upsert_recommendation
+from app.domain.services.credential_links import certificate_url
 from app.domain.services.skills import normalize_skills
 from app.domain.services.work_preferences import effective_preferences
+
+
+def add_certificate(profile, item):
+    if item.get("kind") != "certificate":
+        return
+    certificate = {"id": item["id"], "name": item["title"], "issuer": item.get("issuer", ""),
+                   "year": item.get("year", ""), "url": certificate_url(item.get("url")),
+                   "description": item["description"], "source": "external_certificate", "evidence_id": item["id"]}
+    profile.certifications = [row for row in profile.certifications or [] if row.get("evidence_id") != item["id"]] + [certificate]
 
 
 def preferences(db, user, payload=None):
@@ -41,6 +51,7 @@ def evidence(db, user, payload=None, *, analysis=None):
         if analysis is not None:
             item["analysis"] = analysis
         if payload.get("add_to_profile"):
+            add_certificate(user.profile, item)
             skills = normalize_skills([*(user.profile.skills or []), *payload["skills"]])
             if len(skills) > 100:
                 raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cien habilidades")
@@ -68,6 +79,7 @@ def add_evidence_skills(db, user, evidence_id):
     if evidence is None:
         raise UseCaseError(status_code=404, detail="Evidencia no encontrada")
     db.learning.lock_owner(user.id)
+    add_certificate(user.profile, evidence)
     skills = normalize_skills([*(user.profile.skills or []), *evidence.get("skills", [])])
     if len(skills) > 100:
         raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cien habilidades")

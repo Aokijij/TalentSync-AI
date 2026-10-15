@@ -90,7 +90,7 @@ def prepare_environment(*, testing=False):
 
 def main():
     parser = argparse.ArgumentParser(description="TalentSync: entorno local aislado")
-    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "seed-review", "seed-demo", "seed-scenarios", "seed-quality", "seed-radar", "seed-education", "sync-education", "accounts", "admin-sso", "model-prepare", "model-check", "cv-runtime", "cv-model-prepare", "cv-model-check", "cv-evaluate", "doctor", "verify", "rehearse"))
+    parser.add_argument("command", choices=("setup", "backend", "test", "seed", "seed-review", "seed-demo", "seed-scenarios", "seed-quality", "seed-radar", "reset-realistic", "seed-education", "sync-education", "accounts", "admin-sso", "model-prepare", "model-check", "cv-runtime", "cv-model-prepare", "cv-model-check", "cv-evaluate", "doctor", "verify", "rehearse"))
     parser.add_argument("options", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.options and args.command != "admin-sso":
@@ -116,6 +116,7 @@ def main():
         "seed-scenarios": ["-m", "scripts.seed_scenarios"],
         "seed-quality": ["-m", "scripts.seed_offer_quality"],
         "seed-radar": ["-m", "scripts.seed_market_radar"],
+        "reset-realistic": ["-m", "scripts.seed_realistic"],
         "seed-education": ["-m", "scripts.seed_education_catalog"],
         "sync-education": ["-m", "scripts.sync_education_sources"],
         "admin-sso": ["-m", "scripts.admin_sso", *args.options],
@@ -127,6 +128,12 @@ def main():
         "cv-evaluate": ["-m", "scripts.evaluate_cv_entities"],
     }
     if args.command == "accounts":
+        realistic_file = LOCAL / "realistic-accounts.json"
+        if realistic_file.exists():
+            realistic = json.loads(realistic_file.read_text(encoding="utf-8"))
+            for account in realistic["accounts"]:
+                print(f"{account['type']}: {account['email']} / {realistic['password']}")
+            return
         account_file = LOCAL / "accounts.json"
         if not account_file.exists():
             raise SystemExit("Ejecuta primero el comando seed.")

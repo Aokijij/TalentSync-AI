@@ -335,7 +335,7 @@ export function RecommendationsPage() {
                       type="button"
                       disabled={applied}
                       onClick={() => apply(job)}
-                      className="button-success"
+                      className="button-primary"
                     >
                       <Send size={16}  />
                       {applied ? "Enviada" : "Postularme"}

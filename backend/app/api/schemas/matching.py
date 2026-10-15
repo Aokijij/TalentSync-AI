@@ -1,7 +1,8 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 
+from app.domain.services.credential_links import certificate_url
 from app.domain.services.skills import skill_key
 
 
@@ -44,12 +45,20 @@ class CandidatePreferences(BaseModel):
 
 
 class EvidenceSubmission(BaseModel):
+    issuer: str = Field(default="", max_length=160)
+    year: str = Field(default="", max_length=4, pattern=r"^(?:\d{4})?$")
     add_to_profile: bool = False
     title: str = Field(min_length=3, max_length=160)
     kind: Literal["project", "repository", "portfolio", "experience", "certificate"]
     url: HttpUrl | None = None
     description: str = Field(min_length=10, max_length=2000)
     skills: list[str] = Field(min_length=1, max_length=20)
+
+    @model_validator(mode="after")
+    def certificate_link(self):
+        if self.kind == "certificate":
+            certificate_url(self.url)
+        return self
 
     @field_validator("skills")
     @classmethod

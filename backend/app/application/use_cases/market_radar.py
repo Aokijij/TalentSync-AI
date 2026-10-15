@@ -8,9 +8,10 @@ from app.domain.services.personalization import synthetic_email
 from app.domain.services.skills import normalize_skills
 
 
-def report(db, user, filters):
+def report(db, user, filters, *, local_fixture_mode=False):
     now = datetime.utcnow()
     demo = filters.get("dataset") == "demo"
+    filters = {**filters, "allow_local_fixtures": local_fixture_mode}
     result = market_report(owner_profile(user), db.jobs.market_jobs(now - timedelta(days=90), demo=demo),
                            db.profiles.market_participants(filters["family"], filters["level"], demo=demo), resources(db), filters, now)
     result["demo_available"] = bool(db.jobs.market_jobs(now - timedelta(days=90), demo=True)) if not demo else True

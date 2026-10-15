@@ -28,7 +28,8 @@ function EvidenceCard({ row, busy, onRemove, onAddSkills }) {
       <span className="evidence-status">{row.kind === "certificate" ? "Aportado" : "Declarada"}</span>
     </div>
     <h4>{row.title}</h4>
-    <p className="evidence-description">{row.source === "external_certificate" ? "Certificado aportado por el candidato. TalentSync no valida certificados." : row.description}</p>
+    {row.kind === "certificate" && (row.issuer || row.year) && <p className="evidence-field-help">{[row.issuer, row.year].filter(Boolean).join(" · ")}{row.certificate_id && ` · Credencial ${row.certificate_id}`}</p>}
+    <p className="evidence-description">{row.description}</p>
     <div className="evidence-skills" aria-label="Habilidades relacionadas">
       {skills.slice(0, 4).map((skill) => <span key={skill}>{skill}</span>)}
       {skills.length > 4 && <details className="evidence-extra-skills"><summary>+{skills.length - 4} más</summary><div>{skills.slice(4).map((skill) => <span key={skill}>{skill}</span>)}</div></details>}
@@ -37,15 +38,15 @@ function EvidenceCard({ row, busy, onRemove, onAddSkills }) {
     <details className="evidence-card-detail">
       <summary>Detalles de la evidencia<ChevronDown size={14} aria-hidden="true" /></summary>
       <div>
-        <p className="whitespace-pre-wrap">{row.source === "external_certificate" ? "Certificado aportado por el candidato. TalentSync no valida certificados." : row.description}</p>
+        <p className="whitespace-pre-wrap">{row.description}</p>
         {github && <p>GitHub · revisión {row.analysis.revision?.slice(0, 12)}. Tecnologías detectadas mediante análisis estático; autoría sin verificar.</p>}
         {codewars && <p>Codewars · {row.analysis.overall?.rank} · {row.analysis.completed_challenges?.toLocaleString("es-CO")} retos resueltos · Consulta: {new Date(row.analysis.fetched_at).toLocaleDateString("es-CO")}. Cuenta declarada; titularidad sin verificar.</p>}
         <p>Esta referencia fue aportada por ti. No equivale a una habilidad verificada.</p>
       </div>
     </details>
-    {!row.add_to_profile && skills.length > 0 && <button type="button" className="evidence-skills-action" disabled={busy} onClick={() => onAddSkills(row)}><span className="evidence-skills-action-icon"><Plus size={17} aria-hidden="true" /></span><span>Añadir habilidades<span>Incorporarlas a mi perfil como declaradas</span></span></button>}
+    {!row.add_to_profile && skills.length > 0 && <button type="button" className="evidence-skills-action" disabled={busy} onClick={() => onAddSkills(row)}><span className="evidence-skills-action-icon"><Plus size={17} aria-hidden="true" /></span><span>{row.kind === "certificate" ? "Añadir certificado al perfil" : "Añadir habilidades"}<span>Incorporar el contenido como declarado por mí</span></span></button>}
     <footer className="evidence-card-actions">
-      {row.url ? <a className="button-secondary button-sm" href={row.url} target="_blank" rel="noopener noreferrer">Abrir referencia<ExternalLink size={14} aria-hidden="true" /></a> : <span className="evidence-no-link">Sin enlace adjunto</span>}
+      {row.url ? <a className="button-secondary button-sm" href={row.url} target="_blank" rel="noopener noreferrer">{row.kind === "certificate" ? "Ver certificado" : "Abrir referencia"}<ExternalLink size={14} aria-hidden="true" /></a> : <span className="evidence-no-link">Sin enlace adjunto</span>}
       <button type="button" className="evidence-remove" disabled={busy} onClick={() => onRemove(row)} aria-label={`Retirar evidencia: ${row.title}`}><Trash2 size={15} aria-hidden="true" />Retirar</button>
     </footer>
   </article>;
@@ -58,6 +59,7 @@ export function ProfileEvidence({ profile, onChanged }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [kind, setKind] = useState("experience");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [toolsActivated, setToolsActivated] = useState(false);
@@ -96,12 +98,12 @@ export function ProfileEvidence({ profile, onChanged }) {
     const data = new FormData(form);
     await act(async () => {
       const response = await api.post("/matching/evidence", {
-        title: data.get("title"), kind: data.get("kind"), url: data.get("url") || null,
+        issuer: data.get("issuer") || "", year: data.get("year") || "", title: data.get("title"), kind: data.get("kind"), url: data.get("url") || null,
         skills: data.get("skills").split(",").map((skill) => skill.trim()).filter(Boolean),
         description: data.get("description"), add_to_profile: data.has("add_to_profile"),
       });
-      setRows(response.data); form.reset(); closeForm();
-      setMessage(data.has("add_to_profile") ? "Evidencia guardada y habilidades añadidas a tu perfil." : "Evidencia guardada y vinculada a tus habilidades.");
+      setRows(response.data); form.reset(); setKind("experience"); closeForm();
+      setMessage(data.has("add_to_profile") ? "Evidencia guardada y contenido añadido a tu perfil." : "Evidencia guardada y vinculada a tus habilidades.");
       await onChanged?.();
     });
   }
@@ -126,11 +128,12 @@ export function ProfileEvidence({ profile, onChanged }) {
         <form onSubmit={save}>
           <fieldset disabled={busy} className="evidence-form-fields">
             <label>Título<input ref={titleInput} className="field-control mt-2" name="title" required minLength={3} maxLength={160} placeholder="Ej.: Mejoré el control de inventarios" /></label>
-            <label>Tipo de evidencia<select className="field-control mt-2" name="kind"><option value="experience">Logro laboral</option><option value="portfolio">Portafolio</option><option value="certificate">Certificado externo</option><option value="project">Proyecto</option>{(programmingRelevant || toolsActivated) && <option value="repository">Repositorio</option>}</select></label>
+            <label>Tipo de evidencia<select className="field-control mt-2" name="kind" value={kind} onChange={(event) => setKind(event.target.value)}><option value="experience">Logro laboral</option><option value="portfolio">Portafolio</option><option value="certificate">Certificado externo</option><option value="project">Proyecto</option>{(programmingRelevant || toolsActivated) && <option value="repository">Repositorio</option>}</select></label>
+            {kind === "certificate" && <><label>Entidad emisora (para certificados)<input className="field-control mt-2" name="issuer" maxLength={160} placeholder="Ej.: SENA, universidad o proveedor" /></label><label>Año del certificado<input className="field-control mt-2" name="year" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} placeholder="2026" /></label></>}
             <label className="evidence-field-wide">Tu aporte y resultado<textarea className="field-control mt-2" name="description" rows={3} required minLength={10} maxLength={2000} placeholder="Qué hiciste, qué cambió gracias a tu trabajo y cómo podría revisarse." /></label>
             <label>Habilidades relacionadas<input className="field-control mt-2" name="skills" required placeholder="Inventarios, organización, atención al cliente…" /><span className="evidence-field-help">Separa cada habilidad con una coma.</span></label>
             <label>Enlace de respaldo <span className="evidence-optional">Opcional</span><input className="field-control mt-2" name="url" type="url" placeholder="https://…" /><span className="evidence-field-help">El archivo permanece en su plataforma de origen.</span></label>
-            <label className="evidence-add-skills evidence-field-wide"><input type="checkbox" name="add_to_profile" /><span><strong>Añadir estas habilidades a mi perfil</strong><span>Se incorporarán como habilidades declaradas para calcular tu compatibilidad.</span></span></label>
+            <label className="evidence-add-skills evidence-field-wide"><input type="checkbox" name="add_to_profile" /><span><strong>{kind === "certificate" ? "Añadir certificado y habilidades a mi perfil" : "Añadir estas habilidades a mi perfil"}</strong><span>{kind === "certificate" ? "Aparecerá en Cursos y certificaciones con su enlace. Las habilidades se añaden como declaradas." : "Se incorporarán como habilidades declaradas para calcular tu compatibilidad."}</span></span></label>
           </fieldset>
           <footer className="evidence-form-actions"><p><Info size={15} aria-hidden="true" />Aportar una evidencia no verifica automáticamente una habilidad.</p><div><button type="button" className="button-secondary button-sm" disabled={busy} onClick={closeForm}>Cancelar</button><button className="button-primary button-sm" disabled={busy}><Save size={16} aria-hidden="true" />{busy ? "Guardando…" : "Guardar evidencia"}</button></div></footer>
         </form>

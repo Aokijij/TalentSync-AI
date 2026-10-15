@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.api.schemas.language import LanguageLevel, unique_languages
+from app.domain.services.credential_links import certificate_url
 from app.domain.services.experience_dates import validate_experiences
 from app.domain.services.profile_status import (
     single_current_employment,
@@ -67,6 +68,11 @@ class ProfileUpdate(ProfileBase):
     name: str | None = Field(default=None, min_length=2, max_length=120)
     _single_employment = field_validator("experiences")(single_current_employment)
     _study_status = field_validator("educations")(validate_educations)
+
+    @field_validator("certifications")
+    @classmethod
+    def certificate_links(cls, values):
+        return [{**item, "url": certificate_url(item.get("url"))} for item in values or []]
 
 
 class ProfileResponse(ProfileBase):

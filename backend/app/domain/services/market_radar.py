@@ -29,7 +29,7 @@ def families_for(title):
 def synthetic_job(job):
     text = fold(f"{job.title} {getattr(job, 'company_name', '')}")
     hostname = urlparse(getattr(job, "external_url", "") or "").hostname or ""
-    return (getattr(job, "source_kind", "") == "demo" or "demo" in fold(getattr(job, "source_name", ""))
+    return (getattr(job, "source_name", "") == "local-realistic" or getattr(job, "source_kind", "") == "demo" or "demo" in fold(getattr(job, "source_name", ""))
             or bool(re.search(r"\b(?:fictici\w*|demostracion|synthetic|demo)\b", text))
             or bool(re.search(r"(?:·\s*escenario|\(escenario|\bescenario\s*$)", fold(job.title)))
             or "sin contratacion real" in fold(job.description)
@@ -43,7 +43,7 @@ def selected_jobs(jobs, filters, now):
     for job in sorted(jobs, key=lambda item: (item.created_at, item.id), reverse=True):
         details = job.quality_details or {}
         if (job.status != ("draft" if demo else "active") or job.created_at < now - timedelta(days=90) or job.expires_at and job.expires_at < now
-                or (getattr(job, "source_name", "") != "radar-demo" if demo else synthetic_job(job))):
+                or (getattr(job, "source_name", "") != "radar-demo" if demo else synthetic_job(job) and not (filters.get("allow_local_fixtures") and getattr(job, "source_name", "") == "local-realistic"))):
             continue
         if filters.get("family") and filters["family"] not in families_for(job.title):
             continue
@@ -72,14 +72,15 @@ def peer_report(profile, candidates, filters, now):
     demo = filters.get("dataset") == "demo"
     for row in candidates:
         consent = row.participation or {}
+        local_fixture = bool(filters.get("allow_local_fixtures") and getattr(row, "is_local_fixture", False))
         date = consent.get("updated_at", "")
         try:
             recent = datetime.fromisoformat(date.replace("Z", "+00:00")).replace(tzinfo=None) >= now - timedelta(days=180)
         except (ValueError, TypeError, AttributeError):
             recent = False
         if (row.user_id == profile.user_id or row.user_id in used or not row.email_verified
-                or (not getattr(row, "is_demo", False) if demo else getattr(row, "is_demo", False) or synthetic_email(row.email) or row.email.lower().endswith((".invalid", ".localhost")))
-                or not consent.get("enabled") or (not demo and not consent.get("confirmed_real")) or not recent
+                or (not getattr(row, "is_demo", False) if demo else getattr(row, "is_demo", False) or (not local_fixture and (getattr(row, "is_local_fixture", False) or synthetic_email(row.email) or row.email.lower().endswith((".invalid", ".localhost")))))
+                or not consent.get("enabled") or (not demo and not local_fixture and not consent.get("confirmed_real")) or not recent
                 or consent.get("family") != filters["family"] or consent.get("level") != filters["level"] or city_key(row.location) != city_key(filters["location"])):
             continue
         used.add(row.user_id); cohort.append(row)
@@ -140,6 +141,13 @@ def market_report(profile, jobs, candidates, courses, filters, now=None):
         demand.update(jobs=[], note="Demostración con ofertas ficticias variadas. Los conteos sirven para probar el radar; no describen demanda real ni son vacantes para postularse.", sources={"Escenarios de demostración": len(selected)})
         peers["note"] = "Comparación de perfiles ficticios creados para probar la plataforma. Las habilidades declaradas y porcentajes son de ejemplo." if peers["status"] == "ready" else peers["note"]
         salary["note"] = "Salarios simulados en COP al mes para recorrer el radar. No representan remuneraciones del mercado. Cada grupo conserva contrato, modalidad y horas iguales."
-    return {"dataset": "demo" if demo else "real", "as_of": now.isoformat() + "Z", "since": (now - timedelta(days=90)).date().isoformat(), "filters": filters, "demand": demand,
+    local_data = bool(filters.get("allow_local_fixtures") and any(getattr(job, "source_name", "") == "local-realistic" for job in jobs))
+    cohorts = Counter((family, (job.quality_details or {}).get("seniority"), job.location) for job in jobs if not synthetic_job(job) or (local_data and getattr(job, "source_name", "") == "local-realistic") for family in families_for(job.title))
+    available = [{"family": family, "level": level, "location": city, "offers": count} for (family, level, city), count in cohorts.most_common() if level and city and count >= MINIMUM_SAMPLE][:8]
+    if local_data:
+        demand["note"] = "Ofertas activas del entorno local de pruebas. Empresas, procesos y salarios recreados; no son ofertas oficiales ni estadísticas del mercado real."
+        peers["note"] = "Comparación agregada de perfiles de prueba del mismo grupo. " + peers["note"]
+        salary["note"] = "Salarios de las vacantes de prueba, no remuneraciones oficiales. " + salary["note"]
+    return {"dataset": "demo" if demo else "real", "local_data": local_data, "available_cohorts": available, "as_of": now.isoformat() + "Z", "since": (now - timedelta(days=90)).date().isoformat(), "filters": {key: value for key, value in filters.items() if key != "allow_local_fixtures"}, "demand": demand,
             "peers": peers, "salary": salary, "families": FAMILIES,
             "aspiration": profile.desired_salary, "participation": (profile.preferences or {}).get("market_participation", {})}

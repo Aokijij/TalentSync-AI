@@ -25,8 +25,8 @@
 .thumbnail-modern { border-left:4px solid #4338ca; }
 .thumbnail-modern i { background:#e0e7ff; }
 .thumbnail-minimal i { background:#fff; border-bottom:1px solid #334155; }
-.thumbnail-classic { border-left:1px solid #cbd5e1; background:linear-gradient(90deg,#eef6fc 28%,white 28%); }
-.thumbnail-classic i { background:#020617; height:10px; }
+.thumbnail-classic { border-top:1px solid #0c4a6e; background:white; }
+.thumbnail-classic i { background:#eef6fc; height:10px; border-bottom:1px solid #0c4a6e; }
 .thumbnail-modern { border-left:1px solid #cbd5e1; border-top:3px solid #4338ca; background:linear-gradient(90deg,#312e81 28%,white 28%); }
 .thumbnail-modern i { background:#eef2ff; height:10px; }
 .thumbnail-minimal b { background:#1e293b; height:2px; }

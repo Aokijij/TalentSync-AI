@@ -1,0 +1,9 @@
+.offer-discovery-note { display:flex; align-items:center; gap:1rem; padding:1.25rem; margin:1.25rem 0; border:1px solid var(--line); border-radius:1rem; background:color-mix(in srgb,var(--accent) 5%,var(--surface)); }
+.offer-discovery-icon { display:grid; place-items:center; flex-shrink:0; width:46px; height:46px; border-radius:14px; color:var(--accent); background:color-mix(in srgb,var(--accent) 12%,transparent); }
+.offer-discovery-note strong { font-size:.95rem; }
+.offer-discovery-note p { margin-top:.3rem; color:var(--muted); font-size:.8rem; line-height:1.6; max-width:620px; }
+.offer-discovery-weights { display:flex; flex-wrap:wrap; gap:.5rem; margin-left:auto; min-width:240px; }
+.offer-discovery-weights>span { padding:.4rem .65rem; border:1px solid var(--line); border-radius:.6rem; font-size:.72rem; }
+.offer-discovery-weights b { color:var(--accent); }
+.offer-discovery-weights small { width:100%; color:var(--muted); font-size:.67rem; }
+@media(max-width:800px) { .offer-discovery-note { flex-wrap:wrap; } .offer-discovery-note>div:first-of-type { flex:1; } .offer-discovery-weights { margin-left:0; width:100%; } }

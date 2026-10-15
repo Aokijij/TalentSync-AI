@@ -28,11 +28,8 @@
 .recommendation-match-track > span { display:block; height:100%; border-radius:inherit; }
 .recommendation-match > p { font-size:.68rem; color:var(--muted); }
 .recommendation-card-apply { display:flex; justify-content:flex-end; }
-.recommendation-card-apply button { width:100%; min-height:40px; font-size:.77rem; border-radius:.65rem; padding:.55rem .6rem; }
+.recommendation-card-apply button { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; white-space:nowrap; width:100%; min-height:40px; font-size:.77rem; border-radius:.65rem; padding:.55rem .6rem; }
 .recommendation-card>.surface-card { padding:16px; border-radius:24px; background:var(--surface); box-shadow:none; }
-.recommendation-card-apply .button-success { background:var(--success); color:#061c18; border:1px solid var(--success); font-weight:700; }
-.recommendation-card-apply .button-success:hover { filter:brightness(1.08); }
-.recommendation-card-apply .button-success:disabled { opacity:.6; }
 .recommendation-card-details { grid-column:1/-1; }
 .recommendation-insight-button { display:inline-flex; align-items:center; gap:.4rem; min-height:30px; color:var(--accent); font-size:.71rem; font-weight:650; }
 .recommendation-insight-button:hover { text-decoration:underline; }

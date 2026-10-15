@@ -19,6 +19,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from app.domain.services.credential_links import certificate_url
 from app.domain.services.professions import EDUCATION_LEVEL_LABELS
 from app.domain.services.resume_filename import resume_filename
 from app.infrastructure.resume_pdf import date_label, portrait
@@ -92,6 +93,7 @@ def build_resume(user, included, include_photo, photo):
     side_line = colors.Color(*[value * .65 + .35 for value in (dark.red, dark.green, dark.blue)])
     ink, muted = colors.HexColor("#172a3a"), colors.HexColor("#526477")
     minimal, classic = layout == "minimal", layout == "classic"
+    single_column = minimal or classic
     body = ParagraphStyle("Body", fontName="Resume", fontSize=8.3, leading=13, textColor=ink, spaceAfter=8, splitLongWords=True)
     side_body = ParagraphStyle("Sidebar", parent=body, fontSize=7.6, leading=11.5, textColor=ink if classic else colors.white)
     meta = ParagraphStyle("Meta", parent=body, fontSize=7, leading=10, textColor=muted, spaceAfter=6)
@@ -102,12 +104,12 @@ def build_resume(user, included, include_photo, photo):
     def p(value, style=body, timeline=False):
         return (Timeline if timeline else Paragraph)(escape(str(value or "")).replace("\n", "<br/>"), style)
 
-    header_color = colors.white if classic else ink
-    identity = [p("H O J A  D E  V I D A", ParagraphStyle("Eyebrow", parent=meta, fontName="ResumeBold", textColor=colors.HexColor("#b7c9db") if classic else muted, fontSize=6, spaceAfter=6)),
-                p(user.name, ParagraphStyle("Name", parent=body, fontName="Times-Roman" if minimal else "ResumeBold", fontSize=25 if minimal else 24, leading=29, textColor=header_color, spaceAfter=7))]
+    header_color = ink
+    identity = [p("H O J A  D E  V I D A", ParagraphStyle("Eyebrow", parent=meta, fontName="ResumeBold", textColor=accent if classic else muted, fontSize=6, spaceAfter=6)),
+                p(user.name, ParagraphStyle("Name", parent=body, fontName="Times-Roman" if minimal else "Times-Bold" if classic else "ResumeBold", fontSize=25 if minimal else 24, leading=29, textColor=header_color, spaceAfter=7))]
     long_profession = len(profile.profession or "") > 250
     if profile.profession and not long_profession:
-        identity.append(p(profile.profession, ParagraphStyle("Profession", parent=body, fontSize=10, leading=14, textColor=colors.HexColor("#d5e2ef") if classic else accent, spaceAfter=0)))
+        identity.append(p(profile.profession, ParagraphStyle("Profession", parent=body, fontSize=10, leading=14, textColor=accent, spaceAfter=0)))
     contacts = [str(value) for value in [user.email, getattr(profile, "phone", None), ", ".join(filter(None, [profile.location, profile.department]))] if value] if "contact" in included else []
     long_contact = len(" ".join(contacts)) > 450
     contact_style = ParagraphStyle("Contact", parent=meta, textColor=header_color, fontSize=6.9, leading=11, spaceAfter=7)
@@ -144,30 +146,30 @@ def build_resume(user, included, include_photo, photo):
             dates = [item.get("start_date") or item.get("start_year"), ("En curso" if key == "educations" else "Actualidad") if item.get("is_current") else item.get("end_date") or item.get("end_year") or item.get("year")]
             date = " - ".join(date_label(value) for value in dates if value)
             # Separate flowables allow arbitrarily long roles and descriptions to split.
-            main_width = 519 if minimal else 363
+            main_width = 519 if single_column else 363
             if date and len(str(item.get(primary) or "")) < 120:
-                row = Table([[p(item.get(primary), role, timeline=True), p(date, ParagraphStyle("DateInline", parent=meta, alignment=2))]], colWidths=[main_width - 104, 104])
+                row = Table([[p(item.get(primary), role, timeline=not classic), p(date, ParagraphStyle("DateInline", parent=meta, alignment=2))]], colWidths=[main_width - 104, 104])
                 row.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 0)]))
                 row.keepWithNext = True; main.append(row)
             else:
-                main.append(p(item.get(primary), role, timeline=True))
+                main.append(p(item.get(primary), role, timeline=not classic))
                 if date:
                     main.append(p(date, meta))
             if secondary and item.get(secondary):
                 label = EDUCATION_LEVEL_LABELS.get(item.get("level")) if key == "educations" else None
-                main.append(p(" · ".join(filter(None, [item[secondary], label])), company, timeline=True))
+                main.append(p(" · ".join(filter(None, [item[secondary], label])), company, timeline=not classic))
             if item.get("description"):
-                main.append(p(item["description"], timeline_body, timeline=True))
+                main.append(p(item["description"], timeline_body, timeline=not classic))
             main.append(Spacer(1, 8))
     if "educations" in included and not getattr(profile, "educations", None) and profile.education:
         section(main, "Formación académica"); main.append(p(profile.education))
     ancillary = [[], [], []]
-    long_skills = minimal and len(profile.skills or []) > 20
+    long_skills = single_column and (classic or len(profile.skills or []) > 20)
     target = main if long_skills else ancillary[0] if minimal else side
     if "skills" in included and profile.skills:
-        section(target, "Habilidades", not minimal)
+        section(target, "Habilidades", not single_column)
         # Each pill remains a splittable paragraph, so long skill lists never clip.
-        pill = ParagraphStyle("Pill", parent=side_body if not minimal else body, fontSize=7.2, leading=11, backColor=colors.white if classic else soft_accent if not minimal else tint,
+        pill = ParagraphStyle("Pill", parent=side_body if not single_column else body, fontSize=7.2, leading=11, backColor=colors.white if classic else soft_accent if not minimal else tint,
                               textColor=accent if classic else colors.white if not minimal else ink, borderColor=line if classic else side_line if not minimal else line,
                               borderWidth=.5, borderPadding=5, borderRadius=8, spaceAfter=10)
         width, row, used = (519 if long_skills else 155 if minimal else 124), [], 0
@@ -183,24 +185,30 @@ def build_resume(user, included, include_photo, photo):
                 flush(); used = 0
             row.append(str(skill)); used += length + 5
         flush()
-    if minimal:
-        target = ancillary[1]
+    if single_column:
+        target = main if classic else ancillary[1]
     if "languages" in included and profile.languages:
-        section(target, "Idiomas", not minimal)
-        target.extend(p(f"{item.get('name', item.get('language', ''))} · {'Nativo' if item.get('level') == 'NATIVE' else item.get('level', '')}", side_body if not minimal else body) for item in profile.languages)
-    if minimal:
-        target = ancillary[2]
+        section(target, "Idiomas", not single_column)
+        target.extend(p(f"{item.get('name', item.get('language', ''))} · {'Nativo' if item.get('level') == 'NATIVE' else item.get('level', '')}", side_body if not single_column else body) for item in profile.languages)
+    if single_column:
+        target = main if classic else ancillary[2]
     if "certifications" in included and profile.certifications:
-        section(target, "Cursos y certificaciones", not minimal)
+        section(target, "Cursos y certificaciones", not single_column)
         for item in profile.certifications:
-            target.append(p(item.get("name"), ParagraphStyle("Course", parent=side_body if not minimal else body, fontName="ResumeBold", keepWithNext=True)))
-            target.append(p(" · ".join(str(item.get(key)) for key in ["issuer", "year"] if item.get(key)), side_body if not minimal else meta))
-    if minimal:
-        target = ancillary[1]
+            target.append(p(item.get("name"), ParagraphStyle("Course", parent=side_body if not single_column else body, fontName="ResumeBold", keepWithNext=True)))
+            target.append(p(" · ".join(str(item.get(key)) for key in ["issuer", "year"] if item.get(key)), side_body if not single_column else meta))
+            try:
+                url = certificate_url(item.get("url"))
+            except ValueError:
+                url = ""
+            if url:
+                target.append(Paragraph(f'<link href="{escape(url, {chr(34): "&quot;"})}">Ver certificado</link>', side_body if not single_column else meta))
+    if single_column:
+        target = main if classic else ancillary[1]
     if "preferences" in included:
         values = [profile.preferred_sector, LABELS.get(profile.preferred_modality), LABELS.get(profile.availability)]
         if any(values):
-            section(target, "Preferencias", not minimal); target.extend(p(value, side_body if not minimal else body) for value in values if value)
+            section(target, "Preferencias", not single_column); target.extend(p(value, side_body if not single_column else body) for value in values if value)
     if minimal and any(ancillary):
         groups = [items for items in ancillary if items]
         footer = Table([groups], colWidths=[519 / len(groups)] * len(groups), splitInRow=1)
@@ -208,7 +216,7 @@ def build_resume(user, included, include_photo, photo):
         main.append(footer)
 
     def draw_header(c):
-        c.setFillColor(dark if classic else colors.white); c.rect(0, body_top, 595, header_height, stroke=0, fill=1)
+        c.setFillColor(tint if classic else colors.white); c.rect(0, body_top, 595, header_height, stroke=0, fill=1)
         if not classic:
             c.setFillColor(accent); c.rect(0, 837, 595, 5 if not minimal else 2, stroke=0, fill=1)
         header.drawOn(c, 38, body_top + (header_height - header.wrap(495, 500)[1]) / 2)
@@ -222,15 +230,15 @@ def build_resume(user, included, include_photo, photo):
         doc.build(story or [Spacer(1, 1)])
         return PdfReader(BytesIO(output.getvalue())).pages
 
-    main_pages = paginate(main, 30 if minimal else 186, 535 if minimal else 379)
-    side_pages = [] if minimal else paginate(side, 24, 140)
+    main_pages = paginate(main, 30 if single_column else 186, 535 if single_column else 379)
+    side_pages = [] if single_column else paginate(side, 24, 140)
     count = max(len(main_pages), len(side_pages))
     writer = PdfWriter()
     for index in range(count):
         background = BytesIO(); c = Canvas(background, pagesize=(595, 842))
         c.setFillColor(colors.white); c.rect(0, 0, 595, 842, stroke=0, fill=1)
-        if not minimal:
-            c.setFillColor(tint if classic else dark); c.rect(0, 0, 178, body_top if index == 0 else 842, stroke=0, fill=1)
+        if not single_column:
+            c.setFillColor(dark); c.rect(0, 0, 178, body_top if index == 0 else 842, stroke=0, fill=1)
         if index == 0:
             draw_header(c)
         else:

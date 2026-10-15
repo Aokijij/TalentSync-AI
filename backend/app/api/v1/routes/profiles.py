@@ -30,6 +30,7 @@ from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import career_coach as coach
 from app.application.use_cases import market_radar
 from app.application.use_cases import profiles as use_cases
+from app.core.config import settings
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
 from app.domain.services.resume_filename import resume_disposition, resume_filename
@@ -39,7 +40,7 @@ router = APIRouter()
 
 @router.get("/me/market")
 def market_overview(filters: MarketFilters = Depends(), user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
-    return market_radar.report(db, user, filters.model_dump())
+    return market_radar.report(db, user, filters.model_dump(), local_fixture_mode=settings.environment == "development")
 
 
 @router.put("/me/market/participation")

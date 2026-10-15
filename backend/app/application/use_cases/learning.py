@@ -372,6 +372,7 @@ def register_external_certificate(db, user, resource_id, payload):
     user.profile.certifications = [item for item in user.profile.certifications or [] if item.get("id") != identifier] + [certificate]
     user.profile.evidence = [item for item in user.profile.evidence or [] if item.get("id") != identifier] + [{
         "id": identifier, "title": payload["name"], "kind": "certificate", "url": payload["credential_url"], "skills": resource["skills"],
+        "issuer": resource["provider"], "year": str(payload["year"]), "certificate_id": payload["certificate_id"],
         "description": f"Certificado externo aportado por el candidato. Emisor: {resource['provider']}. TalentSync no valida certificados.",
         "verified": False, "add_to_profile": previous_evidence.get("add_to_profile", False), "source": "external_certificate", "created_at": datetime.utcnow().isoformat()}]
     record_event(db, "learning.external_certificate_added", "user", user.id, actor_user_id=user.id, details={"source": "external_certificate"})

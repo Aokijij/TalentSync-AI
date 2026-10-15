@@ -570,7 +570,7 @@ function Items({ type, profile, editing, update, updateItem }) {
       ? ["role", "company", "start_year", "end_year", "description"]
       : type === "educations"
         ? ["degree", "institution", "start_year", "end_year"]
-        : ["name", "issuer", "year"];
+        : ["name", "issuer", "year", "url"];
   const placeholders = {
     role: "Cargo desempeñado",
     company: "Empresa",
@@ -582,6 +582,7 @@ function Items({ type, profile, editing, update, updateItem }) {
     name: "Nombre de certificación",
     issuer: "Entidad emisora",
     year: "Año de obtención",
+    url: "Enlace del certificado (https://…)",
   };
   const labels = {
     role: "Cargo",
@@ -594,6 +595,7 @@ function Items({ type, profile, editing, update, updateItem }) {
     name: "Certificación",
     issuer: "Entidad emisora",
     year: "Año de obtención",
+    url: "Enlace del certificado (https://…)",
   };
   const text =
     type === "experiences"
@@ -615,7 +617,7 @@ function Items({ type, profile, editing, update, updateItem }) {
                 field === "description" ? (
                   <label key={field} className="text-xs font-semibold text-[var(--muted)] sm:col-span-2">{labels[field]}<textarea className="field-control input-md mt-1 min-h-24" placeholder={placeholders[field]} value={item[field] || ""} onChange={(event) => updateItem(type, index, field, event.target.value)} /></label>
                 ) : (
-                  <label key={field} className="text-xs font-semibold text-[var(--muted)]">{labels[field]}<input className="field-control input-md mt-1" placeholder={placeholders[field]} value={item[field] || ""} onChange={(event) => updateItem(type, index, field, event.target.value)} /></label>
+                  <label key={field} className="text-xs font-semibold text-[var(--muted)]">{labels[field]}<input type={field === "url" ? "url" : "text"} maxLength={field === "url" ? 2000 : 255} className="field-control input-md mt-1" placeholder={placeholders[field]} value={item[field] || ""} onChange={(event) => updateItem(type, index, field, event.target.value)} /></label>
                 ),
               )}
             </div>

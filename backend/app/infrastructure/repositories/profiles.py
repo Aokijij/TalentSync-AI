@@ -10,7 +10,7 @@ class ProfileRepository(SqlAlchemyRepository[Profile]):
         if not family or not level:
             return []
         choice = Profile.preferences["market_participation"]
-        rows = self.session.query(Profile.user_id, Profile.skills, Profile.location, choice.label("participation"), Profile.preferences["radar_demo"].as_boolean().label("is_demo"), User.email, User.email_verified).join(User, User.id == Profile.user_id).filter(
+        rows = self.session.query(Profile.user_id, Profile.skills, Profile.location, choice.label("participation"), Profile.preferences["radar_demo"].as_boolean().label("is_demo"), Profile.preferences["local_fixture"].as_boolean().label("is_local_fixture"), User.email, User.email_verified).join(User, User.id == Profile.user_id).filter(
             User.role == UserRole.CANDIDATE, User.email_verified.is_(True), choice["enabled"].as_boolean().is_(True),
             choice["family"].as_string() == family, choice["level"].as_string() == level,
             Profile.preferences["radar_demo"].as_boolean().is_(True) if demo else Profile.preferences["radar_demo"].as_boolean().is_not(True)).all()

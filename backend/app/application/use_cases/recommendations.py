@@ -110,7 +110,7 @@ def ranked_candidates(
                     else None
                 ),
             )
-        if audience in {"invite", "applied"} and candidate["match_percentage"] < minimum_match:
+        if audience == "invite" and candidate["match_percentage"] < minimum_match:
             continue
         if query:
             searchable = " ".join(

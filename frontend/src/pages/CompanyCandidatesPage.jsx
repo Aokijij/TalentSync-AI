@@ -30,23 +30,27 @@ export function CompanyCandidatesPage() {
   }, [jobId]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setLoading(true);
       setError("");
       try {
         const { data } = await api.get(`/recommendations/jobs/${jobId}/candidates-page`, {
-          params: { audience, query: query.trim() || undefined, minimum_match: 80, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
+          params: { audience, query: query.trim() || undefined, minimum_match: audience === "applied" ? 0 : 80, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
+          signal: controller.signal,
         });
+        if (controller.signal.aborted) return;
         setCandidates(data.items || []);
         setTopCandidates(data.top_candidates || []);
         setTotal(data.total || 0);
       } catch (requestError) {
+        if (controller.signal.aborted) return;
         setError(requestError?.response?.data?.detail || "No fue posible cargar los candidatos");
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }, 250);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); controller.abort(); };
   }, [audience, jobId, page, query, refreshKey]);
 
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
