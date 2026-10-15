@@ -66,11 +66,13 @@ def test_profile_dates_and_mobility_survive_preference_flags_and_ranked_pages(cl
     assert client.get("/api/v1/profiles/me", headers=headers).json()["mobility"] == mobility
     page = client.get(f"/api/v1/recommendations/jobs/{job['id']}/candidates-page?minimum_match=0&limit=5", headers=owner)
     assert page.status_code == 200, page.text
-    row = next(item for item in page.json()["items"] if item["user_id"] == candidate["id"])
-    assert row["location_fit"]["status"] == "conflict" and row["experience_months"] == 12
-    assert row["match_percentage"] == round(row["professional_match_percentage"] * .8, 2)
+    assert candidate["id"] not in {item["user_id"] for item in page.json()["items"]}
     invitation = client.post(f"/api/v1/recommendations/jobs/{job['id']}/candidates/{candidate['id']}/invite", headers=owner)
     assert invitation.status_code == 422 and "traslado" in invitation.json()["detail"]
+    client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"]}).raise_for_status()
+    applied = client.get(f"/api/v1/recommendations/jobs/{job['id']}/candidates-page?audience=applied", headers=owner)
+    row = next(item for item in applied.json()["items"] if item["user_id"] == candidate["id"])
+    assert row["location_fit"]["status"] == "conflict" and row["experience_months"] == 12
     profile["experiences"][0]["end_date"] = "2023-12"
     assert client.put("/api/v1/profiles/me", headers=headers, json=profile).status_code == 422
 

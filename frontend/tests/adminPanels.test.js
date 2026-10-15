@@ -59,3 +59,17 @@ test("discarded CV mentions expose deletion separately from recovery", async () 
   const html = renderToStaticMarkup(createElement(Panel, { rows: [{ skill: "sql", state: "learning", excerpt: "Aprendiendo SQL" }], decisions: { sql: "dismissed" }, onDecision: () => {} }));
   assert.ok(html.includes("Eliminar mención descartada de sql") && html.includes("Recuperar"));
 });
+
+test("requirement support opens a dialog instead of expanding the vacancy card", async () => {
+  const Panel = await component("RequirementSupport");
+  const html = renderToStaticMarkup(createElement(Panel, { details: { requirements: [{ key: "python", skill: "python", reason: "Private detail" }] } }));
+  assert.ok(html.includes('aria-haspopup="dialog"') && html.includes("Ver cumplimiento por requisito"));
+  assert.ok(!html.includes("Private detail") && !html.includes("<details"));
+});
+
+test("language editor keeps long levels inside consistent controls", async () => {
+  const Panel = await component("LanguagesEditor");
+  const html = renderToStaticMarkup(createElement(Panel, { value: [{ name: "inglés", level: "B2" }], onChange: () => {} }));
+  assert.ok(html.includes("language-fields") && html.includes("language-level-control"));
+  assert.ok(html.includes('title="B2 · Intermedio alto"'));
+});

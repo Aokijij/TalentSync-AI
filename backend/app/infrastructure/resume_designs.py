@@ -20,6 +20,7 @@ from reportlab.platypus import (
 )
 
 from app.domain.services.credential_links import certificate_url
+from app.domain.services.experience_dates import recent_experiences
 from app.domain.services.professions import EDUCATION_LEVEL_LABELS
 from app.domain.services.resume_filename import resume_filename
 from app.domain.services.skill_levels import SKILL_LEVEL_LABELS, declared_skill_levels
@@ -153,6 +154,8 @@ def build_resume(user, included, include_photo, photo):
         if key not in included or not items:
             continue
         section(main, title)
+        if key == "experiences":
+            items = recent_experiences(items)
         for item in items:
             dates = [item.get("start_date") or item.get("start_year"), ("En curso" if key == "educations" else "Actualidad") if item.get("is_current") else item.get("end_date") or item.get("end_year") or item.get("year")]
             date = " - ".join(date_label(value) for value in dates if value)
@@ -189,7 +192,7 @@ def build_resume(user, included, include_photo, photo):
             if row:
                 target.append(SkillPills(list(row), pill.textColor, pill.backColor, pill.borderColor))
                 row.clear()
-        for skill in ([] if minimal else skills):
+        for skill in ([] if minimal or not single_column else skills):
             length = pdfmetrics.stringWidth(str(skill), "Resume", 7) + 14
             if length > width:
                 flush(); used = 0; target.append(p(skill, pill)); continue
@@ -197,6 +200,12 @@ def build_resume(user, included, include_photo, photo):
                 flush(); used = 0
             row.append(str(skill)); used += length + 5
         flush()
+        if not single_column:
+            name_style = ParagraphStyle("ModernSkillName", parent=side_body, fontName="ResumeBold", fontSize=7.7, leading=11, spaceAfter=2, keepWithNext=True)
+            level_style = ParagraphStyle("ModernSkillLevel", parent=side_body, fontSize=6.8, leading=10, spaceAfter=9, textColor=colors.HexColor("#e2e8f0"))
+            for skill in profile.skills:
+                target.append(p(skill, name_style))
+                target.append(p(SKILL_LEVEL_LABELS.get(levels.get(skill_key(skill)), "Nivel sin indicar"), level_style))
         if minimal:
             target.append(p(" · ".join(skills)))
     if "languages" in included and profile.languages:

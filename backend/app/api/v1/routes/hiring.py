@@ -1,12 +1,23 @@
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
 
-from app.api.deps import get_unit_of_work, require_roles
+from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
 from app.api.schemas.job import QualityPreview
 from app.api.schemas.job_quality import OfferFeedbackInput
 from app.application.use_cases import hiring as cases
 from app.domain.entities.enums import UserRole
+from app.domain.services.skills import normalize_skills
 
 router = APIRouter()
+
+
+class SkillSearchInput(BaseModel):
+    text: str = Field(min_length=3, max_length=20000)
+
+
+@router.post("/hiring/skills/search")
+def search_skills(payload: SkillSearchInput, user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)), nlp=Depends(get_text_analysis)):
+    return {"skills": normalize_skills(nlp.extract_skills(payload.text))[:100]}
 
 
 @router.get("/hiring/quality/{job_id}")

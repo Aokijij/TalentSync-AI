@@ -12,3 +12,8 @@ export function experienceDuration(months) {
   const years = Math.floor(total / 12), rest = total % 12;
   return [years ? `${years} año${years === 1 ? "" : "s"}` : "", rest ? `${rest} mes${rest === 1 ? "" : "es"}` : ""].filter(Boolean).join(" y ");
 }
+
+export function recentExperiences(items = []) {
+  const key = (item) => `${item.is_current || /^(presente|actualidad|actual)$/i.test(item.end_year || "") ? "1" : "0"}|${item.end_date || item.end_year || ""}|${item.start_date || item.start_year || ""}`;
+  return [...items].sort((a, b) => key(b).localeCompare(key(a)));
+}

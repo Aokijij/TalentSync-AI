@@ -1,7 +1,7 @@
 import { CandidateMatchExplanation } from "../components/CandidateMatchExplanation.jsx";
 import { skillLevels, skillLevelFor } from "../utils/skillLevels.js";
 import { isOngoing } from "../utils/profileStatus.js";
-import { experiencePeriod } from "../utils/experienceDates.js";
+import { experiencePeriod, recentExperiences } from "../utils/experienceDates.js";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -169,7 +169,7 @@ export function CandidateDetailPage() {
           <Timeline
             title="Experiencia laboral"
             icon={BriefcaseBusiness}
-            items={candidate.experiences}
+            items={recentExperiences(candidate.experiences)}
             empty="No hay experiencia laboral registrada."
             render={(item) => (
               <>

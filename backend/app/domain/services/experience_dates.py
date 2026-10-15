@@ -58,3 +58,11 @@ def validate_experiences(items):
         if start and end and start > end:
             raise ValueError("Experiencia: la finalización debe ser posterior al inicio")
     return items
+
+
+def recent_experiences(items):
+    """Sort a copy for display/export without changing editable source indexes."""
+    def key(item):
+        current = item.get("is_current") is True or str(item.get("end_year", "")).casefold() in {"presente", "actualidad", "actual"}
+        return (current, str(item.get("end_date") or item.get("end_year") or ""), str(item.get("start_date") or item.get("start_year") or ""))
+    return sorted(items or [], key=key, reverse=True)

@@ -28,6 +28,7 @@ const source = `// Generado desde DIVIPOLA (Datos Abiertos Colombia, dataset gdx
   `    ) || ""\n  );\n}\n`;
 
 await writeFile(new URL("../src/constants/colombianCities.js", import.meta.url), source);
+await writeFile(new URL("../../backend/app/domain/data/colombian_locations.json", import.meta.url), `${JSON.stringify(locations, null, 2)}\n`);
 console.log(`Escritos ${rows.length} registros DIVIPOLA en ${Object.keys(locations).length} departamentos.`);
 
 function titleCase(value) {

@@ -256,8 +256,12 @@ def refresh_user_recommendations(
 def rank_candidates_for_job(
     db: UnitOfWork, job: Job, *, nlp: TextAnalysis, user_ids: set[int] | None = None,
     batch_size: int | None = None, progress: dict | None = None,
+    eligible_only: bool = False, keep_user_ids: set[int] | None = None,
 ) -> list[tuple[User, float]]:
     users = db.users.candidates_for_ids(user_ids) if user_ids is not None and hasattr(db.users, "candidates_for_ids") else [user for user in db.users.candidates_with_profiles() if user_ids is None or user.id in user_ids]
+    if eligible_only:
+        from app.domain.services.work_preferences import employer_preference_conflicts
+        users = [user for user in users if user.profile and (user.id in (keep_user_ids or set()) or not employer_preference_conflicts(user.profile, job))]
     method = getattr(nlp, "match_method", "lexical-hashing-v1")
     existing = {row.user_id: row for row in db.recommendations.for_job(job.id)} if hasattr(db.recommendations, "for_job") else {
         user.id: db.recommendations.find_for_user_job(user.id, job.id) for user in users}
@@ -277,4 +281,5 @@ def rank_candidates_for_job(
         commit_scores(db)
     if progress is not None:
         progress.update(pending=len(stale) - len(selected), pool_total=len(users))
-    return sorted([(user, existing[user.id].match_percentage) for user in users if user.profile and user.id in existing and (existing[user.id].match_details or {}).get("input_version") == versions[user.id]], key=lambda item: item[1], reverse=True)
+    return sorted([(user, existing[user.id].match_percentage) for user in users if user.profile and user.id in existing and (existing[user.id].match_details or {}).get("input_version") == versions[user.id]
+        and (not eligible_only or user.id in (keep_user_ids or set()) or is_relevant_candidate_recommendation(existing[user.id], user.profile, job))], key=lambda item: item[1], reverse=True)

@@ -1602,3 +1602,57 @@ html[data-theme="dark"] .role-admin .button-primary { color: #302211; }
 .resume-minimal .resume-timeline-item::before { display:none; }
 .offer-skill { grid-template-columns:minmax(0,1fr) 110px 130px 60px auto; }
 @media(max-width:700px) { .offer-skill { grid-template-columns:1fr 1fr; } .offer-skill > label:first-child { grid-column:1/-1; } }
+
+/* Shared controls adapt to the active palette and to the available column width. */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent) 38%, var(--line)) var(--surface); }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: var(--surface); border-radius: 10px; }
+*::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--accent) 38%, var(--line)); border: 2px solid var(--surface); border-radius: 10px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+*::-webkit-scrollbar-corner { background: var(--surface); }
+@media (forced-colors: active) { * { scrollbar-color: auto; scrollbar-width: auto; } }
+.language-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 1rem; }
+.language-level-control, .language-fields input.field-control { height: 48px; min-height: 48px; }
+.language-level-control > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+.mobility-city-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.mobility-city-chips > span { display: inline-flex; align-items: center; gap: .5rem; border: 1px solid var(--line); border-radius: .6rem; background: var(--surface-subtle); padding: .5rem .65rem; font-size: .78rem; }
+.mobility-city-chips button { display: grid; place-items: center; padding: .2rem; border-radius: .3rem; color: var(--muted); }
+.mobility-city-chips button:hover { color: var(--error); background: var(--surface-hover); }
+.candidate-minimum-input { position: relative; }
+.candidate-minimum-input input { padding-right: 3rem; }
+.candidate-minimum-input > span { position: absolute; right: 2rem; top: 50%; color: var(--muted); }
+.offer-skill-search { display: grid; justify-items: start; gap: .8rem; margin: -.25rem 0 .5rem; }
+.offer-skill-search > p { font-size: .8rem; line-height: 1.6; color: var(--muted); }
+.offer-detected-skills { display: flex; flex-wrap: wrap; gap: .5rem; }
+.offer-detected-skills button { display: inline-flex; align-items: center; gap: .35rem; border: 1px solid var(--line); border-radius: .6rem; padding: .5rem .75rem; background: var(--surface); font-size: .8rem; }
+.offer-detected-skills button[aria-pressed=true] { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+.requirement-support-trigger { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 0; color: var(--accent); font-size: .8rem; font-weight: 700; }
+.requirement-support-trigger > span { border: 1px solid var(--line); border-radius: 1rem; padding: .1rem .45rem; font-size: .7rem; }
+.detail-modal-overlay { position: fixed; inset: 0; z-index: 90; background: #020617b3; backdrop-filter: blur(5px); display: grid; place-items: center; padding: 1.25rem; }
+.detail-modal { width: min(100%, 820px); max-height: 88dvh; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 1.4rem; background: var(--surface); box-shadow: 0 24px 80px #0006; overflow: hidden; }
+.detail-modal > header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--line); }
+.detail-modal h2 { font-size: 1.25rem; font-weight: 750; margin-top: .3rem; }
+.detail-modal-content { padding: 1.25rem 1.5rem; overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+.requirement-search { display: flex; align-items: center; gap: .65rem; color: var(--muted); }
+.requirement-modal-note { color: var(--muted); font-size: .8rem; line-height: 1.6; margin: .9rem 0; }
+.detail-modal .requirement-support-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: .75rem; max-height: none; }
+.detail-modal .requirement-support-body article { min-width: 0; overflow-wrap: anywhere; }
+.detail-modal .requirement-support-body article > div:first-child { flex-wrap: wrap; gap: .5rem; }
+.vacancy-learning-heading { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.25rem; }
+.vacancy-learning-heading h3 { font-size: 1.05rem; font-weight: 750; margin: .15rem 0 .35rem; }
+.vacancy-learning-heading > div > p:last-child { color: var(--muted); font-size: .8rem; }
+.vacancy-resource-count { margin-left: auto; flex-shrink: 0; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-radius: 1rem; padding: .35rem .65rem; font-size: .7rem; }
+.vacancy-learning-gaps { padding: .9rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .85rem; }
+.vacancy-learning-gaps > p { color: var(--muted); font-size: .75rem; margin-bottom: .6rem; }
+.vacancy-learning-gaps > div { display: flex; flex-wrap: wrap; gap: .4rem; }
+.vacancy-learning-gaps span { color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); border-radius: .45rem; padding: .25rem .5rem; font-size: .75rem; }
+.vacancy-learning-resources { display: grid; gap: .75rem; margin-top: 1rem; }
+.vacancy-learning .learning-fit-state { flex-wrap: wrap; background: var(--surface); border-color: var(--line); padding: 1.2rem; margin: 1rem 0; }
+.vacancy-learning .learning-fit-state > div { flex: 1 1 230px; min-width: 0; }
+.vacancy-learning .learning-fit-state > a { align-self: center; }
+.vacancy-learning .learning-panel-actions { margin-top: 1rem; }
+.resume-modern .resume-skills { display: grid; gap: 0; }
+.resume-modern .resume-skill { display: grid; gap: .25rem; width: 100%; border: 0; border-bottom: 1px solid #ffffff26; border-radius: 0; background: none; padding: .6rem 0; margin: 0; white-space: normal; overflow-wrap: anywhere; }
+.resume-modern .resume-skill strong { font-size: .8rem; font-weight: 650; }
+.resume-modern .resume-skill small { font-size: .68rem; color: #e2e8f0; }
+@media (max-width: 560px) { .vacancy-learning-heading { align-items: flex-start; flex-wrap: wrap; } .vacancy-resource-count { margin-left: 3.4rem; } .detail-modal-overlay { padding: .5rem; } .detail-modal-content, .detail-modal > header { padding: 1rem; } }

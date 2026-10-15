@@ -1,3 +1,4 @@
+import { useAuth } from "../hooks/useAuth.js";
 import { loadCandidatePages } from "../utils/candidateRequests.js";
 import { experienceDuration } from "../utils/experienceDates.js";
 import { Pagination } from "../components/Pagination.jsx";
@@ -14,6 +15,8 @@ import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.j
 
 export function CompanyTalentPage() {
   const location = useLocation();
+  const { user } = useAuth();
+  const minimumKey = `talentsync:candidate-minimum:${user.id}`;
   const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
   const [jobSearch, setJobSearch] = useState(""), [jobOffset, setJobOffset] = useState(0), [jobTotal, setJobTotal] = useState(0), [selectedSnapshot, setSelectedSnapshot] = useState(null), [pending, setPending] = useState(0);
@@ -23,7 +26,7 @@ export function CompanyTalentPage() {
   const pageSize = 9;
   const [query, setQuery] = useState(searchParams.get("query") || "");
   const [audience, setAudience] = useState(searchParams.get("audience") || "new");
-  const [minMatch, setMinMatch] = useState(Math.max(0, Math.min(100, Number(searchParams.get("min") ?? 50) || 0)));
+  const [minMatch, setMinMatch] = useState(() => { let saved = 50; try { saved = localStorage.getItem(minimumKey) ?? 50; } catch { /* Storage may be disabled. */ } return Math.max(0, Math.min(100, Number(searchParams.get("min") ?? saved) || 0)); });
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [loading, setLoading] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -135,7 +138,7 @@ export function CompanyTalentPage() {
                 <span className="relative mt-2 block"><Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" /><input className="field-control !pl-10" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Ej. servicio al cliente o administración" /></span>
               </label>
               <label className="block text-xs font-semibold text-[var(--muted)]">Porcentaje mínimo
-                <select className="field-control mt-2" value={minMatch} onChange={(event) => { setMinMatch(Number(event.target.value)); setPage(1); }}>{[0, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value ? `${value}% o más` : "Cualquier porcentaje"}</option>)}</select>
+                <div className="candidate-minimum-input"><input aria-label="Porcentaje mínimo de compatibilidad" className="field-control mt-2" type="number" min="0" max="100" step="1" value={minMatch} onChange={(event) => { const value = Math.max(0, Math.min(100, Math.round(Number(event.target.value) || 0))); setMinMatch(value); setPage(1); try { localStorage.setItem(minimumKey, String(value)); } catch { /* Optional preference storage. */ } }} /><span>%</span></div><small className="mt-2 block font-normal">Se recuerda en este navegador para tu usuario. Solo perfiles afines y disponibles.</small>
               </label>
               <button type="button" className="button-secondary" onClick={() => setRefreshVersion((value) => value + 1)} disabled={loading || sending}><RefreshCw size={16} />Actualizar</button>
             </div>

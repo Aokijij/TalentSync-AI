@@ -12,11 +12,10 @@ from app.domain.services.skills import normalize_skills
 def report(db, user, filters, *, local_fixture_mode=False):
     now = datetime.utcnow()
     profile = owner_profile(user)
-    participation = (profile.preferences or {}).get("market_participation", {})
     families = sorted(families_for(profile.profession or profile.education or ""))
     months = experience_months(profile.experiences)
-    suggestion = {"family": participation.get("family") or next(iter(families), ""),
-                  "level": participation.get("level") or ("entry" if months < 12 else "junior" if months < 36 else "mid" if months < 60 else "senior"),
+    suggestion = {"family": next(iter(families), ""),
+                  "level": "entry" if months < 12 else "junior" if months < 36 else "mid" if months < 60 else "senior",
                   "location": profile.location or ""}
     if filters.pop("personalized", False):
         filters = {**filters, **suggestion}

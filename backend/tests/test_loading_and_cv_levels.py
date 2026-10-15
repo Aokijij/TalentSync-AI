@@ -58,7 +58,7 @@ def test_company_ranking_is_progressive_scoped_and_uses_a_constant_number_of_que
     _, other = company_account(client, "bounded-ranking-other")
     job = create_job(client, owner)
     for index in range(15):
-        register(client, f"bounded-person-{index}", skills=["python"])
+        register(client, f"bounded-person-{index}", profession="Desarrollador Python", skills=["python", "sql", "fastapi"])
     calls = []
     original = matching._candidate_match
     def score(profile, job, **kwargs):

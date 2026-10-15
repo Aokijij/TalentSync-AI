@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import { AuthenticatedImage } from "./AuthenticatedImage.jsx";
 import { getResumePalette } from "../constants/resumePalettes.js";
 import { languageLevelLabel } from "../constants/languages.js";
-import { experiencePeriod } from "../utils/experienceDates.js";
+import { experiencePeriod, recentExperiences } from "../utils/experienceDates.js";
 import { isOngoing } from "../utils/profileStatus.js";
 const availabilityLabels = { immediate: "Inmediata", two_weeks: "En 15 días", one_month: "En 30 días", negotiable: "Fecha acordada" };
 const modalityLabels = { remote: "Remoto", hybrid: "Híbrido", onsite: "Presencial" };
@@ -74,7 +74,7 @@ export function ResumePreview({ profile, name, email, photoVersion }) {
             <div className="resume-skills">
               {(profile.skills || []).map((item) => (
                 <span key={item} className="resume-skill">
-                  {item}{skillLevelFor(profile.skill_levels, item) !== "unspecified" ? ` · ${skillLevels[skillLevelFor(profile.skill_levels, item)]}` : ""}
+                  {profile.resume_style === "modern" ? <><strong>{item}</strong><small>{skillLevels[skillLevelFor(profile.skill_levels, item)] || "Nivel sin indicar"}</small></> : <>{item}{skillLevelFor(profile.skill_levels, item) !== "unspecified" ? ` · ${skillLevels[skillLevelFor(profile.skill_levels, item)]}` : ""}</>}
                 </span>
               ))}
               {!profile.skills?.length ? <span className="text-sm opacity-70">Sin habilidades registradas</span> : null}
@@ -111,7 +111,7 @@ export function ResumePreview({ profile, name, email, photoVersion }) {
           ) : null}
           {profile.experiences?.length ? (
             <ResumeSection title="Experiencia">
-              {profile.experiences.map((item, index) => (
+              {recentExperiences(profile.experiences).map((item, index) => (
                 <div
                   key={`${item.company}-${index}`}
                   className="resume-timeline-item break-inside-avoid"

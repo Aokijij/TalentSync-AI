@@ -2,10 +2,10 @@ import { useId, useState } from "react";
 import { MapPin, Search, X, Check } from "lucide-react";
 const fold = (text) => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
-export function Autocomplete({ label, options, value, onChange, ...props }) {
+export function Autocomplete({ label, options, value, onChange, onSelect, ...props }) {
   const id = useId(), [open, setOpen] = useState(false), [active, setActive] = useState(-1);
   const matches = value.trim() ? options.filter((item) => fold(item).includes(fold(value))).slice(0, 8) : options.slice(0, 7);
-  const select = (item) => { onChange(item); setOpen(false); setActive(-1); };
+  const select = (item) => { onChange(item); onSelect?.(item); setOpen(false); setActive(-1); };
   return <div className="city-combobox"><label htmlFor={id}>{label}</label><div className="city-combobox-input"><MapPin size={16} aria-hidden="true" />
     <input {...props} id={id} className="field-control" value={value} role="combobox" autoComplete="off" aria-autocomplete="list" aria-expanded={open} aria-controls={`${id}-list`} aria-activedescendant={open && active >= 0 ? `${id}-${active}` : undefined}
       onChange={(event) => { onChange(event.target.value); setOpen(true); setActive(-1); }} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}

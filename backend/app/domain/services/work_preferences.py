@@ -19,7 +19,10 @@ def location_fit(profile, job):
     departments = (getattr(profile, "department", None), getattr(job, "department", None))
     if same and all(departments) and city_key(departments[0]) != city_key(departments[1]):
         same = False
-    if same or city_key(job.location) in {city_key(value) for value in mobility.get("commuting_cities", [])}:
+    def commuting_match(value):
+        parts = str(value).split(",", 1)
+        return city_key(parts[0]) == city_key(job.location) and (len(parts) == 1 or not departments[1] or city_key(parts[1]) == city_key(departments[1]))
+    if same or any(commuting_match(value) for value in mobility.get("commuting_cities", [])):
         return result("local", "Puede asistir en la ciudad de la vacante según su perfil.")
     if mobility.get("willing_to_relocate") is True:
         return result("relocation", "Está dispuesto a cambiar de ciudad; acuerda las condiciones del traslado.")
@@ -44,3 +47,21 @@ def effective_preferences(profile):
             "salary_required", "modality_required", "location_required"
         )},
     }
+
+
+def employer_preference_conflicts(profile, job):
+    """Hard conditions for invitations; occasional travel is not daily attendance."""
+    prefs = effective_preferences(profile)
+    fit = location_fit(profile, job)
+    conflicts = []
+    if job.modality in {"onsite", "hybrid"} and fit["status"] not in {"local", "relocation"}:
+        if prefs["mobility"].get("willing_to_relocate") is False:
+            conflicts.append("No acepta traslado ni asistencia habitual en la ciudad de la vacante")
+        elif prefs["location_required"]:
+            conflicts.append("No se ha confirmado la ciudad imprescindible")
+    if prefs["modality_required"] and prefs["modalities"] and job.modality not in prefs["modalities"]:
+        conflicts.append("La modalidad no cumple su condición imprescindible")
+    if prefs["salary_required"] and prefs["minimum_salary"] is not None:
+        if job.salary is None or job.salary < prefs["minimum_salary"]:
+            conflicts.append("El salario no cumple su mínimo imprescindible")
+    return conflicts

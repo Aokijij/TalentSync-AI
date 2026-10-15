@@ -18,7 +18,10 @@ from app.domain.services.experience_dates import experience_months
 from app.domain.services.match_explanations import requirements_for
 from app.domain.services.skill_levels import declared_skill_levels
 from app.domain.services.skills import skill_gap
-from app.domain.services.work_preferences import location_fit
+from app.domain.services.work_preferences import (
+    employer_preference_conflicts,
+    location_fit,
+)
 
 
 def profile_experience(profile) -> tuple[float | None, str | None]:
@@ -69,7 +72,7 @@ def ranked_candidates(
     ensure_job_access(db, job, current_user)
     applied_ids = {user_id for (user_id,) in db.applications.candidate_ids(job.id)}
     ranked = []
-    users = rank_candidates_for_job(db, job, nlp=nlp, user_ids=applied_ids if audience == "applied" else None, batch_size=batch_size, progress=progress)
+    users = rank_candidates_for_job(db, job, nlp=nlp, user_ids=applied_ids if audience == "applied" else None, batch_size=batch_size, progress=progress, eligible_only=True, keep_user_ids=applied_ids)
     applications = {row.user_id: row for row in db.applications.for_job(job.id)}
     user_ids = {user.id for user, _ in users}
     invitations = db.notifications.pending_invitation_ids(user_ids, f"/vacantes/{job.id}")
@@ -213,8 +216,9 @@ def invite_candidate(
             status_code=409, detail="El candidato ya se postuló a esta vacante"
         )
     recommendation = upsert_recommendation(db, candidate, job, nlp=nlp)
-    if not location_fit(candidate.profile, job)["invitation_allowed"]:
-        raise UseCaseError(status_code=422, detail="El candidato no acepta viajes ni traslado a otra ciudad. Respeta sus preferencias de movilidad.")
+    conflicts = employer_preference_conflicts(candidate.profile, job)
+    if conflicts:
+        raise UseCaseError(status_code=422, detail=". ".join(conflicts) + ". Respeta las preferencias del candidato.")
     if recommendation.match_percentage < 50:
         raise UseCaseError(
             status_code=422,

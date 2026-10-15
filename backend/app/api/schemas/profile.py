@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.api.schemas.language import LanguageLevel, unique_languages
+from app.domain.services.colombian_locations import canonical_commuting_city
 from app.domain.services.credential_links import certificate_url
 from app.domain.services.experience_dates import validate_experiences
 from app.domain.services.profile_status import (
@@ -24,7 +25,7 @@ class Mobility(BaseModel):
     def cities(cls, values):
         if any(not value.strip() or len(value.strip()) > 120 for value in values):
             raise ValueError("Indica ciudades válidas de hasta 120 caracteres")
-        return list(dict.fromkeys(value.strip() for value in values))
+        return list(dict.fromkeys(canonical_commuting_city(value) for value in values))
 
 
 class ProfileBase(BaseModel):

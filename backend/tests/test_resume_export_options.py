@@ -41,6 +41,22 @@ def test_export_validates_options_and_is_candidate_private(client):
         assert client.post("/api/v1/profiles/me/export", headers=headers, json=data).status_code == 422
 
 
+@pytest.mark.parametrize("style", ["classic", "modern", "minimal"])
+def test_export_orders_experiences_and_keeps_modern_skill_levels(client, style):
+    _, headers = register(client, f"ordered-{style}", skills=["python"])
+    profile = client.get("/api/v1/profiles/me", headers=headers).json()
+    profile.update(resume_style=style, skill_levels={"python": "advanced"}, experiences=[
+        {"role": "Cargo anterior marcador", "start_date": "2018-01", "end_date": "2019-01"},
+        {"role": "Cargo reciente marcador", "start_date": "2022-01", "end_date": "2023-01"},
+        {"role": "Cargo actual marcador", "start_date": "2024-01", "is_current": True},
+    ])
+    contents = text(client.post("/api/v1/profiles/me/export", headers=headers, json={"profile": profile}))
+    assert contents.index("Cargo actual marcador") < contents.index("Cargo reciente marcador") < contents.index("Cargo anterior marcador")
+    assert "Avanzado" in contents
+    if style == "modern":
+        assert "python (Avanzado)" not in contents
+
+
 def test_export_includes_only_owner_evidence_when_selected(client):
     owner, headers = register(client, "evidence-owner")
     other, _ = register(client, "evidence-other")
