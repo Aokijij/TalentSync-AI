@@ -1,3 +1,5 @@
+import { CandidateMatchExplanation } from "../components/CandidateMatchExplanation.jsx";
+import { skillLevels, skillLevelFor } from "../utils/skillLevels.js";
 import { isOngoing } from "../utils/profileStatus.js";
 import { experiencePeriod } from "../utils/experienceDates.js";
 import { useEffect, useState } from "react";
@@ -47,34 +49,34 @@ export function CandidateDetailPage() {
   const [application, setApplication] = useState(null);
   const [showAnswers, setShowAnswers] = useState(false);
   const [error, setError] = useState("");
+  const [matchError, setMatchError] = useState("");
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    const profileRequest = api.get(`/profiles/candidates/${userId}`, { params: jobId ? { job_id: jobId } : {} });
-    const matchRequest = jobId
-      ? api
-          .get(`/recommendations/jobs/${jobId}/candidates`)
-          .then(({ data }) =>
-            data.find((item) => String(item.user_id) === String(userId)),
-          )
-          .catch(() => null)
-      : Promise.resolve(null);
+    const controller = new AbortController();
+    let cancelled = false;
+    setError(""); setMatchError(""); setCandidate(null); setMatch(null); setApplication(null);
+    const profileRequest = api.get(`/profiles/candidates/${userId}`, { signal: controller.signal, params: jobId ? { job_id: jobId } : {} });
+    const matchRequest = jobId ? api.get(`/recommendations/jobs/${jobId}/candidates/${userId}/explanation`, { signal: controller.signal }).then(({ data }) => data).catch((failure) => { if (!cancelled) setMatchError(getApiErrorMessage(failure, "No pudimos cargar la explicación de compatibilidad.")); return null; }) : Promise.resolve(null);
     const applicationRequest = jobId
-      ? api.get(`/applications/jobs/${jobId}`).then(({ data }) => data.find((item) => String(item.user_id) === String(userId))).catch(() => null)
+      ? api.get(`/applications/jobs/${jobId}`, { signal: controller.signal }).then(({ data }) => data.find((item) => String(item.user_id) === String(userId))).catch(() => null)
       : Promise.resolve(null);
     Promise.all([profileRequest, matchRequest, applicationRequest])
       .then(([{ data }, candidateMatch, application]) => {
+        if (cancelled) return;
         setCandidate(data);
         const base = Number(candidateMatch?.base_match_percentage ?? candidateMatch?.match_percentage ?? application?.base_match_percentage ?? 0);
-        const adjustment = Number(application?.screening_adjustment || 0);
+        const adjustment = Number(application?.screening_adjustment ?? candidateMatch?.screening_adjustment ?? 0);
         setApplication(application ? { ...application, base_match_percentage: base } : null);
         setMatch(candidateMatch ? { ...candidateMatch, base_match_percentage: base, screening_adjustment: adjustment, match_percentage: Math.max(0, Math.min(100, base + adjustment)) } : null);
       })
-      .catch((requestError) =>
-        setError(
+      .catch((requestError) => {
+        if (!cancelled) setError(
           getApiErrorMessage(requestError, "No fue posible cargar el perfil"),
-        ),
-      );
-  }, [jobId, userId]);
+        );
+      });
+    return () => { cancelled = true; controller.abort(); };
+  }, [jobId, userId, retry]);
 
   if (error)
     return (
@@ -158,6 +160,8 @@ export function CandidateDetailPage() {
           ) : null}
         </div></div>
       </section>
+      {match?.match_details && <CandidateMatchExplanation match={match} />}
+      {matchError && <section className="surface-card p-4" role="alert"><p className="text-sm text-[var(--error)]">{matchError}</p><button type="button" className="button-secondary mt-3" onClick={() => setRetry((value) => value + 1)}>Reintentar explicación</button></section>}
       <ApplicationAnswersModal application={showAnswers ? application : null} candidateName={candidate.name} onClose={() => setShowAnswers(false)} onSaved={(updated) => { setApplication(updated); setMatch((current) => current ? { ...current, screening_adjustment: updated.screening_adjustment, match_percentage: updated.adjusted_match_percentage } : current); }} />
       <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-6">
@@ -229,7 +233,7 @@ export function CandidateDetailPage() {
                   key={skill}
                   className="rounded-full border border-[var(--accent)]/25 bg-[var(--accent)]/10 px-3 py-1.5 text-sm font-semibold text-[var(--accent)]"
                 >
-                  {skill}
+                  {skill}{skillLevelFor(candidate.skill_levels, skill) !== "unspecified" ? ` · ${skillLevels[skillLevelFor(candidate.skill_levels, skill)]}` : ""}
                 </span>
               ))}
               {!candidate.skills?.length && (

@@ -202,6 +202,10 @@ def update_job(
             )
     for key, value in changes.items():
         setattr(job, key, value)
+    if previous_status != job.status:
+        from app.application.use_cases.events import record_event
+        record_event(db, "job.status_updated", "job", job.id, actor_user_id=current_user.id,
+                     details={"previous_status": previous_status, "status": job.status})
     if review_changed:
         job.quality_revision += 1
         from app.application.use_cases.events import record_event

@@ -105,9 +105,12 @@ def update_job(
     *,
     nlp: TextAnalysis = Depends(get_text_analysis),
 ) -> Job:
+    changes = payload.model_dump(exclude_unset=True)
+    if "skill_requirements" in changes:
+        changes["skill_requirements"] = [row.model_dump() for row in payload.skill_requirements]
     return use_cases.update_job(
         job_id=job_id,
-        payload=payload.model_dump(exclude_unset=True),
+        payload=changes,
         current_user=current_user,
         db=db,
         nlp=nlp,

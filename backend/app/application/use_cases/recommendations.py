@@ -1,4 +1,5 @@
 import unicodedata
+from copy import deepcopy
 from datetime import datetime
 
 from app.application.errors import UseCaseError
@@ -15,6 +16,7 @@ from app.domain.entities.records import Notification, Recommendation, User
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
 from app.domain.services.experience_dates import experience_months
 from app.domain.services.match_explanations import requirements_for
+from app.domain.services.skill_levels import declared_skill_levels
 from app.domain.services.skills import skill_gap
 from app.domain.services.work_preferences import location_fit
 
@@ -101,6 +103,7 @@ def ranked_candidates(
                 experience_months=experience_months(user.profile.experiences),
                 match_percentage=(max(0.0, min(100.0, percentage + (application.screening_adjustment or 0))) if application else percentage),
                 skills=user.profile.skills or [],
+                skill_levels=declared_skill_levels(user.profile),
                 languages=user.profile.languages or [],
                 experience_years=years,
                 experience_summary=None if hidden else summary,
@@ -148,6 +151,30 @@ def ranked_candidates(
             -candidate["match_percentage"],
         ),
     )
+
+
+def candidate_explanation(job_id, user_id, current_user, db, *, nlp):
+    from app.application.use_cases.jobs import match_current_candidate
+    from app.application.use_cases.profiles import get_candidate_profile
+    job = db.jobs.get(job_id)
+    if job is None:
+        raise UseCaseError(status_code=404, detail="Vacante no encontrada")
+    ensure_job_access(db, job, current_user)
+    visible = get_candidate_profile(user_id, current_user, db, job_id=job_id)
+    candidate = db.users.get(user_id)
+    recommendation = match_current_candidate(job_id, candidate, db, nlp=nlp)
+    details = deepcopy(recommendation.match_details)
+    if visible.get("identity_hidden") or not (candidate.privacy_preferences or {}).get("share_evidence", True):
+        for row in details.get("requirements", []):
+            row["evidence"] = []
+    fit = location_fit(candidate.profile, job)
+    professional = recommendation.match_percentage
+    base = round(professional * fit["factor"], 2)
+    application = db.applications.find_for_user_job(user_id, job_id)
+    adjustment = (application.screening_adjustment or 0) if application else 0
+    return {"user_id": user_id, "job_id": job_id, "match_percentage": max(0, min(100, base + adjustment)),
+            "base_match_percentage": base, "professional_match_percentage": professional, "screening_adjustment": adjustment,
+            "match_details": details, "location_fit": fit}
 
 
 def invite_candidate(

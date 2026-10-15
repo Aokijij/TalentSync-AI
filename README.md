@@ -349,6 +349,18 @@ Todas las rutas funcionales comienzan en `/api/v1`. Las operaciones protegidas r
 
 Consulta `/docs` para ver parámetros, esquemas y respuestas del contrato vigente.
 
+### Perfiles, compatibilidad y administración
+
+Cada habilidad del perfil admite un nivel declarado: en aprendizaje, básico, intermedio, avanzado o experto. «Sin indicar» conserva la falta de información. La revisión de una oferta permite solicitar un nivel mínimo; la compatibilidad compara ambos sin inferir dominio por años de experiencia. Si la oferta exige un nivel y el candidato no lo indica, el requisito queda parcial. Los requisitos antiguos sin nivel conservan la comparación por presencia. Estos niveles son declaraciones, no evaluaciones acreditadas.
+
+La ficha del candidato para empresas explica factores, requisitos y ajuste por respuestas de esa vacante. La consulta calcula una sola comparación y respeta los permisos y la selección ciega. Las duraciones se presentan en años y meses.
+
+El administrador puede pausar, reactivar o cerrar una publicación desde su ficha. Pausar mantiene abiertos los procesos; cerrar finaliza los pendientes y notifica a los candidatos. La eliminación definitiva se confirma por separado. Los cambios de estado quedan en el registro de eventos.
+
+El catálogo educativo permite descargar un ejemplo JSON, cargar un archivo y revisar los recursos antes de importarlos como borradores. Para un recurso se recomienda el formulario. La revisión del motor explica qué comprueba, cuándo utilizarla y cómo interpretar el informe; los identificadores técnicos quedan en una sección para soporte.
+
+En el entorno local aislado, `python scripts/local.py seed-skill-levels` añade niveles variados únicamente a los perfiles de prueba identificados como `local_fixture` y a las vacantes de la semilla compatibles. Conserva declaraciones existentes y ofertas modificadas; hace un respaldo SQLite antes de guardar. No reinicia los datos ni modifica perfiles personales o administradores.
+
 ## Actualización de producción
 
 La publicación tiene dos pasos separados: Azure para la API y Cloudflare Pages para el frontend. Antes de actualizar, ejecuta pruebas, revisa el diff, confirma un respaldo recuperable y crea el commit que identificará la imagen.

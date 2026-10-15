@@ -1,3 +1,4 @@
+import { skillLevels, skillLevelFor } from "../utils/skillLevels.js";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { AuthenticatedImage } from "./AuthenticatedImage.jsx";
 import { getResumePalette } from "../constants/resumePalettes.js";
@@ -8,7 +9,7 @@ const availabilityLabels = { immediate: "Inmediata", two_weeks: "En 15 días", o
 const modalityLabels = { remote: "Remoto", hybrid: "Híbrido", onsite: "Presencial" };
 const resumeStyles = {
   classic: {
-    header: "bg-slate-950 text-white",
+    header: "bg-white text-slate-950",
     photo: "rounded-xl",
   },
   modern: {
@@ -73,7 +74,7 @@ export function ResumePreview({ profile, name, email, photoVersion }) {
             <div className="resume-skills">
               {(profile.skills || []).map((item) => (
                 <span key={item} className="resume-skill">
-                  {item}
+                  {item}{skillLevelFor(profile.skill_levels, item) !== "unspecified" ? ` · ${skillLevels[skillLevelFor(profile.skill_levels, item)]}` : ""}
                 </span>
               ))}
               {!profile.skills?.length ? <span className="text-sm opacity-70">Sin habilidades registradas</span> : null}

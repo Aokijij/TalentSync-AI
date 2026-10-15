@@ -30,6 +30,7 @@ class RecommendationBatch(BaseModel):
 
 
 class RankedCandidate(BaseModel):
+    skill_levels: dict = Field(default_factory=dict)
     professional_match_percentage: float | None = None
     location_fit: dict = Field(default_factory=dict)
     experience_months: int = 0

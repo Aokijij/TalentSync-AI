@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -9,6 +10,7 @@ from app.domain.services.profile_status import (
     single_current_employment,
     validate_educations,
 )
+from app.domain.services.skills import skill_key
 
 
 class Mobility(BaseModel):
@@ -28,6 +30,16 @@ class Mobility(BaseModel):
 class ProfileBase(BaseModel):
     profession: str | None = None
     skills: list[str] = Field(default_factory=list)
+    skill_levels: dict[str, Literal["learning", "basic", "intermediate", "advanced", "expert"]] | None = Field(default=None, max_length=100)
+
+    @field_validator("skill_levels")
+    @classmethod
+    def normalized_levels(cls, value):
+        if value is None:
+            return None
+        if any(not skill_key(key) or len(key) > 100 for key in value):
+            raise ValueError("Indica nombres válidos de habilidades de hasta 100 caracteres")
+        return {skill_key(key): level for key, level in value.items()}
     languages: list[LanguageLevel] = Field(default_factory=list, max_length=20)
 
     _unique_languages = field_validator("languages")(unique_languages)

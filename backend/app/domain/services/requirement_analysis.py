@@ -8,6 +8,11 @@ from app.domain.services.skill_context import (
     profile_skill_context,
     skill_mentions,
 )
+from app.domain.services.skill_levels import (
+    SKILL_LEVEL_LABELS,
+    SKILL_LEVELS,
+    declared_skill_levels,
+)
 from app.domain.services.skills import skill_gap, skill_key, skill_set
 
 STATUS_LABELS = {"fulfilled": "Cumplido con datos declarados", "partial": "Cumplimiento parcial", "unknown": "Sin información suficiente", "not_met": "No cumple según lo registrado"}
@@ -22,6 +27,7 @@ def requirement_rows(profile, job):
     experiences = getattr(profile, "experiences", None) or []
     evidence = getattr(profile, "evidence", None) or []
     imported = profile_skill_context(profile)
+    levels = declared_skill_levels(profile)
     for row in rows:
         key = row["key"]
         work, signals = [], []
@@ -54,6 +60,16 @@ def requirement_rows(profile, job):
             status, score, reason = "unknown", 0, "La habilidad se menciona en formación; esto no indica aprendizaje actual ni acredita dominio."
         else:
             status, score, reason = "unknown", 0, "No hay información suficiente para determinar el cumplimiento."
+        actual, required = levels.get(key, "unspecified"), row.get("level", "unspecified")
+        if status == "fulfilled" and actual == "learning":
+            status, score = "partial", 35
+            reason = "El candidato declara esta habilidad en aprendizaje; no se presupone dominio profesional."
+        if score > 0 and required in SKILL_LEVELS:
+            level_score = 50 if actual == "unspecified" else min(100, SKILL_LEVELS[actual] / SKILL_LEVELS[required] * 100)
+            if level_score < score:
+                score, status = round(level_score, 2), "partial"
+                reason += f" Nivel solicitado: {SKILL_LEVEL_LABELS[required]}; nivel declarado: {SKILL_LEVEL_LABELS[actual]}."
+        row.update(declared_level=actual, required_level=required)
         related = [experiences[index] for index in work]
         row.update(status=status, status_label=STATUS_LABELS[status], score=score, covered=status == "fulfilled", reason=reason,
                    related_months=experience_months(related), months_estimated=any(month_index(item.get("start_date")) is None for item in related),

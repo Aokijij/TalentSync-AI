@@ -77,3 +77,11 @@
 .market-cohort-shortcuts>span { width:100%; font-size:.75rem; color:var(--muted); }
 .market-cohort-shortcuts button { display:inline-flex; align-items:center; gap:.5rem; padding:.55rem .75rem; border:1px solid var(--line); border-radius:.65rem; color:var(--accent); font-size:.72rem; background:var(--surface); }
 .market-cohort-shortcuts button:hover { border-color:var(--accent); }
+.market-profile-shortcut { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:14px 18px; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
+.market-profile-shortcut > p { flex:1 1 330px; font-size:12px; }
+.market-profile-shortcut > button { display:inline-flex; align-items:center; gap:10px; padding:6px 14px 6px 6px; border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,var(--surface)); transition:background .15s,box-shadow .15s; }
+.market-profile-shortcut > button > span { display:grid; place-items:center; width:30px; height:30px; border-radius:8px; background:color-mix(in srgb,var(--accent) 15%,var(--surface)); }
+.market-profile-shortcut > button strong { font-size:13px; }
+.market-profile-shortcut > button:hover:not(:disabled) { background:color-mix(in srgb,var(--accent) 15%,var(--surface)); box-shadow:0 3px 12px #0001; }
+.market-profile-shortcut > button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.market-profile-shortcut > button:disabled { opacity:.55; }

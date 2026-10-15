@@ -10,6 +10,7 @@ class SkillRequirement(BaseModel):
     skill: str = Field(min_length=1, max_length=100)
     essential: bool = False
     weight: int = Field(default=1, ge=1, le=5)
+    level: Literal["unspecified", "basic", "intermediate", "advanced", "expert"] = "unspecified"
 
     @field_validator("skill")
     @classmethod

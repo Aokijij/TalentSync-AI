@@ -91,6 +91,13 @@ def ranked_candidates_page(
     }
 
 
+@router.get("/jobs/{job_id}/candidates/{user_id}/explanation")
+def candidate_explanation(job_id: int, user_id: int,
+    current_user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)),
+    db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis)):
+    return use_cases.candidate_explanation(job_id, user_id, current_user, db, nlp=nlp)
+
+
 @router.post(
     "/jobs/{job_id}/candidates/{user_id}/invite",
     response_model=NotificationResponse,

@@ -62,7 +62,7 @@ def skill_gap(candidate_skills, requirements):
     for requirement in requirements:
         key = skill_key(requirement["skill"])
         foundations = sorted(available & SKILL_FOUNDATIONS.get(key, set()))
-        result.append({**requirement, "key": key, "covered": key in available,
+        result.append({"essential": False, "weight": 1, "level": "unspecified", **requirement, "key": key, "covered": key in available,
                        "foundations": foundations if key not in available else [],
                        "status": "declared" if key in available else "related" if foundations else "missing"})
     return result

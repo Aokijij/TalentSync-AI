@@ -205,7 +205,7 @@ export function SkillRadarChart({
           Vacante
         </span>
       </figcaption>
-      <p className="mt-3 text-center text-xs text-[var(--muted)]">Presencia de habilidades; no mide tu nivel de dominio.</p>
+      <p className="mt-3 text-center text-xs text-[var(--muted)]">{requirements?.some((row) => row.required_level && row.required_level !== "unspecified") ? "Compara las habilidades y los niveles declarados con los mínimos de la vacante. No es una evaluación de dominio." : "Presencia de habilidades; no mide tu nivel de dominio."}</p>
       {pages > 1 && <nav className="mt-3 flex items-center justify-center gap-3 text-xs" aria-label="Grupos del mapa de habilidades"><button className="button-ghost button-sm" disabled={safePage === 1} onClick={() => setPage(safePage - 1)}>Anterior</button><span>Grupo {safePage} de {pages} · {allAxes.length} habilidades</span><button className="button-ghost button-sm" disabled={safePage === pages} onClick={() => setPage(safePage + 1)}>Siguiente</button></nav>}
     </figure>
   );

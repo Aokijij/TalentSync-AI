@@ -1,3 +1,4 @@
+import { experienceDuration } from "../utils/experienceDates.js";
 import { Pagination } from "../components/Pagination.jsx";
 import { useEffect, useState } from "react";
 import { ArrowRight, BriefcaseBusiness, Check, RefreshCw, Search, Send, UsersRound } from "lucide-react";
@@ -180,7 +181,7 @@ function TalentCard({ candidate, job, sending, returnTo, onInvite, onReview }) {
         {candidate.validated_foundations?.map((row, index) => <p className="text-xs text-[var(--success)]" key={index}>Fundamentos evaluados: {row.skill} · {row.score}%</p>)}
         {job.languages?.length ? <div><p className="text-xs font-semibold text-[var(--muted)]">Idiomas para este cargo</p>{job.languages.map((item) => { const actual = candidate.languages?.find((language) => language.name === item.name); return <p key={item.name} className="mt-1 text-xs text-[var(--muted)]"><span className="capitalize font-semibold">{item.name}</span>: solicita {languageLevelLabel(item.level)} · Candidato: {actual ? languageLevelLabel(actual.level) : "sin registrar"}</p>; })}</div> : null}
         </div></details>
-        <p className="text-sm text-[var(--muted)]">{candidate.experience_months ? `${Math.floor(candidate.experience_months / 12)} años y ${candidate.experience_months % 12} meses de experiencia registrada` : candidate.experience_summary || "Experiencia no especificada"}</p>
+        <p className="text-sm text-[var(--muted)]">{experienceDuration(candidate.experience_months)}</p>
         <div><p className="text-xs font-semibold text-[var(--muted)]">Habilidades que coinciden</p><div className="mt-2 flex flex-wrap gap-2">{skills.length ? skills.slice(0, 4).map((skill) => <span key={skill} className="inline-flex items-center gap-1 rounded-lg border border-[var(--line)] px-2 py-1 text-xs text-[var(--ink-strong)]"><Check size={12} className="text-[var(--success)]" />{skill}</span>) : <p className="text-xs text-[var(--muted)]">La coincidencia se basa en otros aspectos del perfil.</p>}{skills.length > 4 ? <span className="py-1 text-xs text-[var(--muted)]">+{skills.length - 4} más</span> : null}</div></div>
       </div>
       <div className="mt-auto border-t border-[var(--line)] pt-4">

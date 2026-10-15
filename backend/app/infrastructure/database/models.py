@@ -207,6 +207,10 @@ class Profile(Base):
         return (self.preferences or {}).get("mobility", {})
 
     @property
+    def skill_levels(self):
+        return (self.preferences or {}).get("skill_levels", {})
+
+    @property
     def cv_skill_context(self):
         from app.domain.services.skill_context import profile_skill_context
         return profile_skill_context(self)

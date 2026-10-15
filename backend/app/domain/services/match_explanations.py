@@ -12,7 +12,7 @@ from app.domain.services.requirement_analysis import (
 )
 from app.domain.services.work_preferences import effective_preferences, location_fit
 
-MATCH_VERSION = "contextual-match-v10"
+MATCH_VERSION = "contextual-match-v11"
 
 
 def weighted_coverage(profile, job):
@@ -23,7 +23,7 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
     payload = [MATCH_VERSION, text_method, profile.skills, profile.embedding, getattr(profile, "preferred_sector", None),
                profile.profession, profile.experience, profile.education, getattr(profile, "experiences", []),
                getattr(profile, "educations", []), getattr(profile, "certifications", []), getattr(profile, "languages", []),
-               getattr(profile, "evidence", []), job.skills, job.embedding, job.title, job.description, job.requirements,
+               getattr(profile, "evidence", []), (getattr(profile, "preferences", None) or {}).get("skill_levels", getattr(profile, "skill_levels", {})), job.skills, job.embedding, job.title, job.description, job.requirements,
                getattr(job, "skill_requirements", []), getattr(job, "languages", []), getattr(job, "required_study_fields", []),
                getattr(job, "required_education_level", None), getattr(job, "source_kind", "internal"), job.sector,
                (getattr(job, "quality_details", None) or {}).get("experience_years"),

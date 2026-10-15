@@ -1,3 +1,4 @@
+import { skillLevels, skillLevelFor, updateSkillLevel } from "../utils/skillLevels.js";
 import { EducationFields } from "../components/EducationFields.jsx";
 import { CareerCoachWorkspace } from "../components/CareerCoachWorkspace.jsx";
 import { CoachDialog } from "../components/CoachDialog.jsx";
@@ -66,6 +67,7 @@ const normalize = (data) => ({
     ? "immediate"
     : data.availability,
   skills: data.skills || [],
+  skill_levels: data.skill_levels || {},
   experiences: data.experiences || [],
   educations: data.educations || [],
   certifications: data.certifications || [],
@@ -395,6 +397,7 @@ export function ProfilePage() {
             </Section>
             <Section id="profile-languages" icon={BookOpen} title="Idiomas"><LanguagesEditor value={profile.languages} editing={editing} onChange={(value) => update("languages", value)} /></Section>
             <Section id="profile-skills" icon={BriefcaseBusiness} title="Habilidades">
+              <p className="mb-3 text-xs text-[var(--muted)]">Indica tu dominio actual de cada habilidad. Es una declaración de tu perfil; no una acreditación. Los niveles no se deducen de los años de experiencia.</p>
               <CvContextReview rows={profile.cv_skill_context} skills={profile.skills} decisions={profile.cv_mention_decisions} disabled={editing} onDecision={async (skill, action) => { const { data } = await api.patch("/profiles/me/cv-mentions", { skill, action }); setProfile(normalize(data)); await refreshUser(); }} />
               <div className="flex flex-wrap gap-2">
                 {(editing || allSkills ? profile.skills : profile.skills.slice(0, 12)).map((item) => (
@@ -402,7 +405,8 @@ export function ProfilePage() {
                     key={item}
                     className="profile-skill"
                   >
-                    {item}
+                    <span>{item}</span>
+                    {editing ? <select aria-label={`Nivel de ${item}`} className="profile-skill-level" value={skillLevelFor(profile.skill_levels, item)} onChange={(event) => update("skill_levels", updateSkillLevel(profile.skill_levels, item, event.target.value))}>{Object.entries(skillLevels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select> : skillLevelFor(profile.skill_levels, item) !== "unspecified" && <small>{skillLevels[skillLevelFor(profile.skill_levels, item)]}</small>}
                     {editing && (
                       <button
                         type="button"

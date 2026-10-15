@@ -1,3 +1,5 @@
+import { skillLevels, skillKey } from "../utils/skillLevels.js";
+import { AdminVacancyActions } from "../components/AdminVacancyActions.jsx";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -115,6 +117,8 @@ function JobDetailContent({ jobId }) {
         {errorMessage || "Cargando vacante…"}
       </div>
     );
+  const displayedSkills = [...new Map([...(job.skill_requirements || []).map((row) => row.skill), ...(job.skills || [])].map((skill) => [skillKey(skill), skill])).values()];
+  const minimumLevels = Object.fromEntries((job.skill_requirements || []).map((row) => [skillKey(row.skill), row.level]));
   return (
     <div className="space-y-6">
       <Link
@@ -124,6 +128,7 @@ function JobDetailContent({ jobId }) {
         <ArrowLeft size={16} />
         {user?.role === "company" ? "Volver a mis vacantes" : "Volver a vacantes"}
       </Link>
+      {user?.role === "admin" && <AdminVacancyActions job={job} onChanged={setJob} />}
       <section className="surface-card p-6">
         {matchError && <div className="vacancy-match-notice" role="status"><p>{matchError}</p><button type="button" onClick={async () => { setMatchError(""); try { setMatch((await api.post(`/jobs/${jobId}/match`, {}, { __quiet: true })).data); } catch (failure) { setMatchError(getApiErrorMessage(failure, "La compatibilidad aún no está disponible.")); } }}>Volver a calcular</button></div>}
         <div className={match ? "grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]" : "block"}>
@@ -254,7 +259,7 @@ function JobDetailContent({ jobId }) {
         </div>
         <aside className="job-detail-sidebar">
           <section className="job-requirements-card"><header><span><BriefcaseBusiness size={19} /></span><div><small>ANTES DE POSTULARTE</small><h2>Lo que busca esta oferta</h2></div></header>
-            <div className="job-requirement-group"><h3>{job.source_kind === "external" ? "Habilidades identificadas" : "Habilidades relacionadas"}</h3><div className="job-skill-chips">{(job.skills || []).map((skill) => <span key={skill}>{skill}</span>)}</div>{!job.skills?.length && <p>Consulta los requisitos en la descripción de la oferta.</p>}</div>
+            <div className="job-requirement-group"><h3>{job.source_kind === "external" ? "Habilidades identificadas" : "Habilidades relacionadas"}</h3><div className="job-skill-chips">{displayedSkills.map((skill) => <span key={skillKey(skill)}>{skill}{minimumLevels[skillKey(skill)] && minimumLevels[skillKey(skill)] !== "unspecified" ? ` · ${skillLevels[minimumLevels[skillKey(skill)]]}` : ""}</span>)}</div>{!displayedSkills.length && <p>Consulta los requisitos en la descripción de la oferta.</p>}</div>
             {(job.required_education_level || job.required_study_fields?.length) ? <div className="job-requirement-group"><h3><BookOpen size={16} />Formación requerida</h3><p className="job-requirement-value">{{ technical: "Técnico", technologist: "Tecnólogo", university: "Profesional universitario", postgraduate: "Posgrado" }[job.required_education_level] || "Nivel no especificado"}</p>{!!job.required_study_fields?.length && <div className="job-skill-chips">{job.required_study_fields.map((field) => <span key={field}>{field}</span>)}</div>}<small>Se reconocen títulos equivalentes del mismo campo.</small></div> : null}
             <div className="job-requirement-group"><h3><Globe2 size={16} />Idiomas</h3>{job.languages?.length ? <div className="job-language-list">{job.languages.map((language) => <p key={language.name}><strong>{language.name}</strong><span>{languageLevelLabel(language.level)}</span></p>)}</div> : <p>No se especifica un requisito de idioma.</p>}</div>
           </section>

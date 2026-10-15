@@ -145,3 +145,4 @@ html[data-theme="dark"] .profile-page .button-primary { color:#082f49; }
 .cv-mention-actions .cv-confirm-button { display:inline-flex; align-items:center; gap:.4rem; border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line)); background:color-mix(in srgb,var(--accent) 10%,var(--surface)); color:var(--accent); font-weight:650; font-size:.73rem; border-radius:.55rem; min-height:36px; padding:.5rem .65rem; }
 .cv-confirm-button:hover { border-color:var(--accent); }
 @media(max-width:800px) { .profile-summary-circle { width:46px; height:46px; } .profile-summary-circle > strong { font-size:.88rem; } .profile-summary-circle.is-complete > strong { font-size:.77rem; } }
+.profile-skill-level { max-width:145px; padding:3px 6px; border:1px solid var(--line); border-radius:6px; font-size:11px; background:var(--surface); color:var(--ink); }

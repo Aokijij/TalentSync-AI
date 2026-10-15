@@ -1,3 +1,4 @@
+import { CourseBatchImport } from "../components/CourseBatchImport.jsx";
 import { AdminLearningLibrary } from "../components/AdminLearningLibrary.jsx";
 import { LearningConnectors } from "../components/LearningConnectors.jsx";
 import { ArrowRight, ArrowLeft } from "lucide-react";
@@ -79,6 +80,6 @@ export function LearningCatalogPage() {
     </form>}
 
     <AdminLearningLibrary rows={listedRows} busy={busy} onEdit={(row) => { setEditing(row); setStep(0); setFormOpen(true); }} />
-    <details className="surface-card p-5"><summary className="cursor-pointer font-bold">Opciones avanzadas · importar un lote JSON</summary><p className="my-3 text-sm text-[var(--muted)]">Hasta cincuenta recursos por lote y doscientos en total. Usa una lista de objetos con los campos del formulario. No se consultan APIs ni se importan alumnos, compras o certificados.</p><form className="space-y-3" onSubmit={async (event) => { event.preventDefault(); const form = event.currentTarget; const value = new FormData(form).get("catalog"); if (!await confirm({ title: "Importar estos recursos", description: "El lote se añadirá al catálogo educativo que consultan los candidatos.", confirmLabel: "Importar recursos" })) return; act(async () => { const resources = JSON.parse(value); const { data } = await api.post("/admin/learning/resources/import", { resources }); form.reset(); return data; }); }}><label className="block">Lista JSON<textarea className="field-control mt-1 min-h-36 font-mono" name="catalog" required maxLength={200000} /></label><button className="button-secondary" disabled={busy}>Importar recursos</button></form></details>
+    <CourseBatchImport onImported={setRows} />
   </>} </div>;
 }

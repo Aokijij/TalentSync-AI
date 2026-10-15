@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
+button:not(:disabled), a[href], summary, select:not(:disabled),
+input:is([type="checkbox"], [type="radio"], [type="file"]):not(:disabled),
+[role="button"]:not([aria-disabled="true"]), label:has(input:is([type="checkbox"], [type="radio"], [type="file"]):not(:disabled)) { cursor:pointer; }
+button:disabled, select:disabled, input:disabled, [aria-disabled="true"] { cursor:not-allowed; }
+
 /* Preserve the previous border and focus defaults during the v4 migration. */
 @layer base {
   *, ::before, ::after, ::backdrop, ::file-selector-button {
@@ -1578,3 +1583,22 @@ html[data-theme="dark"] .role-admin .button-primary { color: #302211; }
 .vacancy-menu > div > * { display:flex; align-items:center; gap:.5rem; text-align:left; padding:.7rem; width:100%; font-size:.8rem; border-radius:.5rem; }
 .vacancy-menu > div > *:hover { background:var(--surface-subtle); }
 .vacancy-menu > summary::-webkit-details-marker { display:none; }
+.resume-classic .resume-header { background:white; color:#172a3a; border-top:0; border-bottom:3px solid var(--resume-accent); display:flex; flex-direction:column; text-align:center; }
+.resume-classic .resume-identity { flex-direction:row-reverse; justify-content:center; }
+.resume-classic .resume-name { font-family:Georgia,"Times New Roman",serif; font-weight:700; }
+.resume-classic .resume-contact-list { flex-direction:row; flex-wrap:wrap; justify-content:center; }
+.resume-classic .resume-body { display:flex; flex-direction:column-reverse; }
+.resume-classic .resume-main { font-family:Georgia,"Times New Roman",serif; }
+.resume-classic .resume-sidebar { background:white; color:#172a3a; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.resume-classic .resume-section h2 { background:var(--resume-tint,#eef6fc); padding:7px 10px; }
+.resume-classic .resume-timeline-item { border-left:0; padding-left:0; }
+.resume-classic .resume-timeline-item::before { display:none; }
+.resume-minimal .resume-name { font-family:Arial,sans-serif; font-weight:700; }
+.resume-minimal .resume-body { display:flex; flex-direction:column-reverse; }
+.resume-minimal .resume-sidebar { display:block; background:white; color:#172a3a; }
+.resume-minimal .resume-section h2 { border:0; text-transform:none; letter-spacing:normal; }
+.resume-minimal .resume-skill { border:0; background:none; padding:0; }
+.resume-minimal .resume-timeline-item { border:0; padding-left:0; }
+.resume-minimal .resume-timeline-item::before { display:none; }
+.offer-skill { grid-template-columns:minmax(0,1fr) 110px 130px 60px auto; }
+@media(max-width:700px) { .offer-skill { grid-template-columns:1fr 1fr; } .offer-skill > label:first-child { grid-column:1/-1; } }

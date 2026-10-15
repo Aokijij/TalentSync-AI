@@ -14,6 +14,7 @@ from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.skill_levels import declared_skill_levels
 from app.domain.services.skills import normalize_skills
 
 
@@ -121,7 +122,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
             return {
                 "id": profile.id, "user_id": user_id, "name": candidate_alias(job_id, user_id),
                 "identity_hidden": True, "profession": profile.profession,
-                "skills": profile.skills or [], "languages": profile.languages or [],
+                "skills": profile.skills or [], "skill_levels": declared_skill_levels(profile), "languages": profile.languages or [],
                 "availability": profile.availability, "preferred_modality": profile.preferred_modality,
                 "desired_salary": profile.desired_salary,
                 "experiences": [{key: row.get(key) for key in ("role", "start_year", "end_year", "start_date", "end_date", "is_current")} for row in profile.experiences or []],
@@ -142,6 +143,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
         "email": candidate.email,
         "profession": profile.profession,
         "skills": profile.skills or [],
+        "skill_levels": declared_skill_levels(profile),
         "languages": profile.languages or [],
         "experience": profile.experience,
         "education": profile.education,
@@ -198,6 +200,10 @@ def update_my_profile(
         db.add(current_user)
     profile.profession = payload["profession"]
     profile.skills = normalize_skills(payload["skills"])
+    supplied_levels = payload.get("skill_levels")
+    if supplied_levels is not None:
+        profile.preferences = {**(profile.preferences or {}), "skill_levels": supplied_levels}
+    profile.preferences = {**(profile.preferences or {}), "skill_levels": declared_skill_levels(profile)}
     profile.languages = payload.get("languages", [])
     previous_summary = payload["experience"]
     profile.education = payload["education"]
