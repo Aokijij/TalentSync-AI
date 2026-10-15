@@ -11,7 +11,7 @@ export function SearchPreferences({ data, onSaved, alignment }) {
 
   async function toggle(key, value) {
     setBusy(true); setError(""); setPending({ ...data, [key]: value });
-    try { await api.put("/matching/preferences", { [key]: value }); await onSaved?.(); }
+    try { const response = await api.put("/matching/preferences", { [key]: value }); await onSaved?.(response.data); }
     catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); setPending(null); }
   }
   const rows = data ? [

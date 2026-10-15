@@ -7,7 +7,7 @@ from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import get_job
 from app.application.use_cases.learning_resources import resources as catalog_resources
-from app.application.use_cases.matching import candidate_match
+from app.application.use_cases.matching import candidate_match, prepare_scores
 from app.domain.services.career_learning import AREAS, profile_areas
 from app.domain.services.course_practices import (
     course_practice,
@@ -21,6 +21,7 @@ from app.domain.services.learning_activities import (
 )
 from app.domain.services.learning_catalog import ASSESSMENTS
 from app.domain.services.match_explanations import requirements_for
+from app.domain.services.requirement_analysis import requirement_rows
 from app.domain.services.skills import normalize_skills, skill_gap, skill_set
 from app.domain.services.sql_challenges import CHALLENGES
 
@@ -57,24 +58,28 @@ def catalog(db, user, area="recommended"):
 
 def opportunities(db, user, job_id, nlp):
     job = get_job(job_id, db, user)
-    gaps = [row for row in skill_gap(user.profile.skills, requirements_for(job)) if not row["covered"]]
+    gaps = [row for row in requirement_rows(user.profile, job) if not row["covered"]]
     missing = {row["key"] for row in gaps}
-    baseline = candidate_match(user.profile, job, nlp=nlp)[0]
     active = [other for other in db.jobs.active() if other.id != job.id][:200]
     resources = []
     eligible = [resource for resource in catalog_resources(db) if missing & skill_set(resource["skills"])]
     eligible.sort(key=lambda row: (-len(missing & skill_set(row["skills"])), row["hours"], row["id"]))
-    baselines = {other.id: candidate_match(user.profile, other, nlp=nlp)[0] for other in active}
-    for resource in eligible[:10]:
+    projections = [(resource, ProjectedProfile(user.profile, normalize_skills([*user.profile.skills, *resource["skills"]]))) for resource in eligible[:10]]
+    prepare_scores(nlp, [(user.profile, job), *[(profile, job) for _, profile in projections]])
+    baseline = candidate_match(user.profile, job, nlp=nlp)[0]
+    # Other offers need only an explicit missing-skill intersection. Running
+    # the neural model for every course/offer pair blocked ordinary requests.
+    known = skill_set(user.profile.skills)
+    other_gaps = [skill_set([row["skill"] for row in requirements_for(other)]) - known for other in active]
+    for resource, projected_profile in projections:
         targeted = missing & skill_set(resource["skills"])
         if not targeted:
             continue
-        projected_profile = ProjectedProfile(user.profile, normalize_skills([*user.profile.skills, *resource["skills"]]))
         projected = candidate_match(projected_profile, job, nlp=nlp)[0]
-        affected = sum(candidate_match(projected_profile, other, nlp=nlp)[0] > baselines[other.id] for other in active)
+        affected = sum(bool(missing_skills & skill_set(resource["skills"])) for missing_skills in other_gaps)
         resources.append({**resource, "targeted_skills": sorted(targeted), "current_match": baseline, "projected_match": projected,
                           "estimated_gain": round(projected - baseline, 2), "other_jobs_impacted": affected,
-                          "notice": "Escenario hipotético si acreditas la habilidad; completar el recurso no garantiza este resultado ni una entrevista."})
+                          "notice": "Escenario hipotético si acreditas la habilidad. Otras vacantes cuentan requisitos relacionados, sin recalcular su compatibilidad. Completar el curso no acredita dominio ni garantiza una entrevista."})
     return {"job_id": job.id, "gaps": gaps, "resources": sorted(resources, key=lambda row: (-row["estimated_gain"] / row["hours"], row["id"])),
             "sampled_jobs": len(active), "current_match": baseline, "eligible_resources": len(eligible), "resource_limit": 10}
 

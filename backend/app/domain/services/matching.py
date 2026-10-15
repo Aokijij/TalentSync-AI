@@ -2,6 +2,7 @@ import re
 import unicodedata
 
 from app.domain.entities.records import Job, Profile, Recommendation
+from app.domain.services.languages import LEVELS, language_levels
 from app.domain.services.professions import education_match
 from app.domain.services.skills import skill_set
 
@@ -132,9 +133,11 @@ def language_coverage(profile, job) -> float | None:
     required = getattr(job, "languages", None) or []
     if not required:
         return None
-    levels = {level: index for index, level in enumerate(["A1", "A2", "B1", "B2", "C1", "C2", "NATIVE"], start=1)}
-    available = {item["name"]: levels.get(item["level"], 0) for item in getattr(profile, "languages", None) or []}
-    return round(sum(min(1.0, available.get(item["name"], 0) / levels[item["level"]]) for item in required) / len(required) * 100, 2)
+    requested = language_levels(required)
+    available = language_levels(getattr(profile, "languages", None))
+    if not requested:
+        return None
+    return round(sum(min(1.0, LEVELS.get(available.get(name), 0) / LEVELS[level]) for name, level in requested.items()) / len(requested) * 100, 2)
 
 
 def combined_match(semantic: float, skill_score: float, language_score: float | None = None, education_score: float | None = None, certification_score: float | None = None) -> float:

@@ -8,6 +8,7 @@ from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases.matching import upsert_recommendation
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Company, Job, User
+from app.domain.services.match_explanations import input_version, preference_alignment
 from app.domain.services.offer_review import review_offer
 from app.domain.services.reputation import company_health
 
@@ -309,4 +310,19 @@ def match_current_candidate(
     job = db.jobs.get(job_id)
     if job is None or job.status == "draft":
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
-    return upsert_recommendation(db, current_user, job, nlp=nlp)
+    method = getattr(nlp, "match_method", "lexical-hashing-v1")
+    version = input_version(current_user.profile, job, method)
+    cached = db.recommendations.find_for_user_job(current_user.id, job.id)
+    if cached is not None and (cached.match_details or {}).get("input_version") == version:
+        preferences = preference_alignment(current_user.profile, job)
+        cached.match_details = {**cached.match_details, "preferences": preferences, "candidate_interest_score": preferences["score"]}
+        return cached
+    try:
+        return upsert_recommendation(db, current_user, job, nlp=nlp, cached=cached)
+    except UseCaseError as error:
+        if error.status_code != 409:
+            raise
+        winner = db.recommendations.find_for_user_job(current_user.id, job.id)
+        if winner is None or (winner.match_details or {}).get("input_version") != version:
+            raise
+        return winner

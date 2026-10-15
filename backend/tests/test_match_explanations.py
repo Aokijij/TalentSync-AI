@@ -3,7 +3,7 @@ from test_api_flows import client, company_account, create_job, register  # noqa
 from app.domain.services.skills import skill_gap, skill_key
 
 
-def test_profile_conditions_are_authoritative_and_requirement_flags_invalidate_cache(client):  # noqa: F811
+def test_profile_conditions_are_authoritative_and_requirement_flags_refresh_without_invalidating_scores(client):  # noqa: F811
     _, company = company_account(client, "profile-conditions")
     job = create_job(client, company)
     assert client.patch(f"/api/v1/jobs/{job['id']}", headers=company, json={"salary": 3_000_000, "modality": "onsite", "location": "Bogotá"}).status_code == 200
@@ -20,7 +20,7 @@ def test_profile_conditions_are_authoritative_and_requirement_flags_invalidate_c
     required = client.get(endpoint, headers=headers).json()
     assert required["preferences"]["unmet_conditions"] == ["Salario mínimo"]
     assert required["overall_score"] == initial["overall_score"]
-    assert required["input_version"] != initial["input_version"]
+    assert required["input_version"] == initial["input_version"]
     profile.update(desired_salary=2_500_000, preferred_modality="onsite", location="Bogotá")
     assert client.put("/api/v1/profiles/me", headers=headers, json=profile).status_code == 200
     fresh = client.get("/api/v1/recommendations/me/jobs", headers=headers, params={"include_all": True}).json()[0]["match_details"]

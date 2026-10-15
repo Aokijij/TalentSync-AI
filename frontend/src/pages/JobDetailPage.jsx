@@ -51,6 +51,7 @@ function JobDetailContent({ jobId }) {
   const [answers, setAnswers] = useState({});
   const [availableJobs, setAvailableJobs] = useState([]);
   const [companyId, setCompanyId] = useState(null);
+  useEffect(() => { if (routeLocation.hash === "#postularme" && job?.application_questions?.length) setShowQuestions(!alreadyApplied); }, [job, routeLocation.hash, alreadyApplied]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
     return loadVacancyData(api, { jobId, role: user?.role }, {

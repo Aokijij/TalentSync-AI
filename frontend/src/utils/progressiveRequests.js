@@ -15,14 +15,22 @@ export function createProgressiveLoader(request, pause = () => new Promise((reso
   function continueRefresh(accountId) {
     const key = String(accountId);
     if (refreshing.has(key) || !observers.get(key)?.size) return;
-    const run = { stopped: false };
+    const run = { stopped: false, failures: 0 };
     refreshing.set(key, run);
     (async () => {
       try {
         while (!run.stopped && observers.get(key)?.size) {
           await pause();
           if (run.stopped || !observers.get(key)?.size) break;
-          const response = await pendingBatch(accountId);
+          let response;
+          try {
+            response = await pendingBatch(accountId);
+            run.failures = 0;
+          } catch (error) {
+            if (run.stopped || error.code === "ERR_CANCELED") break;
+            if (++run.failures <= 2 && (!error.response || [502, 503, 504].includes(error.response.status))) continue;
+            throw error;
+          }
           if (run.stopped) break;
           publish(accountId, response);
           if (!response.data.pending) break;

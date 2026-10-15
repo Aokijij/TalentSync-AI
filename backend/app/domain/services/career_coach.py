@@ -78,7 +78,7 @@ def demand_report(profile, jobs, courses, search="", sector="", location="", now
     counts = Counter(skill_key(skill) for job in sample for skill in set(skill_key(value) for value in job.skills or []))
     known = skill_set(profile.skills)
     rows = []
-    for skill, count in counts.most_common(12):
+    for skill, count in sorted(counts.items(), key=lambda row: (-row[1], row[0])):
         options = [resource for resource in courses if skill in skill_set(resource.get("skills", []))]
         rows.append({"skill": skill, "count": count, "percentage": round(count / len(sample) * 100) if len(sample) >= 5 else None,
                      "declared": skill in known, "courses": [{key: resource.get(key) for key in ("id", "title", "provider", "hours", "url")} for resource in options[:3]]})

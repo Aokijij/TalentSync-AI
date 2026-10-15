@@ -12,7 +12,7 @@ from app.domain.services.personalization import synthetic_email
 from app.domain.services.professions import PROFESSION_GROUPS
 from app.domain.services.requirement_analysis import ROLE_FAMILIES
 from app.domain.services.skill_context import fold
-from app.domain.services.skills import skill_key, skill_set
+from app.domain.services.skills import skill_set
 from app.domain.services.work_preferences import city_key
 
 MINIMUM_SAMPLE = 20
@@ -101,8 +101,15 @@ def percentile(values, ratio):
 
 
 def salary_report(jobs, filters):
+    offers = [{"id": job.id, "title": job.title, "company": getattr(job, "company_name", ""), "location": job.location,
+               "level": (job.quality_details or {}).get("seniority"), "modality": job.modality, "salary": job.salary,
+               "salary_max": (job.quality_details or {}).get("salary_max"), "contract_type": (job.quality_details or {}).get("contract_type"),
+               "weekly_hours": (job.quality_details or {}).get("weekly_hours")}
+              for job in jobs if job.salary and math.isfinite(job.salary) and job.salary > 0
+              and all((job.quality_details or {}).get(key) == value for key, value in (("salary_currency", "COP"), ("salary_period", "monthly"), ("salary_basis", "gross_base")))]
+    observations = {"offers": sorted(offers, key=lambda row: (row["salary"], row["id"])), "total_offers": len(jobs), "offers_with_salary": len(offers)}
     if not all(filters.get(key) for key in ("family", "level", "location")):
-        return {"status": "choose_cohort", "groups": [], "minimum_sample": MINIMUM_SAMPLE, "note": "Elige área, nivel y ciudad para consultar salarios comparables."}
+        return {**observations, "status": "choose_cohort", "groups": [], "minimum_sample": MINIMUM_SAMPLE, "note": "Puedes consultar los salarios de las ofertas filtradas. Para una mediana comparable, elige área, nivel y ciudad."}
     groups = defaultdict(lambda: defaultdict(list))
     eligible = 0
     for job in jobs:
@@ -120,7 +127,7 @@ def salary_report(jobs, filters):
             continue
         results.append({"modality": key[0], "employment_type": key[1], "contract_type": key[2], "weekly_hours": key[3], "sample": len(values),
                         "offers": sum(len(amounts) for amounts in companies.values()), "median": round(median(values), 2), "p25": percentile(values, .25), "p75": percentile(values, .75)})
-    return {"status": "ready" if results else "insufficient_data", "groups": sorted(results, key=lambda row: (-row["sample"], row["modality"], row["contract_type"], row["weekly_hours"])),
+    return {**observations, "status": "ready" if results else "insufficient_data", "groups": sorted(results, key=lambda row: (-row["sample"], row["modality"], row["contract_type"], row["weekly_hours"])),
             "minimum_sample": MINIMUM_SAMPLE, "eligible_offers": eligible, "offers_with_salary": sum(bool(job.salary and job.salary > 0) for job in jobs), "total_offers": len(jobs),
             "currency": "COP", "period": "monthly", "basis": "gross_base",
             "note": "Mínimos fijos brutos publicados en COP al mes, no salarios pagados. Mediana por empresa y luego entre empresas; cada grupo separa contrato, modalidad, jornada y horas. No se infieren condiciones ausentes ni se incluyen pagos variables."}
@@ -134,7 +141,8 @@ def market_report(profile, jobs, candidates, courses, filters, now=None):
     demand = demand_report(profile, demand_jobs, courses, now=now)
     observed = {row["skill"]: row for row in demand["skills"]}
     demand["own_skills"] = [observed.get(skill, {"skill": skill, "count": 0, "percentage": None, "declared": True,
-        "courses": [{key: course.get(key) for key in ("id", "title", "provider", "hours", "url")} for course in courses if skill in skill_set(course.get("skills", []))][:3]}) for skill in sorted({skill_key(value) for value in profile.skills or []})]
+        "courses": [{key: course.get(key) for key in ("id", "title", "provider", "hours", "url")} for course in courses if skill in skill_set(course.get("skills", []))][:3]}) for skill in sorted(skill_set(profile.skills))]
+    demand["own_skills"].sort(key=lambda row: (-row["count"], row["skill"]))
     demand["note"] = "Ofertas publicadas activas de los últimos 90 días, sin duplicados por empresa, cargo y ubicación. Se excluyen demos identificables. La demanda observada no representa todo el mercado."
     peers, salary = peer_report(profile, candidates, filters, now), salary_report(selected, filters)
     if demo:

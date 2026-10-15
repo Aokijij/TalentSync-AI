@@ -19,7 +19,7 @@ import {
   Building2,
   MapPin,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { api } from "../api/client.js";
 import { getRecommendations } from "../api/recommendations.js";
@@ -36,9 +36,10 @@ import { externalPortal } from "../utils/externalPortal.js";
 import { pageItems, totalPages } from "../utils/pagination.js";
 
 export function RecommendationsPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
-  const refreshingMatches = useRecommendationUpdates(user.id, setRecommendations);
+  const { refreshing: refreshingMatches, error: matchLoadError, retry: retryMatches } = useRecommendationUpdates(user.id, setRecommendations);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [preferences, setPreferences] = useState(null);
@@ -69,12 +70,14 @@ export function RecommendationsPage() {
     if (showLoading) setLoading(true);
     setError("");
     try {
-      await Promise.all([
+      const results = await Promise.allSettled([
         getRecommendations(user.id).then(({ data }) => setRecommendations(data)),
         api.get("/applications/me").then(({ data }) => setApplications(data)),
         api.get("/jobs").then(({ data }) => setJobs(data)),
         api.get("/matching/preferences").then(({ data }) => setPreferences(data)),
       ]);
+      const failed = results.slice(0, 3).some((row) => row.status === "rejected" && row.reason?.code !== "ERR_CANCELED");
+      if (failed) setError("No pudimos cargar una parte de las recomendaciones. Puedes volver a intentarlo.");
     } catch {
       setError("No pudimos cargar las recomendaciones. Puedes volver a intentarlo.");
     } finally {
@@ -132,6 +135,10 @@ export function RecommendationsPage() {
       setExternalJob(job);
       return;
     }
+    if (job.application_questions?.length || job.application_questions_count) {
+      navigate(`/vacantes/${job.id}#postularme`);
+      return;
+    }
     try {
       await api.post("/applications", { job_id: job.id });
       setMessage("Postulación registrada correctamente");
@@ -148,6 +155,7 @@ export function RecommendationsPage() {
   return (
     <div className="space-y-6">
       {refreshingMatches && <p role="status" className="text-sm text-[var(--muted)]">Actualizando compatibilidades… Puedes seguir usando la plataforma.</p>}
+      {matchLoadError && <p role="alert" className="surface-card p-4 text-[var(--error)]">{matchLoadError} <button className="underline" onClick={retryMatches}>Reintentar</button></p>}
       <PageHeader
         kicker="Recomendaciones"
         title="Empleos sugeridos para tu perfil"
@@ -155,7 +163,7 @@ export function RecommendationsPage() {
       />
 
       <RecommendationControls interests={interests} jobs={jobs} onSaved={() => { setPage(1); return load(false); }} respectPreferences={respectPreferences} onRespectChange={(value) => { setRespectPreferences(value); setPage(1); }} excludedCount={enriched.filter((item) => !meetsRequiredPreferences(item)).length} />
-      <SearchPreferences data={preferences} onSaved={() => load(false)} />
+      <SearchPreferences data={preferences} onSaved={async (next) => { setPreferences(next); setPage(1); setError(""); try { const { data } = await getRecommendations(user.id); setRecommendations(data); } catch (failure) { if (failure.code !== "ERR_CANCELED") setError("No pudimos actualizar las recomendaciones. Puedes volver a intentarlo."); } }} />
       <label className="block"><span className="sr-only">Buscar recomendaciones</span><input className="field-control" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por cargo, empresa, ciudad o habilidad" /></label>
       {error && (
         <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)]">

@@ -9,6 +9,7 @@ import { Autocomplete } from "./Autocomplete.jsx";
 import { groupWritingHistory } from "../utils/writingHistory.js";
 import { experiencePeriod } from "../utils/experienceDates.js";
 import { skillName } from "../utils/skillNames.js";
+import { browseRadarSkills } from "../utils/radarSkills.js";
 import { CareerCoach } from "./CareerCoach.jsx";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { formatLearningHours } from "../utils/learningPresentation.js";
@@ -25,7 +26,8 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
   const [tab, setTab] = useState(context === "learning" ? "radar" : "guidance");
   const [data, setData] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [message, setMessage] = useState("");
   const [index, setIndex] = useState(0), [result, setResult] = useState(""), [style, setStyle] = useState("paragraph"), [texts, setTexts] = useState({}), [proposalId, setProposalId] = useState("");
-  const [filters, setFilters] = useState({ search: "", sector: profile.preferred_sector || "", location: "" }), [radar, setRadar] = useState(externalRadar ?? null), [radarView, setRadarView] = useState("learn"), [moreSkills, setMoreSkills] = useState(false);
+  const [filters, setFilters] = useState({ search: "", sector: profile.preferred_sector || "", location: "" }), [radar, setRadar] = useState(externalRadar ?? null), [radarView, setRadarView] = useState("learn");
+  const [skillQuery, setSkillQuery] = useState(""), [skillPage, setSkillPage] = useState(1);
   const [selectedSkill, setSelectedSkill] = useState("");
   const [focusWriting, setFocusWriting] = useState(false);
   const reviewRef = useRef(null);
@@ -43,7 +45,7 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
       .catch((failure) => { if (active) setError(getApiErrorMessage(failure)); });
     return () => { active = false; };
   }, [tab, profile.preferred_sector, radar, externalRadar]);
-  useEffect(() => { if (externalRadar !== undefined) { setRadar(externalRadar); setSelectedSkill(""); setMoreSkills(false); } }, [externalRadar]);
+  useEffect(() => { if (externalRadar !== undefined) { setRadar(externalRadar); setSkillPage(1); setSkillQuery(""); setSelectedSkill(""); } }, [externalRadar]);
   useEffect(() => { if (proposalId) reviewRef.current?.focus(); }, [proposalId, data]);
 
   function startWriting(experienceIndex) {
@@ -60,7 +62,8 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
   const learningSkills = radar?.skills.filter((row) => !row.declared) || [];
   const knownSkills = radar?.own_skills || radar?.skills.filter((row) => row.declared) || [];
   const visibleSkills = radarView === "learn" ? learningSkills : knownSkills;
-  const selected = visibleSkills.find((row) => row.skill === selectedSkill) || visibleSkills[0];
+  const skillBrowser = browseRadarSkills(visibleSkills, skillQuery, skillPage);
+  const selected = visibleSkills.find((row) => row.skill === selectedSkill) || skillBrowser.rows[0] || visibleSkills[0];
 
   function writingCard(row, primary = false) {
     return <section className="coach-proposal" key={row.id}>
@@ -109,7 +112,7 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
         </>}
         {tab === "radar" && <>
           <h3>Encuentra tu próximo aprendizaje</h3><p>Elige una habilidad que piden las ofertas y encuentra formación para practicarla.</p>
-          {!hideFilters && <form className="coach-learning-search" onSubmit={(event) => { event.preventDefault(); act(async () => { setRadar((await api.get("/profiles/me/coach/radar", { params: filters })).data); setMoreSkills(false); }); }}>
+          {!hideFilters && <form className="coach-learning-search" onSubmit={(event) => { event.preventDefault(); act(async () => { setRadar((await api.get("/profiles/me/coach/radar", { params: filters })).data); setSkillPage(1); setSkillQuery(""); setSelectedSkill(""); }); }}>
             <div className="learning-filter-heading"><SlidersHorizontal size={18} /><strong>Personaliza tu búsqueda</strong></div>
             <div className="learning-filter-fields"><label>Cargo o profesión<input className="field-control" maxLength={160} value={filters.search} onChange={(event) => setFilters((value) => ({ ...value, search: event.target.value }))} placeholder="Ej. auxiliar contable" /></label><label>Sector<select className="field-control" value={filters.sector} onChange={(event) => setFilters((value) => ({ ...value, sector: event.target.value }))}><option value="">Todos los sectores</option>{filters.sector && !JOB_SECTORS.includes(filters.sector) && <option>{filters.sector}</option>}{JOB_SECTORS.map((sector) => <option key={sector}>{sector}</option>)}</select></label><Autocomplete label="Ciudad o ubicación" options={cities} value={filters.location} onChange={(location) => setFilters((value) => ({ ...value, location }))} placeholder="Buscar ciudad…" maxLength={120} /></div>
             <div className="learning-filter-actions"><small>Busca para actualizar las habilidades y sus cursos.</small><div><button type="button" className="learning-reset-button" disabled={busy} onClick={() => { const next = { search: "", sector: "", location: "" }; setFilters(next); act(async () => { setRadar((await api.get("/profiles/me/coach/radar", { params: next })).data); setSelectedSkill(""); }); }}><RotateCcw size={14} />Restablecer</button><button type="submit" className="button-primary" disabled={busy}><Search size={16} />Buscar habilidades</button></div></div>
@@ -117,10 +120,10 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
           {!radar && <p role="status">Buscando habilidades y formación…</p>}
           {radar && <>
             <div className="coach-learning-summary"><strong>{radar.sample} ofertas consultadas</strong><span>{radar.sample ? "Elige una habilidad y abre el curso que te interese." : "Prueba otra palabra, ubicación o sector."}</span></div>
-            <><div className="coach-learning-switch" aria-label="Habilidades por explorar"><button type="button" aria-pressed={radarView === "learn"} onClick={() => { setRadarView("learn"); setMoreSkills(false); }}>Solicitadas que aún no tengo <span>{learningSkills.length}</span></button><button type="button" aria-pressed={radarView === "known"} onClick={() => { setRadarView("known"); setMoreSkills(false); }}>Ya en mi perfil <span>{knownSkills.length}</span></button></div>
+            <><div className="coach-learning-switch" aria-label="Habilidades por explorar"><button type="button" aria-pressed={radarView === "learn"} onClick={() => { setRadarView("learn"); setSkillPage(1); setSkillQuery(""); setSelectedSkill(""); }}>Solicitadas que aún no tengo <span>{learningSkills.length}</span></button><button type="button" aria-pressed={radarView === "known"} onClick={() => { setRadarView("known"); setSkillPage(1); setSkillQuery(""); setSelectedSkill(""); }}>Ya en mi perfil <span>{knownSkills.length}</span></button></div>
               {!visibleSkills.length && <div className="coach-empty"><CheckCircle2 size={28} /><h4>{radarView === "learn" ? radar.sample ? "Las habilidades mostradas ya están en tu perfil" : "No hay ofertas con estos filtros" : "Aún no tienes estas habilidades registradas"}</h4><p>{radarView === "learn" ? "Puedes profundizar en ellas desde la otra pestaña o explorar un cargo diferente." : "Si conoces alguna, puedes añadirla en Habilidades. Si quieres aprenderla, consulta los cursos sugeridos."}</p></div>}
               {!!selected && <div className="coach-learning-browser">
-                <div className="coach-skill-options"><h4><span>1</span>Elige una habilidad</h4><div className="coach-skill-list">{visibleSkills.slice(0, moreSkills ? visibleSkills.length : 5).map((row) => <button type="button" key={row.skill} aria-pressed={selected.skill === row.skill} onClick={() => setSelectedSkill(row.skill)}><span><strong>{skillName(row.skill)}</strong><small>{row.count ? `${row.count} de ${radar.sample} ofertas la solicitan` : "Registrada en tu perfil · sin demanda observada"}</small></span><ArrowRight size={17} /></button>)}</div>{visibleSkills.length > 5 && <button className="button-secondary coach-show-more" type="button" aria-expanded={moreSkills} onClick={() => { if (moreSkills) setSelectedSkill(""); setMoreSkills((value) => !value); }}>{moreSkills ? "Mostrar menos" : `Ver ${visibleSkills.length - 5} habilidades más`}<ChevronDown size={15} /></button>}</div>
+                <div className="coach-skill-options"><h4><span>1</span>Elige una habilidad</h4><label className="coach-skill-search"><span className="sr-only">Buscar habilidad</span><Search size={15} /><input value={skillQuery} onChange={(event) => { setSkillQuery(event.target.value); setSkillPage(1); setSelectedSkill(""); }} placeholder="Buscar entre las habilidades…" /></label><p className="coach-learning-count">{skillBrowser.total} habilidades · mayor demanda primero</p><div className="coach-skill-list">{skillBrowser.rows.map((row) => <button type="button" key={row.skill} aria-pressed={selected.skill === row.skill} onClick={() => setSelectedSkill(row.skill)}><span><strong>{skillName(row.skill)}</strong><small>{row.count} de {radar.sample} ofertas la solicitan</small></span><ArrowRight size={17} /></button>)}</div>{!skillBrowser.total && <p role="status">No hay habilidades con ese nombre.</p>}{skillBrowser.pages > 1 && <nav className="coach-skill-pagination" aria-label="Páginas de habilidades"><button className="button-secondary button-sm" disabled={skillBrowser.page === 1} onClick={() => { setSkillPage(skillBrowser.page - 1); setSelectedSkill(""); }}>Anterior</button><span>{skillBrowser.page} / {skillBrowser.pages}</span><button className="button-secondary button-sm" disabled={skillBrowser.page === skillBrowser.pages} onClick={() => { setSkillPage(skillBrowser.page + 1); setSelectedSkill(""); }}>Siguiente</button></nav>}</div>
                 <section className="coach-learning-choice" aria-live="polite"><h4><span>2</span>{selected.declared ? "Sigue practicando" : "Elige cómo aprender"}</h4><h3>{skillName(selected.skill)}</h3><p>{selected.declared ? "Ya está en tu perfil. Estos recursos pueden ayudarte a profundizar." : "Que no aparezca en tu perfil no significa que no la conozcas. Puedes explorar un curso o revisar tus habilidades."}</p>
                   <div className="coach-learning-courses">{selected.courses.map((course) => <article key={course.id}><div><h5>{course.title}</h5><p>{course.provider}{course.hours ? ` · ${formatLearningHours(course.hours)} h estimadas` : ""}</p></div><Link className="coach-course-action" to={learningLink(course)}>Ver curso<ArrowUpRight size={16} /></Link></article>)}</div>
                   {!selected.courses.length && <div className="coach-empty-course"><p>Todavía no hay un curso asociado a esta habilidad.</p><Link className="coach-course-action" to={`/aprendizaje?search=${encodeURIComponent(selected.skill)}#cursos`}>Buscar formación<ArrowUpRight size={16} /></Link></div>}

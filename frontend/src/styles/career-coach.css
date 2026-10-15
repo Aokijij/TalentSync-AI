@@ -279,3 +279,8 @@ html[data-theme="dark"] .coach-workspace .button-primary { color:#082f49; }
 .writing-status { font-size:.65rem; font-weight:550; border:1px solid var(--line); border-radius:99px; padding:.3rem .55rem; color:var(--muted); }
 .writing-status.status-applied { color:var(--success); background:color-mix(in srgb,var(--success) 8%,var(--surface)); }
 .writing-status.status-prepared { color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,var(--surface)); }
+.coach-skill-search { display:flex; align-items:center; gap:.5rem; padding:.65rem .75rem; margin-bottom:.7rem; border:1px solid var(--line); border-radius:.65rem; color:var(--muted); }
+.coach-skill-search input { min-width:0; width:100%; background:transparent; font-size:.8rem; color:var(--ink); outline:none; }
+.coach-skill-search:focus-within { border-color:var(--accent); }
+.coach-skill-pagination { display:flex; align-items:center; justify-content:space-between; gap:.4rem; margin-top:.75rem; }
+.coach-skill-pagination > span { font-size:.75rem; white-space:nowrap; }

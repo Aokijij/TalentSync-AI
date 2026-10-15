@@ -4,9 +4,11 @@ from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases.personalization import order as personalize
 from app.domain.entities.records import Job, Recommendation, User
+from app.domain.services.languages import LEVELS, language_levels
 from app.domain.services.match_explanations import (
     explain,
     input_version,
+    preference_alignment,
 )
 from app.domain.services.matching import (
     combined_match,
@@ -156,14 +158,14 @@ def upsert_recommendation(
         requirement_details=analysis["requirement_details"]
     )
     if language_score is not None:
-        available = {item["name"]: item["level"] for item in user.profile.languages or []}
+        available = language_levels(user.profile.languages)
         language_reasons = [f"score:languages:{language_score}"]
-        levels = {level: index for index, level in enumerate(["A1", "A2", "B1", "B2", "C1", "C2", "NATIVE"], start=1)}
-        for item in job.languages:
-            actual = available.get(item["name"], "sin registrar")
+        for name, level in language_levels(job.languages).items():
+            item = {"name": name, "level": level}
+            actual = available.get(name, "sin registrar")
             required_label = "Nativo" if item["level"] == "NATIVE" else item["level"]
             actual_label = "Nativo" if actual == "NATIVE" else actual
-            if levels.get(actual, 0) >= levels[item["level"]]:
+            if LEVELS.get(actual, 0) >= LEVELS[level]:
                 language_reasons.append(f"Cumples el idioma solicitado: {item['name']} (mínimo {required_label}, tu nivel {actual_label})")
             else:
                 language_reasons.append(f"Idioma por fortalecer: {item['name']} (mínimo {required_label}, tu nivel {actual_label}). Registra tu nivel real o mejora hasta el nivel solicitado")
@@ -218,6 +220,11 @@ def refresh_user_recommendations(
         progress.update(pending=remaining, total=len(jobs))
     recommendations = sorted((row for job_id, row in by_job.items() if job_id in versions
         and (row.match_details or {}).get("input_version") == versions[job_id]), key=lambda item: item.match_percentage, reverse=True)
+    # Preference flags filter results; they do not change professional scores.
+    # Refresh their presentation without scheduling another model evaluation.
+    for row in recommendations:
+        preferences = preference_alignment(user.profile, job_map[row.job_id])
+        row.match_details = {**row.match_details, "preferences": preferences, "candidate_interest_score": preferences["score"]}
     if include_all:
         return personalize(db, user, sorted(recommendations, key=lambda item: (company_health(job_map[item.job_id].company)["visibility_reduced"], -item.match_percentage)))
     recommendations = sorted(

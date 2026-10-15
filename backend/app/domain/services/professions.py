@@ -6,7 +6,7 @@ import unicodedata
 from app.domain.services.profile_status import is_ongoing
 
 PROFESSION_GROUPS = {
-    "software": ("ingenieria de sistemas", "ingenieria informatica", "ingenieria de software", "ciencias de la computacion", "desarrollo de software", "tecnologia en sistemas", "analisis y desarrollo de sistemas"),
+    "software": ("ingenieria de sistemas", "ingenieria informatica", "ingenieria de software", "ciencias de la computacion", "desarrollo de software", "tecnologia en sistemas", "tecnico en sistemas", "tecnico profesional en sistemas", "analisis y desarrollo de sistemas"),
     "data": ("ciencia de datos", "analitica de datos", "estadistica", "matematicas", "inteligencia de negocios", "business intelligence", "ingenieria de datos"),
     "electronics": ("ingenieria electronica", "ingenieria electrica", "telecomunicaciones", "automatizacion", "mecatronica"),
     "civil": ("ingenieria civil", "construccion", "arquitectura", "obras civiles", "gestion de la construccion"),
@@ -42,9 +42,9 @@ def fields_are_related(candidate, requested):
 def infer_education_level(value):
     text = normalize(value)
     if any(term in text for term in ("especializacion", "maestria", "master", "posgrado", "doctorado")): return "postgraduate"
-    if any(term in text for term in ("profesional", "universidad", "universitario", "ingenieria", "licenciatura")): return "university"
-    if "tecnolog" in text: return "technologist"
+    if re.search(r"\btecnolog[oa]\b|\btecnologia\s+en\b", text): return "technologist"
     if any(term in text for term in ("tecnico", "tecnica")): return "technical"
+    if any(term in text for term in ("profesional", "universidad", "universitario", "ingenieria", "licenciatura")): return "university"
     return None
 
 
@@ -63,12 +63,13 @@ def education_match(profile, job):
     fields = list(getattr(job, "required_study_fields", None) or [])
     required_level = getattr(job, "required_education_level", None)
     if not fields and not required_level: return None
-    entries = [str(getattr(profile, "profession", "") or ""), str(getattr(profile, "education", "") or ""), *[str(item.get("degree", "")) for item in (getattr(profile, "educations", None) or [])]]
-    field_score = 100.0 if not fields else min(100.0, sum(any(fields_are_related(entry, field) for entry in entries) for field in fields) / len(fields) * 100)
+    records = getattr(profile, "educations", None) or []
+    entries = [str(item.get("degree", "")) for item in records] if records else [str(getattr(profile, "profession", "") or ""), str(getattr(profile, "education", "") or "")]
+    # The listed study fields are accepted alternatives, not simultaneous degrees.
+    field_score = 100.0 if not fields or any(fields_are_related(entry, field) for entry in entries for field in fields) else 0.0
     level_score = 100.0
     if required_level:
-        records = getattr(profile, "educations", None) or []
-        best = max((LEVEL_RANK.get(item.get("level") or infer_education_level(item.get("degree", "")), 0) for item in records if not is_ongoing(item)), default=0) if records else max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in entries), default=0)
+        best = max((LEVEL_RANK.get(item.get("level") or infer_education_level(item.get("degree", "")), 0) for item in records if not is_ongoing(item) and (not fields or any(fields_are_related(item.get("degree", ""), field) for field in fields))), default=0) if records else max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in entries), default=0)
         level_score = min(100.0, best / LEVEL_RANK[required_level] * 100)
     return round(field_score * .7 + level_score * .3, 2)
 

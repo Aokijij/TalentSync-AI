@@ -4,6 +4,24 @@ import { createProgressiveLoader } from "./progressiveRequests.js";
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
+test("a transient background failure retries and eventually publishes completed data", async () => {
+  let calls = 0;
+  const pauses = [], updates = [];
+  const feed = createProgressiveLoader(async () => {
+    if (++calls === 2) throw new Error("Temporary network failure");
+    return { data: { items: [calls], pending: calls < 3 ? 1 : 0 } };
+  }, () => new Promise((resolve) => pauses.push(resolve)));
+  const leave = feed.subscribe(1, (items, pending, failure) => updates.push({ items, pending, failure }));
+  await feed.load(1);
+  pauses.shift()(); await tick();
+  pauses.shift()(); await tick();
+  assert.equal(calls, 3);
+  assert.deepEqual(updates.at(-1).items, [3]);
+  assert.equal(updates.at(-1).pending, false);
+  assert.equal(updates.at(-1).failure, null);
+  leave();
+});
+
 test("the first batch renders before the remaining work and overlapping views share requests", async () => {
   let calls = 0;
   const pauses = [];

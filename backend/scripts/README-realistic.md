@@ -1,5 +1,32 @@
 # Datos locales para pruebas de contratación
 
+Para **actualizar el conjunto existente conservando las postulaciones**, usa
+`backend/.venv/Scripts/python.exe scripts/local.py enrich-realistic`.
+La actualización guarda una copia SQLite consistente y enriquece las 360 ofertas
+en su lugar, sin cambiar sus ID, propietarios, cuentas, contraseñas, etapas ni
+historial. Conserva ofertas editadas en la aplicación y respuestas ya existentes.
+Solo añade respuestas de ejemplo a postulaciones de los perfiles de prueba.
+Es idempotente y valida la misma ruta aislada que el generador original.
+
+La ampliación contiene 161 habilidades, cinco niveles y 168 perfiles adicionales
+(273 de prueba en total). Incluye grupos comparables de desarrollo inicial,
+intermedio, senior y liderazgo en Medellín, salud junior en Bogotá, logística
+intermedia en Medellín y ventas junior en Cali. Las tareas, herramientas, dos
+resultados medibles y tres preguntas de cada oferta dependen del cargo, la
+especialidad y un caso empresarial local. Todas tienen condiciones y proceso
+completos; las diferencias de redacción permiten revisar su claridad.
+El generador usa un mínimo fijo de 2.000.000 COP para los puestos de prueba a
+tiempo completo. Es una decisión del conjunto sintético, no una referencia legal
+ni una estadística salarial. La actualización corrige también los registros v2
+generados con importes menores, sin sobrescribir ofertas editadas posteriormente.
+
+El radar comienza con filtros editables sugeridos por el perfil; el nivel se
+orienta por los meses registrados y no acredita seniority. Muestra todas las
+habilidades ordenadas por demanda, con buscador y páginas de cinco. Los salarios
+individuales están disponibles con cualquier combinación de filtros. Las
+medianas conservan sus umbrales y condiciones comparables; no se mezclan cargos
+para llenar una búsqueda vacía.
+
 `backend/.venv/Scripts/python.exe scripts/local.py reset-realistic` reemplaza
 vacantes, empresas y candidatos de prueba exclusivamente en
 `.local/talentsync.sqlite3`. El comando valida la ruta exacta y el entorno de
@@ -69,3 +96,19 @@ los resultados afectados. Editar solo el diseño del CV o transcurrir diez minut
 no obliga a repetir toda la inferencia. El endpoint de lista completa permanece
 disponible para clientes anteriores. La lista de postulados calcula únicamente
 las personas que pertenecen al proceso.
+
+Los idiomas usan una identidad canónica compartida por la API, las puntuaciones
+y sus explicaciones: «English», «Inglés» e «inglés» coinciden. La versión v10
+invalida puntuaciones anteriores. Los campos académicos aceptados son alternativas
+y el nivel explícito del estudio tiene prioridad sobre su nombre.
+Con estudios estructurados, el cargo declarado no sustituye el título y un
+grado de otra área no eleva el nivel académico solicitado.
+
+Cambiar salario, ciudad, modalidad o sus casillas imprescindibles actualiza los
+filtros y su explicación sin recalcular afinidad profesional. Cambiar el sector
+preferido sí invalida la puntuación porque participa en la señal de contexto.
+La búsqueda de cursos evalúa únicamente la vacante seleccionada y hasta diez
+proyecciones. El contador de otras ofertas usa requisitos relacionados, sin
+presentarlo como una mejora calculada de compatibilidad. Las pantallas de
+aprendizaje y actualización progresiva conservan resultados disponibles y
+permiten reintentar cuando una sección falla.

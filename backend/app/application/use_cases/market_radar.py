@@ -3,19 +3,30 @@ from datetime import datetime, timedelta
 from app.application.errors import UseCaseError
 from app.application.use_cases.career_coach import owner_profile
 from app.application.use_cases.learning_resources import resources
-from app.domain.services.market_radar import market_report
+from app.domain.services.experience_dates import experience_months
+from app.domain.services.market_radar import families_for, market_report
 from app.domain.services.personalization import synthetic_email
 from app.domain.services.skills import normalize_skills
 
 
 def report(db, user, filters, *, local_fixture_mode=False):
     now = datetime.utcnow()
+    profile = owner_profile(user)
+    participation = (profile.preferences or {}).get("market_participation", {})
+    families = sorted(families_for(profile.profession or profile.education or ""))
+    months = experience_months(profile.experiences)
+    suggestion = {"family": participation.get("family") or next(iter(families), ""),
+                  "level": participation.get("level") or ("entry" if months < 12 else "junior" if months < 36 else "mid" if months < 60 else "senior"),
+                  "location": profile.location or ""}
+    if filters.pop("personalized", False):
+        filters = {**filters, **suggestion}
     demo = filters.get("dataset") == "demo"
     filters = {**filters, "allow_local_fixtures": local_fixture_mode}
     result = market_report(owner_profile(user), db.jobs.market_jobs(now - timedelta(days=90), demo=demo),
                            db.profiles.market_participants(filters["family"], filters["level"], demo=demo), resources(db), filters, now)
     result["demo_available"] = bool(db.jobs.market_jobs(now - timedelta(days=90), demo=True)) if not demo else True
     result["email_verified"] = user.email_verified
+    result["suggested_filters"] = suggestion
     return result
 
 

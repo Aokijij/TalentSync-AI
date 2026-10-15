@@ -25,7 +25,7 @@ import {
 } from "../components/ProfileCompletionRing.jsx";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { pageItems, totalPages } from "../utils/pagination.js";
 
 const candidateStatusLabel = {
@@ -41,9 +41,10 @@ const candidateStatusLabel = {
 };
 
 export function CandidateDashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
-  const refreshingMatches = useRecommendationUpdates(user.id, setRecommendations);
+  const { refreshing: refreshingMatches, error: matchLoadError, retry: retryMatches } = useRecommendationUpdates(user.id, setRecommendations);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [message, setMessage] = useState("");
@@ -165,6 +166,10 @@ export function CandidateDashboard() {
       setExternalJob(job);
       return;
     }
+    if (job.application_questions?.length || job.application_questions_count) {
+      navigate(`/vacantes/${job.id}#postularme`);
+      return;
+    }
     api
       .post("/applications", { job_id: job.id })
       .then(() => api.get("/applications/me"))
@@ -183,6 +188,7 @@ export function CandidateDashboard() {
   return (
     <div className="space-y-6">
       {refreshingMatches && <p role="status" className="text-sm text-[var(--muted)]">Actualizando compatibilidades… Puedes seguir usando la plataforma.</p>}
+      {matchLoadError && <p role="alert" className="surface-card p-4 text-[var(--error)]">{matchLoadError} <button className="underline" onClick={retryMatches}>Reintentar</button></p>}
       <section className="page-hero">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">

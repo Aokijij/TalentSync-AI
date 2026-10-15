@@ -3,8 +3,7 @@ from uuid import uuid4
 
 from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
-from app.application.use_cases.jobs import get_job
-from app.application.use_cases.matching import upsert_recommendation
+from app.application.use_cases.jobs import match_current_candidate
 from app.domain.services.credential_links import certificate_url
 from app.domain.services.skills import normalize_skills
 from app.domain.services.work_preferences import effective_preferences
@@ -21,6 +20,8 @@ def add_certificate(profile, item):
 
 def preferences(db, user, payload=None):
     if payload is not None:
+        db.profiles.lock_owner(user.id)
+        db.refresh(user.profile)
         # Keep older API clients working by writing their values to the profile.
         # Current clients send only the three requirement flags.
         if "minimum_salary" in payload:
@@ -92,5 +93,4 @@ def add_evidence_skills(db, user, evidence_id):
 
 
 def match_details(db, user, job_id, nlp):
-    job = get_job(job_id, db, user)
-    return upsert_recommendation(db, user, job, nlp=nlp).match_details
+    return match_current_candidate(job_id, user, db, nlp=nlp).match_details
