@@ -104,7 +104,7 @@ def review_offer(job, peers=()):
     schedule_ok = meaningful(schedule, 10, 3) and bool(re.search(r"lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|d[ií]as|seman|turnos", schedule)) and bool(re.search(r"\d|horario|diurn|nocturn|rotativ", schedule))
     response_days = getattr(job, "response_days", 0) or 0
     process_days = d.get("process_days") or 0
-    location_ok = bool((job.location or "").strip())
+    location_ok = job.modality == "remote" or bool((job.location or "").strip())
     if job.modality in {"onsite", "hybrid"}:
         try:
             department = getattr(job, "department", None)
@@ -117,31 +117,44 @@ def review_offer(job, peers=()):
         critical = True
     checks = []
 
-    def check(key, label, weight, passed, step, action_text, required=False):
-        checks.append({"key": key, "label": label, "weight": weight, "passed": bool(passed),
+    def check(key, label, weight, passed, step, action_text, required=False, earned=None):
+        points = round(weight if passed else 0) if earned is None else round(max(0, min(weight, earned)))
+        checks.append({"key": key, "label": label, "weight": weight, "points": points,
+                       "remaining_points": weight - points, "passed": bool(passed),
+                       "state": "complete" if passed and points == weight else "partial" if points else "missing",
                        "step": step, "action": action_text, "required": required,
-                       "priority": "Obligatorio" if required else "Mejora"})
+                       "priority": "Obligatorio" if required and not passed else "Mejora"})
 
-    check("title", "Cargo específico", 0, 5 <= len(title) <= 180 and bool(re.search(r"\w", title)) and not re.search(r"\b(?:urgente|gana dinero)\b", title.casefold()), 0, "Usa un nombre de cargo, sin reclamos publicitarios. Puede ser una palabra, como Analista.", True)
-    check("salary", "Salario fijo o rango real", 10, range_ok, 0, "Publica un salario fijo mensual positivo en COP. El rango máximo es opcional.", True)
-    check("contract_type", "Contrato definido", 7, d.get("contract_type"), 0, "Selecciona el tipo de contrato, separado de la dedicación.", True)
-    check("schedule", "Jornada y horario", 7, schedule_ok, 0, "Añade los días y horarios o turnos para ayudar a decidir.")
-    check("location", "Modalidad y ubicación", 6, job.modality in {"remote", "hybrid", "onsite"} and location_ok, 0, "Elige una ciudad del catálogo para trabajo presencial o híbrido. Para remoto, indica el territorio permitido.", True)
-    check("description", "Responsabilidades concretas", 12, meaningful(description, 40, 6), 1, "Explica las funciones del cargo en al menos 40 caracteres y seis palabras diferentes.", True)
-    check("missions", "Resultados esperados y evaluación", 13, complete_missions, 1, "Opcional: añade resultados, cómo se evaluarán y en qué plazo.")
-    check("requirements", "Experiencia y nivel explícitos", 10, meaningful(requirements, 20, 3) and d.get("seniority") and d.get("experience_years") is not None, 2, "Indica el nivel, la experiencia mínima (puede ser 0) y los conocimientos necesarios.", True)
+    description_ok = meaningful(description, 40, 6)
+    description_points = 20 if meaningful(description, 100, 10) else 10 if description_ok else 5 if meaningful(description, 15, 3) else 0
+    knowledge_ok = meaningful(requirements, 20, 3)
+    requirement_points = (5 if knowledge_ok else 0) + (5 if d.get("seniority") else 0) + (5 if d.get("experience_years") is not None else 0)
+    mission_points = 0
+    if missions:
+        parts = [sum((meaningful(row.get("outcome", ""), 15, 4), meaningful(row.get("measure", ""), 10, 3),
+                      1 <= (row.get("days") or 0) <= 365)) if row.get("outcome", "").strip() or row.get("measure", "").strip() else 0 for row in missions]
+        mission_points = sum(parts) / len(missions)
+    process_points = int(d.get("interview_count") is not None) + int(process_days >= 1)
+    check("title", "Cargo específico", 5, 5 <= len(title) <= 180 and bool(re.search(r"\w", title)) and not re.search(r"\b(?:urgente|gana dinero)\b", title.casefold()), 0, "Usa un nombre de cargo, sin reclamos publicitarios. Puede ser una palabra, como Analista.", True)
+    check("salary", "Salario fijo o rango real", 15, range_ok, 0, "Publica un salario fijo mensual positivo en COP. El rango máximo es opcional.", True)
+    check("contract_type", "Contrato definido", 10, d.get("contract_type"), 0, "Selecciona el tipo de contrato, separado de la dedicación.", True)
+    check("schedule", "Jornada y horario", 3, schedule_ok, 0, "Opcional: selecciona los días y horas o describe los turnos.", earned=3 if schedule_ok else 1 if meaningful(schedule, 8, 2) else 0)
+    check("location", "Modalidad y ubicación", 10, job.modality in {"remote", "hybrid", "onsite"} and location_ok, 0, "Elige una ciudad para trabajo presencial o híbrido. En remoto, la ciudad o el país son opcionales.", True)
+    check("description", "Responsabilidades y contexto", 20, description_ok, 1, "Describe las funciones y su contexto. El texto ya aporta puntos aunque no añadas misiones; amplíalo con entregables y equipo para completar este criterio.", True, earned=description_points)
+    check("missions", "Resultados esperados y evaluación", 3, complete_missions, 1, "Opcional: añade un resultado, su evaluación y plazo. Cada dato aporta; no necesitas misiones para puntuar las responsabilidades.", earned=mission_points)
+    check("requirements", "Conocimientos, nivel y experiencia", 15, knowledge_ok and d.get("seniority") and d.get("experience_years") is not None, 2, "Indica conocimientos, nivel y experiencia mínima (se acepta 0). Cada uno aporta 5 puntos.", True, earned=requirement_points)
     check("skill_requirements", "Habilidades priorizadas", 10, 1 <= len(skills) <= 50, 2, "Añade al menos una habilidad. Puedes marcar todas como deseables si se aprenden en el cargo.", True)
-    check("process", "Entrevistas y duración estimada", 10, d.get("interview_count") is not None and process_days >= 1 and bool(getattr(job, "pipeline_stages", None)), 3, "Opcional: declara entrevistas y duración estimada del proceso.")
+    check("process", "Entrevistas y duración estimada", 2, d.get("interview_count") is not None and process_days >= 1 and bool(getattr(job, "pipeline_stages", None)), 3, "Opcional: entrevistas y duración aportan un punto cada una.", earned=process_points)
     check("response_days", "Compromiso de respuesta", 5, 1 <= response_days <= 30 and (not process_days or response_days <= process_days), 3, "Acuerda un plazo de respuesta entre 1 y 30 días; si defines una duración total, debe caber en ella.", True)
-    check("inclusive", "Lenguaje y requisitos coherentes", 10, not critical and not any(row["code"].startswith("wording_") for row in issues), 2, "Retira frases genéricas y resuelve las contradicciones señaladas.")
-    score = sum(row["weight"] for row in checks if row["passed"])
+    check("inclusive", "Lenguaje y requisitos coherentes", 2, not critical and not any(row["code"].startswith("wording_") for row in issues), 2, "Retira frases genéricas y resuelve las contradicciones señaladas.")
+    score = sum(row["points"] for row in checks)
     blockers = [row for row in checks if row["required"] and not row["passed"]]
-    minimum_score = 70
+    minimum_score = 60
     can_publish = not blockers and not critical and score >= minimum_score
     reference = local_reference(job, peers)
     if salary and reference["median"] and salary < reference["median"] * .65:
         issue("salary_below_local_reference", "El mínimo fijo está por debajo del 65% de la referencia local. Revisa las condiciones comparadas antes de cambiarlo.", 0, "salary")
-    pending = sorted((row for row in checks if not row["passed"]), key=lambda row: (not row["required"], -row["weight"]))
+    pending = sorted((row for row in checks if not row["passed"] or row["points"] < row["weight"]), key=lambda row: (not (row["required"] and not row["passed"]), -row["remaining_points"]))
     return {"version": 1, "completeness": score, "score": score, "level": "A" if can_publish and score >= 90 and not any(row["code"].startswith("wording_") for row in issues) else "B" if can_publish else "Pendiente",
             "rating": offer_rating(score), "rating_scale": RATING_SCALE,
             "checks": checks, "issues": issues, "next_actions": pending, "blockers": blockers, "can_publish": can_publish, "minimum_publish_score": minimum_score,

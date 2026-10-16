@@ -1604,12 +1604,18 @@ html[data-theme="dark"] .role-admin .button-primary { color: #302211; }
 @media(max-width:700px) { .offer-skill { grid-template-columns:1fr 1fr; } .offer-skill > label:first-child { grid-column:1/-1; } }
 
 /* Shared controls adapt to the active palette and to the available column width. */
-* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent) 38%, var(--line)) var(--surface); }
+html[data-role="company"] { --scrollbar-accent:#7446b7; --scrollbar-track:#f8f6fb; }
+html[data-role="admin"] { --scrollbar-accent:#9a600d; --scrollbar-track:#faf7f0; }
+html[data-role="candidate"] { --scrollbar-accent:#0369a1; --scrollbar-track:#f0f9ff; }
+html[data-theme="dark"][data-role="company"] { --scrollbar-accent:#c4a1ff; --scrollbar-track:#121016; }
+html[data-theme="dark"][data-role="admin"] { --scrollbar-accent:#efbc65; --scrollbar-track:#171510; }
+html[data-theme="dark"][data-role="candidate"] { --scrollbar-accent:#38bdf8; --scrollbar-track:#090d16; }
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--scrollbar-accent,var(--accent)) 60%, var(--line)) var(--scrollbar-track,var(--surface)); }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-track { background: var(--surface); border-radius: 10px; }
-*::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--accent) 38%, var(--line)); border: 2px solid var(--surface); border-radius: 10px; }
-*::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-*::-webkit-scrollbar-corner { background: var(--surface); }
+*::-webkit-scrollbar-track { background: var(--scrollbar-track,var(--surface)); border-radius: 10px; }
+*::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--scrollbar-accent,var(--accent)) 60%, var(--line)); border: 2px solid var(--scrollbar-track,var(--surface)); border-radius: 10px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-accent,var(--accent)); }
+*::-webkit-scrollbar-corner { background: var(--scrollbar-track,var(--surface)); }
 @media (forced-colors: active) { * { scrollbar-color: auto; scrollbar-width: auto; } }
 .language-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 1rem; }
 .language-level-control, .language-fields input.field-control { height: 48px; min-height: 48px; }

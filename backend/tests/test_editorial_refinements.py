@@ -20,7 +20,7 @@ def test_an_excellent_score_does_not_bypass_missing_publication_requirements():
     payload = complete_offer()
     payload["quality_details"]["contract_type"] = ""
     report = review_offer(SimpleNamespace(**payload, pipeline_stages=[{"id": "initial"}]))
-    assert report["score"] == 93 and report["rating"]["label"] == "Excelente"
+    assert report["score"] == 90 and report["rating"]["label"] == "Excelente"
     assert report["can_publish"] is False and report["blockers"][0]["key"] == "contract_type"
 
 

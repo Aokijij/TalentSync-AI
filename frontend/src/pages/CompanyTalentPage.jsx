@@ -117,6 +117,7 @@ export function CompanyTalentPage() {
         </div>
         <VacancyPicker jobs={jobs} selected={selectedJob} query={jobSearch} loading={loadingJobs} disabled={sending} remaining={Math.max(0, jobTotal - jobs.length)} onMore={() => setJobOffset(jobs.length)} onQuery={(value) => { setJobSearch(value); setJobOffset(0); }} onSelect={(job) => { setSelectedSnapshot(job); setSelectedJobId(String(job.id)); setQuery(""); setPage(1); }} />
         {!loadingJobs && !jobs.length && !jobSearch && <Link className="button-secondary mt-4" to="/empresa/vacantes">Gestionar vacantes <ArrowRight size={16} /></Link>}
+        {selectedJob && <Link className="talent-job-detail button-secondary button-sm" state={{ returnTo: `${location.pathname}${location.search}` }} to={`/vacantes/${selectedJob.id}`}><BriefcaseBusiness size={15} />Ver detalle de esta vacante<ArrowRight size={15} /></Link>}
         {selectedJob && <p className="talent-job-context"><BriefcaseBusiness size={16} />{selectedJob.skills?.length ? `Buscamos experiencia en ${selectedJob.skills.slice(0, 4).join(", ")}.` : "Compararemos la experiencia y la formación con los requisitos del cargo."}</p>}
       </section>
 
@@ -128,8 +129,8 @@ export function CompanyTalentPage() {
           </div>
           {pending > 0 && <p role="status" className="text-sm text-[var(--muted)]">Actualizando {pending} compatibilidades pendientes. Los resultados disponibles se pueden revisar mientras termina.</p>}
           <div className="surface-card !p-4 sm:!p-5">
-            <div className="flex flex-wrap gap-2 border-b border-[var(--line)] pb-4" role="group" aria-label="Tipo de candidatos">
-              {[{ value: "new", label: "Personas para invitar" }, { value: "applied", label: "Ya se postularon" }].map((tab) => <button key={tab.value} type="button" aria-pressed={audience === tab.value} className={`${audience === tab.value ? "button-primary" : "button-secondary"} button-sm`} onClick={() => { setAudience(tab.value); setPage(1); }}>{tab.label}</button>)}
+            <div className="talent-audience-tabs" role="group" aria-label="Tipo de candidatos">
+              {[{ value: "new", label: "Personas para invitar" }, { value: "applied", label: "Ya se postularon" }].map((tab) => <button key={tab.value} type="button" aria-pressed={audience === tab.value} className="talent-audience-tab" onClick={() => { setAudience(tab.value); setPage(1); }}>{tab.value === "new" ? <Send size={17} /> : <UsersRound size={17} />}<span>{tab.label}<small>{tab.value === "new" ? "Descubre perfiles compatibles" : "Revisa sus postulaciones"}</small></span></button>)}
             </div>
             <div className={`talent-search-filters ${audience === "applied" ? "applied" : ""}`}>
               <label className="block text-xs font-semibold text-[var(--muted)]">Nombre, profesión o habilidad

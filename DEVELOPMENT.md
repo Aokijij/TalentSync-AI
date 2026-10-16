@@ -1167,9 +1167,37 @@ las valoraciones privadas al editar y usa el catálogo DIVIPOLA para ciudades
 presenciales/híbridas. La API rechaza ciudades inexistentes al publicar, incluso
 por el formulario antiguo; remoto conserva el territorio permitido en texto.
 
-La publicación requiere 70/100, cargo, salario, contrato, ubicación/modalidad,
+La publicación requiere 60/100, cargo, salario, contrato, ubicación/modalidad,
 responsabilidades, conocimientos/nivel/experiencia (se acepta 0), al menos una
 habilidad y plazo de respuesta. Misiones, horario, entrevistas, duración total,
 formación y preguntas son opcionales. Las contradicciones críticas continúan
 bloqueando. Un cargo de una palabra es válido. El texto de experiencia se
 representa con listas y párrafos también en la vista empresarial.
+
+
+### Pulido de ofertas y explicaciones — 16 de octubre de 2026
+
+La puntuación asigna hasta 90 puntos a los datos básicos y 10 a mejoras
+adicionales. Cada criterio expone points y remaining_points; nivel, conocimientos
+y experiencia suman por separado. Responsabilidades pesan 20 puntos y misiones
+3; estas últimas conservan crédito parcial por resultado, evaluación y plazo.
+Alcanzar 60 puntos no sustituye los campos obligatorios ni las reglas de
+coherencia. La vista distingue el puntaje suficiente de los datos aún pendientes.
+La ubicación no es obligatoria ni pierde puntos en una oferta remota.
+
+El horario se puede definir con días, horas y descansos, turnos, flexibilidad o
+texto libre. quality_details.work_schedule conserva la selección y schedule
+contiene su representación pública. Las horas semanales calculadas se incorporan
+solo al pulsar Usar estas horas; se contemplan jornadas que cruzan medianoche.
+Los textos de horarios anteriores siguen editándose sin conversión automática.
+
+Autocomplete importa sus propios estilos; no depende de visitar Mi desarrollo.
+La selección con teclado o puntero muestra municipios del catálogo compartido.
+El rol del usuario se aplica también al documento para colorear la barra de
+desplazamiento principal, con limpieza al salir del espacio autenticado.
+
+La vista de talento enlaza al detalle de la vacante. La selección ciega tiene
+explicación propia, separada de idiomas. Los componentes de compatibilidad
+incluyen motivos calculados desde los resultados existentes, sin otra inferencia
+ni cambio de versión del ranking; no se añaden nombres, contacto o instituciones
+a estas explicaciones. Son accesibles por cursor, foco y toque.

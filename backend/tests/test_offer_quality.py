@@ -41,7 +41,7 @@ def test_publication_requires_conditions_even_with_a_high_score(client):
     payload = complete_offer()
     payload["quality_details"]["contract_type"] = ""
     preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
-    assert preview["score"] == 93 and preview["can_publish"] is False
+    assert preview["score"] == 90 and preview["can_publish"] is False
     assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 422
     saved = client.post("/api/v1/jobs", headers=owner, json={**payload, "status": "draft"})
     assert saved.status_code == 201, saved.text
@@ -150,13 +150,13 @@ def test_local_reference_requires_independent_comparable_recent_companies():
     assert sum(row["weight"] for row in review_offer(subject)["checks"]) == 100
 
 
-def test_an_87_point_offer_can_publish_without_optional_missions(client):
+def test_responsibilities_keep_their_points_without_optional_missions(client):
     _, owner = company_account(client, "quality-optional-mission")
     payload = complete_offer()
     payload["quality_details"]["missions"] = []
     preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
-    assert preview["score"] == 87 and preview["can_publish"] is True
-    assert preview["minimum_publish_score"] == 70
+    assert preview["score"] == 97 and preview["can_publish"] is True
+    assert preview["minimum_publish_score"] == 60
     assert preview["blockers"] == []
     assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 201
 
@@ -173,7 +173,7 @@ def test_minimal_publishable_offer_keeps_education_questions_and_choice_scores(c
                   "options": ["Sí", "No"], "option_scores": {"Sí": 3, "No": -1}}]
     payload["application_questions"] = questions
     preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
-    assert preview["score"] == 70 and preview["can_publish"] is True
+    assert preview["score"] == 92 and preview["can_publish"] is True
     assert all(not row["required"] for row in preview["next_actions"])
     saved = client.post("/api/v1/jobs", headers=owner, json=payload)
     assert saved.status_code == 201, saved.text
@@ -188,7 +188,7 @@ def test_unknown_work_city_cannot_be_published_even_with_a_high_score(client):
     payload = complete_offer()
     payload.update(modality="onsite", location="Ciudad inventada 123")
     preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
-    assert preview["score"] == 94 and preview["can_publish"] is False
+    assert preview["score"] == 90 and preview["can_publish"] is False
     assert [row["key"] for row in preview["blockers"]] == ["location"]
     assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 422
     legacy_payload = {key: value for key, value in payload.items() if key != "quality_details"}
@@ -208,3 +208,45 @@ def test_incomplete_optional_process_cannot_hide_a_contradiction(client):
     report = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
     assert not report["can_publish"]
     assert any(row["code"] == "process_conflict" for row in report["issues"])
+
+
+def test_remote_work_needs_no_city_or_country_to_publish(client):
+    _, owner = company_account(client, "quality-remote-global")
+    payload = complete_offer()
+    payload["location"] = ""
+    preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
+    assert preview["can_publish"] and preview["minimum_publish_score"] == 60
+    assert next(row for row in preview["checks"] if row["key"] == "location")["points"] == 10
+    assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 201
+
+
+def test_partial_quality_keeps_independent_credit_for_each_relevant_field(client):
+    _, owner = company_account(client, "quality-partial")
+    payload = complete_offer()
+    payload["quality_details"].update(missions=[], seniority="", experience_years=None, interview_count=None)
+    report = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
+    checks = {row["key"]: row for row in report["checks"]}
+    assert checks["description"]["points"] == checks["description"]["weight"] == 20
+    assert checks["missions"]["points"] == 0 and checks["missions"]["weight"] == 3
+    assert checks["requirements"]["points"] == 5 and checks["requirements"]["state"] == "partial"
+    assert checks["process"]["points"] == 1
+    assert report["score"] == sum(row["points"] for row in report["checks"])
+    assert sum(row["weight"] for row in report["checks"]) == 100
+    assert not report["can_publish"] and [row["key"] for row in report["blockers"]] == ["requirements"]
+    payload["quality_details"].update(seniority="entry", experience_years=0, missions=[{"outcome": "Preparar un informe con las ventas", "measure": "", "days": 30}])
+    updated = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
+    partial_mission = next(row for row in updated["checks"] if row["key"] == "missions")
+    assert partial_mission["points"] == 2 and partial_mission["state"] == "partial"
+    assert updated["can_publish"] and not partial_mission["required"]
+
+
+def test_structured_schedule_is_saved_with_its_public_text_and_rejects_invalid_times(client):
+    _, owner = company_account(client, "quality-structured-schedule")
+    payload = complete_offer()
+    schedule = {"mode": "fixed", "days": ["mon", "tue", "wed", "thu", "fri"], "start": "08:00", "end": "17:00", "break_minutes": 60, "notes": ""}
+    payload["quality_details"]["work_schedule"] = schedule
+    saved = client.post("/api/v1/jobs", headers=owner, json=payload)
+    assert saved.status_code == 201, saved.text
+    assert saved.json()["quality_details"]["work_schedule"] == schedule
+    payload["quality_details"]["work_schedule"]["start"] = "25:30"
+    assert client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).status_code == 422

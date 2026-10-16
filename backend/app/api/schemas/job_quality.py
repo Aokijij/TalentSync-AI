@@ -11,6 +11,16 @@ class JobMission(BaseModel):
     skill: str = Field(default="", max_length=100)
 
 
+class WorkSchedule(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: Literal["fixed", "rotating", "flexible", "custom"] = "fixed"
+    days: list[Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]] = Field(default_factory=list, max_length=7)
+    start: str = Field(default="", pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$|^$")
+    end: str = Field(default="", pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$|^$")
+    break_minutes: int = Field(default=0, ge=0, le=240)
+    notes: str = Field(default="", max_length=180)
+
+
 class QualityDetails(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: Literal[1] = 1
@@ -22,6 +32,7 @@ class QualityDetails(BaseModel):
     weekly_hours: float | None = Field(default=None, ge=1, le=80, allow_inf_nan=False)
     contract_type: Literal["", "indefinite", "fixed_term", "services", "apprenticeship", "project"] = ""
     schedule: str = Field(default="", max_length=300)
+    work_schedule: WorkSchedule | None = None
     seniority: Literal["", "entry", "junior", "mid", "senior", "lead"] = ""
     experience_years: int | None = Field(default=None, ge=0, le=50)
     learnable_skills: list[str] = Field(default_factory=list, max_length=20)

@@ -163,6 +163,10 @@ function Navigation({ linksForRole, unreadNotifications, onNavigate, role }) {
 export function AppLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  useEffect(() => {
+    document.documentElement.dataset.role = user.role;
+    return () => { delete document.documentElement.dataset.role; };
+  }, [user.role]);
   useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); }, [location.pathname]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [organizationName, setOrganizationName] = useState("");

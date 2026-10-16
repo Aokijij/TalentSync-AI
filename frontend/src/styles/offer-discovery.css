@@ -28,3 +28,22 @@
 .offer-fields>.city-combobox { align-self:start; }
 @media(max-width:1100px) { .offer-skills-panel .offer-skill { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 65px 40px; } .offer-skills-panel .offer-skill>.offer-field:first-child { grid-column:1/-1; } }
 @media(max-width:600px) { .offer-skills-panel,.offer-education-panel { padding:1rem; } .offer-skills-panel>header { flex-wrap:wrap; gap:.6rem; } .offer-skills-panel .offer-skill { grid-template-columns:minmax(0,1fr) minmax(0,1fr); padding:.8rem; } .offer-skills-panel .offer-skill>button { justify-self:end; } }
+.offer-step-points { display:block; margin-top:4px; font-size:.62rem; color:var(--muted); font-weight:400; }
+.offer-publication-status { margin-top:1rem; padding:.9rem; border:1px solid var(--line); border-left:3px solid var(--warning); border-radius:10px; background:var(--surface-subtle); font-size:.78rem; line-height:1.65; }
+.offer-publication-status.ready { border-left-color:var(--success); }
+.offer-publication-status>strong { display:block; font-size:.84rem; }
+.offer-publication-status p { color:var(--muted); margin-top:.4rem; }
+.offer-quality-breakdown { margin-top:1rem; border-top:1px solid var(--line); padding-top:1rem; font-size:.75rem; }
+.offer-quality-breakdown summary { cursor:pointer; font-weight:700; }
+.offer-quality-breakdown>p { margin:.7rem 0; line-height:1.6; color:var(--muted); }
+.offer-quality-breakdown section { margin-top:1rem; }
+.offer-quality-breakdown section>header { display:flex; justify-content:space-between; padding-bottom:.5rem; border-bottom:1px solid var(--line); font-size:.78rem; }
+.offer-quality-breakdown button { display:flex; justify-content:space-between; gap:.5rem; width:100%; text-align:left; padding:.6rem 0; line-height:1.6; }
+.offer-quality-breakdown button small { display:block; font-size:.65rem; color:var(--muted); margin-top:.2rem; }
+.offer-quality-breakdown button>b { white-space:nowrap; color:var(--accent); }
+.offer-checklist .offer-earned-points { color:var(--success); font-weight:650; }
+.offer-blind-hiring { display:flex; align-items:flex-start; gap:12px; padding:1rem; border:1px solid var(--line); border-radius:14px; background:var(--surface-subtle); }
+.offer-blind-hiring>svg { color:var(--accent); flex-shrink:0; margin-top:3px; }
+.offer-blind-hiring h3 { font-size:.9rem; font-weight:700; }
+.offer-blind-hiring p,.offer-blind-hiring small { display:block; color:var(--muted); font-size:.77rem; line-height:1.7; margin-top:.4rem; }
+.offer-blind-hiring label { display:flex; gap:.5rem; align-items:center; margin-top:.8rem; font-size:.82rem; font-weight:600; }

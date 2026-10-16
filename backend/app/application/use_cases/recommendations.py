@@ -179,6 +179,10 @@ def candidate_explanation(job_id, user_id, current_user, db, *, nlp):
     candidate = db.users.get(user_id)
     recommendation = match_current_candidate(job_id, candidate, db, nlp=nlp)
     details = deepcopy(recommendation.match_details)
+    from app.domain.services.component_reasons import component_reasons
+    explanations = component_reasons(details, candidate.profile, job)
+    for component in details.get("components", []):
+        component["explanations"] = explanations.get(component["key"], [])
     if visible.get("identity_hidden") or not (candidate.privacy_preferences or {}).get("share_evidence", True):
         for row in details.get("requirements", []):
             row["evidence"] = []
