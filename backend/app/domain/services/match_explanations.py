@@ -28,6 +28,11 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
                getattr(job, "required_education_level", None), getattr(job, "source_kind", "internal"), job.sector,
                (getattr(job, "quality_details", None) or {}).get("experience_years"),
                (getattr(profile, "preferences", None) or {}).get("cv_skill_context", []), (getattr(profile, "preferences", None) or {}).get("writing_contexts", []), date.today().strftime("%Y-%m")]
+    details = getattr(job, "quality_details", None) or {}
+    if details.get("experience_months") is not None:
+        payload.append({"experience_months": details["experience_months"]})
+    if details.get("education_accepts_in_progress"):
+        payload.append({"education_accepts_in_progress": True})
     return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
 
 

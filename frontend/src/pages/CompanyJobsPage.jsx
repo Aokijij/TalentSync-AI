@@ -28,7 +28,6 @@ import { PageHeader } from "../components/PageHeader.jsx";
 import {
   COLOMBIA_LOCATIONS,
   COLOMBIAN_DEPARTMENTS,
-  departmentForCity,
 } from "../constants/colombianCities.js";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
@@ -202,26 +201,8 @@ export function CompanyJobsPage() {
     navigate("/empresa/calidad?nueva=1");
   }
 
-  async function editJob(job) {
-    setError("");
-    setEditingJob(job);
-    setPendingSave(null);
-    setShowPreview(false);
-    let questions = [];
-    try {
-      const response = await api.get(`/jobs/${job.id}/application-questions`);
-      questions = response.data;
-    } catch {
-      questions = [];
-    }
-    reset({
-      ...job,
-      department: job.department || departmentForCity(job.location),
-      benefits: (job.benefits || []).join(", "),
-      application_questions: questions,
-      required_study_fields: (job.required_study_fields || []).join(", "),
-    });
-    setShowModal(true);
+  function editJob(job) {
+    navigate(`/empresa/calidad?vacante=${job.id}`);
   }
 
   function closeForm() {

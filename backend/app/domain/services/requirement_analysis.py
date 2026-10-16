@@ -3,6 +3,7 @@ import re
 from datetime import date
 
 from app.domain.services.experience_dates import experience_months, month_index
+from app.domain.services.job_requirements import minimum_experience_months
 from app.domain.services.skill_context import (
     fold,
     profile_skill_context,
@@ -98,15 +99,16 @@ ROLE_FAMILIES = {
 
 def relevant_experience(profile, job, today=None):
     details = getattr(job, "quality_details", None) or {}
-    years = details.get("experience_years")
-    source = "structured" if years is not None else None
-    if years is None:
+    required = minimum_experience_months(details)
+    source = "structured" if required is not None else None
+    if required is None:
         text = fold(getattr(job, "requirements", ""))
-        match = re.search(r"\b(\d{1,2})(?:\s*(?:a|[-–])\s*\d{1,2})?\s*anos?\s+(?:de\s+)?experiencia\b", text)
+        match = re.search(r"\b(\d{1,3})(?:\s*(?:a|[-–])\s*\d{1,3})?\s*(anos?|mes(?:es)?)\s+(?:de\s+)?experiencia\b", text)
         if match:
-            years, source = int(match[1]), "requirements_text"
-    if type(years) not in {int, float} or not 0 <= years <= 50:
-        years, source = None, None
+            required = int(match[1]) * (12 if match[2].startswith("ano") else 1)
+            source = "requirements_text"
+        if required is not None and not 0 <= required <= 600:
+            required, source = None, None
     title = fold(getattr(job, "title", ""))
     families = {key for key, terms in ROLE_FAMILIES.items() if any(term in title for term in terms)}
     generic = {"analista", "asistente", "profesional", "auxiliar", "senior", "junior", "de", "del", "en", "y", "ingeniero", "ingeniera", "coordinador", "coordinadora", "especialista"}
@@ -120,7 +122,6 @@ def relevant_experience(profile, job, today=None):
         if aligned or any(item["state"] in {"applied", "declared"} for item in contextual):
             related.append(entry)
     months = experience_months(related, today=today)
-    required = int(years * 12) if years is not None else None
     dated = [entry for entry in related if experience_months([entry], today=today) > 0]
     unknown_dates = len(related) - len(dated)
     status = "fulfilled" if required == 0 or required is not None and months >= required else "unknown" if required is None or not dated else "partial"

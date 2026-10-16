@@ -1,0 +1,13 @@
+.time-picker { position:relative; min-width:0; }
+.time-picker>label { display:block; margin-bottom:.5rem; font-size:.76rem; font-weight:600; }
+.time-picker-trigger { display:flex; align-items:center; gap:.55rem; width:100%; text-align:left; }
+.time-picker-trigger>svg { flex-shrink:0; color:var(--accent); }.time-picker-trigger strong { font-weight:600; font-variant-numeric:tabular-nums; }.time-picker-trigger small { margin-left:auto; font-size:.66rem; color:var(--muted); }
+.time-picker-popover { position:absolute; z-index:55; top:calc(100% + 7px); left:0; width:min(310px,80vw); padding:1rem; border:1px solid var(--line); border-radius:16px; background:var(--surface); box-shadow:0 14px 35px #0002; }
+.time-picker-popover>div:not([role=group]) { display:flex; justify-content:space-between; gap:.5rem; margin-bottom:.5rem; font-size:.76rem; }
+.time-picker-popover>div>span,.time-picker-popover>p { color:var(--muted); font-size:.67rem; }
+.time-hour-grid,.time-minute-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:5px; margin-bottom:.9rem; }
+.time-hour-grid button,.time-minute-grid button { min-height:34px; border:1px solid var(--line); border-radius:7px; font-size:.75rem; font-variant-numeric:tabular-nums; }
+.time-picker-popover button[aria-pressed=true] { background:var(--accent); color:var(--surface); border-color:var(--accent); font-weight:700; }
+.time-picker-popover button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+.schedule-times>.time-picker:nth-child(2) .time-picker-popover { left:auto; right:0; }

@@ -1,3 +1,4 @@
+import { invitationTokenFromPath, loginDestination } from "../utils/accessNavigation.js";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -13,6 +14,7 @@ export function LoginPage() {
   const { login, accessOptions } = useAuth();
   const navigate = useNavigate(), location = useLocation();
   const company = location.pathname.startsWith("/empresa"), portal = company ? "company" : "candidate";
+  const invitation = company ? invitationTokenFromPath(location.state?.from) : null;
   const [credentials, setCredentials] = useState(null), [showPassword, setShowPassword] = useState(false), [error, setError] = useState(""), [verifying, setVerifying] = useState(false);
   async function authenticate(values, code) {
     setError("");
@@ -20,10 +22,7 @@ export function LoginPage() {
       const user = await login(values.email, values.password, { code, remember: values.remember, portal });
       if (user.mfa_required) { setCredentials({ ...values }); resetField("password"); return; }
       setCredentials(null);
-      if (accessOptions.mode === "session" && company && accessOptions.company_mfa_required !== false && !user.mfa_enabled) { navigate("/seguridad"); return; }
-      const from = location.state?.from;
-      const allowed = typeof from === "string" && from.startsWith("/") && !from.startsWith("//") && (company ? from.startsWith("/empresa") : !/^\/(empresa|admin|administracion)/.test(from));
-      navigate(allowed ? from : company ? "/empresa" : "/candidato", { replace: true });
+      navigate(loginDestination({ company, from: location.state?.from, user, accessOptions }), { replace: true });
     } catch (failure) { setError(getApiErrorMessage(failure, "No pudimos validar este acceso. Revisa tu cuenta y el portal seleccionado.")); }
   }
   return <AuthFrame company={company}>
@@ -39,7 +38,7 @@ export function LoginPage() {
         <button className="button-primary w-full" disabled={isSubmitting}>{isSubmitting ? "Validando…" : <>{company ? "Entrar a mi empresa" : "Entrar a mi espacio"}<ArrowRight size={18} /></>}</button>
       </form>
       {!company && accessOptions.providers.some((provider) => provider.enabled) && <div className="mt-5"><AccessProviders availableOnly /></div>}
-      <p className="mt-6 text-sm">{company ? "¿Tu empresa aún no tiene cuenta?" : "¿Es tu primera vez aquí?"} <Link className="font-bold text-[var(--accent)]" to={company ? "/empresa/registro" : "/registro"}>{company ? "Registrar mi empresa" : "Crear mi perfil"}</Link></p>
+      <p className="mt-6 text-sm">{company ? "¿Tu empresa aún no tiene cuenta?" : "¿Es tu primera vez aquí?"} <Link className="font-bold text-[var(--accent)]" to={company ? `/empresa/registro${invitation ? `?invitation=${encodeURIComponent(invitation)}` : ""}` : "/registro"}>{company ? invitation ? "Crear cuenta para el equipo" : "Registrar mi empresa" : "Crear mi perfil"}</Link></p>
       <div className="access-switch"><span>{company ? "¿Buscas empleo?" : "¿Quieres contratar?"}</span><Link to={company ? "/login" : "/empresa/login"}>{company ? "Ir al acceso de candidato" : "Ir al acceso de empresa"}<ArrowRight size={16} /></Link></div>
     </>}
   </AuthFrame>;

@@ -13,7 +13,7 @@ def complete_offer():
     return {"title": "Analista de datos", "description": "Analizará los reportes de ventas con el equipo comercial, revisará diferencias entre fuentes y preparará un informe semanal con resultados documentados.",
             "requirements": "Fundamentos de SQL y análisis de datos. Se aceptan proyectos de formación como evidencia de los conocimientos y ejemplos de trabajo.",
             "salary": 3500000, "location": "Colombia", "modality": "remote", "employment_type": "full_time", "sector": "Tecnologia y software",
-            "skill_requirements": [{"skill": "sql", "essential": True, "weight": 4}], "response_days": 7,
+            "skill_requirements": [{"skill": "sql", "essential": True, "weight": 4}, {"skill": "excel", "essential": False, "weight": 2}, {"skill": "analisis de datos", "essential": True, "weight": 3}], "response_days": 7,
             "quality_details": {"version": 1, "salary_max": 4500000, "contract_type": "indefinite", "schedule": "Lunes a viernes, 8:00 a 17:00, con una hora de descanso", "seniority": "junior", "experience_years": 0,
                                 "learnable_skills": ["power bi"], "missions": [{"outcome": "Construir un tablero de seguimiento de ventas", "measure": "Revisión documentada y conciliación con las fuentes", "days": 60, "skill": "sql"}], "interview_count": 2, "process_days": 14}}
 
@@ -41,7 +41,7 @@ def test_publication_requires_conditions_even_with_a_high_score(client):
     payload = complete_offer()
     payload["quality_details"]["contract_type"] = ""
     preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
-    assert preview["score"] == 90 and preview["can_publish"] is False
+    assert preview["score"] == 92 and preview["can_publish"] is False
     assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 422
     saved = client.post("/api/v1/jobs", headers=owner, json={**payload, "status": "draft"})
     assert saved.status_code == 201, saved.text
@@ -155,7 +155,7 @@ def test_responsibilities_keep_their_points_without_optional_missions(client):
     payload = complete_offer()
     payload["quality_details"]["missions"] = []
     preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
-    assert preview["score"] == 97 and preview["can_publish"] is True
+    assert preview["score"] == 91 and preview["can_publish"] is True
     assert preview["minimum_publish_score"] == 60
     assert preview["blockers"] == []
     assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 201
@@ -173,7 +173,7 @@ def test_minimal_publishable_offer_keeps_education_questions_and_choice_scores(c
                   "options": ["Sí", "No"], "option_scores": {"Sí": 3, "No": -1}}]
     payload["application_questions"] = questions
     preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
-    assert preview["score"] == 92 and preview["can_publish"] is True
+    assert preview["score"] == 76 and preview["can_publish"] is True
     assert all(not row["required"] for row in preview["next_actions"])
     saved = client.post("/api/v1/jobs", headers=owner, json=payload)
     assert saved.status_code == 201, saved.text
@@ -188,7 +188,7 @@ def test_unknown_work_city_cannot_be_published_even_with_a_high_score(client):
     payload = complete_offer()
     payload.update(modality="onsite", location="Ciudad inventada 123")
     preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
-    assert preview["score"] == 90 and preview["can_publish"] is False
+    assert preview["score"] == 92 and preview["can_publish"] is False
     assert [row["key"] for row in preview["blockers"]] == ["location"]
     assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 422
     legacy_payload = {key: value for key, value in payload.items() if key != "quality_details"}
@@ -216,7 +216,7 @@ def test_remote_work_needs_no_city_or_country_to_publish(client):
     payload["location"] = ""
     preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
     assert preview["can_publish"] and preview["minimum_publish_score"] == 60
-    assert next(row for row in preview["checks"] if row["key"] == "location")["points"] == 10
+    assert next(row for row in preview["checks"] if row["key"] == "location")["points"] == 8
     assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 201
 
 
@@ -226,17 +226,17 @@ def test_partial_quality_keeps_independent_credit_for_each_relevant_field(client
     payload["quality_details"].update(missions=[], seniority="", experience_years=None, interview_count=None)
     report = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
     checks = {row["key"]: row for row in report["checks"]}
-    assert checks["description"]["points"] == checks["description"]["weight"] == 20
-    assert checks["missions"]["points"] == 0 and checks["missions"]["weight"] == 3
-    assert checks["requirements"]["points"] == 5 and checks["requirements"]["state"] == "partial"
-    assert checks["process"]["points"] == 1
+    assert checks["description"]["points"] == checks["description"]["weight"] == 15
+    assert checks["missions"]["points"] == 0 and checks["missions"]["weight"] == 9
+    assert checks["requirements"]["points"] == 4 and checks["requirements"]["state"] == "partial"
+    assert checks["process"]["points"] == 4
     assert report["score"] == sum(row["points"] for row in report["checks"])
     assert sum(row["weight"] for row in report["checks"]) == 100
     assert not report["can_publish"] and [row["key"] for row in report["blockers"]] == ["requirements"]
     payload["quality_details"].update(seniority="entry", experience_years=0, missions=[{"outcome": "Preparar un informe con las ventas", "measure": "", "days": 30}])
     updated = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
     partial_mission = next(row for row in updated["checks"] if row["key"] == "missions")
-    assert partial_mission["points"] == 2 and partial_mission["state"] == "partial"
+    assert partial_mission["points"] == 6 and partial_mission["state"] == "partial"
     assert updated["can_publish"] and not partial_mission["required"]
 
 

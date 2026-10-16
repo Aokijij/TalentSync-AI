@@ -1,6 +1,10 @@
 """Local editorial assistance: preserve supplied context and structure explicit facts."""
 import re
 
+from app.domain.services.job_requirements import (
+    experience_label,
+    minimum_experience_months,
+)
 from app.domain.services.offer_review import details_for
 
 LEVELS = {"entry": "Inicial", "junior": "Junior", "mid": "Intermedio", "senior": "Senior", "lead": "Liderazgo"}
@@ -81,9 +85,9 @@ def writing_draft(job):
     requirements, changes = [], []
     if details.get("seniority"):
         requirements.append(f"Nivel del cargo: {LEVELS.get(details['seniority'], details['seniority'])}.")
-    years = details.get("experience_years")
-    if years is not None:
-        requirements.append("No se exige experiencia laboral previa." if years == 0 else f"Experiencia requerida: {years} {'año' if years == 1 else 'años'}.")
+    months = minimum_experience_months(details)
+    if months is not None:
+        requirements.append("No se exige experiencia laboral previa." if months == 0 else f"Experiencia requerida: {experience_label(details)}.")
     for label, values in [("Esencial al ingresar", essential), ("Deseable, no imprescindible", desirable), ("Puedes aprender durante el ingreso", learnable)]:
         if values:
             requirements += ["", label, *[f"• {value}" for value in values]]
@@ -108,10 +112,10 @@ def writing_draft(job):
                           "basis": "Preserva los conocimientos y evidencias del texto original y organiza las prioridades que configuraste."})
     if not essential:
         questions.append({"step": 2, "text": "¿Qué habilidad debe demostrar al ingresar y cuáles puede aprender con acompañamiento? Marca las esenciales antes de publicar."})
-    if years is None:
-        questions.append({"step": 2, "text": "¿Cuánta experiencia requiere el alcance real del cargo? Define el nivel y los años sin confundirlos con la edad de la persona."})
-    elif any(int(value) != years for value in re.findall(r"(\d{1,2})\s*(?:años|years)", job.requirements or "", re.I)):
-        questions.append({"step": 2, "text": "El texto actual y la experiencia configurada mencionan años diferentes. Confirma la condición correcta antes de aplicar la propuesta."})
+    if months is None:
+        questions.append({"step": 2, "text": "¿Cuánta experiencia requiere el alcance real del cargo? Define el nivel y los meses o años sin confundirlos con la edad de la persona."})
+    elif any(int(value) * (1 if unit.casefold().startswith("mes") else 12) != months for value, unit in re.findall(r"(\d{1,3})\s*(años?|years?|mes(?:es)?)", job.requirements or "", re.I)):
+        questions.append({"step": 2, "text": "El texto actual y la experiencia configurada mencionan meses o años diferentes. Confirma la condición correcta antes de aplicar la propuesta."})
     if set(value.casefold() for value in essential) & learnable_keys:
         questions.append({"step": 2, "text": "Una habilidad figura como esencial y aprendible. Decide si debe dominarla al ingresar o si recibirá formación."})
     return {"method": "local-editorial-writing-v2", "proposals": proposals, "questions": questions,

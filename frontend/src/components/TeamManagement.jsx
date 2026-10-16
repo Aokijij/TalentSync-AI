@@ -34,6 +34,7 @@ export function TeamManagement({ jobs, busy: saving, act, canInvite, mfaRequired
       <button type="button" className="button-primary" disabled={busy || !!editor || !canInvite} onClick={() => setEditor({ kind: "invite" })}><Plus size={17} />Invitar integrante</button>
     </header>
     <div className="team-overview"><span><i className="team-dot active" />{active} {active === 1 ? "activo" : "activos"}</span><span><i className="team-dot" />{counts.revoked || 0} con acceso retirado</span><span><Mail size={14} />{pending} {pending === 1 ? "invitación pendiente" : "invitaciones pendientes"}</span></div>
+    <p className="team-invite-note">El registro de empresa crea al propietario. Para sumar un reclutador o entrevistador, invita su correo y elige su permiso aquí. Esa persona acepta el enlace con su cuenta o crea una cuenta desde la invitación, sin registrar otra empresa.</p>
     <details className="team-permissions-help"><summary><ShieldCheck size={15} />Qué puede hacer cada rol</summary><div><p><strong>Propietario</strong>Administra verificación, equipo, empresa y contratación.</p><p><strong>Reclutador</strong>Gestiona las vacantes y candidaturas de la empresa. No administra el equipo.</p><p><strong>Entrevistador</strong>Consulta procesos asignados y guarda evaluaciones internas. No publica ofertas ni cambia decisiones de contratación.</p></div></details>
     {editor?.kind === "invite" && <TeamEditor key="invite" jobs={jobs} busy={busy} mfaRequired={mfaRequired} onSave={save} onClose={() => setEditor(null)} />}
     <div className="team-list-toolbar">

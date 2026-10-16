@@ -1,0 +1,12 @@
+import "../styles/vacancy-requirements.css";
+import { useState } from "react";
+import { LEVELS } from "../utils/offerQuality.js";
+import { minimumExperienceMonths, experienceLabel } from "../utils/jobRequirements.js";
+
+const suggestions = { entry: [0, 3, 6], junior: [0, 6, 12, 24], mid: [12, 24, 36], senior: [36, 48, 60], lead: [48, 60, 84] };
+export function ExperienceRequirementEditor({ details, onChange }) {
+  const months = minimumExperienceMonths(details);
+  const [unit, setUnit] = useState(months && months % 12 === 0 ? "years" : "months");
+  const setMonths = (value) => onChange({ ...details, experience_months: value, experience_years: value != null && value % 12 === 0 ? value / 12 : null });
+  return <section className="experience-requirement-editor"><div className="offer-fields"><label className="offer-field"><span>Nivel del cargo</span><select className="field-control" value={details.seniority} onChange={(event) => onChange({ ...details, seniority: event.target.value })}><option value="">Selecciona el nivel</option>{Object.entries(LEVELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><div className="offer-field"><label htmlFor="minimum-job-experience">Experiencia mínima</label><div className="experience-amount"><input id="minimum-job-experience" className="field-control" type="number" min={0} max={unit === "years" ? 50 : 600} step={unit === "years" ? "any" : 1} value={months == null ? "" : unit === "years" ? Number((months / 12).toFixed(2)) : months} onChange={(event) => setMonths(event.target.value === "" ? null : Math.round(Number(event.target.value) * (unit === "years" ? 12 : 1)))} /><select className="field-control" aria-label="Unidad de experiencia" value={unit} onChange={(event) => setUnit(event.target.value)}><option value="months">Meses</option><option value="years">Años</option></select></div><small>{months == null ? "Puedes indicar 0 si aceptas personas sin experiencia." : experienceLabel(details)}</small></div></div><div className="experience-presets"><span>Opciones orientativas para este nivel</span>{(suggestions[details.seniority] || [0, 6, 12]).map((value) => <button type="button" key={value} onClick={() => { setUnit(value < 12 ? "months" : "years"); setMonths(value); }}>{value === 0 ? "Sin experiencia" : value < 12 ? `${value} meses` : `${value / 12} ${value === 12 ? "año" : "años"}`}</button>)}</div><p>El nivel orienta las opciones; tú defines la experiencia relacionada que necesita el cargo.</p></section>;
+}

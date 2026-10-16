@@ -1,8 +1,10 @@
+import { EDUCATION_LEVELS } from "../constants/educationLevels.js";
 import { skillLevels, skillKey } from "../utils/skillLevels.js";
 import { AdminVacancyActions } from "../components/AdminVacancyActions.jsx";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  PencilLine,
   BookOpen,
   Globe2,
   Building2,
@@ -53,6 +55,7 @@ function JobDetailContent({ jobId }) {
   const [answers, setAnswers] = useState({});
   const [availableJobs, setAvailableJobs] = useState([]);
   const [companyId, setCompanyId] = useState(null);
+  const [companyRole, setCompanyRole] = useState(null);
   useEffect(() => { if (routeLocation.hash === "#postularme" && job?.application_questions?.length) setShowQuestions(!alreadyApplied); }, [job, routeLocation.hash, alreadyApplied]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -62,7 +65,7 @@ function JobDetailContent({ jobId }) {
       match: setMatch,
       matchError: (failure) => setMatchError(getApiErrorMessage(failure, "No pudimos calcular la compatibilidad de esta oferta.")),
       applications: (data) => setAlreadyApplied(data.some((item) => Number(item.job_id) === Number(jobId))),
-      company: (data) => setCompanyId(data?.id ?? null),
+      company: (data) => { setCompanyId(data?.id ?? null); setCompanyRole(data?.active === false ? null : data?.role); },
       error: () => setErrorMessage("No pudimos cargar esta vacante. Vuelve a intentarlo."),
     });
   }, [jobId, user?.role]);
@@ -121,13 +124,14 @@ function JobDetailContent({ jobId }) {
   const minimumLevels = Object.fromEntries((job.skill_requirements || []).map((row) => [skillKey(row.skill), row.level]));
   return (
     <div className="space-y-6">
-      <Link
+      <div className="flex flex-wrap items-center justify-between gap-3"><Link
         to={user?.role === "company" ? "/empresa/vacantes" : (routeLocation.state?.returnTo || "/vacantes")}
         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
       >
         <ArrowLeft size={16} />
         {user?.role === "company" ? "Volver a mis vacantes" : "Volver a vacantes"}
       </Link>
+      {isOwnCompanyJob && ["owner", "recruiter"].includes(companyRole) && <Link className="button-secondary" to={`/empresa/calidad?vacante=${job.id}`}><PencilLine size={16} />Editar vacante</Link>}</div>
       {user?.role === "admin" && <AdminVacancyActions job={job} onChanged={setJob} />}
       <section className="surface-card p-6">
         {matchError && <div className="vacancy-match-notice" role="status"><p>{matchError}</p><button type="button" onClick={async () => { setMatchError(""); try { setMatch((await api.post(`/jobs/${jobId}/match`, {}, { __quiet: true })).data); } catch (failure) { setMatchError(getApiErrorMessage(failure, "La compatibilidad aún no está disponible.")); } }}>Volver a calcular</button></div>}
@@ -260,7 +264,7 @@ function JobDetailContent({ jobId }) {
         <aside className="job-detail-sidebar">
           <section className="job-requirements-card"><header><span><BriefcaseBusiness size={19} /></span><div><small>ANTES DE POSTULARTE</small><h2>Lo que busca esta oferta</h2></div></header>
             <div className="job-requirement-group"><h3>{job.source_kind === "external" ? "Habilidades identificadas" : "Habilidades relacionadas"}</h3><div className="job-skill-chips">{displayedSkills.map((skill) => <span key={skillKey(skill)}>{skill}{minimumLevels[skillKey(skill)] && minimumLevels[skillKey(skill)] !== "unspecified" ? ` · ${skillLevels[minimumLevels[skillKey(skill)]]}` : ""}</span>)}</div>{!displayedSkills.length && <p>Consulta los requisitos en la descripción de la oferta.</p>}</div>
-            {(job.required_education_level || job.required_study_fields?.length) ? <div className="job-requirement-group"><h3><BookOpen size={16} />Formación requerida</h3><p className="job-requirement-value">{{ technical: "Técnico", technologist: "Tecnólogo", university: "Profesional universitario", postgraduate: "Posgrado" }[job.required_education_level] || "Nivel no especificado"}</p>{!!job.required_study_fields?.length && <div className="job-skill-chips">{job.required_study_fields.map((field) => <span key={field}>{field}</span>)}</div>}<small>Se reconocen títulos equivalentes del mismo campo.</small></div> : null}
+            {(job.required_education_level || job.required_study_fields?.length) ? <div className="job-requirement-group"><h3><BookOpen size={16} />Formación requerida</h3><p className="job-requirement-value">{EDUCATION_LEVELS[job.required_education_level] || "Nivel no especificado"}</p>{!!job.required_study_fields?.length && <div className="job-skill-chips">{job.required_study_fields.map((field) => <span key={field}>{field}</span>)}</div>}<small>{job.quality_details?.education_accepts_in_progress ? "Se aceptan estudios en curso del nivel y área solicitados." : "Se solicitan estudios terminados; se reconocen títulos equivalentes del mismo campo."}</small></div> : null}
             <div className="job-requirement-group"><h3><Globe2 size={16} />Idiomas</h3>{job.languages?.length ? <div className="job-language-list">{job.languages.map((language) => <p key={language.name}><strong>{language.name}</strong><span>{languageLevelLabel(language.level)}</span></p>)}</div> : <p>No se especifica un requisito de idioma.</p>}</div>
           </section>
           {user?.role === "candidate" && <VacancyCvAdvice key={jobId} jobId={jobId} />}

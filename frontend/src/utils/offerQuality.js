@@ -1,9 +1,12 @@
+import { minimumExperienceMonths } from "./jobRequirements.js";
+import { scheduleHours } from "./workSchedule.js";
+import { remoteLocationLabel } from "./remoteScope.js";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
 
 export const CONTRACTS = { indefinite: "Indefinido", fixed_term: "Término fijo", services: "Prestación de servicios", apprenticeship: "Aprendizaje", project: "Obra o labor" };
 export const LEVELS = { entry: "Inicial / sin experiencia", junior: "Junior", mid: "Intermedio", senior: "Senior", lead: "Liderazgo" };
 export const QUALITY_STEPS = ["Condiciones", "Responsabilidades", "Requisitos", "Proceso", "Revisar y publicar"];
-export const EMPTY_DETAILS = { version: 1, salary_currency: "COP", salary_period: "monthly", salary_basis: "gross_base", weekly_hours: null, salary_max: null, variable_pay: "", contract_type: "", schedule: "", work_schedule: null, seniority: "", experience_years: null, learnable_skills: [], missions: [], interview_count: null, process_days: null };
+export const EMPTY_DETAILS = { version: 1, salary_currency: "COP", salary_period: "monthly", salary_basis: "gross_base", weekly_hours: null, salary_max: null, variable_pay: "", contract_type: "", schedule: "", work_schedule: null, seniority: "", experience_years: null, experience_months: null, education_accepts_in_progress: false, remote_scope: null, learnable_skills: [], missions: [], interview_count: null, process_days: null };
 
 export function qualityStepProgress(quality, step) {
   const rows = (quality?.checks || []).filter((row) => row.step === step);
@@ -24,10 +27,13 @@ export function offerPayload(draft) {
   payload.salary = draft.salary === "" || draft.salary == null ? null : Number(draft.salary);
   payload.response_days = Number(draft.response_days) || 7;
   payload.skill_requirements = (draft.skill_requirements || []).filter((row) => row.skill.trim()).map((row) => ({ ...row, skill: row.skill.trim(), weight: Number(row.weight) || 1 }));
+  const months = minimumExperienceMonths(draft.quality_details);
+  if (draft.modality === "remote" && draft.quality_details.remote_scope) { payload.location = remoteLocationLabel(draft.quality_details.remote_scope); payload.department = ""; }
   payload.quality_details = { ...draft.quality_details,
+    experience_months: months, experience_years: months != null && months % 12 === 0 ? months / 12 : null,
     // The publisher reviews these units in the guided salary fields.
     salary_currency: "COP", salary_period: "monthly", salary_basis: "gross_base",
-    weekly_hours: draft.quality_details.weekly_hours === "" || draft.quality_details.weekly_hours == null ? null : Number(draft.quality_details.weekly_hours),
+    weekly_hours: draft.quality_details.work_schedule ? scheduleHours(draft.quality_details.work_schedule) : draft.quality_details.weekly_hours === "" || draft.quality_details.weekly_hours == null ? null : Number(draft.quality_details.weekly_hours),
     salary_max: draft.quality_details.salary_max === "" || draft.quality_details.salary_max == null ? null : Number(draft.quality_details.salary_max),
     missions: draft.quality_details.missions.map((row) => ({ ...row, days: Number(row.days) || 90 })) };
   return payload;

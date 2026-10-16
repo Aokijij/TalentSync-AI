@@ -14,6 +14,10 @@ def location_fit(profile, job):
     def result(status, message, factor=1):
         return {"status": status, "message": message, "factor": factor, "invitation_allowed": status != "conflict"}
     if job.modality == "remote":
+        from app.domain.services.remote_locations import remote_scope_fit
+        scoped = remote_scope_fit(profile, job)
+        if scoped:
+            return scoped
         return result("remote", "Sin asistencia presencial; confirma el territorio permitido por la oferta.")
     if job.modality not in {"onsite", "hybrid"} or not job.location or not getattr(profile, "location", None):
         return result("unknown", "Falta confirmar la ciudad o la disponibilidad para asistir.")
@@ -56,6 +60,8 @@ def employer_preference_conflicts(profile, job):
     prefs = effective_preferences(profile)
     fit = location_fit(profile, job)
     conflicts = []
+    if job.modality == "remote" and fit["status"] == "conflict":
+        conflicts.append("El país de residencia está fuera del alcance remoto de la vacante")
     if job.modality in {"onsite", "hybrid"} and fit["status"] not in {"local", "relocation"}:
         if prefs["mobility"].get("willing_to_relocate") is False:
             conflicts.append("No acepta traslado ni asistencia habitual en la ciudad de la vacante")

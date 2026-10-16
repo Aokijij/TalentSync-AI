@@ -20,6 +20,9 @@ const ScreeningQuestionsEditor = await component("ScreeningQuestionsEditor", "Sc
 const OfferPublicationStatus = await component("OfferPublicationStatus", "OfferPublicationStatus");
 const OfferQualityBreakdown = await component("OfferQualityBreakdown", "OfferQualityBreakdown");
 const WorkScheduleEditor = await component("WorkScheduleEditor", "WorkScheduleEditor");
+const ExperienceRequirementEditor = await component("ExperienceRequirementEditor", "ExperienceRequirementEditor");
+const RemoteScopeEditor = await component("RemoteScopeEditor", "RemoteScopeEditor");
+const OfferConditions = await component("OfferConditions", "OfferConditions");
 
 test("inline AI experience bullets render as separate safe list items", () => {
   const html = renderToStaticMarkup(createElement(StructuredJobText, { text: "• Revisé inventarios. • Analicé movimientos. • Registré <script>datos</script>." }));
@@ -58,10 +61,12 @@ test("publication status separates the numeric minimum from missing required inf
 });
 
 test("quality breakdown shows earned responsibility points independently of missions", () => {
-  const html = renderToStaticMarkup(createElement(OfferQualityBreakdown, { quality: { score: 20, checks: [{ key: "description", label: "Responsabilidades", step: 1, points: 20, weight: 20, passed: true, required: true }, { key: "missions", label: "Misiones", step: 1, points: 0, weight: 3, passed: false }] } }));
-  assert.match(html, /20\/23/);
-  assert.match(html, /20\/20/);
-  assert.match(html, /0\/3/);
+  const html = renderToStaticMarkup(createElement(OfferQualityBreakdown, { quality: { score: 15, checks: [{ key: "description", label: "Responsabilidades", step: 1, points: 15, weight: 15, passed: true, required: true }, { key: "missions", label: "Misiones", step: 1, points: 0, weight: 9, passed: false }] } }));
+  assert.match(html, /70 puntos/);
+  assert.match(html, /30 \(30%\)/);
+  assert.match(html, /15\/24/);
+  assert.match(html, /15\/15/);
+  assert.match(html, /0\/9/);
 });
 
 test("schedule editor keeps legacy free text editable", () => {
@@ -69,4 +74,27 @@ test("schedule editor keeps legacy free text editable", () => {
   assert.match(html, /<textarea/);
   assert.match(html, /Sábados de 7:00 a 12:00/);
   assert.match(html, /Escribir horario/);
+});
+
+test("structured schedule displays calculated hours and custom time triggers", () => {
+  const html = renderToStaticMarkup(createElement(WorkScheduleEditor, { details: { work_schedule: { mode: "fixed", days: ["mon", "tue", "wed", "thu", "fri"], start: "05:30", end: "15:30", break_minutes: 60, notes: "" } }, onChange() {} }));
+  assert.match(html, /45 horas semanales/);
+  assert.match(html, /Se calculan y guardan automáticamente/);
+  assert.equal((html.match(/aria-haspopup="dialog"/g) || []).length, 2);
+  assert.ok(!html.includes('type="time"'));
+  assert.ok(!html.includes("Usar estas horas"));
+});
+
+test("monthly experience and remote restrictions are visible to both editors and candidates", () => {
+  const details = { seniority: "junior", experience_months: 6, remote_scope: { mode: "regions", countries: ["CO", "MX"], continents: ["EU"] } };
+  const experience = renderToStaticMarkup(createElement(ExperienceRequirementEditor, { details, onChange() {} }));
+  assert.match(experience, /6 meses/);
+  assert.match(experience, /value="months" selected/);
+  const remote = renderToStaticMarkup(createElement(RemoteScopeEditor, { value: details.remote_scope, onChange() {} }));
+  assert.match(remote, /Continentes admitidos/);
+  assert.match(remote, /Quitar CO/);
+  assert.match(remote, /Quitar MX/);
+  const publicView = renderToStaticMarkup(createElement(OfferConditions, { job: { modality: "remote", quality_details: details } }));
+  assert.match(publicView, /6 meses/);
+  assert.match(publicView, /Europa · Colombia · México/);
 });

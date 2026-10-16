@@ -52,3 +52,32 @@ test("guided editing preserves education and private question scores", () => {
   assert.equal(empty.required_education_level, null);
   assert.deepEqual(empty.application_questions, []);
 });
+
+test("guided payload automatically recalculates hours and preserves monthly requirements", () => {
+  const draft = offerDraft({ quality_details: { experience_years: 2, weekly_hours: 40 } });
+  assert.equal(offerPayload(draft).quality_details.experience_months, 24);
+  draft.quality_details.experience_months = 6;
+  draft.quality_details.work_schedule = { mode: "fixed", days: ["mon", "tue", "wed", "thu", "fri"], start: "05:30", end: "15:30", break_minutes: 60 };
+  let details = offerPayload(draft).quality_details;
+  assert.equal(details.weekly_hours, 45);
+  assert.equal(details.experience_months, 6);
+  assert.equal(details.experience_years, null);
+  draft.quality_details.work_schedule.mode = "flexible";
+  details = offerPayload(draft).quality_details;
+  assert.equal(details.weekly_hours, null);
+});
+
+test("remote offers preserve multiple countries, continents and student acceptance", () => {
+  const draft = offerDraft({ modality: "remote", location: "Medellín", department: "Antioquia", required_education_level: "secondary" });
+  const scope = { mode: "regions", countries: ["CO", "MX"], continents: ["EU"] };
+  draft.quality_details.remote_scope = scope;
+  draft.quality_details.education_accepts_in_progress = true;
+  const payload = offerPayload(draft);
+  assert.deepEqual(payload.quality_details.remote_scope, scope);
+  assert.equal(payload.department, "");
+  assert.match(payload.location, /Europa/);
+  assert.match(payload.location, /Colombia/);
+  assert.match(payload.location, /México/);
+  assert.equal(payload.required_education_level, "secondary");
+  assert.equal(payload.quality_details.education_accepts_in_progress, true);
+});

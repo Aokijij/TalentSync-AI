@@ -45,6 +45,7 @@ def infer_education_level(value):
     if re.search(r"\btecnolog[oa]\b|\btecnologia\s+en\b", text): return "technologist"
     if any(term in text for term in ("tecnico", "tecnica")): return "technical"
     if any(term in text for term in ("profesional", "universidad", "universitario", "ingenieria", "licenciatura")): return "university"
+    if any(term in text for term in ("bachiller", "secundaria", "educacion media")): return "secondary"
     return None
 
 
@@ -68,8 +69,9 @@ def education_match(profile, job):
     # The listed study fields are accepted alternatives, not simultaneous degrees.
     field_score = 100.0 if not fields or any(fields_are_related(entry, field) for entry in entries for field in fields) else 0.0
     level_score = 100.0
+    accepts_students = (getattr(job, "quality_details", None) or {}).get("education_accepts_in_progress", False)
     if required_level:
-        best = max((LEVEL_RANK.get(item.get("level") or infer_education_level(item.get("degree", "")), 0) for item in records if not is_ongoing(item) and (not fields or any(fields_are_related(item.get("degree", ""), field) for field in fields))), default=0) if records else max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in entries), default=0)
+        best = max((LEVEL_RANK.get(item.get("level") or infer_education_level(item.get("degree", "")), 0) for item in records if (accepts_students or not is_ongoing(item)) and (not fields or any(fields_are_related(item.get("degree", ""), field) for field in fields))), default=0) if records else max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in entries), default=0)
         level_score = min(100.0, best / LEVEL_RANK[required_level] * 100)
     return round(field_score * .7 + level_score * .3, 2)
 

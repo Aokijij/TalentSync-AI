@@ -89,7 +89,7 @@ class JobCreate(PipelineStagesMixin):
     application_questions: list[ScreeningQuestionConfig] = Field(
         default_factory=list, max_length=10
     )
-    required_education_level: Literal["technical", "technologist", "university", "postgraduate"] | None = None
+    required_education_level: Literal["secondary", "technical", "technologist", "university", "postgraduate"] | None = None
     required_study_fields: list[str] = Field(default_factory=list, max_length=20)
 
     @field_validator("application_questions")
@@ -131,7 +131,7 @@ class JobUpdate(PipelineStagesMixin):
     application_questions: list[ScreeningQuestionConfig] | None = Field(
         default=None, max_length=10
     )
-    required_education_level: Literal["technical", "technologist", "university", "postgraduate"] | None = None
+    required_education_level: Literal["secondary", "technical", "technologist", "university", "postgraduate"] | None = None
     required_study_fields: list[str] | None = Field(default=None, max_length=20)
 
     @field_validator("application_questions")
