@@ -267,3 +267,29 @@ def test_guided_vacancies_keep_blind_hiring_and_secondary_education_consistent(c
     assert changed.status_code == 200, changed.text
     assert changed.json()["required_study_fields"] == []
     assert changed.json()["quality_details"]["education_accepts_in_progress"] is False
+
+
+def test_long_screening_questions_and_options_survive_creation_editing_and_submission(client):
+    _, owner = company_account(client, "quality-long-screening")
+    payload = complete_offer()
+    prompt = "Explica cómo resolverías esta situación. " * 20
+    option = "Verificar la información con el equipo. " * 20
+    assert 500 < len(prompt) <= 1000 and 500 < len(option) <= 1000
+    question = {"id": "long", "prompt": prompt, "type": "choice", "required": True, "options": [option, "Consultar otra alternativa"], "option_scores": {option: 3}}
+    payload["application_questions"] = [question]
+    saved = client.post("/api/v1/jobs", headers=owner, json=payload)
+    assert saved.status_code == 201, saved.text
+    job_id = saved.json()["id"]
+    configured = client.get(f"/api/v1/jobs/{job_id}/application-questions", headers=owner).json()[0]
+    assert configured["prompt"] == prompt and configured["options"][0] == option
+    assert configured["option_scores"][option] == 3
+    question["prompt"] = "¿" + "a" * 998 + "?"
+    assert client.patch(f"/api/v1/jobs/{job_id}", headers=owner, json={"application_questions": [question]}).status_code == 200
+    question["prompt"] += "a"
+    assert client.patch(f"/api/v1/jobs/{job_id}", headers=owner, json={"application_questions": [question]}).status_code == 422
+    _, candidate = register(client, "long-screening-candidate")
+    applied = client.post("/api/v1/applications", headers=candidate, json={"job_id": job_id, "screening_answers": [{"question_id": "long", "answer": option}]})
+    assert applied.status_code == 201, applied.text
+    with client.session_factory() as db:
+        answer = db.get(Job, job_id).applications[0].screening_answers[0]
+        assert answer["answer"] == option.strip() and answer["configured_adjustment"] == 3

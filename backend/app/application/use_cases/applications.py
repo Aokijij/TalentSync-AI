@@ -27,11 +27,12 @@ def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
             raise UseCaseError(status_code=422, detail=f"Responde la pregunta: {question['prompt']}")
         if not answer:
             continue
-        if question.get("type") == "choice" and answer not in question.get("options", []):
-            raise UseCaseError(status_code=422, detail=f"Selecciona una opción válida para: {question['prompt']}")
         configured_adjustment = 0.0
         if question.get("type") == "choice":
-            configured_adjustment = float((question.get("option_scores") or {}).get(answer, 0) or 0)
+            matches = [option for option in question.get("options", []) if option.strip() == answer]
+            if len(matches) != 1:
+                raise UseCaseError(status_code=422, detail=f"Selecciona una opción válida para: {question['prompt']}")
+            configured_adjustment = float((question.get("option_scores") or {}).get(matches[0], 0) or 0)
             automatic_adjustment += configured_adjustment
         saved.append(
             {

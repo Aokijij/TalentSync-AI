@@ -23,6 +23,7 @@ const WorkScheduleEditor = await component("WorkScheduleEditor", "WorkScheduleEd
 const ExperienceRequirementEditor = await component("ExperienceRequirementEditor", "ExperienceRequirementEditor");
 const RemoteScopeEditor = await component("RemoteScopeEditor", "RemoteScopeEditor");
 const OfferConditions = await component("OfferConditions", "OfferConditions");
+const ProcessStages = await component("ProcessStages", "ProcessStages");
 const EducationRequirementsEditor = await component("EducationRequirementsEditor", "EducationRequirementsEditor");
 const TextItemsEditor = await component("TextItemsEditor", "TextItemsEditor");
 
@@ -109,7 +110,10 @@ test("education levels appear in one list and secondary education has no career 
   assert.ok(!secondary.includes("Carreras o áreas aceptadas"));
   assert.match(secondary, /value="secondary" selected/);
   const technical = renderToStaticMarkup(createElement(EducationRequirementsEditor, { ...props, level: "technical" }));
-  assert.match(technical, /value="technical_in_progress" selected/);
+  assert.match(technical, /value="technical" selected/);
+  assert.ok(!technical.includes("_in_progress"));
+  assert.match(technical, /Aceptar personas que aún están estudiando/);
+  assert.match(technical, /type="checkbox" checked/);
   assert.match(technical, /Carreras o áreas aceptadas/);
   assert.match(technical, /Quitar Sistemas/);
 });
@@ -131,4 +135,24 @@ test("added text items are individual removable chips rather than a comma-separa
   assert.match(html, /Quitar Excel/);
   assert.ok(!html.includes('value="SQL,Excel"'));
   assert.match(html, /Añadir o Enter/);
+});
+
+
+test("long screening text has a 1000-character allowance and accessible option removal", () => {
+  const prompt = "Explica cómo resolverías esta situación. ".repeat(20), option = "Verificar la información antes de continuar. ".repeat(15);
+  const html = renderToStaticMarkup(createElement(ScreeningQuestionsEditor, { value: [{ id: "long", prompt, type: "choice", required: true, options: [option, "Otra alternativa"], option_scores: {} }], onChange() {} }));
+  assert.equal((html.match(/maxLength="1000"/g) || []).length, 3);
+  assert.ok(html.includes(prompt));
+  assert.ok(html.includes(option));
+  assert.match(html, /role="switch"/);
+  assert.match(html, /aria-pressed="true"/);
+  assert.match(html, /screening-remove-option/);
+  assert.match(html, /<span>Eliminar<\/span>/);
+});
+
+test("process stages preserve the company's configured order in a compact list", () => {
+  const html = renderToStaticMarkup(createElement(ProcessStages, { stages: [{ id: "received", title: "Recibidas" }, { id: "interview", title: "Entrevista" }] }));
+  assert.equal((html.match(/<li/g) || []).length, 2);
+  assert.ok(html.indexOf("Recibidas") < html.indexOf("Entrevista"));
+  assert.ok(!html.includes("Etapa del tablero"));
 });

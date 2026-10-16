@@ -18,7 +18,7 @@ class PipelineStage(BaseModel):
 class ScreeningQuestionPublic(BaseModel):
     category: Literal["screening", "work_scenario"] = "screening"
     id: str = Field(min_length=2, max_length=80, pattern=r"^[a-z0-9][a-z0-9_-]*$")
-    prompt: str = Field(min_length=5, max_length=300)
+    prompt: str = Field(min_length=5, max_length=1000)
     type: Literal["open", "choice"] = "open"
     required: bool = True
     options: list[str] = Field(default_factory=list, max_length=12)
