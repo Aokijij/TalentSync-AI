@@ -73,3 +73,13 @@ test("language editor keeps long levels inside consistent controls", async () =>
   assert.ok(html.includes("language-fields") && html.includes("language-level-control"));
   assert.ok(html.includes('title="B2 · Intermedio alto"'));
 });
+
+test("professional summary exposes personal editing and local generation without changing the saved text", async () => {
+  const Panel = await component("ProfessionalSummary");
+  const profile = { experience: "Mi texto personal", summary_mode: "custom" };
+  const html = renderToStaticMarkup(createElement(Panel, { profile, editing: false, onChange: () => {}, onEdit: () => {} }));
+  for (const value of ["Editar mi texto", "Generar con IA local", "Mi texto personal", 'aria-haspopup="dialog"']) assert.ok(html.includes(value));
+  assert.ok(!html.includes("<textarea"));
+  const editor = renderToStaticMarkup(createElement(Panel, { profile, editing: true, onChange: () => {}, onEdit: () => {} }));
+  assert.ok(editor.includes('maxLength="3000"') && editor.includes("Mi texto personal") && editor.includes("Guardar cambios"));
+});

@@ -59,6 +59,7 @@ class SQLPractice(Protocol):
 
 class CareerTextWriter(Protocol):
     def generate(self, record: dict, *, style: str, result: str) -> dict: ...
+    def generate_summary(self, facts: dict, *, tone: str) -> dict: ...
 
 
 class InterviewConnectivity(Protocol):

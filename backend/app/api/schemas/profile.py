@@ -45,6 +45,7 @@ class ProfileBase(BaseModel):
 
     _unique_languages = field_validator("languages")(unique_languages)
     experience: str | None = None
+    summary_mode: Literal["automatic", "custom"] | None = None
     education: str | None = None
     location: str | None = None
     department: str | None = None
@@ -78,6 +79,7 @@ class ProfileBase(BaseModel):
 
 
 class ProfileUpdate(ProfileBase):
+    experience: str | None = Field(default=None, max_length=3000)
     name: str | None = Field(default=None, min_length=2, max_length=120)
     _single_employment = field_validator("experiences")(single_current_employment)
     _study_status = field_validator("educations")(validate_educations)

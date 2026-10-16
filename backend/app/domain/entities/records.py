@@ -25,6 +25,7 @@ class Profile(Protocol):
     profession: str | None
     skills: list[str]
     experience: str | None
+    summary_mode: str
     education: str | None
     location: str | None
     department: str | None

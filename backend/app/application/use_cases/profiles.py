@@ -245,7 +245,9 @@ def update_my_profile(
     profile.certifications = payload["certifications"] or []
     profile.resume_style = payload["resume_style"]
     profile.resume_color = payload.get("resume_color", "default")
-    profile.experience = build_professional_summary(profile, previous_summary)
+    summary_mode = payload.get("summary_mode") or (profile.preferences or {}).get("professional_summary_mode", "automatic")
+    profile.preferences = {**(profile.preferences or {}), "professional_summary_mode": summary_mode}
+    profile.experience = previous_summary if summary_mode == "custom" else build_professional_summary(profile, previous_summary)
     text = " ".join(
         filter(
             None,
@@ -355,7 +357,9 @@ def upload_cv(
             levels[key] = suggestion["level"]
             sources[key] = suggestion
     profile.preferences = {**(profile.preferences or {}), "skill_levels": levels, "skill_level_sources": sources}
-    profile.experience = analysis.experience or profile.experience
+    custom_summary = (profile.preferences or {}).get("professional_summary_mode") == "custom"
+    if not custom_summary:
+        profile.experience = analysis.experience or profile.experience
     profile.education = analysis.education or profile.education
     if analysis.location:
         location_parts = [part.strip() for part in analysis.location.split(",", 1)]
@@ -366,7 +370,7 @@ def upload_cv(
     profile.experiences = _merge_imported(profile.experiences, analysis.experiences, ("role", "company"))
     profile.educations = _merge_imported(profile.educations, analysis.educations, ("degree", "institution"))
     profile.certifications = _merge_imported(profile.certifications, analysis.certifications, ("name", "issuer"))
-    if analysis.experiences:
+    if analysis.experiences and not custom_summary:
         profile.experience = build_professional_summary(
             profile, analysis.experience or profile.experience
         )

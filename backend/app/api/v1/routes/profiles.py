@@ -18,6 +18,7 @@ from app.api.schemas.career_coach import (
     WritingProposal,
 )
 from app.api.schemas.market import MarketFilters, MarketParticipation, MarketSkill
+from app.api.schemas.professional_summary import SummaryGeneration
 from app.api.schemas.profile import (
     CandidateProfileResponse,
     ProfileResponse,
@@ -28,7 +29,7 @@ from app.application.errors import UseCaseError
 from app.application.ports.services import ImageStorage, ResumeReader, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import career_coach as coach
-from app.application.use_cases import market_radar
+from app.application.use_cases import market_radar, professional_summary
 from app.application.use_cases import profiles as use_cases
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
@@ -36,6 +37,11 @@ from app.domain.entities.records import Profile, User
 from app.domain.services.resume_filename import resume_disposition, resume_filename
 
 router = APIRouter()
+
+
+@router.post("/me/summary/generate")
+def generate_summary(payload: SummaryGeneration, user=Depends(require_roles(UserRole.CANDIDATE)), writer=Depends(get_career_writer), nlp=Depends(get_text_analysis)):
+    return professional_summary.generate(user, payload.model_dump(), writer=writer, nlp=nlp)
 
 
 @router.get("/me/market")

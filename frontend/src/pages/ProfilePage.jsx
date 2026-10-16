@@ -1,4 +1,6 @@
 import { addProfileSkill } from "../utils/skillLevels.js";
+import { ProfessionalSummary } from "../components/ProfessionalSummary.jsx";
+import { withCustomSummary } from "../utils/professionalSummary.js";
 import { SkillLevelsEditor } from "../components/SkillLevelsEditor.jsx";
 import { EducationFields } from "../components/EducationFields.jsx";
 import { CareerCoachWorkspace } from "../components/CareerCoachWorkspace.jsx";
@@ -101,7 +103,7 @@ export function ProfilePage() {
     const frame = window.requestAnimationFrame(() => {
       if (target) {
         target.scrollIntoView({ block: "center", behavior: "smooth" });
-        (target.matches("input,textarea") ? target : target.querySelector("input,textarea,button"))?.focus({ preventScroll: true });
+        (target.matches("input,textarea") ? target : target.querySelector(coachTarget === "profile-summary" ? "textarea" : "input,textarea,button"))?.focus({ preventScroll: true });
       }
       setCoachTarget("");
     });
@@ -128,7 +130,7 @@ export function ProfilePage() {
   useEffect(() => {
     if (!profile || !location.hash) return;
     const target = location.hash.slice(1);
-    if (["profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations"].includes(target)) { setEditing(true); setCoachTarget(target); }
+    if (["profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations"].includes(target)) { setEditing(true); setCoachTarget(target); }
     else if (target === "preferencias") { setCoachTarget(target); }
     else if (["evidencias", "profile-evidence"].includes(target)) { setCoachTarget("profile-evidence"); }
   }, [Boolean(profile), location.hash]);
@@ -347,7 +349,7 @@ export function ProfilePage() {
           </header>
       )}
       <ResumeExportDialog open={exportOpen} onClose={() => setExportOpen(false)} profile={profile} name={name} photoVersion={photoVersion} onPhoto={uploadPhoto} onDesignSaved={(design) => setProfile((current) => ({ ...current, ...design }))} onEdit={() => editFromCoach("profile-experiences")} />
-      <CoachDialog open={completionOpen} onClose={() => setCompletionOpen(false)} title="Qué puedes completar en tu perfil" className="profile-completion-dialog"><div className="profile-completion-body"><p>Este indicador revisa información incluida; no mide tu compatibilidad. Completa solo lo que corresponda a tu trayectoria.</p>{getProfileCompletion(profile).missing.length ? <ul>{getProfileCompletion(profile).missing.map((label) => <li key={label}><span><Plus size={16} />{label}</span><button type="button" onClick={() => { setCompletionOpen(false); const target = { "Título profesional": "profile-profession", "Teléfono, ciudad y departamento": "profile-contact", "6 habilidades específicas": "profile-skills", "Resumen profesional de 120 caracteres": "profile-experiences", "2 experiencias completas": "profile-experiences", "Formación académica completa": "profile-educations", "Curso o certificación": "profile-certifications", "Idioma con nivel": "profile-languages", "Preferencias laborales completas": "preferencias" }[label]; if (target) editFromCoach(target); else document.querySelector('.profile-toolbar input[type="file"]')?.click(); }}>Completar <span aria-hidden="true">→</span></button></li>)}</ul> : <div className="profile-completion-success"><CheckCircle2 size={28} /><strong>Tienes información en los diez apartados</strong><p>Mantenla actualizada y revisa que refleje tu experiencia real.</p></div>}</div></CoachDialog>
+      <CoachDialog open={completionOpen} onClose={() => setCompletionOpen(false)} title="Qué puedes completar en tu perfil" className="profile-completion-dialog"><div className="profile-completion-body"><p>Este indicador revisa información incluida; no mide tu compatibilidad. Completa solo lo que corresponda a tu trayectoria.</p>{getProfileCompletion(profile).missing.length ? <ul>{getProfileCompletion(profile).missing.map((label) => <li key={label}><span><Plus size={16} />{label}</span><button type="button" onClick={() => { setCompletionOpen(false); const target = { "Título profesional": "profile-profession", "Teléfono, ciudad y departamento": "profile-contact", "6 habilidades específicas": "profile-skills", "Resumen profesional de 120 caracteres": "profile-summary", "2 experiencias completas": "profile-experiences", "Formación académica completa": "profile-educations", "Curso o certificación": "profile-certifications", "Idioma con nivel": "profile-languages", "Preferencias laborales completas": "preferencias" }[label]; if (target) editFromCoach(target); else document.querySelector('.profile-toolbar input[type="file"]')?.click(); }}>Completar <span aria-hidden="true">→</span></button></li>)}</ul> : <div className="profile-completion-success"><CheckCircle2 size={28} /><strong>Tienes información en los diez apartados</strong><p>Mantenla actualizada y revisa que refleje tu experiencia real.</p></div>}</div></CoachDialog>
       <CoachDialog open={coachOpen} onClose={() => setCoachOpen(false)}>
         <Link className="profile-radar-link" to="/aprendizaje#radar-laboral">Explorar mi radar laboral →</Link>
         <CareerCoachWorkspace active={coachOpen} profile={profile} editing={editing} onEdit={editFromCoach} onSave={save} onProfileChanged={async () => { setProfile(normalize((await api.get("/profiles/me")).data)); await refreshUser(); }} />
@@ -356,11 +358,8 @@ export function ProfilePage() {
         <article className="profile-document">
           <div className="profile-content-grid">
             <div className="profile-main-sections">
-            <Section icon={UserRound} title="Resumen profesional">
-              <p className="text-sm leading-6 text-[var(--muted)]">
-                {profile.experience || "Agrega tu profesión, experiencia, formación y habilidades. Al guardar construiremos un resumen breve de tu trayectoria."}
-              </p>
-              {editing ? <p className="text-xs text-[var(--muted)]">Este resumen se actualiza automáticamente al guardar, sin repetir la lista de empresas.</p> : null}
+            <Section id="profile-summary" icon={UserRound} title="Resumen profesional">
+              <ProfessionalSummary profile={profile} editing={editing} onChange={(text) => setProfile((current) => withCustomSummary(current, text))} onEdit={() => { setProfile((current) => withCustomSummary(current, current.experience || "")); editFromCoach("profile-summary"); }} />
             </Section>
             <Section id="profile-experiences" icon={BriefcaseBusiness} title="Experiencia laboral">
               <Items
