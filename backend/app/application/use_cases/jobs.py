@@ -8,19 +8,29 @@ from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases.matching import upsert_recommendation
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Company, Job, User
+from app.domain.services.colombian_locations import canonical_commuting_city
 from app.domain.services.match_explanations import input_version, preference_alignment
 from app.domain.services.offer_review import review_offer
 from app.domain.services.reputation import company_health
 
-REVIEW_FIELDS = {"title", "description", "requirements", "salary", "location", "modality", "employment_type", "sector", "response_days", "quality_details", "skill_requirements", "pipeline_stages"}
+REVIEW_FIELDS = {"title", "description", "requirements", "salary", "location", "department", "modality", "employment_type", "sector", "response_days", "quality_details", "skill_requirements", "pipeline_stages"}
 
 
 def validate_guided_publication(values):
+    if values.get("status") == "active" and values.get("modality") in {"onsite", "hybrid"}:
+        location = values.get("location") or ""
+        department = values.get("department")
+        try:
+            canonical_commuting_city(f"{location}, {department}" if department and "," not in location else location)
+        except ValueError as error:
+            raise UseCaseError(status_code=422, detail="Elige una ciudad válida del catálogo de Colombia para publicar una vacante presencial o híbrida.") from error
     if values.get("quality_details") and values.get("status") == "active":
         review = review_offer(SimpleNamespace(**values))
         if not review["can_publish"]:
             missing = [row["label"] for row in review["blockers"]]
             missing += [row["message"] for row in review["issues"] if row["severity"] == "critical"]
+            if review["score"] < review["minimum_publish_score"]:
+                missing.append(f"Alcanza al menos {review['minimum_publish_score']}/100 de claridad (actual: {review['score']})")
             raise UseCaseError(status_code=422, detail="Antes de publicar: " + "; ".join(missing) + ". Puedes guardar un borrador.")
 
 

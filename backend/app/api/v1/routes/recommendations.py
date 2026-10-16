@@ -65,7 +65,7 @@ def ranked_candidates_page(
     job_id: int,
     audience: str = Query(default="invite", pattern="^(invite|applied)$"),
     query: str | None = Query(default=None, max_length=120),
-    minimum_match: float = Query(default=80, ge=0, le=100),
+    minimum_match: float = Query(default=60, ge=0, le=100),
     limit: int = Query(default=10, ge=5, le=50),
     offset: int = Query(default=0, ge=0),
     batch_size: int = Query(default=12, ge=1, le=24),

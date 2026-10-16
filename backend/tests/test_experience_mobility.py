@@ -88,4 +88,5 @@ def test_offer_review_handles_languages_and_current_conditions_without_publishin
     payload["quality_details"]["schedule"] = "aaaaaaaaaaaaaaaaaa"
     response = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload)
     assert not next(row for row in response.json()["checks"] if row["key"] == "schedule")["passed"]
-    assert not response.json()["can_publish"]
+    assert response.json()["can_publish"]
+    assert not next(row for row in response.json()["checks"] if row["key"] == "schedule")["required"]

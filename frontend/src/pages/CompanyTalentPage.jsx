@@ -1,3 +1,7 @@
+import { VacancyPicker } from "../components/VacancyPicker.jsx";
+import { TalentComparison } from "../components/TalentComparison.jsx";
+import { TALENT_MINIMUM_OPTIONS, talentMinimum } from "../utils/talentMinimum.js";
+import "../styles/talent-workspace.css";
 import { useAuth } from "../hooks/useAuth.js";
 import { loadCandidatePages } from "../utils/candidateRequests.js";
 import { experienceDuration } from "../utils/experienceDates.js";
@@ -21,12 +25,12 @@ export function CompanyTalentPage() {
   const [jobs, setJobs] = useState([]);
   const [jobSearch, setJobSearch] = useState(""), [jobOffset, setJobOffset] = useState(0), [jobTotal, setJobTotal] = useState(0), [selectedSnapshot, setSelectedSnapshot] = useState(null), [pending, setPending] = useState(0);
   const [selectedJobId, setSelectedJobId] = useState(searchParams.get("job") || "");
-  const [candidates, setCandidates] = useState([]);
+  const [candidates, setCandidates] = useState([]), [topCandidates, setTopCandidates] = useState([]);
   const [page, setPage] = useState(Math.max(1, Math.min(100000, Math.floor(Number(searchParams.get("page"))) || 1))), [total, setTotal] = useState(0);
   const pageSize = 9;
   const [query, setQuery] = useState(searchParams.get("query") || "");
   const [audience, setAudience] = useState(searchParams.get("audience") || "new");
-  const [minMatch, setMinMatch] = useState(() => { let saved = 50; try { saved = localStorage.getItem(minimumKey) ?? 50; } catch { /* Storage may be disabled. */ } return Math.max(0, Math.min(100, Number(searchParams.get("min") ?? saved) || 0)); });
+  const [minMatch, setMinMatch] = useState(() => { let saved = 60; try { saved = localStorage.getItem(minimumKey) ?? 60; } catch { /* Optional storage. */ } return talentMinimum(searchParams.get("min") ?? saved); });
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [loading, setLoading] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -35,7 +39,7 @@ export function CompanyTalentPage() {
   const [invitation, setInvitation] = useState(null);
   const [sending, setSending] = useState(false);
   const [reviewApplication, setReviewApplication] = useState(null);
-  const selectedJob = jobs.find((job) => String(job.id) === selectedJobId) || (String(selectedSnapshot?.id) === selectedJobId ? selectedSnapshot : null);
+  const selectedJob = (String(selectedSnapshot?.id) === selectedJobId ? selectedSnapshot : null) || jobs.find((job) => String(job.id) === selectedJobId);
 
   useEffect(() => {
     const next = { audience, min: String(minMatch), page: String(page) };
@@ -46,15 +50,13 @@ export function CompanyTalentPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    setLoadingJobs(true);
     const timer = setTimeout(async () => {
       try {
         const { data } = await api.get("/jobs/mine/choices", { params: { search: jobSearch, offset: jobOffset, limit: 50 }, signal: controller.signal });
         if (controller.signal.aborted) return;
         setJobs((current) => jobOffset ? [...current, ...data.items] : data.items); setJobTotal(data.total);
-        if (selectedJobId && !data.items.some((job) => String(job.id) === selectedJobId) && !selectedSnapshot) {
-          const response = await api.get(`/jobs/${selectedJobId}`, { signal: controller.signal });
-          if (!controller.signal.aborted && response.data.company_id === data.company_id) setSelectedSnapshot(response.data);
-        }
+
       } catch (failure) { if (!controller.signal.aborted) setError(getApiErrorMessage(failure, "No pudimos cargar tus vacantes.")); }
       finally { if (!controller.signal.aborted) setLoadingJobs(false); }
     }, 200);
@@ -62,13 +64,20 @@ export function CompanyTalentPage() {
   }, [jobSearch, jobOffset]);
 
   useEffect(() => {
+    if (!selectedJobId) return;
     const controller = new AbortController();
-    setCandidates([]); setMessage(""); setInvitation(null); setPending(0);
+    api.get(`/jobs/${selectedJobId}`, { signal: controller.signal }).then(({ data }) => { if (!controller.signal.aborted) setSelectedSnapshot(data); }).catch((failure) => { if (!controller.signal.aborted) setError(getApiErrorMessage(failure, "No pudimos cargar la vacante seleccionada.")); });
+    return () => controller.abort();
+  }, [selectedJobId]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setCandidates([]); setTopCandidates([]); setTotal(0); setMessage(""); setInvitation(null); setPending(0);
     if (!selectedJobId) { setLoading(false); return; }
     setError(""); setLoading(true);
     const timer = setTimeout(async () => {
       try {
-        await loadCandidatePages({ signal: controller.signal, request: () => api.get(`/recommendations/jobs/${selectedJobId}/candidates-page`, { params: { audience: audience === "new" ? "invite" : "applied", query, minimum_match: minMatch, limit: pageSize, offset: (page - 1) * pageSize }, signal: controller.signal, __skipRetry: true }), onPage: (data) => { setCandidates(data.items); setTotal(data.total); setPending(data.pending || 0); setLoading(false); if (!data.pending && page > Math.max(1, Math.ceil(data.total / pageSize))) setPage(Math.max(1, Math.ceil(data.total / pageSize))); } });
+        await loadCandidatePages({ signal: controller.signal, request: () => api.get(`/recommendations/jobs/${selectedJobId}/candidates-page`, { params: { audience: audience === "new" ? "invite" : "applied", query, minimum_match: audience === "applied" ? 0 : minMatch, limit: pageSize, offset: (page - 1) * pageSize }, signal: controller.signal, __skipRetry: true }), onPage: (data) => { setCandidates(data.items); setTopCandidates(data.top_candidates || []); setTotal(data.total); setPending(data.pending || 0); setLoading(false); if (!data.pending && page > Math.max(1, Math.ceil(data.total / pageSize))) setPage(Math.max(1, Math.ceil(data.total / pageSize))); } });
       } catch (failure) { if (!controller.signal.aborted) { setPending(0); setError(getApiErrorMessage(failure, "No pudimos cargar los candidatos. Pulsa Actualizar para volver a intentar.")); } }
       finally { if (!controller.signal.aborted) setLoading(false); }
     }, 250);
@@ -106,20 +115,9 @@ export function CompanyTalentPage() {
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--accent)] text-sm font-bold text-white">1</span>
           <div><h2 className="text-xl font-bold">¿Para qué cargo buscas candidatos?</h2><p className="mt-1 text-sm text-[var(--muted)]">La búsqueda se hará únicamente para la vacante que elijas.</p></div>
         </div>
-        <label className="mt-4 block text-xs text-[var(--muted)]">Buscar entre mis vacantes<input className="field-control mt-2" placeholder="Nombre del cargo" value={jobSearch} onChange={(event) => { setJobSearch(event.target.value); setJobOffset(0); }} /></label>
-        {loadingJobs ? <p className="mt-5 text-sm text-[var(--muted)]">Cargando tus vacantes…</p> : jobs.length ? (
-          <div className="mt-5 sm:ml-12">
-            <label className="block max-w-2xl text-sm font-semibold">Vacante
-              <select className="field-control mt-2" value={selectedJobId} disabled={sending} onChange={(event) => { setSelectedSnapshot(jobs.find((job) => String(job.id) === event.target.value) || null); setSelectedJobId(event.target.value); setQuery(""); setPage(1); }}>
-                <option value="">Selecciona una vacante…</option>
-                {selectedJob && !jobs.some((job) => job.id === selectedJob.id) && <option value={selectedJob.id}>{selectedJob.title}</option>}
-                {jobs.map((job) => <option key={job.id} value={job.id}>{job.title}{job.status === "paused" ? " · Pausada" : ""}</option>)}
-              </select>
-            </label>
-            {jobs.length < jobTotal && <button type="button" className="button-secondary button-sm mt-3" onClick={() => setJobOffset(jobs.length)}>Cargar más vacantes ({jobTotal - jobs.length})</button>}
-            {selectedJob ? <p className="mt-3 flex items-start gap-2 text-xs text-[var(--muted)]"><BriefcaseBusiness size={15} className="shrink-0" />{selectedJob.skills?.length ? `Buscamos experiencia en ${selectedJob.skills.slice(0, 3).join(", ")}${selectedJob.skills.length > 3 ? " y otras habilidades" : ""}.` : "Compararemos la experiencia y la formación con los requisitos del cargo."}</p> : null}
-          </div>
-        ) : !error ? <div className="mt-5 sm:ml-12"><p className="text-sm text-[var(--muted)]">{jobSearch ? "No hay vacantes con ese nombre. Prueba otra búsqueda." : "Publica una vacante para empezar a buscar personas para tu equipo."}</p><Link className="button-primary mt-4" to="/empresa/vacantes">Gestionar vacantes <ArrowRight size={16} /></Link></div> : null}
+        <VacancyPicker jobs={jobs} selected={selectedJob} query={jobSearch} loading={loadingJobs} disabled={sending} remaining={Math.max(0, jobTotal - jobs.length)} onMore={() => setJobOffset(jobs.length)} onQuery={(value) => { setJobSearch(value); setJobOffset(0); }} onSelect={(job) => { setSelectedSnapshot(job); setSelectedJobId(String(job.id)); setQuery(""); setPage(1); }} />
+        {!loadingJobs && !jobs.length && !jobSearch && <Link className="button-secondary mt-4" to="/empresa/vacantes">Gestionar vacantes <ArrowRight size={16} /></Link>}
+        {selectedJob && <p className="talent-job-context"><BriefcaseBusiness size={16} />{selectedJob.skills?.length ? `Buscamos experiencia en ${selectedJob.skills.slice(0, 4).join(", ")}.` : "Compararemos la experiencia y la formación con los requisitos del cargo."}</p>}
       </section>
 
       {selectedJob ? (
@@ -133,16 +131,18 @@ export function CompanyTalentPage() {
             <div className="flex flex-wrap gap-2 border-b border-[var(--line)] pb-4" role="group" aria-label="Tipo de candidatos">
               {[{ value: "new", label: "Personas para invitar" }, { value: "applied", label: "Ya se postularon" }].map((tab) => <button key={tab.value} type="button" aria-pressed={audience === tab.value} className={`${audience === tab.value ? "button-primary" : "button-secondary"} button-sm`} onClick={() => { setAudience(tab.value); setPage(1); }}>{tab.label}</button>)}
             </div>
-            <div className="mt-4 grid items-end gap-4 sm:grid-cols-[1fr_180px_auto]">
+            <div className={`talent-search-filters ${audience === "applied" ? "applied" : ""}`}>
               <label className="block text-xs font-semibold text-[var(--muted)]">Nombre, profesión o habilidad
                 <span className="relative mt-2 block"><Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" /><input className="field-control !pl-10" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Ej. servicio al cliente o administración" /></span>
               </label>
-              <label className="block text-xs font-semibold text-[var(--muted)]">Porcentaje mínimo
-                <div className="candidate-minimum-input"><input aria-label="Porcentaje mínimo de compatibilidad" className="field-control mt-2" type="number" min="0" max="100" step="1" value={minMatch} onChange={(event) => { const value = Math.max(0, Math.min(100, Math.round(Number(event.target.value) || 0))); setMinMatch(value); setPage(1); try { localStorage.setItem(minimumKey, String(value)); } catch { /* Optional preference storage. */ } }} /><span>%</span></div><small className="mt-2 block font-normal">Se recuerda en este navegador para tu usuario. Solo perfiles afines y disponibles.</small>
-              </label>
+              {audience === "new" && <label className="talent-minimum">Compatibilidad mínima
+                <select className="field-control" value={minMatch} onChange={(event) => { const value = talentMinimum(event.target.value); setMinMatch(value); setPage(1); try { localStorage.setItem(minimumKey, String(value)); } catch { /* Optional storage. */ } }}>{TALENT_MINIMUM_OPTIONS.map((value) => <option key={value} value={value}>{value}% o más</option>)}</select>
+              </label>}
               <button type="button" className="button-secondary" onClick={() => setRefreshVersion((value) => value + 1)} disabled={loading || sending}><RefreshCw size={16} />Actualizar</button>
             </div>
+            <p className="talent-filter-note">{audience === "new" ? "Se recuerda tu porcentaje. Mostramos perfiles afines que cumplen las preferencias y la disponibilidad conocidas." : "Se muestran todas las postulaciones, independientemente de su porcentaje."}</p>
           </div>
+          <TalentComparison candidates={topCandidates} requiredSkills={selectedJob.skills || []} />
 
           {loading ? <div className="surface-card py-12 text-center text-sm text-[var(--muted)]">Buscando candidatos para {selectedJob.title}…</div> : error && !candidates.length ? null : (
             <>
@@ -151,7 +151,7 @@ export function CompanyTalentPage() {
                 {results.map((candidate) => <TalentCard key={candidate.user_id} candidate={candidate} job={selectedJob} sending={sending} returnTo={`${location.pathname}${location.search}`} onInvite={() => setInvitation(candidate)} onReview={() => setReviewApplication(candidate)} />)}
               </div>
               <Pagination page={page} pages={Math.max(1, Math.ceil(total / pageSize))} total={total} pageSize={pageSize} onChange={setPage} label="Páginas de candidatos" />
-              {!results.length ? <div className="surface-card !py-10 text-center"><UsersRound className="mx-auto text-[var(--accent)]" size={30} /><h3 className="mt-3 font-bold">{audience === "new" ? "No hay personas para invitar con estos filtros" : "No hay postulaciones con estos filtros"}</h3><p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">{audience === "new" ? "Prueba otra búsqueda o revisa a las personas que ya se postularon. Los nuevos candidatos deben tener al menos 50% de coincidencia para recibir una invitación." : "Prueba otra búsqueda o selecciona cualquier porcentaje para ver todas las postulaciones."}</p><button type="button" className="button-secondary mt-4" onClick={() => { setQuery(""); setMinMatch(audience === "new" ? 50 : 0); setPage(1); }}>Limpiar filtros</button></div> : null}
+              {!results.length ? <div className="surface-card !py-10 text-center"><UsersRound className="mx-auto text-[var(--accent)]" size={30} /><h3 className="mt-3 font-bold">{audience === "new" ? "No hay personas para invitar con estos filtros" : "No hay postulaciones con estos filtros"}</h3><p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">{audience === "new" ? "Prueba otra búsqueda o revisa a las personas que ya se postularon. El mínimo para esta búsqueda es 60% de compatibilidad." : "Limpia el texto de búsqueda para ver todas las postulaciones."}</p><button type="button" className="button-secondary mt-4" onClick={() => { setQuery(""); setMinMatch(60); setPage(1); }}>Limpiar filtros</button></div> : null}
               {audience === "new" && results.length ? <p className="px-1 text-xs leading-5 text-[var(--muted)]">El perfil completo estará disponible si la persona se postula. La invitación no inicia una contratación.</p> : null}
             </>
           )}
@@ -189,7 +189,7 @@ function TalentCard({ candidate, job, sending, returnTo, onInvite, onReview }) {
         <div><p className="text-xs font-semibold text-[var(--muted)]">Habilidades que coinciden</p><div className="mt-2 flex flex-wrap gap-2">{skills.length ? skills.slice(0, 4).map((skill) => <span key={skill} className="inline-flex items-center gap-1 rounded-lg border border-[var(--line)] px-2 py-1 text-xs text-[var(--ink-strong)]"><Check size={12} className="text-[var(--success)]" />{skill}</span>) : <p className="text-xs text-[var(--muted)]">La coincidencia se basa en otros aspectos del perfil.</p>}{skills.length > 4 ? <span className="py-1 text-xs text-[var(--muted)]">+{skills.length - 4} más</span> : null}</div></div>
       </div>
       <div className="mt-auto border-t border-[var(--line)] pt-4">
-        {candidate.has_applied ? <div className="grid gap-2">{candidate.identity_hidden ? <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil anónimo</Link> : <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil del candidato <ArrowRight size={16} /></Link>}{candidate.screening_answers?.length ? <button type="button" className="button-outline w-full" onClick={onReview}>Ver respuestas y valorar</button> : null}</div> : <button type="button" className="button-primary w-full" disabled={candidate.has_pending_invitation || sending || candidate.match_percentage < 50 || candidate.location_fit?.invitation_allowed === false} onClick={onInvite}><Send size={16} />{candidate.has_pending_invitation ? "Invitación enviada" : "Invitar a postularse"}</button>}
+        {candidate.has_applied ? <div className="grid gap-2">{candidate.identity_hidden ? <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil anónimo</Link> : <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil del candidato <ArrowRight size={16} /></Link>}{candidate.screening_answers?.length ? <button type="button" className="button-outline w-full" onClick={onReview}>Ver respuestas y valorar</button> : null}</div> : <button type="button" className="button-primary w-full" disabled={candidate.has_pending_invitation || sending || candidate.match_percentage < 60 || candidate.location_fit?.invitation_allowed === false} onClick={onInvite}><Send size={16} />{candidate.has_pending_invitation ? "Invitación enviada" : "Invitar a postularse"}</button>}
         <p className="mt-2 text-center text-xs text-[var(--muted)]">{candidate.identity_hidden && candidate.has_applied ? "Compara habilidades y resultados antes de avanzar a entrevista." : candidate.has_applied ? "Ya puedes consultar su perfil completo." : candidate.has_pending_invitation ? "Estamos esperando que decida si desea postularse." : "Le enviaremos la vacante. Tú decides después a quién contratar."}</p>
       </div>
     </article>

@@ -1,5 +1,6 @@
 import { CandidateMatchExplanation } from "../components/CandidateMatchExplanation.jsx";
 import { ProfileLinks } from "../components/ProfileLinks.jsx";
+import { StructuredJobText } from "../components/StructuredJobText.jsx";
 import { skillLevels, skillLevelFor } from "../utils/skillLevels.js";
 import { isOngoing } from "../utils/profileStatus.js";
 import { experiencePeriod, recentExperiences } from "../utils/experienceDates.js";
@@ -181,9 +182,7 @@ export function CandidateDetailPage() {
                   {item.company ? `${item.company} · ` : ""}{experiencePeriod(item)}
                 </p>
                 {item.description && (
-                  <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                    {item.description}
-                  </p>
+                  <div className="mt-3"><StructuredJobText text={item.description} /></div>
                 )}
               </>
             )}

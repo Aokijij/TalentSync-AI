@@ -50,6 +50,8 @@ def local_reference(job, peers):
 
 
 def review_offer(job, peers=()):
+    from app.domain.services.colombian_locations import canonical_commuting_city
+
     d = details_for(job)
     title = (job.title or "").strip()
     description = (job.description or "").strip()
@@ -94,8 +96,6 @@ def review_offer(job, peers=()):
     range_ok = salary > 0 and (salary_max is None or salary_max >= salary)
     if salary_max is not None and salary_max < salary:
         issue("salary_range", "El máximo del rango no puede ser menor que el mínimo.", 0, "salary", "critical")
-    action = bool(re.search(r"\b(?:desarroll|registr|analiz|revis|gestion|coordin|atend|prepar|diseñ|implement|manten|verific|concil|organiz|control|document|program|supervis|apoy|resolv|oper|realiz|crea|constru)\w*", description.casefold()))
-    context = bool(re.search(r"\b(?:equipo|resultado|entrega|cliente|reporte|informe|proyecto|proceso|venta|soporte|servicio|producto|registro|sistema)\w*", description.casefold()))
     critical = any(row["severity"] == "critical" for row in issues)
     def meaningful(value, minimum, words):
         return len(value.strip()) >= minimum and len(set(re.findall(r"\w+", value.casefold()))) >= words
@@ -104,6 +104,14 @@ def review_offer(job, peers=()):
     schedule_ok = meaningful(schedule, 10, 3) and bool(re.search(r"lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|d[ií]as|seman|turnos", schedule)) and bool(re.search(r"\d|horario|diurn|nocturn|rotativ", schedule))
     response_days = getattr(job, "response_days", 0) or 0
     process_days = d.get("process_days") or 0
+    location_ok = bool((job.location or "").strip())
+    if job.modality in {"onsite", "hybrid"}:
+        try:
+            department = getattr(job, "department", None)
+            location = job.location or ""
+            canonical_commuting_city(f"{location}, {department}" if department and "," not in location else location)
+        except ValueError:
+            location_ok = False
     if process_days and response_days > process_days:
         issue("process_conflict", "El plazo de respuesta por avance supera la duración total estimada del proceso.", 3, "response_days", "critical")
         critical = True
@@ -114,28 +122,29 @@ def review_offer(job, peers=()):
                        "step": step, "action": action_text, "required": required,
                        "priority": "Obligatorio" if required else "Mejora"})
 
-    check("title", "Cargo específico", 0, 5 <= len(title) <= 180 and len(set(re.findall(r"\w+", title))) >= 2 and not re.search(r"\b(?:urgente|gana dinero)\b", title.casefold()), 0, "Usa un nombre específico de cargo, sin reclamos publicitarios.", True)
+    check("title", "Cargo específico", 0, 5 <= len(title) <= 180 and bool(re.search(r"\w", title)) and not re.search(r"\b(?:urgente|gana dinero)\b", title.casefold()), 0, "Usa un nombre de cargo, sin reclamos publicitarios. Puede ser una palabra, como Analista.", True)
     check("salary", "Salario fijo o rango real", 10, range_ok, 0, "Publica un salario fijo mensual positivo en COP. El rango máximo es opcional.", True)
     check("contract_type", "Contrato definido", 7, d.get("contract_type"), 0, "Selecciona el tipo de contrato, separado de la dedicación.", True)
-    check("schedule", "Jornada y horario", 7, schedule_ok, 0, "Completa Jornada y horario con días y horas o turnos. Ejemplo: lunes a viernes, 8:00 a 17:00, una hora de descanso. Para turnos, explica días, rotación y franjas.", True)
-    check("location", "Modalidad y ubicación", 6, job.modality in {"remote", "hybrid", "onsite"} and bool((job.location or "").strip()), 0, "Indica la ciudad o el territorio permitido para trabajar de forma remota.", True)
-    check("description", "Responsabilidades concretas", 12, meaningful(description, 100, 10) and action and context, 1, "En Responsabilidades y contexto escribe qué hará, para quién y qué entregará. Ejemplo: conciliará facturas para preparar el cierre mensual con el equipo contable.", True)
-    check("missions", "Resultados esperados y evaluación", 13, complete_missions, 1, "Define al menos un resultado, cómo se evaluará y en qué plazo.", True)
-    check("requirements", "Experiencia y nivel explícitos", 10, meaningful(requirements, 60, 8) and d.get("seniority") and d.get("experience_years") is not None, 2, "Completa Nivel del cargo, Experiencia mínima y Conocimientos y evidencia aceptada. Se permite 0 años. Explica qué debe demostrar y si aceptas proyectos de formación.", True)
-    check("skill_requirements", "Habilidades priorizadas", 10, 1 <= len(skills) <= 10 and any(row.get("essential") for row in skills), 2, "Define hasta diez habilidades y distingue esenciales de deseables.", True)
-    check("process", "Entrevistas y duración estimada", 10, d.get("interview_count") is not None and process_days >= 1 and bool(getattr(job, "pipeline_stages", None)), 3, "Declara entrevistas, etapas y duración estimada del proceso.", True)
-    check("response_days", "Compromiso de respuesta", 5, 1 <= response_days <= 14 and response_days <= process_days, 3, "Acuerda respuesta por avance de hasta catorce días y dentro del plazo total.", True)
+    check("schedule", "Jornada y horario", 7, schedule_ok, 0, "Añade los días y horarios o turnos para ayudar a decidir.")
+    check("location", "Modalidad y ubicación", 6, job.modality in {"remote", "hybrid", "onsite"} and location_ok, 0, "Elige una ciudad del catálogo para trabajo presencial o híbrido. Para remoto, indica el territorio permitido.", True)
+    check("description", "Responsabilidades concretas", 12, meaningful(description, 40, 6), 1, "Explica las funciones del cargo en al menos 40 caracteres y seis palabras diferentes.", True)
+    check("missions", "Resultados esperados y evaluación", 13, complete_missions, 1, "Opcional: añade resultados, cómo se evaluarán y en qué plazo.")
+    check("requirements", "Experiencia y nivel explícitos", 10, meaningful(requirements, 20, 3) and d.get("seniority") and d.get("experience_years") is not None, 2, "Indica el nivel, la experiencia mínima (puede ser 0) y los conocimientos necesarios.", True)
+    check("skill_requirements", "Habilidades priorizadas", 10, 1 <= len(skills) <= 50, 2, "Añade al menos una habilidad. Puedes marcar todas como deseables si se aprenden en el cargo.", True)
+    check("process", "Entrevistas y duración estimada", 10, d.get("interview_count") is not None and process_days >= 1 and bool(getattr(job, "pipeline_stages", None)), 3, "Opcional: declara entrevistas y duración estimada del proceso.")
+    check("response_days", "Compromiso de respuesta", 5, 1 <= response_days <= 30 and (not process_days or response_days <= process_days), 3, "Acuerda un plazo de respuesta entre 1 y 30 días; si defines una duración total, debe caber en ella.", True)
     check("inclusive", "Lenguaje y requisitos coherentes", 10, not critical and not any(row["code"].startswith("wording_") for row in issues), 2, "Retira frases genéricas y resuelve las contradicciones señaladas.")
     score = sum(row["weight"] for row in checks if row["passed"])
     blockers = [row for row in checks if row["required"] and not row["passed"]]
-    can_publish = not blockers and not critical
+    minimum_score = 70
+    can_publish = not blockers and not critical and score >= minimum_score
     reference = local_reference(job, peers)
     if salary and reference["median"] and salary < reference["median"] * .65:
         issue("salary_below_local_reference", "El mínimo fijo está por debajo del 65% de la referencia local. Revisa las condiciones comparadas antes de cambiarlo.", 0, "salary")
     pending = sorted((row for row in checks if not row["passed"]), key=lambda row: (not row["required"], -row["weight"]))
     return {"version": 1, "completeness": score, "score": score, "level": "A" if can_publish and score >= 90 and not any(row["code"].startswith("wording_") for row in issues) else "B" if can_publish else "Pendiente",
             "rating": offer_rating(score), "rating_scale": RATING_SCALE,
-            "checks": checks, "issues": issues, "next_actions": pending, "blockers": blockers, "can_publish": can_publish,
+            "checks": checks, "issues": issues, "next_actions": pending, "blockers": blockers, "can_publish": can_publish, "minimum_publish_score": minimum_score,
             "readiness": "Lista para publicar" if can_publish else "Completa los requisitos de publicación",
             "salary_reference": reference, "blind_hiring": getattr(job, "blind_hiring", False),
             "notice": "Revisión de claridad y coherencia basada en reglas locales. La puntuación no modifica la compatibilidad ni garantiza condiciones laborales."}

@@ -4,7 +4,9 @@ import unicodedata
 def city_key(value):
     value = str(value or "").split(",")[0].strip().casefold()
     value = "".join(c for c in unicodedata.normalize("NFKD", value) if not unicodedata.combining(c))
-    return "bogota" if value in {"bogota d.c.", "bogota dc", "bogota d.c"} else value
+    return {"bogota d.c.": "bogota", "bogota dc": "bogota", "bogota d.c": "bogota",
+            "cartagena de indias": "cartagena", "san jose de cucuta": "cucuta",
+            "santiago de cali": "cali"}.get(value, value)
 
 
 def location_fit(profile, job):

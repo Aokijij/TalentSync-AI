@@ -256,7 +256,7 @@ export function CompanyDashboard() {
             {jobActivity.map((job) => (
               <Link
                 key={job.id}
-                to={`/empresa/vacantes/${job.id}/candidatos`}
+                to={`/empresa/talento?job=${job.id}`}
                 className="flex items-center justify-between gap-4 rounded-[var(--radius-lg)] bg-[var(--surface-subtle)] p-4 hover:bg-[var(--surface-hover)]"
               >
                 <div>

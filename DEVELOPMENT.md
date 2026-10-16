@@ -1152,3 +1152,24 @@ SQLite anterior a la primera carga, preserva claves existentes y no duplica las
 seis empresas, dieciocho candidatos, veinticuatro vacantes ni treinta y seis
 postulaciones. Las cuentas y claves permanecen en .local/review-accounts.json y
 .local/ACCESOS_REVISION.md, fuera de Git. Los ejemplos no entrenan el modelo.
+
+
+### Ajuste local del flujo empresarial — 16 de octubre de 2026
+
+Buscar talento reúne la selección de vacante en un único autocompletado, las
+tarjetas y la comparación de cinco perfiles obtenida de la misma respuesta
+paginada. El mínimo se recuerda por usuario y admite 60, 70, 80, 90 y 100%; las
+postulaciones se muestran sin umbral. Los enlaces antiguos de candidatos
+redirigen a esta vista sin iniciar otra consulta de ranking.
+
+El formulario guiado incluye formación y preguntas de preselección, conserva
+las valoraciones privadas al editar y usa el catálogo DIVIPOLA para ciudades
+presenciales/híbridas. La API rechaza ciudades inexistentes al publicar, incluso
+por el formulario antiguo; remoto conserva el territorio permitido en texto.
+
+La publicación requiere 70/100, cargo, salario, contrato, ubicación/modalidad,
+responsabilidades, conocimientos/nivel/experiencia (se acepta 0), al menos una
+habilidad y plazo de respuesta. Misiones, horario, entrevistas, duración total,
+formación y preguntas son opcionales. Las contradicciones críticas continúan
+bloqueando. Un cargo de una palabra es válido. El texto de experiencia se
+representa con listas y párrafos también en la vista empresarial.

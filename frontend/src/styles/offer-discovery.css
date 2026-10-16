@@ -7,3 +7,24 @@
 .offer-discovery-weights b { color:var(--accent); }
 .offer-discovery-weights small { width:100%; color:var(--muted); font-size:.67rem; }
 @media(max-width:800px) { .offer-discovery-note { flex-wrap:wrap; } .offer-discovery-note>div:first-of-type { flex:1; } .offer-discovery-weights { margin-left:0; width:100%; } }
+
+.offer-skills-panel,.offer-education-panel { border:1px solid var(--line); border-radius:16px; padding:1.25rem; background:color-mix(in srgb,var(--accent) 3%,var(--surface)); display:grid; gap:1rem; }
+.offer-skills-panel>header { display:flex; gap:1rem; align-items:flex-start; justify-content:space-between; }
+.offer-skills-panel h3,.offer-education-panel h3 { font-weight:750; }
+.offer-skills-panel header p,.offer-education-panel>p { margin-top:.4rem; font-size:.8rem; color:var(--muted); line-height:1.65; }
+.offer-skills-panel header>span { flex-shrink:0; padding:.35rem .65rem; border-radius:20px; background:var(--surface); border:1px solid var(--line); font-size:.7rem; color:var(--accent); }
+.offer-skills-panel .offer-skill-search { margin:0; padding-bottom:1rem; border-bottom:1px solid var(--line); }
+.offer-skills-panel .offer-skill { margin:0; background:var(--surface); grid-template-columns:minmax(140px,1fr) 110px 125px 60px 40px; gap:.7rem; padding:1rem; }
+.offer-skills-panel .offer-skill .field-control { min-height:44px; padding:.65rem .7rem; font-size:.8rem; }
+.offer-skills-panel .offer-skill .offer-field { font-size:.74rem; }
+.offer-skills-panel .offer-skill>button { min-height:44px; color:var(--error); }
+.offer-skills-empty { display:grid; justify-items:center; text-align:center; gap:.6rem; padding:1.7rem 1rem; border:1px dashed var(--line); border-radius:12px; }
+.offer-skills-empty>svg { color:var(--accent); }
+.offer-skills-empty p { max-width:400px; font-size:.8rem; line-height:1.6; color:var(--muted); }
+.offer-publication-blockers { margin-top:1.2rem; border:1px solid var(--line); border-radius:12px; padding:1rem; background:var(--surface-subtle); font-size:.8rem; }
+.offer-publication-blockers ul { display:grid; gap:.6rem; margin-top:.7rem; padding-left:1rem; list-style:disc; color:var(--muted); }
+.offer-publication-blockers button { text-align:left; line-height:1.6; }
+.offer-publication-blockers button:hover { color:var(--accent); text-decoration:underline; }
+.offer-fields>.city-combobox { align-self:start; }
+@media(max-width:1100px) { .offer-skills-panel .offer-skill { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 65px 40px; } .offer-skills-panel .offer-skill>.offer-field:first-child { grid-column:1/-1; } }
+@media(max-width:600px) { .offer-skills-panel,.offer-education-panel { padding:1rem; } .offer-skills-panel>header { flex-wrap:wrap; gap:.6rem; } .offer-skills-panel .offer-skill { grid-template-columns:minmax(0,1fr) minmax(0,1fr); padding:.8rem; } .offer-skills-panel .offer-skill>button { justify-self:end; } }

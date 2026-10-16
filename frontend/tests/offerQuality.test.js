@@ -37,3 +37,18 @@ test("guided offers declare salary units and only explicit weekly hours", () => 
   assert.equal(offerPayload(legacy).quality_details.salary_basis, "gross_base");
   assert.equal(offerPayload(legacy).quality_details.weekly_hours, null);
 });
+
+test("guided editing preserves education and private question scores", () => {
+  const questions = [{ id: "availability", prompt: "¿Puedes asistir?", type: "choice", required: true, options: ["Sí", "No"], option_scores: { "Sí": 3, "No": -1 } }];
+  const job = { application_questions: questions, required_education_level: "university", required_study_fields: ["Sistemas"] };
+  const draft = offerDraft(job);
+  draft.description = "Actualicé las responsabilidades";
+  assert.deepEqual(offerPayload(draft).application_questions, questions);
+  assert.equal(offerPayload(draft).required_education_level, "university");
+  assert.deepEqual(offerPayload(draft).required_study_fields, ["Sistemas"]);
+  draft.required_study_fields = " Sistemas, Informática, ";
+  assert.deepEqual(offerPayload(draft).required_study_fields, ["Sistemas", "Informática"]);
+  const empty = offerPayload(offerDraft());
+  assert.equal(empty.required_education_level, null);
+  assert.deepEqual(empty.application_questions, []);
+});

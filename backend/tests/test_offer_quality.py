@@ -148,3 +148,63 @@ def test_local_reference_requires_independent_comparable_recent_companies():
     peers[0].source_name = "local-quality-demo"
     assert local_reference(subject, peers)["median"] is None
     assert sum(row["weight"] for row in review_offer(subject)["checks"]) == 100
+
+
+def test_an_87_point_offer_can_publish_without_optional_missions(client):
+    _, owner = company_account(client, "quality-optional-mission")
+    payload = complete_offer()
+    payload["quality_details"]["missions"] = []
+    preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
+    assert preview["score"] == 87 and preview["can_publish"] is True
+    assert preview["minimum_publish_score"] == 70
+    assert preview["blockers"] == []
+    assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 201
+
+
+def test_minimal_publishable_offer_keeps_education_questions_and_choice_scores(client):
+    _, owner = company_account(client, "quality-minimum")
+    payload = complete_offer()
+    payload["title"] = "Analista"
+    payload["quality_details"].update(schedule="", missions=[], interview_count=None, process_days=None)
+    payload["skill_requirements"][0]["essential"] = False
+    payload["required_education_level"] = "technical"
+    payload["required_study_fields"] = ["Sistemas"]
+    questions = [{"id": "availability", "prompt": "¿Puedes asistir los sábados?", "type": "choice", "required": True,
+                  "options": ["Sí", "No"], "option_scores": {"Sí": 3, "No": -1}}]
+    payload["application_questions"] = questions
+    preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
+    assert preview["score"] == 70 and preview["can_publish"] is True
+    assert all(not row["required"] for row in preview["next_actions"])
+    saved = client.post("/api/v1/jobs", headers=owner, json=payload)
+    assert saved.status_code == 201, saved.text
+    job = saved.json()
+    assert job["required_education_level"] == "technical" and job["required_study_fields"] == ["Sistemas"]
+    assert client.get(f"/api/v1/jobs/{job['id']}/application-questions", headers=owner).json()[0]["option_scores"] == questions[0]["option_scores"]
+    assert "option_scores" not in client.get(f"/api/v1/jobs/{job['id']}").json()["application_questions"][0]
+
+
+def test_unknown_work_city_cannot_be_published_even_with_a_high_score(client):
+    _, owner = company_account(client, "quality-invalid-city")
+    payload = complete_offer()
+    payload.update(modality="onsite", location="Ciudad inventada 123")
+    preview = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
+    assert preview["score"] == 94 and preview["can_publish"] is False
+    assert [row["key"] for row in preview["blockers"]] == ["location"]
+    assert client.post("/api/v1/jobs", headers=owner, json=payload).status_code == 422
+    legacy_payload = {key: value for key, value in payload.items() if key != "quality_details"}
+    assert client.post("/api/v1/jobs", headers=owner, json=legacy_payload).status_code == 422
+    saved = client.post("/api/v1/jobs", headers=owner, json={**payload, "status": "draft"})
+    assert saved.status_code == 201
+    job_id = saved.json()["id"]
+    assert client.patch(f"/api/v1/jobs/{job_id}", headers=owner, json={"status": "active"}).status_code == 422
+    published = client.patch(f"/api/v1/jobs/{job_id}", headers=owner, json={"status": "active", "location": "medellin, Antioquia"})
+    assert published.status_code == 200, published.text
+
+
+def test_incomplete_optional_process_cannot_hide_a_contradiction(client):
+    _, owner = company_account(client, "quality-process-conflict")
+    payload = complete_offer()
+    payload["quality_details"].update(missions=[], interview_count=None, process_days=3)
+    report = client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).json()
+    assert not report["can_publish"]
+    assert any(row["code"] == "process_conflict" for row in report["issues"])
