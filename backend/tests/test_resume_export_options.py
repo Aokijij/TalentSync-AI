@@ -4,6 +4,7 @@ from io import BytesIO
 import pytest
 from PIL import Image
 from pypdf import PdfReader
+from reportlab.pdfbase import pdfmetrics
 from test_api_flows import client, company_account, register  # noqa: F401
 
 from app.infrastructure.database.models import User
@@ -66,8 +67,35 @@ def test_export_includes_only_owner_evidence_when_selected(client):
         db.commit()
     included = text(client.post("/api/v1/profiles/me/export", headers=headers, json={"sections": ["evidence"]}))
     omitted = text(client.post("/api/v1/profiles/me/export", headers=headers, json={"sections": []}))
-    assert "muestras de trabajo" in included.lower() and "Análisis documentado de pedidos" in included
+    assert "proyectos y logros" in included.lower() and "Análisis documentado de pedidos" in included
     assert "otra cuenta" not in included and "Proyecto del candidato" not in omitted
+
+
+@pytest.mark.parametrize("include_photo", [False, True])
+def test_modern_header_keeps_a_long_name_within_two_lines_and_inside_the_page(client, include_photo):
+    _, headers = register(client, "modern-header")
+    name = "María Alejandra Restrepo Gómez Delgado"
+    response = client.post("/api/v1/profiles/me/export", headers=headers, json={
+        "sections": ["contact"], "include_photo": include_photo,
+        "profile": {"name": name, "resume_style": "modern", "profession": "Desarrolladora de aplicaciones web",
+                    "phone": "+57 300 123 4567", "location": "Medellín", "department": "Antioquia"},
+    })
+    assert response.status_code == 200
+    reader = PdfReader(BytesIO(response.content))
+    assert len(reader.pages) == 1
+    names = []
+
+    def visit(value, cm, tm, font, size):
+        if size >= 20 and value.strip():
+            names.append((value.strip(), cm[4] + tm[4], cm[5] + tm[5], size))
+
+    contents = reader.pages[0].extract_text(visitor_text=visit)
+    assert name in " ".join(contents.split())
+    assert "+57 300 123 4567" in contents and "Medellín" in contents
+    assert len({round(item[2]) for item in names}) <= 2
+    for value, x, y, size in names:
+        assert x >= 38 and y > 650
+        assert x + pdfmetrics.stringWidth(value, "ResumeBold", size) <= 557
 
 
 @pytest.mark.parametrize("style", ["classic", "modern", "minimal"])
@@ -79,6 +107,25 @@ def test_long_profiles_keep_last_skill_and_experience_across_pages(client, style
     contents = text(response)
     assert "habilidad-marcador-79" in contents and "Cargo marcador 11" in contents
     assert len(PdfReader(BytesIO(response.content)).pages) > 1
+
+
+def test_modern_sidebar_does_not_create_an_extra_page_just_for_preferences(client):
+    _, headers = register(client, "modern-sidebar")
+    skills = ["análisis de requerimientos", "api rest", "aseguramiento de calidad", "automatización", "css", "desarrollo de software", "git", "html", "mysql", "php", "qa", "react", "testing", "fastapi", "javascript", "python", "vite", "sql", "typescript", "java"]
+    response = client.post("/api/v1/profiles/me/export", headers=headers, json={"profile": {
+        "name": "María Alejandra Restrepo Gómez Delgado", "profession": "Desarrolladora Front-End", "resume_style": "modern",
+        "skills": skills, "skill_levels": {skill: "intermediate" for skill in skills},
+        "links": [{"platform": "github", "url": "https://github.com/example-person"}, {"platform": "linkedin", "url": "https://linkedin.com/in/example-person"}],
+        "languages": [{"name": "español", "level": "NATIVE"}, {"name": "inglés", "level": "B1"}],
+        "certifications": [{"name": "Excel básico", "issuer": "Entidad de formación", "year": "2017"}],
+        "preferred_sector": "Tecnología y software", "preferred_modality": "remote", "availability": "immediate",
+    }})
+    assert response.status_code == 200
+    reader = PdfReader(BytesIO(response.content))
+    assert len(reader.pages) == 1
+    contents = reader.pages[0].extract_text()
+    for marker in ("java", "Excel básico", "Tecnología y software", "Remoto", "Inmediata"):
+        assert marker in contents
 
 
 def test_photo_is_owner_scoped_and_can_be_omitted(client, monkeypatch, tmp_path):
