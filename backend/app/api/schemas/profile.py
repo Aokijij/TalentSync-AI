@@ -1,12 +1,20 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    field_validator,
+    model_validator,
+)
 
 from app.api.schemas.language import LanguageLevel, unique_languages
 from app.domain.services.colombian_locations import canonical_commuting_city
 from app.domain.services.credential_links import certificate_url
 from app.domain.services.experience_dates import validate_experiences
+from app.domain.services.profile_links import LINK_PLATFORMS, professional_link_url
 from app.domain.services.profile_status import (
     single_current_employment,
     validate_educations,
@@ -26,6 +34,22 @@ class Mobility(BaseModel):
         if any(not value.strip() or len(value.strip()) > 120 for value in values):
             raise ValueError("Indica ciudades válidas de hasta 120 caracteres")
         return list(dict.fromkeys(canonical_commuting_city(value) for value in values))
+
+
+class ProfileLink(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    platform: Literal["linkedin", "github", "portfolio", "gitlab", "behance", "dribbble", "kaggle", "stackoverflow", "medium", "youtube", "other"]
+    url: HttpUrl
+    label: str = Field(default="", max_length=60)
+
+    @model_validator(mode="after")
+    def professional_url(self):
+        professional_link_url(self.url)
+        label, domain = LINK_PLATFORMS[self.platform]
+        host = (self.url.host or "").lower()
+        if domain and host != domain and not host.endswith("." + domain):
+            raise ValueError(f"El enlace de {label} debe pertenecer a {domain}")
+        return self
 
 
 class ProfileBase(BaseModel):
@@ -54,6 +78,14 @@ class ProfileBase(BaseModel):
     preferred_sector: str | None = None
     desired_salary: float | None = None
     phone: str | None = None
+    links: list[ProfileLink] = Field(default_factory=list, max_length=10)
+
+    @field_validator("links")
+    @classmethod
+    def unique_links(cls, values):
+        if values is not None and len({str(item.url) for item in values}) != len(values):
+            raise ValueError("No repitas el mismo enlace profesional")
+        return values
     # Older profiles can have NULL in these columns until they are edited.
     experiences: list[dict] | None = Field(default_factory=list)
     _experience_dates = field_validator("experiences")(validate_experiences)
@@ -79,6 +111,8 @@ class ProfileBase(BaseModel):
 
 
 class ProfileUpdate(ProfileBase):
+    # Omission preserves links for older clients; an empty list removes them.
+    links: list[ProfileLink] | None = Field(default=None, max_length=10)
     experience: str | None = Field(default=None, max_length=3000)
     name: str | None = Field(default=None, min_length=2, max_length=120)
     _single_employment = field_validator("experiences")(single_current_employment)

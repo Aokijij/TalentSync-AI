@@ -208,6 +208,10 @@ class Profile(Base):
         return (self.preferences or {}).get("mobility", {})
 
     @property
+    def links(self):
+        return (self.preferences or {}).get("professional_links", [])
+
+    @property
     def summary_mode(self):
         return "custom" if (self.preferences or {}).get("professional_summary_mode") == "custom" else "automatic"
 

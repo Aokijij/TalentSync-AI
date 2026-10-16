@@ -173,6 +173,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
         "preferred_sector": profile.preferred_sector,
         "desired_salary": profile.desired_salary,
         "phone": profile.phone,
+        "links": getattr(profile, "links", []) or [],
         "experiences": profile.experiences or [],
         "educations": profile.educations or [],
         "certifications": profile.certifications or [],
@@ -238,6 +239,8 @@ def update_my_profile(
     profile.preferred_sector = payload["preferred_sector"]
     profile.desired_salary = payload["desired_salary"]
     profile.phone = payload["phone"]
+    if payload.get("links") is not None:
+        profile.preferences = {**(profile.preferences or {}), "professional_links": [{**item, "url": str(item["url"])} for item in payload["links"]]}
     profile.experiences = payload["experiences"] or []
     if "mobility" in payload:
         profile.preferences = {**(profile.preferences or {}), "mobility": payload["mobility"]}

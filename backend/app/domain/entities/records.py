@@ -34,6 +34,7 @@ class Profile(Protocol):
     preferred_sector: str | None
     desired_salary: float | None
     phone: str | None
+    links: list[dict]
     experiences: list[dict]
     educations: list[dict]
     certifications: list[dict]

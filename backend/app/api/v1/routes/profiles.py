@@ -150,10 +150,10 @@ def preview_resume_export(payload: ResumeExport, user=Depends(require_roles(User
     from app.domain.services.career_coach import snapshot
     profile = coach.owner_profile(user)
     values = {**snapshot(profile), "resume_style": profile.resume_style, "resume_color": profile.resume_color,
-              "photo_filename": profile.photo_filename, "evidence": getattr(profile, "evidence", [])}
+              "photo_filename": profile.photo_filename, "evidence": getattr(profile, "evidence", []), "links": getattr(profile, "links", [])}
     name = user.name
     if payload.profile:
-        values.update(payload.profile.model_dump(exclude={"name"}))
+        values.update(payload.profile.model_dump(mode="json", exclude={"name"} | ({"links"} if payload.profile.links is None else set())))
         name = payload.profile.name or name
     document_user = SimpleNamespace(name=name, email=user.email, profile=SimpleNamespace(**values))
     return Response(exporter(document_user, sections=payload.sections, include_photo=payload.include_photo), media_type="application/pdf", headers={

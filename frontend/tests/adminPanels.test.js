@@ -96,3 +96,14 @@ test("evidence text editor starts with the complete saved text and offers save a
   for (const value of ["Editar texto de la evidencia", "Taskflow", "Desarrollé la aplicación", "Diseñé su interfaz", 'maxLength="2000"', "Guardar cambios", "Cancelar"]) assert.ok(html.includes(value), value);
   assert.ok(!html.includes('type="url"') && !html.includes("type=\"checkbox\""));
 });
+
+test("professional links expose common platforms in the editor and safe links in the saved profile", async () => {
+  const Panel = await component("ProfileLinks");
+  const value = [{ platform: "github", url: "https://github.com/my-projects", label: "" }];
+  const html = renderToStaticMarkup(createElement(Panel, { value }));
+  assert.ok(html.includes('href="https://github.com/my-projects"') && html.includes('rel="noopener noreferrer"') && html.includes("GitHub"));
+  const editor = renderToStaticMarkup(createElement(Panel, { value, editing: true, onChange: () => {} }));
+  for (const label of ["LinkedIn", "GitHub", "Behance", "GitLab", "Kaggle", "Portafolio personal", "Otro enlace", "Añadir enlace", "Eliminar enlace 1", "Guardar cambios"]) assert.ok(editor.includes(label), label);
+  const unsafe = renderToStaticMarkup(createElement(Panel, { value: [{ platform: "other", url: "javascript:alert(1)" }] }));
+  assert.ok(!unsafe.includes("href="));
+});

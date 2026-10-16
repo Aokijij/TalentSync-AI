@@ -10,6 +10,8 @@ import { CvContextReview } from "../components/CvContextReview.jsx";
 import { ExperienceFields, MobilityFields } from "../components/ExperienceFields.jsx";
 import { Link, useLocation } from "react-router-dom";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
+import { ProfileLinks } from "../components/ProfileLinks.jsx";
+import { profileLinksPayload } from "../utils/profileLinks.js";
 import { useEffect, useState } from "react";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import {
@@ -19,6 +21,7 @@ import {
   Download,
   Edit3,
   Mail,
+  Link2,
   MapPin,
   Phone,
   Plus,
@@ -75,6 +78,7 @@ const normalize = (data) => ({
   educations: data.educations || [],
   certifications: data.certifications || [],
   languages: data.languages || [],
+  links: data.links || [],
   resume_export_options: data.resume_export_options || {},
   resume_style: data.resume_style || "classic",
   resume_color: getResumePalette(data.resume_style, data.resume_color).id,
@@ -130,7 +134,7 @@ export function ProfilePage() {
   useEffect(() => {
     if (!profile || !location.hash) return;
     const target = location.hash.slice(1);
-    if (["profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations"].includes(target)) { setEditing(true); setCoachTarget(target); }
+    if (["profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations", "profile-links"].includes(target)) { setEditing(true); setCoachTarget(target); }
     else if (target === "preferencias") { setCoachTarget(target); }
     else if (["evidencias", "profile-evidence"].includes(target)) { setCoachTarget("profile-evidence"); }
   }, [Boolean(profile), location.hash]);
@@ -149,14 +153,14 @@ export function ProfilePage() {
   async function save() {
     setError("");
     try {
-      const { data } = await api.put("/profiles/me", { ...profile, name, mobility: { ...profile.mobility, commuting_cities: (profile.mobility?.commuting_cities || []).map((value) => value.trim()).filter(Boolean) } });
+      const { data } = await api.put("/profiles/me", { ...profile, name, links: profileLinksPayload(profile.links), mobility: { ...profile.mobility, commuting_cities: (profile.mobility?.commuting_cities || []).map((value) => value.trim()).filter(Boolean) } });
       setProfile(normalize(data));
       await refreshUser();
       setEditing(false);
       setMessage("Hoja de vida actualizada correctamente");
       return data;
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, "No fue posible actualizar la hoja de vida"));
+      setError(requestError instanceof Error && !requestError.isAxiosError ? requestError.message : getApiErrorMessage(requestError, "No fue posible actualizar la hoja de vida"));
       return null;
     }
   }
@@ -381,6 +385,7 @@ export function ProfilePage() {
             </Section>
             </div>
             <aside className="profile-side-sections">
+            <Section id="profile-links" icon={Link2} title="Enlaces profesionales"><ProfileLinks value={profile.links} editing={editing} onChange={(value) => update("links", value)} onEdit={() => editFromCoach("profile-links")} /></Section>
             <Section id="profile-certifications" icon={CheckCircle2} title="Cursos y certificaciones">
               <Items
                 type="certifications"

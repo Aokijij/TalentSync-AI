@@ -1,0 +1,19 @@
+.profile-links { display: grid; gap: 16px; }
+.profile-links > button { justify-self: start; }
+.profile-links-help { color: var(--muted); font-size: .8rem; line-height: 1.65; }
+.profile-links-list, .profile-links-fields { display: grid; gap: 12px; }
+.profile-link { display: flex; align-items: center; gap: 12px; padding: 13px; min-width: 0; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-subtle); transition: border-color .15s, background .15s; }
+.profile-link:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.profile-link:focus-visible, .profile-link-remove:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.profile-link-icon { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); }
+.profile-link > span:nth-child(2) { flex: 1; min-width: 0; }
+.profile-link strong { display: block; font-size: .85rem; color: var(--ink-strong); }
+.profile-link small { display: block; margin-top: 3px; font-size: .72rem; color: var(--muted); overflow-wrap: anywhere; }
+.profile-link > svg { flex-shrink: 0; color: var(--accent); }
+.profile-link-editor { display: grid; gap: 12px; min-width: 0; position: relative; padding: 12px 16px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-subtle); }
+.profile-link-editor legend { display: flex; align-items: center; gap: 6px; padding: 0 7px; font-size: .75rem; font-weight: 650; color: var(--accent); }
+.profile-link-editor label { display: grid; gap: 7px; min-width: 0; font-size: .8rem; font-weight: 600; }
+.profile-link-editor label:first-of-type { margin-top: 16px; }
+.profile-link-editor .field-control { background: var(--surface); font-size: .8rem; font-weight: 400; }
+.profile-link-remove { display: grid; place-items: center; position: absolute; top: 1px; right: 10px; padding: 7px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); cursor: pointer; }
+.profile-link-remove:hover { border-color: var(--error); color: var(--error); }

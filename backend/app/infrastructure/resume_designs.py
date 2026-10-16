@@ -22,6 +22,7 @@ from reportlab.platypus import (
 from app.domain.services.credential_links import certificate_url
 from app.domain.services.experience_dates import recent_experiences
 from app.domain.services.professions import EDUCATION_LEVEL_LABELS
+from app.domain.services.profile_links import link_label, professional_link_url
 from app.domain.services.resume_filename import resume_filename
 from app.domain.services.skill_levels import SKILL_LEVEL_LABELS, declared_skill_levels
 from app.domain.services.skills import skill_key
@@ -179,6 +180,19 @@ def build_resume(user, included, include_photo, photo):
         section(main, "Formación académica"); main.append(p(profile.education))
     long_skills = single_column
     target = main if single_column else side
+    if "contact" in included and getattr(profile, "links", None):
+        section(target, "Enlaces profesionales", not single_column)
+        link_style = ParagraphStyle("ProfessionalLink", parent=meta if single_column else side_body, fontSize=7 if single_column else 6.8, leading=10, spaceAfter=9)
+        for item in profile.links:
+            try:
+                url = professional_link_url(item.get("url"))
+            except ValueError:
+                url = ""
+            if not url:
+                continue
+            caption = escape(link_label(item))
+            display = escape(url.removeprefix("https://").removeprefix("http://").removeprefix("www.").rstrip("/"))
+            target.append(Paragraph(f'<link href="{escape(url, {chr(34): "&quot;"})}"><b>{caption}</b><br/>{display}</link>', link_style))
     if "skills" in included and profile.skills:
         section(target, "Habilidades", not single_column)
         levels = declared_skill_levels(profile)

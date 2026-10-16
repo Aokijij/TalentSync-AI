@@ -1,4 +1,5 @@
 import { CandidateMatchExplanation } from "../components/CandidateMatchExplanation.jsx";
+import { ProfileLinks } from "../components/ProfileLinks.jsx";
 import { skillLevels, skillLevelFor } from "../utils/skillLevels.js";
 import { isOngoing } from "../utils/profileStatus.js";
 import { experiencePeriod, recentExperiences } from "../utils/experienceDates.js";
@@ -223,6 +224,7 @@ export function CandidateDetailPage() {
           />}
         </div>
         <aside className="space-y-5">
+          {!candidate.identity_hidden && candidate.links?.length > 0 && <section className="surface-card p-5"><h2 className="mb-3 font-bold text-[var(--ink-strong)]">Enlaces profesionales</h2><ProfileLinks value={candidate.links} /></section>}
           <section className="surface-card p-5"><h2 className="mb-3 font-bold">Idiomas</h2><LanguagesEditor value={candidate.languages || []} editing={false} /></section>
           <section className="surface-card p-5">
             <h2 className="font-bold text-[var(--ink-strong)]">
