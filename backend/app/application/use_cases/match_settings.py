@@ -64,6 +64,28 @@ def evidence(db, user, payload=None, *, analysis=None):
     return user.profile.evidence or []
 
 
+def edit_evidence_text(db, user, evidence_id, payload):
+    db.profiles.lock_owner(user.id)
+    db.refresh(user.profile)
+    rows = user.profile.evidence or []
+    item = next((row for row in rows if row["id"] == evidence_id), None)
+    if item is None:
+        raise UseCaseError(status_code=404, detail="Evidencia no encontrada")
+    # Edit only the candidate's text, preserving the imported reference and analysis.
+    text = {"title": payload["title"], "description": payload["description"]}
+    user.profile.evidence = [{**row, **text} if row["id"] == evidence_id else row for row in rows]
+    if item.get("kind") == "certificate":
+        user.profile.certifications = [
+            {**row, "name": text["title"], "description": text["description"]}
+            if row.get("evidence_id") == evidence_id else row
+            for row in user.profile.certifications or []
+        ]
+    user.profile.updated_at = datetime.utcnow()
+    record_event(db, "profile.evidence_edited", "profile", user.profile.id, actor_user_id=user.id)
+    db.commit()
+    return user.profile.evidence
+
+
 def remove_evidence(db, user, evidence_id):
     rows = user.profile.evidence or []
     if not any(row["id"] == evidence_id for row in rows):

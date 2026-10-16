@@ -1,6 +1,13 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    field_validator,
+    model_validator,
+)
 
 from app.domain.services.credential_links import certificate_url
 from app.domain.services.skills import skill_key
@@ -43,6 +50,13 @@ class CandidatePreferences(BaseModel):
         if any(not item.strip() or len(item) > 120 for item in value):
             raise ValueError("Indica ubicaciones de hasta 120 caracteres")
         return list(dict.fromkeys(item.strip() for item in value))
+
+
+class EvidenceTextUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    title: str = Field(min_length=3, max_length=160)
+    description: str = Field(min_length=10, max_length=2000)
 
 
 class EvidenceSubmission(BaseModel):

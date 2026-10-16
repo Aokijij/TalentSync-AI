@@ -7,7 +7,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const require = createRequire(import.meta.url);
-async function component(name) {
+async function component(name, exportName = name) {
   const compiled = await build({
     entryPoints: [fileURLToPath(new URL(`../src/components/${name}.jsx`, import.meta.url))],
     bundle: true, write: false, platform: "node", format: "cjs", jsx: "automatic", packages: "external",
@@ -19,7 +19,7 @@ async function component(name) {
   });
   const module = { exports: {} };
   new Function("require", "module", "exports", compiled.outputFiles[0].text)(require, module, module.exports);
-  return module.exports[name];
+  return module.exports[exportName];
 }
 
 test("company explanation shows factors, levels, years and months and private response adjustment", async () => {
@@ -82,4 +82,17 @@ test("professional summary reveals the local AI action only when editing the pro
   assert.ok(!html.includes("<textarea") && !html.includes("Generar con IA local") && !html.includes("Editar mi texto"));
   const editor = renderToStaticMarkup(createElement(Panel, { profile, editing: true, onChange: () => {}, onEdit: () => {} }));
   for (const value of ['maxLength="3000"', "Mi texto personal", "Guardar cambios", "Generar con IA local", 'aria-haspopup="dialog"']) assert.ok(editor.includes(value));
+});
+
+test("saved repository evidence exposes text editing without hiding its reference or skills", async () => {
+  const Panel = await component("ProfileEvidence", "EvidenceCard");
+  const html = renderToStaticMarkup(createElement(Panel, { row: { id: "project-1", title: "TalentSync AI", kind: "repository", description: "Desarrollé la plataforma.", url: "https://github.com/example/project", skills: ["python", "react"], analysis: { origin: "github_public", revision: "original-revision" } }, busy: false }));
+  for (const value of ["Editar texto de TalentSync AI", 'aria-haspopup="dialog"', "Abrir referencia", "python", "react", "original-rev", "Retirar evidencia: TalentSync AI"]) assert.ok(html.includes(value), value);
+});
+
+test("evidence text editor starts with the complete saved text and offers save and cancel", async () => {
+  const Panel = await component("EvidenceTextEditor");
+  const html = renderToStaticMarkup(createElement(Panel, { row: { id: "project-1", title: "Taskflow", description: "Desarrollé la aplicación para organizar tareas.\nDiseñé su interfaz." }, onClose: () => {}, onSaved: () => {} }));
+  for (const value of ["Editar texto de la evidencia", "Taskflow", "Desarrollé la aplicación", "Diseñé su interfaz", 'maxLength="2000"', "Guardar cambios", "Cancelar"]) assert.ok(html.includes(value), value);
+  assert.ok(!html.includes('type="url"') && !html.includes("type=\"checkbox\""));
 });

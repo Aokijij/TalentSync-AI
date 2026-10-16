@@ -13,6 +13,7 @@ from app.api.schemas.matching import (
     CodewarsEvidenceSubmission,
     CodewarsPreviewRequest,
     EvidenceSubmission,
+    EvidenceTextUpdate,
     ProjectEvidenceSubmission,
     RepositoryPreviewRequest,
 )
@@ -76,6 +77,11 @@ def evidence(user=Depends(candidate), db=Depends(get_unit_of_work)):
 @router.post("/matching/evidence")
 def add_evidence(payload: EvidenceSubmission, user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.evidence(db, user, payload.model_dump(mode="json"))
+
+
+@router.patch("/matching/evidence/{evidence_id}")
+def edit_evidence_text(evidence_id: str, payload: EvidenceTextUpdate, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.edit_evidence_text(db, user, evidence_id, payload.model_dump())
 
 
 @router.delete("/matching/evidence/{evidence_id}", status_code=204)

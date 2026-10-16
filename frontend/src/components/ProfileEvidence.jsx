@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Award, BriefcaseBusiness, Check, ChevronDown, Code2, ExternalLink, FileBadge, FolderOpen, Info, Link2, Plus, Save, Trash2, X } from "lucide-react";
+import { Award, BriefcaseBusiness, Check, ChevronDown, Code2, ExternalLink, FileBadge, FolderOpen, Info, Link2, PencilLine, Plus, Save, Trash2, X } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { GitHubEvidence } from "./GitHubEvidence.jsx";
 import { CodewarsEvidence } from "./CodewarsEvidence.jsx";
+import { EvidenceTextEditor } from "./EvidenceTextEditor.jsx";
 import { programmingEvidenceRelevant } from "../utils/evidenceContext.js";
 import "../styles/profile-evidence.css";
 
@@ -16,7 +17,7 @@ const kinds = {
   repository: { label: "Repositorio", Icon: Code2 },
 };
 
-function EvidenceCard({ row, busy, onRemove, onAddSkills }) {
+export function EvidenceCard({ row, busy, onRemove, onAddSkills, onEdit }) {
   const { label, Icon } = kinds[row.kind] || kinds.experience;
   const skills = row.skills || [];
   const github = row.analysis?.origin === "github_public";
@@ -47,7 +48,7 @@ function EvidenceCard({ row, busy, onRemove, onAddSkills }) {
     {!row.add_to_profile && skills.length > 0 && <button type="button" className="evidence-skills-action" disabled={busy} onClick={() => onAddSkills(row)}><span className="evidence-skills-action-icon"><Plus size={17} aria-hidden="true" /></span><span>{row.kind === "certificate" ? "Añadir certificado al perfil" : "Añadir habilidades"}<span>Incorporar el contenido como declarado por mí</span></span></button>}
     <footer className="evidence-card-actions">
       {row.url ? <a className="button-secondary button-sm" href={row.url} target="_blank" rel="noopener noreferrer">{row.kind === "certificate" ? "Ver certificado" : "Abrir referencia"}<ExternalLink size={14} aria-hidden="true" /></a> : <span className="evidence-no-link">Sin enlace adjunto</span>}
-      <button type="button" className="evidence-remove" disabled={busy} onClick={() => onRemove(row)} aria-label={`Retirar evidencia: ${row.title}`}><Trash2 size={15} aria-hidden="true" />Retirar</button>
+      <div className="evidence-card-manage"><button type="button" className="button-secondary button-sm evidence-edit-action" disabled={busy} onClick={() => onEdit(row)} aria-label={`Editar texto de ${row.title}`} aria-haspopup="dialog"><PencilLine size={15} aria-hidden="true" />Editar texto</button><button type="button" className="evidence-remove" disabled={busy} onClick={() => onRemove(row)} aria-label={`Retirar evidencia: ${row.title}`}><Trash2 size={15} aria-hidden="true" />Retirar</button></div>
     </footer>
   </article>;
 }
@@ -59,6 +60,7 @@ export function ProfileEvidence({ profile, onChanged }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editingRow, setEditingRow] = useState(null);
   const [kind, setKind] = useState("experience");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -138,7 +140,8 @@ export function ProfileEvidence({ profile, onChanged }) {
           <footer className="evidence-form-actions"><p><Info size={15} aria-hidden="true" />Aportar una evidencia no verifica automáticamente una habilidad.</p><div><button type="button" className="button-secondary button-sm" disabled={busy} onClick={closeForm}>Cancelar</button><button className="button-primary button-sm" disabled={busy}><Save size={16} aria-hidden="true" />{busy ? "Guardando…" : "Guardar evidencia"}</button></div></footer>
         </form>
       </section>
-      {loading ? <p role="status" className="evidence-empty">Cargando tus evidencias…</p> : rows.length ? <div className="evidence-grid">{rows.map((row) => <EvidenceCard key={row.id} row={row} busy={busy} onRemove={remove} onAddSkills={(row) => act(async () => { const { data } = await api.post(`/matching/evidence/${row.id}/skills`); setRows(data); await onChanged?.(); setMessage("Habilidades incorporadas como declaradas por ti."); })} />)}</div> : !error && <div className="evidence-empty"><span className="evidence-icon"><FolderOpen size={24} aria-hidden="true" /></span><h4>Tu experiencia merece verse</h4><p>Empieza con un logro laboral, una muestra de trabajo o un certificado. Puede ser de cualquier profesión.</p></div>}
+      {loading ? <p role="status" className="evidence-empty">Cargando tus evidencias…</p> : rows.length ? <div className="evidence-grid">{rows.map((row) => <EvidenceCard key={row.id} row={row} busy={busy} onEdit={(row) => { setError(""); setMessage(""); setEditingRow(row); }} onRemove={remove} onAddSkills={(row) => act(async () => { const { data } = await api.post(`/matching/evidence/${row.id}/skills`); setRows(data); await onChanged?.(); setMessage("Habilidades incorporadas como declaradas por ti."); })} />)}</div> : !error && <div className="evidence-empty"><span className="evidence-icon"><FolderOpen size={24} aria-hidden="true" /></span><h4>Tu experiencia merece verse</h4><p>Empieza con un logro laboral, una muestra de trabajo o un certificado. Puede ser de cualquier profesión.</p></div>}
+      {editingRow && <EvidenceTextEditor key={editingRow.id} row={editingRow} onClose={() => setEditingRow(null)} onSaved={(data) => { setRows(data); setEditingRow(null); setMessage("Texto de la evidencia actualizado."); Promise.resolve(onChanged?.()).catch((failure) => setError(getApiErrorMessage(failure, "El texto se guardó, pero no pudimos actualizar el resto del perfil."))); }} />}
       <details className="evidence-integrations" onToggle={(event) => { if (event.currentTarget.open) setToolsActivated(true); }}>
         <summary><Link2 size={18} aria-hidden="true" /><span><strong>{programmingRelevant ? "Conectar GitHub o Codewars" : "Otras fuentes de evidencia"}</strong><span>Opcional · Proyectos y práctica de programación</span></span><ChevronDown size={16} aria-hidden="true" /></summary>
         {toolsActivated && <div className="evidence-integration-content"><p>Elige qué proyectos o retos relacionar con tus habilidades.</p><GitHubEvidence onSaved={async (data) => { setRows(data); await onChanged?.(); }} /><CodewarsEvidence onSaved={async (data) => { setRows(data); await onChanged?.(); }} /></div>}
