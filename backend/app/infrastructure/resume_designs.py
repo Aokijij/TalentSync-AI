@@ -42,15 +42,22 @@ LABELS = {"remote": "Remoto", "hybrid": "Híbrido", "onsite": "Presencial", "imm
 
 
 class Monogram(Flowable):
-    def __init__(self, name, color, circular, size):
+    def __init__(self, name, color, circular, size, gradient=None):
         super().__init__(); self.width = self.height = size
         self.name, self.color, self.circular = name, color, circular
+        self.gradient = gradient
 
     def draw(self):
         c, size = self.canv, self.width
         c.setFillColor(self.color)
         if self.circular:
             c.circle(size / 2, size / 2, size / 2, fill=1, stroke=0)
+            if self.gradient:
+                c.saveState()
+                path = c.beginPath(); path.circle(size / 2, size / 2, size / 2)
+                c.clipPath(path, stroke=0, fill=0)
+                c.linearGradient(0, size, size, 0, self.gradient)
+                c.restoreState()
         else:
             c.roundRect(0, 0, size, size, 7, fill=1, stroke=0)
         initials = "".join(word[0] for word in str(self.name or "Candidato").split()[:2]).upper()
@@ -66,6 +73,14 @@ class Timeline(Paragraph):
         if self.style.timelineDot:
             c.setFillColor(self.style.timelineColor); c.circle(-8, self.height - 6, 2.8, fill=1, stroke=0)
         c.restoreState(); super().draw()
+
+
+def gradient_panel(canvas, x, y, width, height, start, end):
+    canvas.saveState()
+    path = canvas.beginPath(); path.rect(x, y, width, height)
+    canvas.clipPath(path, stroke=0, fill=0)
+    canvas.linearGradient(x, y + height, x + width, y, [start, end])
+    canvas.restoreState()
 
 
 class SkillPills(Flowable):
@@ -99,7 +114,7 @@ def build_resume(user, included, include_photo, photo):
     minimal, classic, modern = layout == "minimal", layout == "classic", layout == "modern"
     single_column = minimal or classic
     body = ParagraphStyle("Body", fontName="Times-Roman" if classic else "Resume", fontSize=9.3 if classic else 8.3, leading=14 if classic else 13, textColor=ink, spaceAfter=6 if modern else 8, splitLongWords=True)
-    side_body = ParagraphStyle("Sidebar", parent=body, fontSize=7.6, leading=11.5, textColor=ink)
+    side_body = ParagraphStyle("Sidebar", parent=body, fontSize=7.6, leading=11.5, textColor=colors.white if modern else ink)
     meta = ParagraphStyle("Meta", parent=body, fontSize=7, leading=10, textColor=muted, spaceAfter=6)
     role = ParagraphStyle("Role", parent=body, fontName="Times-Bold" if classic else "ResumeBold", fontSize=10 if classic else 9, leading=14 if classic else 13, spaceAfter=3, keepWithNext=True, timelineColor=accent, timelineDot=True)
     company = ParagraphStyle("Company", parent=body, fontSize=8, textColor=accent, spaceAfter=4, keepWithNext=True, timelineColor=line, timelineDot=False)
@@ -108,18 +123,18 @@ def build_resume(user, included, include_photo, photo):
     def p(value, style=body, timeline=False):
         return (Timeline if timeline else Paragraph)(escape(str(value or "")).replace("\n", "<br/>"), style)
 
-    header_color = colors.white if modern else ink
-    identity = [] if minimal else [p("H O J A  D E  V I D A", ParagraphStyle("Eyebrow", parent=meta, fontName="ResumeBold", textColor=colors.HexColor("#cbd5e1") if modern else accent if classic else muted, fontSize=6, spaceAfter=6, alignment=1 if classic else 0))]
+    header_color = ink
+    identity = [] if minimal else [p("H O J A  D E  V I D A", ParagraphStyle("Eyebrow", parent=meta, fontName="ResumeBold", textColor=accent if classic else muted, fontSize=6, spaceAfter=6, alignment=1 if classic else 0))]
     identity.append(p(user.name, ParagraphStyle("Name", parent=body, fontName="Times-Bold" if classic else "ResumeBold", fontSize=28 if classic else 25, leading=30 if modern else 32, textColor=header_color, spaceAfter=7, alignment=1 if classic else 0)))
     long_profession = len(profile.profession or "") > 250
     if profile.profession and not long_profession:
-        identity.append(p(profile.profession, ParagraphStyle("Profession", parent=body, fontSize=10, leading=14, textColor=colors.HexColor("#e2e8f0") if modern else accent, spaceAfter=0, alignment=1 if classic else 0)))
+        identity.append(p(profile.profession, ParagraphStyle("Profession", parent=body, fontSize=10, leading=14, textColor=accent, spaceAfter=0, alignment=1 if classic else 0)))
     contacts = [str(value) for value in [user.email, getattr(profile, "phone", None), ", ".join(filter(None, [profile.location, profile.department]))] if value] if "contact" in included else []
     long_contact = len(" ".join(contacts)) > 450
     contact_style = ParagraphStyle("Contact", parent=meta, textColor=header_color, fontSize=6.9, leading=11, spaceAfter=7)
     contact = [p(value, contact_style) for value in contacts] if not long_contact else []
     size = 80 if modern else 54 if minimal else 65
-    avatar = portrait(photo, size, circular=not classic) if photo and include_photo else Monogram(user.name, accent if classic or modern else dark, not classic, size) if include_photo else None
+    avatar = portrait(photo, size, circular=not classic) if photo and include_photo else Monogram(user.name, accent if classic or modern else dark, not classic, size, gradient=[accent, dark] if modern else None) if include_photo else None
     cells, widths = ([avatar, identity, contact], [size + 15, 335 - size, 145]) if avatar else ([identity, contact], [350, 145])
     if classic:
         centered_contact = p(" · ".join(contacts) if not long_contact else "", ParagraphStyle("CenteredContact", parent=contact_style, alignment=1, spaceBefore=12))
@@ -132,7 +147,7 @@ def build_resume(user, included, include_photo, photo):
         # with it for a separate column, especially with long Spanish names.
         if contact:
             identity.append(Spacer(1, 8))
-            identity.append(p(" · ".join(contacts), ParagraphStyle("ModernContact", parent=contact_style, fontSize=7.2, leading=12, textColor=colors.HexColor("#e2e8f0"), spaceAfter=0)))
+            identity.append(p(" · ".join(contacts), ParagraphStyle("ModernContact", parent=contact_style, fontSize=7.2, leading=12, textColor=muted, spaceAfter=0)))
         header = Table([[avatar, identity]] if avatar else [[identity]], colWidths=[104, 415] if avatar else [519])
     else:
         header = Table([cells], colWidths=widths)
@@ -142,9 +157,9 @@ def build_resume(user, included, include_photo, photo):
     body_top = 842 - header_height
 
     def section(story, title, side=False):
-        text_color = accent if side or not modern else ink
+        text_color = colors.white if modern and side else accent if not modern else ink
         heading = ParagraphStyle("Section", parent=side_body if side else body, fontName="Times-Bold" if classic else "ResumeBold", fontSize=9.5 if classic else 7.6 if side else 8.5, leading=13, textColor=text_color, spaceBefore=8 if modern and side else 10 if modern else 17 if minimal else 13, spaceAfter=4 if modern and side else 10 if classic else 6, keepWithNext=True, backColor=tint if classic else None, borderPadding=6 if classic else 0)
-        rule = HRFlowable(width=28 if modern and not side else "100%", thickness=2 if modern and not side else .6, color=accent if modern and not side else line, hAlign="LEFT", spaceAfter=7 if modern and side else 8 if modern else 10)
+        rule = HRFlowable(width=28 if modern and not side else "100%", thickness=2 if modern and not side else .6, color=side_line if modern and side else accent if modern else line, hAlign="LEFT", spaceAfter=7 if modern and side else 8 if modern else 10)
         rule.keepWithNext = True
         story.append(p(title if minimal else title.upper(), heading))
         if not single_column:
@@ -222,10 +237,12 @@ def build_resume(user, included, include_photo, photo):
             row.append(str(skill)); used += length + 5
         flush()
         if not single_column:
-            skill_style = ParagraphStyle("ModernSkill", parent=side_body, fontSize=7.3, leading=10, spaceAfter=5, backColor=colors.white, borderColor=line, borderWidth=.4, borderPadding=2, borderRadius=3)
+            skill_style = ParagraphStyle("ModernSkill", parent=side_body, fontSize=7.6, leading=10.5, spaceAfter=5)
             for skill in profile.skills:
                 level = SKILL_LEVEL_LABELS.get(levels.get(skill_key(skill)), "Nivel sin indicar")
-                target.append(Paragraph(f'<b>{escape(str(skill))}</b> <font size="6.4" color="{muted.hexval()}">· {escape(level)}</font>', skill_style))
+                inline = pdfmetrics.stringWidth(str(skill), "ResumeBold", 7.6) + pdfmetrics.stringWidth(level, "Resume", 6.7) + 8 <= 124
+                separator = " · " if inline else "<br/>"
+                target.append(Paragraph(f'<b>{escape(str(skill))}</b>{separator}<font size="6.7" color="#e2e8f0">{escape(level)}</font>', skill_style))
         if minimal:
             target.append(p(" · ".join(skills)))
     if "languages" in included and profile.languages:
@@ -253,10 +270,12 @@ def build_resume(user, included, include_photo, photo):
                 for index, value in enumerate(present):
                     target.append(p(value, ParagraphStyle("Preference", parent=body, keepWithNext=index < len(present) - 1)))
     def draw_header(c):
-        c.setFillColor(dark if modern else colors.white); c.rect(0, body_top, 595, header_height, stroke=0, fill=1)
+        c.setFillColor(colors.white); c.rect(0, body_top, 595, header_height, stroke=0, fill=1)
         if classic:
             c.setStrokeColor(accent); c.setLineWidth(2); c.line(38, body_top + 10, 557, body_top + 10)
-        if not classic:
+        if modern:
+            gradient_panel(c, 0, 837, 595, 5, dark, accent)
+        elif not classic:
             c.setFillColor(accent); c.rect(0, 837, 595, 5 if not minimal else 2, stroke=0, fill=1)
         header.drawOn(c, 38, body_top + (header_height - header.wrap(519 if modern else 495, 500)[1]) / 2)
         c.setStrokeColor(line); c.setLineWidth(.5); c.line(0, body_top, 595, body_top)
@@ -277,8 +296,7 @@ def build_resume(user, included, include_photo, photo):
         background = BytesIO(); c = Canvas(background, pagesize=(595, 842))
         c.setFillColor(colors.white); c.rect(0, 0, 595, 842, stroke=0, fill=1)
         if not single_column:
-            c.setFillColor(tint); c.rect(0, 0, 178, body_top if index == 0 else 842, stroke=0, fill=1)
-            c.setStrokeColor(line); c.setLineWidth(.5); c.line(178, 0, 178, body_top if index == 0 else 842)
+            gradient_panel(c, 0, 0, 178, body_top if index == 0 else 842, dark, accent)
         if index == 0:
             draw_header(c)
         else:

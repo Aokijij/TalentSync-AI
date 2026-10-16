@@ -25,8 +25,8 @@
 .thumbnail-minimal i { background:#fff; border-bottom:1px solid #334155; }
 .thumbnail-classic { border-top:1px solid #0c4a6e; background:white; }
 .thumbnail-classic i { background:#eef6fc; height:10px; border-bottom:1px solid #0c4a6e; }
-.thumbnail-modern { border-top:2px solid #4338ca; background:linear-gradient(90deg,#eef2ff 28%,white 28%); }
-.thumbnail-modern i { background:#312e81; height:10px; margin:-5px -5px 0; border-radius:1px 1px 0 0; }
+.thumbnail-modern { border-top:2px solid #4338ca; background:linear-gradient(white,white) top/100% 12px no-repeat,linear-gradient(145deg,#312e81,#4338ca) left/28% 100% no-repeat,white; }
+.thumbnail-modern i { background:#e0e7ff; height:8px; }
 .thumbnail-minimal b { background:#1e293b; height:2px; }
 .resume-color-picker { margin:1.3rem 0; }
 .resume-design-actions { display:grid; gap:8px; margin:20px 0; }

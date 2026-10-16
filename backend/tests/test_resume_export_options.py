@@ -98,6 +98,28 @@ def test_modern_header_keeps_a_long_name_within_two_lines_and_inside_the_page(cl
         assert x + pdfmetrics.stringWidth(value, "ResumeBold", size) <= 557
 
 
+@pytest.mark.parametrize("color", ["default", "forest", "wine", "blue"])
+def test_modern_color_themes_export_real_gradients_without_losing_skill_names_or_levels(client, color):
+    _, headers = register(client, "modern-gradient-" + color)
+    response = client.post("/api/v1/profiles/me/export", headers=headers, json={"profile": {
+        "name": "Nombre de ejemplo", "resume_style": "modern", "resume_color": color,
+        "skills": ["css", "aseguramiento de calidad"],
+        "skill_levels": {"css": "basic", "aseguramiento de calidad": "advanced"},
+    }})
+    assert response.status_code == 200
+    reader = PdfReader(BytesIO(response.content))
+    contents = " ".join(page.extract_text() for page in reader.pages)
+    assert "css" in contents and "Básico" in contents
+    assert "aseguramiento de calidad" in contents and "Avanzado" in contents
+    shadings = reader.pages[0]["/Resources"]["/Shading"].get_object()
+    assert len(shadings) >= 2  # Sidebar and avatar retain actual vector gradients.
+    for reference in shadings.values():
+        shading = reference.get_object()
+        assert shading["/ShadingType"] == 2
+        function = shading["/Function"].get_object()
+        assert function["/C0"] != function["/C1"]
+
+
 @pytest.mark.parametrize("style", ["classic", "modern", "minimal"])
 def test_long_profiles_keep_last_skill_and_experience_across_pages(client, style):
     _, headers = register(client, f"long-{style}", skills=[f"habilidad-marcador-{index}" for index in range(80)])

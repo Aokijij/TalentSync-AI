@@ -3,7 +3,7 @@ import { Check, Camera, UserRound } from "lucide-react";
 import { AuthenticatedImage } from "./AuthenticatedImage.jsx";
 import { getResumePalettes } from "../constants/resumePalettes.js";
 
-const designs = [["classic", "Clásico", "Cabecera centrada · Tipografía clásica"], ["modern", "Moderno", "Cabecera de color · Panel lateral claro"], ["minimal", "Minimalista", "Una columna · Sin adornos"]];
+const designs = [["classic", "Clásico", "Cabecera centrada · Tipografía clásica"], ["modern", "Moderno", "Degradado de color · Habilidades con nivel"], ["minimal", "Minimalista", "Una columna · Sin adornos"]];
 export function ResumeDesignControls({ profile, photoVersion, style, color, onStyle, onColor, onPhoto }) {
   const [uploading, setUploading] = useState(false), [photoMessage, setPhotoMessage] = useState("");
   async function changePhoto(event) {
