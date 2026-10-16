@@ -98,6 +98,29 @@ def test_modern_header_keeps_a_long_name_within_two_lines_and_inside_the_page(cl
         assert x + pdfmetrics.stringWidth(value, "ResumeBold", size) <= 557
 
 
+@pytest.mark.parametrize("style", ["classic", "modern", "minimal"])
+def test_reference_designs_keep_contact_on_the_right_and_distinguish_columns_and_typefaces(client, style):
+    user, headers = register(client, "design-" + style)
+    response = client.post("/api/v1/profiles/me/export", headers=headers, json={"profile": {
+        "name": "Jose", "resume_style": style, "skills": ["habilidad de ejemplo"],
+        "experiences": [{"role": "Cargo marcador", "company": "Empresa de ejemplo", "start_date": "2023-01", "end_date": "2024-01"}],
+        "educations": [{"degree": "Título de ejemplo", "institution": "Institución", "start_year": "2018", "end_year": "2022"}],
+    }})
+    assert response.status_code == 200
+    reader = PdfReader(BytesIO(response.content))
+    locations = {}
+
+    def visit(value, cm, tm, font, size):
+        for marker in ("Jose", user["email"], "Cargo marcador"):
+            if marker in value:
+                locations[marker] = (cm[4] + tm[4], str(font.get("/BaseFont", "")))
+
+    reader.pages[0].extract_text(visitor_text=visit)
+    assert locations[user["email"]][0] >= 425
+    assert ("Times-Roman" in locations["Jose"][1]) == (style == "minimal")
+    assert (locations["Cargo marcador"][0] < 100) == (style == "minimal")
+
+
 @pytest.mark.parametrize("color", ["default", "forest", "wine", "blue"])
 def test_modern_color_themes_export_real_gradients_without_losing_skill_names_or_levels(client, color):
     _, headers = register(client, "modern-gradient-" + color)
@@ -137,6 +160,9 @@ def test_modern_sidebar_does_not_create_an_extra_page_just_for_preferences(clien
     skills = ["automatización", "css", "desarrollo de software", "git", "html", "qa", "react", "testing", "fastapi", "javascript", "python", "vite", "sql", "typescript"]
     response = client.post("/api/v1/profiles/me/export", headers=headers, json={"profile": {
         "name": "María Alejandra Restrepo Gómez Delgado", "profession": "Desarrolladora Front-End", "resume_style": "modern",
+        "experience": "Resumen marcador que debe conservarse.",
+        "experiences": [{"role": "Cargo conservado", "start_date": "2022-01", "end_date": "2023-01"}],
+        "educations": [{"degree": "Formación conservada", "institution": "Institución", "start_year": "2018", "end_year": "2022"}],
         "skills": skills, "skill_levels": {skill: "intermediate" for skill in skills},
         "links": [{"platform": "github", "url": "https://github.com/example-person"}, {"platform": "linkedin", "url": "https://linkedin.com/in/example-person"}],
         "languages": [{"name": "español", "level": "NATIVE"}, {"name": "inglés", "level": "B1"}],
@@ -147,8 +173,21 @@ def test_modern_sidebar_does_not_create_an_extra_page_just_for_preferences(clien
     reader = PdfReader(BytesIO(response.content))
     assert len(reader.pages) == 1
     contents = reader.pages[0].extract_text()
-    for marker in ("typescript", "Excel básico", "Tecnología y software", "Remoto", "Inmediata"):
+    for marker in (*skills, "Cargo conservado", "Formación conservada", "Resumen marcador", "Excel básico", "Tecnología y software", "Remoto", "Inmediata"):
         assert marker in contents
+
+
+def test_minimal_education_cards_split_across_pages_without_losing_long_descriptions(client):
+    _, headers = register(client, "minimal-long-card")
+    response = client.post("/api/v1/profiles/me/export", headers=headers, json={"sections": ["educations"], "profile": {
+        "resume_style": "minimal", "educations": [{"degree": "Título de prueba", "institution": "Institución",
+            "start_year": "2018", "end_year": "2022", "description": "Inicio del contenido. " + "Descripción de la formación y los proyectos realizados. " * 150 + "Fin del contenido."}],
+    }})
+    assert response.status_code == 200
+    reader = PdfReader(BytesIO(response.content))
+    assert len(reader.pages) > 1
+    contents = " ".join(page.extract_text() for page in reader.pages)
+    assert "Inicio del contenido." in contents and "Fin del contenido." in contents
 
 
 def test_photo_is_owner_scoped_and_can_be_omitted(client, monkeypatch, tmp_path):
