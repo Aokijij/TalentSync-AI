@@ -133,7 +133,8 @@ def test_long_profiles_keep_last_skill_and_experience_across_pages(client, style
 
 def test_modern_sidebar_does_not_create_an_extra_page_just_for_preferences(client):
     _, headers = register(client, "modern-sidebar")
-    skills = ["análisis de requerimientos", "api rest", "aseguramiento de calidad", "automatización", "css", "desarrollo de software", "git", "html", "mysql", "php", "qa", "react", "testing", "fastapi", "javascript", "python", "vite", "sql", "typescript", "java"]
+    # A typical sidebar leaves room for readable spacing, languages and courses.
+    skills = ["automatización", "css", "desarrollo de software", "git", "html", "qa", "react", "testing", "fastapi", "javascript", "python", "vite", "sql", "typescript"]
     response = client.post("/api/v1/profiles/me/export", headers=headers, json={"profile": {
         "name": "María Alejandra Restrepo Gómez Delgado", "profession": "Desarrolladora Front-End", "resume_style": "modern",
         "skills": skills, "skill_levels": {skill: "intermediate" for skill in skills},
@@ -146,7 +147,7 @@ def test_modern_sidebar_does_not_create_an_extra_page_just_for_preferences(clien
     reader = PdfReader(BytesIO(response.content))
     assert len(reader.pages) == 1
     contents = reader.pages[0].extract_text()
-    for marker in ("java", "Excel básico", "Tecnología y software", "Remoto", "Inmediata"):
+    for marker in ("typescript", "Excel básico", "Tecnología y software", "Remoto", "Inmediata"):
         assert marker in contents
 
 

@@ -158,8 +158,8 @@ def build_resume(user, included, include_photo, photo):
 
     def section(story, title, side=False):
         text_color = colors.white if modern and side else accent if not modern else ink
-        heading = ParagraphStyle("Section", parent=side_body if side else body, fontName="Times-Bold" if classic else "ResumeBold", fontSize=9.5 if classic else 7.6 if side else 8.5, leading=13, textColor=text_color, spaceBefore=8 if modern and side else 10 if modern else 17 if minimal else 13, spaceAfter=4 if modern and side else 10 if classic else 6, keepWithNext=True, backColor=tint if classic else None, borderPadding=6 if classic else 0)
-        rule = HRFlowable(width=28 if modern and not side else "100%", thickness=2 if modern and not side else .6, color=side_line if modern and side else accent if modern else line, hAlign="LEFT", spaceAfter=7 if modern and side else 8 if modern else 10)
+        heading = ParagraphStyle("Section", parent=side_body if side else body, fontName="Times-Bold" if classic else "ResumeBold", fontSize=9.5 if classic else 7.6 if side else 8.5, leading=13, textColor=text_color, spaceBefore=12 if modern and side else 10 if modern else 17 if minimal else 13, spaceAfter=6 if modern else 10 if classic else 6, keepWithNext=True, backColor=tint if classic else None, borderPadding=6 if classic else 0)
+        rule = HRFlowable(width=28 if modern and not side else "100%", thickness=2 if modern and not side else .6, color=side_line if modern and side else accent if modern else line, hAlign="LEFT", spaceAfter=9 if modern and side else 8 if modern else 10)
         rule.keepWithNext = True
         story.append(p(title if minimal else title.upper(), heading))
         if not single_column:
@@ -204,7 +204,7 @@ def build_resume(user, included, include_photo, photo):
     target = main if single_column else side
     if "contact" in included and getattr(profile, "links", None):
         section(target, "Enlaces profesionales", not single_column)
-        link_style = ParagraphStyle("ProfessionalLink", parent=meta if single_column else side_body, fontSize=7 if single_column else 6.8, leading=10, spaceAfter=7 if modern else 9)
+        link_style = ParagraphStyle("ProfessionalLink", parent=meta if single_column else side_body, fontSize=7 if single_column else 6.8, leading=11 if modern else 10, spaceAfter=10 if modern else 9)
         for item in profile.links:
             try:
                 url = professional_link_url(item.get("url"))
@@ -237,7 +237,7 @@ def build_resume(user, included, include_photo, photo):
             row.append(str(skill)); used += length + 5
         flush()
         if not single_column:
-            skill_style = ParagraphStyle("ModernSkill", parent=side_body, fontSize=7.6, leading=10.5, spaceAfter=5)
+            skill_style = ParagraphStyle("ModernSkill", parent=side_body, fontSize=7.6, leading=11.5, spaceAfter=8)
             for skill in profile.skills:
                 level = SKILL_LEVEL_LABELS.get(levels.get(skill_key(skill)), "Nivel sin indicar")
                 inline = pdfmetrics.stringWidth(str(skill), "ResumeBold", 7.6) + pdfmetrics.stringWidth(level, "Resume", 6.7) + 8 <= 124
@@ -247,7 +247,8 @@ def build_resume(user, included, include_photo, photo):
             target.append(p(" · ".join(skills)))
     if "languages" in included and profile.languages:
         section(target, "Idiomas", not single_column)
-        target.extend(p(f"{item.get('name', item.get('language', ''))} · {'Nativo' if item.get('level') == 'NATIVE' else item.get('level', '')}", side_body if not single_column else body) for item in profile.languages)
+        language_style = ParagraphStyle("ModernLanguage", parent=side_body, leading=12, spaceAfter=9) if modern else body
+        target.extend(p(f"{item.get('name', item.get('language', ''))} · {'Nativo' if item.get('level') == 'NATIVE' else item.get('level', '')}", language_style) for item in profile.languages)
     if "certifications" in included and profile.certifications:
         section(target, "Cursos y certificaciones", not single_column)
         for item in profile.certifications:
