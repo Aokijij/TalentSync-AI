@@ -68,7 +68,7 @@ test("guided payload automatically recalculates hours and preserves monthly requ
 });
 
 test("remote offers preserve multiple countries, continents and student acceptance", () => {
-  const draft = offerDraft({ modality: "remote", location: "Medellín", department: "Antioquia", required_education_level: "secondary" });
+  const draft = offerDraft({ modality: "remote", location: "Medellín", department: "Antioquia", required_education_level: "technical" });
   const scope = { mode: "regions", countries: ["CO", "MX"], continents: ["EU"] };
   draft.quality_details.remote_scope = scope;
   draft.quality_details.education_accepts_in_progress = true;
@@ -78,6 +78,17 @@ test("remote offers preserve multiple countries, continents and student acceptan
   assert.match(payload.location, /Europa/);
   assert.match(payload.location, /Colombia/);
   assert.match(payload.location, /México/);
-  assert.equal(payload.required_education_level, "secondary");
+  assert.equal(payload.required_education_level, "technical");
   assert.equal(payload.quality_details.education_accepts_in_progress, true);
+});
+
+test("secondary offers remove career and ongoing-study restrictions and new guided offers keep privacy enabled", () => {
+  const draft = offerDraft({ blind_hiring: false, required_education_level: "secondary", required_study_fields: ["Sistemas"] });
+  draft.quality_details.education_accepts_in_progress = true;
+  draft.quality_details.learnable_skills = [" SQL ", "sql", "Excel"];
+  const payload = offerPayload(draft);
+  assert.deepEqual(payload.required_study_fields, []);
+  assert.deepEqual(payload.quality_details.learnable_skills, ["sql", "Excel"]);
+  assert.equal(payload.quality_details.education_accepts_in_progress, false);
+  assert.equal(payload.blind_hiring, true);
 });

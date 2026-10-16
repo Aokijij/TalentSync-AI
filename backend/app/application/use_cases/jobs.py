@@ -184,6 +184,12 @@ def update_job(
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
     ensure_job_access(db, job, current_user)
     changes = dict(payload)
+    if changes.get("required_education_level", job.required_education_level) == "secondary":
+        if job.required_study_fields or "required_study_fields" in changes:
+            changes["required_study_fields"] = []
+        details = changes.get("quality_details", job.quality_details)
+        if details and details.get("education_accepts_in_progress"):
+            changes["quality_details"] = {**details, "education_accepts_in_progress": False}
     if job.quality_details and "quality_details" in changes and changes["quality_details"] is None:
         raise UseCaseError(status_code=422, detail="Conserva las condiciones de la revisión guiada")
     review_values = {key: changes.get(key, getattr(job, key, None)) for key in REVIEW_FIELDS | {"status", "id", "company_id", "blind_hiring"}}

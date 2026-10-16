@@ -250,3 +250,20 @@ def test_structured_schedule_is_saved_with_its_public_text_and_rejects_invalid_t
     assert saved.json()["quality_details"]["work_schedule"] == schedule
     payload["quality_details"]["work_schedule"]["start"] = "25:30"
     assert client.post("/api/v1/hiring/quality/preview", headers=owner, json=payload).status_code == 422
+
+
+def test_guided_vacancies_keep_blind_hiring_and_secondary_education_consistent(client):
+    _, owner = company_account(client, "quality-secondary-policy")
+    payload = complete_offer()
+    payload.update(blind_hiring=False, required_education_level="secondary", required_study_fields=["Sistemas"])
+    payload["quality_details"]["education_accepts_in_progress"] = True
+    saved = client.post("/api/v1/jobs", headers=owner, json=payload)
+    assert saved.status_code == 201, saved.text
+    job = saved.json()
+    assert job["blind_hiring"] is True
+    assert job["required_study_fields"] == []
+    assert job["quality_details"]["education_accepts_in_progress"] is False
+    changed = client.patch(f"/api/v1/jobs/{job['id']}", headers=owner, json={"quality_details": payload["quality_details"], "required_study_fields": ["Administración"]})
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["required_study_fields"] == []
+    assert changed.json()["quality_details"]["education_accepts_in_progress"] is False

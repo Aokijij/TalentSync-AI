@@ -29,6 +29,8 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
                (getattr(job, "quality_details", None) or {}).get("experience_years"),
                (getattr(profile, "preferences", None) or {}).get("cv_skill_context", []), (getattr(profile, "preferences", None) or {}).get("writing_contexts", []), date.today().strftime("%Y-%m")]
     details = getattr(job, "quality_details", None) or {}
+    if getattr(job, "required_education_level", None) == "secondary":
+        payload.append({"secondary_education_policy": "completed_without_study_fields-v1"})
     if details.get("experience_months") is not None:
         payload.append({"experience_months": details["experience_months"]})
     if details.get("education_accepts_in_progress"):

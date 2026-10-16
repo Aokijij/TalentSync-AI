@@ -13,9 +13,14 @@ def component_reasons(details, profile, job):
     if experience.get("required_months") is not None:
         context_lines.append(f"Experiencia relacionada: {experience.get('related_months', 0)} meses registrados frente a {experience['required_months']} solicitados. Esta comparación forma parte del contexto; no suma puntos por separado.")
     fields = getattr(job, "required_study_fields", None) or []
+    secondary = getattr(job, "required_education_level", None) == "secondary"
+    if secondary:
+        fields = []
     education_lines = ["Se comparan las áreas de estudio aceptadas (70% del componente) y el nivel académico solicitado (30%). Los estudios en curso no acreditan un título terminado."]
-    if (getattr(job, "quality_details", None) or {}).get("education_accepts_in_progress"):
+    if not secondary and (getattr(job, "quality_details", None) or {}).get("education_accepts_in_progress"):
         education_lines = ["Se comparan las áreas aceptadas (70% del componente) y el nivel académico (30%). Esta vacante acepta estudios en curso del nivel y área solicitados; no exige que estén terminados."]
+    if secondary:
+        education_lines = ["Se compara el nivel de bachillerato terminado. No se exige una carrera específica; los estudios en curso no acreditan este requisito."]
     if fields:
         education_lines.append("Áreas aceptadas: " + ", ".join(fields[:5]) + ". Se acepta cualquiera de las alternativas, no se exigen todas.")
     requested = language_levels(getattr(job, "languages", None))

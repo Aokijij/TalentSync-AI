@@ -63,17 +63,19 @@ def infer_study_fields(value):
 def education_match(profile, job):
     fields = list(getattr(job, "required_study_fields", None) or [])
     required_level = getattr(job, "required_education_level", None)
+    if required_level == "secondary":
+        fields = []
     if not fields and not required_level: return None
     records = getattr(profile, "educations", None) or []
     entries = [str(item.get("degree", "")) for item in records] if records else [str(getattr(profile, "profession", "") or ""), str(getattr(profile, "education", "") or "")]
     # The listed study fields are accepted alternatives, not simultaneous degrees.
     field_score = 100.0 if not fields or any(fields_are_related(entry, field) for entry in entries for field in fields) else 0.0
     level_score = 100.0
-    accepts_students = (getattr(job, "quality_details", None) or {}).get("education_accepts_in_progress", False)
+    accepts_students = required_level != "secondary" and (getattr(job, "quality_details", None) or {}).get("education_accepts_in_progress", False)
     if required_level:
         best = max((LEVEL_RANK.get(item.get("level") or infer_education_level(item.get("degree", "")), 0) for item in records if (accepts_students or not is_ongoing(item)) and (not fields or any(fields_are_related(item.get("degree", ""), field) for field in fields))), default=0) if records else max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in entries), default=0)
         level_score = min(100.0, best / LEVEL_RANK[required_level] * 100)
-    return round(field_score * .7 + level_score * .3, 2)
+    return round(level_score if required_level == "secondary" else field_score * .7 + level_score * .3, 2)
 
 
 def certification_match(profile, job):

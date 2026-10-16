@@ -1,3 +1,4 @@
+import { textItems } from "./textItems.js";
 import { minimumExperienceMonths } from "./jobRequirements.js";
 import { scheduleHours } from "./workSchedule.js";
 import { remoteLocationLabel } from "./remoteScope.js";
@@ -23,13 +24,16 @@ export function offerPayload(draft) {
   const payload = {};
   for (const key of ["title", "description", "requirements", "location", "department", "modality", "employment_type", "sector", "languages", "benefits", "response_days", "blind_hiring", "skill_requirements", "quality_details", "application_questions", "required_education_level", "required_study_fields"]) payload[key] = draft[key];
   payload.required_education_level = draft.required_education_level || null;
-  payload.required_study_fields = typeof draft.required_study_fields === "string" ? draft.required_study_fields.split(",").map((value) => value.trim()).filter(Boolean) : draft.required_study_fields || [];
+  payload.required_study_fields = draft.required_education_level === "secondary" ? [] : textItems(draft.required_study_fields);
+  payload.blind_hiring = draft.id ? draft.blind_hiring : true;
   payload.salary = draft.salary === "" || draft.salary == null ? null : Number(draft.salary);
   payload.response_days = Number(draft.response_days) || 7;
   payload.skill_requirements = (draft.skill_requirements || []).filter((row) => row.skill.trim()).map((row) => ({ ...row, skill: row.skill.trim(), weight: Number(row.weight) || 1 }));
   const months = minimumExperienceMonths(draft.quality_details);
   if (draft.modality === "remote" && draft.quality_details.remote_scope) { payload.location = remoteLocationLabel(draft.quality_details.remote_scope); payload.department = ""; }
   payload.quality_details = { ...draft.quality_details,
+    learnable_skills: textItems(draft.quality_details.learnable_skills),
+    education_accepts_in_progress: draft.required_education_level !== "secondary" && !!draft.quality_details.education_accepts_in_progress,
     experience_months: months, experience_years: months != null && months % 12 === 0 ? months / 12 : null,
     // The publisher reviews these units in the guided salary fields.
     salary_currency: "COP", salary_period: "monthly", salary_basis: "gross_base",

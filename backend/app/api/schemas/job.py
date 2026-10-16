@@ -58,6 +58,14 @@ class PipelineStagesMixin(BaseModel):
             raise ValueError("Las etapas del proceso no pueden repetirse")
         return self
 
+    @model_validator(mode="after")
+    def secondary_education_is_completed_and_has_no_study_fields(self):
+        if getattr(self, "required_education_level", None) == "secondary":
+            self.required_study_fields = []
+            if self.quality_details is not None:
+                self.quality_details.education_accepts_in_progress = False
+        return self
+
 
 def default_pipeline_stages() -> list[PipelineStage]:
     return [PipelineStage(**stage) for stage in default_stages()]
@@ -91,6 +99,12 @@ class JobCreate(PipelineStagesMixin):
     )
     required_education_level: Literal["secondary", "technical", "technologist", "university", "postgraduate"] | None = None
     required_study_fields: list[str] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def guided_vacancies_use_blind_hiring(self):
+        if self.quality_details is not None:
+            self.blind_hiring = True
+        return self
 
     @field_validator("application_questions")
     @classmethod

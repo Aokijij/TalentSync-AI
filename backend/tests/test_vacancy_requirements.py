@@ -79,6 +79,14 @@ def test_education_in_progress_only_meets_level_when_explicitly_accepted():
     assert JobCreate.model_validate(payload).required_education_level == "secondary"
 
 
+def test_secondary_education_requires_completion_and_ignores_career_restrictions():
+    profile = SimpleNamespace(educations=[{"degree": "Bachiller académico", "level": "secondary", "is_current": True}])
+    job = SimpleNamespace(required_education_level="secondary", required_study_fields=["Ingeniería de sistemas"], quality_details={"education_accepts_in_progress": True})
+    assert education_match(profile, job) == 0
+    profile.educations[0]["is_current"] = False
+    assert education_match(profile, job) == 100
+
+
 @pytest.mark.parametrize("location,allowed", [("Medellín, Antioquia", True), ("España", True), ("México", True), ("Japón", False)])
 def test_remote_scope_accepts_union_of_countries_and_continents(location, allowed):
     profile = SimpleNamespace(location=location, preferences={})

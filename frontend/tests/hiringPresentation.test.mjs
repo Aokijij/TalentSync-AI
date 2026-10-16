@@ -23,6 +23,8 @@ const WorkScheduleEditor = await component("WorkScheduleEditor", "WorkScheduleEd
 const ExperienceRequirementEditor = await component("ExperienceRequirementEditor", "ExperienceRequirementEditor");
 const RemoteScopeEditor = await component("RemoteScopeEditor", "RemoteScopeEditor");
 const OfferConditions = await component("OfferConditions", "OfferConditions");
+const EducationRequirementsEditor = await component("EducationRequirementsEditor", "EducationRequirementsEditor");
+const TextItemsEditor = await component("TextItemsEditor", "TextItemsEditor");
 
 test("inline AI experience bullets render as separate safe list items", () => {
   const html = renderToStaticMarkup(createElement(StructuredJobText, { text: "• Revisé inventarios. • Analicé movimientos. • Registré <script>datos</script>." }));
@@ -97,4 +99,36 @@ test("monthly experience and remote restrictions are visible to both editors and
   const publicView = renderToStaticMarkup(createElement(OfferConditions, { job: { modality: "remote", quality_details: details } }));
   assert.match(publicView, /6 meses/);
   assert.match(publicView, /Europa · Colombia · México/);
+});
+
+test("education levels appear in one list and secondary education has no career field or ongoing option", () => {
+  const props = { level: "secondary", fields: ["Sistemas"], acceptsStudents: true, onChange() {} };
+  const secondary = renderToStaticMarkup(createElement(EducationRequirementsEditor, props));
+  assert.ok(!secondary.includes("<optgroup"));
+  assert.ok(!secondary.includes('value="secondary_in_progress"'));
+  assert.ok(!secondary.includes("Carreras o áreas aceptadas"));
+  assert.match(secondary, /value="secondary" selected/);
+  const technical = renderToStaticMarkup(createElement(EducationRequirementsEditor, { ...props, level: "technical" }));
+  assert.match(technical, /value="technical_in_progress" selected/);
+  assert.match(technical, /Carreras o áreas aceptadas/);
+  assert.match(technical, /Quitar Sistemas/);
+});
+
+test("long screening prompts and scored options use wrapping textareas and retain their complete text", () => {
+  const prompt = "Describe un trabajo o proyecto donde utilizaste JavaScript para construir formularios accesibles y explica cómo verificaste el resultado con el equipo.";
+  const option = "Verificar la fuente, documentar la diferencia y acordar con el equipo la corrección antes de continuar.";
+  const html = renderToStaticMarkup(createElement(ScreeningQuestionsEditor, { value: [{ id: "example", prompt, type: "choice", required: true, options: [option, "Continuar sin revisar"], option_scores: { [option]: 3 } }], onChange() {} }));
+  assert.equal((html.match(/<textarea /g) || []).length, 3);
+  assert.ok(html.includes(prompt));
+  assert.ok(html.includes(option));
+  assert.match(html, /value="3" selected/);
+  assert.match(html, /aria-label="Eliminar pregunta 1"/);
+});
+
+test("added text items are individual removable chips rather than a comma-separated input", () => {
+  const html = renderToStaticMarkup(createElement(TextItemsEditor, { label: "Habilidades que la empresa enseñará", value: ["SQL", "Excel"], onChange() {} }));
+  assert.match(html, /Quitar SQL/);
+  assert.match(html, /Quitar Excel/);
+  assert.ok(!html.includes('value="SQL,Excel"'));
+  assert.match(html, /Añadir o Enter/);
 });

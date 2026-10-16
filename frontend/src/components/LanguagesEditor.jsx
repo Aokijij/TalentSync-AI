@@ -1,5 +1,6 @@
+import { AddItemButton } from "./AddItemButton.jsx";
 import { useEffect, useId, useState } from "react";
-import { Check, ChevronDown, Languages, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Languages, Trash2 } from "lucide-react";
 import { LANGUAGE_NAMES, LANGUAGE_LEVELS, languageLevelLabel } from "../constants/languages.js";
 
 export function LanguagesEditor({ value = [], onChange, editing = true, required = false }) {
@@ -20,7 +21,7 @@ export function LanguagesEditor({ value = [], onChange, editing = true, required
         </div>
       ) : <p key={index} className="rounded-lg border border-[var(--line)] px-3 py-2 text-sm"><span className="font-semibold capitalize">{item.name}</span> · {languageLevelLabel(item.level)}</p>)}
       {!value.length && <p className="text-sm text-[var(--muted)]">{required ? "Sin requisitos de idioma registrados." : "No has registrado idiomas."}</p>}
-      {editing && <button className="button-secondary button-sm" type="button" onClick={() => onChange([...value, { name: "", level: "B1" }])} disabled={value.length >= 20}><Plus size={15} />Añadir idioma</button>}
+      {editing && <AddItemButton icon={Languages} help={required ? "Elige el idioma y el nivel mínimo que necesita el cargo." : "Indica el idioma y tu nivel de dominio."} onClick={() => onChange([...value, { name: "", level: "B1" }])} disabled={value.length >= 20}>Añadir idioma</AddItemButton>}
     </div>
   );
 }
