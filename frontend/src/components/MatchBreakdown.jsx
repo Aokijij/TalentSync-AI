@@ -1,3 +1,4 @@
+import { CredentialMatchDetails } from "./CredentialSummary.jsx";
 import { AcademicMatchDetails } from "./AcademicMatchDetails.jsx";
 import { useId, useState } from "react";
 import { CircleHelp } from "lucide-react";
@@ -43,7 +44,7 @@ function Signal({ signalKey, label, value, weight, description, color }) {
 
 export function MatchBreakdown({ skillMatch = 0, semanticMatch = 0, languageMatch = null, details = null }) {
   const hasLanguages = languageMatch !== null && languageMatch !== undefined;
-  if (details?.components?.length) return <section className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4"><h3 className="font-bold">¿Cómo se calcula?</h3><p className="mt-1 text-xs text-[var(--muted)]">Cada señal aporta su puntuación multiplicada por el peso. Pasa por una señal o pulsa su ayuda para saber cómo mejorarla.</p><div className="mt-4 space-y-4">{details.components.map((row) => <Signal key={row.key} signalKey={row.key} label={row.label} value={row.score} weight={Math.round(row.weight * 100)} description={`Aporta ${row.points.toFixed(1)} puntos`} color="var(--accent)" />)}</div><AcademicMatchDetails value={details.education_requirement} /><p className="mt-3 text-xs text-[var(--muted)]">Las preferencias se muestran por separado. Los datos externos incompletos reducen el resultado.</p></section>;
+  if (details?.components?.length) return <section className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4"><h3 className="font-bold">¿Cómo se calcula?</h3><p className="mt-1 text-xs text-[var(--muted)]">Cada señal aporta su puntuación multiplicada por el peso. Pasa por una señal o pulsa su ayuda para saber cómo mejorarla.</p><div className="mt-4 space-y-4">{details.components.map((row) => <Signal key={row.key} signalKey={row.key} label={row.label} value={row.score} weight={Math.round(row.weight * 100)} description={`Aporta ${row.points.toFixed(1)} puntos`} color="var(--accent)" />)}</div><AcademicMatchDetails value={details.education_requirement} /><CredentialMatchDetails value={details.credential_requirements} /><p className="mt-3 text-xs text-[var(--muted)]">Las preferencias se muestran por separado. Los datos externos incompletos reducen el resultado.</p></section>;
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
       <h3 className="font-bold text-[var(--ink-strong)]">¿Cómo se calcula?</h3>

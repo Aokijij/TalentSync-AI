@@ -34,6 +34,10 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
         payload.append({"academic_catalog": catalog()["version"], "academic_catalog_sha256": catalog_fingerprint(), "education_field_policy": details.get("education_field_policy", "related"), "academic_policy": "record-comparison-v1"})
     if getattr(job, "required_education_level", None) == "secondary":
         payload.append({"secondary_education_policy": "completed_without_study_fields-v1"})
+    credentials = details.get("credential_requirements") or {}
+    if credentials.get("driving_categories") or credentials.get("professional_cards"):
+        from app.domain.services.credentials import profile_credentials
+        payload.append({"credential_policy": "declared-validity-v1", "requirements": credentials, "driving_licenses": profile_credentials(profile, "driving_licenses"), "professional_cards": profile_credentials(profile, "professional_cards"), "credential_date": date.today().isoformat()})
     if details.get("experience_months") is not None:
         payload.append({"experience_months": details["experience_months"]})
     if details.get("education_accepts_in_progress"):
@@ -74,6 +78,7 @@ def explain(profile, job, *, context, skills, language, education, certification
     if language is not None:
         components.append({"key": "languages", "label": "Idiomas", "score": language, "weight": .1})
     from app.domain.services.academic_matching import education_evaluation
+    from app.domain.services.credentials import credential_evaluation
     academic = education_evaluation(profile, job)
     rows = requirement_details if requirement_details is not None else requirement_rows(profile, job)
     preferences = preference_alignment(profile, job)
@@ -85,6 +90,7 @@ def explain(profile, job, *, context, skills, language, education, certification
             "text_method": text_method, "components": components, "requirements": rows, "section_scores": section_scores or [], "retained_writing_context": retained_writing_context,
             "experience_requirement": experience_details or relevant_experience(profile, job),
             "education_requirement": academic,
+            "credential_requirements": credential_evaluation(profile, job),
             "context_notice": "Se comparan cargos, funciones y conocimientos por separado. Cuando se pide experiencia mínima, los meses relacionados aportan el 20% de la señal de contexto; no son una señal adicional al total.",
             "unmet_essential_skills": [row["skill"] for row in rows if row.get("essential") and not row["covered"]],
             "preferences": preferences, "candidate_interest_score": preferences["score"], "overall_score": percentage,

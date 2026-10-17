@@ -7,7 +7,7 @@ import { JOB_SECTORS } from "../constants/jobSectors.js";
 export const CONTRACTS = { indefinite: "Indefinido", fixed_term: "Término fijo", services: "Prestación de servicios", apprenticeship: "Aprendizaje", project: "Obra o labor" };
 export const LEVELS = { entry: "Inicial / sin experiencia", junior: "Junior", mid: "Intermedio", senior: "Senior", lead: "Liderazgo" };
 export const QUALITY_STEPS = ["Condiciones", "Responsabilidades", "Requisitos", "Proceso", "Revisar y publicar"];
-export const EMPTY_DETAILS = { version: 1, salary_currency: "COP", salary_period: "monthly", salary_basis: "gross_base", weekly_hours: null, salary_max: null, variable_pay: "", contract_type: "", schedule: "", work_schedule: null, seniority: "", experience_years: null, experience_months: null, education_accepts_in_progress: false, education_field_policy: "related", remote_scope: null, learnable_skills: [], missions: [], interview_count: null, process_days: null };
+export const EMPTY_DETAILS = { version: 1, salary_currency: "COP", salary_period: "monthly", salary_basis: "gross_base", weekly_hours: null, salary_max: null, variable_pay: "", contract_type: "", schedule: "", work_schedule: null, seniority: "", experience_years: null, experience_months: null, education_accepts_in_progress: false, education_field_policy: "related", credential_requirements: { driving_categories: [], professional_cards: [] }, remote_scope: null, learnable_skills: [], missions: [], interview_count: null, process_days: null };
 
 export function qualityStepProgress(quality, step) {
   const rows = (quality?.checks || []).filter((row) => row.step === step);
@@ -17,7 +17,7 @@ export function qualityStepProgress(quality, step) {
 export function offerDraft(job = {}) {
   return { title: "", description: "", requirements: "", salary: null, location: "", department: "", modality: "remote", employment_type: "full_time", sector: JOB_SECTORS[0], benefits: [], languages: [], application_questions: [], required_education_level: null, required_study_fields: [], response_days: 7, blind_hiring: true, status: "draft", ...job,
     skill_requirements: job.skill_requirements?.length ? job.skill_requirements.map((row) => ({ ...row })) : (job.skills || []).map((skill) => ({ skill, essential: false, weight: 1 })),
-    quality_details: { ...EMPTY_DETAILS, ...job.quality_details, missions: (job.quality_details?.missions || []).map((row) => ({ ...row })) } };
+    quality_details: { ...EMPTY_DETAILS, ...job.quality_details, credential_requirements: { driving_categories: [...(job.quality_details?.credential_requirements?.driving_categories || [])], professional_cards: [...(job.quality_details?.credential_requirements?.professional_cards || [])] }, missions: (job.quality_details?.missions || []).map((row) => ({ ...row })) } };
 }
 
 export function offerPayload(draft) {

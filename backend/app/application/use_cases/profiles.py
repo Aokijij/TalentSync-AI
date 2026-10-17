@@ -177,6 +177,8 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
         "experiences": profile.experiences or [],
         "educations": profile.educations or [],
         "certifications": profile.certifications or [],
+        "driving_licenses": getattr(profile, "driving_licenses", None) or [],
+        "professional_cards": getattr(profile, "professional_cards", None) or [],
         "cv_text": profile.cv_text,
         "cv_filename": profile.cv_filename,
         "cv_uploaded_at": profile.cv_uploaded_at,
@@ -239,6 +241,11 @@ def update_my_profile(
     profile.preferred_sector = payload["preferred_sector"]
     profile.desired_salary = payload["desired_salary"]
     profile.phone = payload["phone"]
+    from datetime import date
+    for credential_field in ("driving_licenses", "professional_cards"):
+        if payload.get(credential_field) is not None:
+            records = [{key: value.isoformat() if isinstance(value, date) else value for key, value in record.items()} for record in payload[credential_field]]
+            profile.preferences = {**(profile.preferences or {}), credential_field: records}
     if payload.get("links") is not None:
         profile.preferences = {**(profile.preferences or {}), "professional_links": [{**item, "url": str(item["url"])} for item in payload["links"]]}
     profile.experiences = payload["experiences"] or []

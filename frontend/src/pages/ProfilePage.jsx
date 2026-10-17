@@ -1,3 +1,4 @@
+import { ProfileCredentials } from "../components/ProfileCredentials.jsx";
 import { addProfileSkill } from "../utils/skillLevels.js";
 import { ProfessionalSummary } from "../components/ProfessionalSummary.jsx";
 import { withCustomSummary } from "../utils/professionalSummary.js";
@@ -77,6 +78,8 @@ const normalize = (data) => ({
   experiences: data.experiences || [],
   educations: data.educations || [],
   certifications: data.certifications || [],
+  driving_licenses: data.driving_licenses || [],
+  professional_cards: data.professional_cards || [],
   languages: data.languages || [],
   links: data.links || [],
   resume_export_options: data.resume_export_options || {},
@@ -134,7 +137,7 @@ export function ProfilePage() {
   useEffect(() => {
     if (!profile || !location.hash) return;
     const target = location.hash.slice(1);
-    if (["profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations", "profile-links"].includes(target)) { setEditing(true); setCoachTarget(target); }
+    if (["profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations", "profile-links", "profile-credentials"].includes(target)) { setEditing(true); setCoachTarget(target); }
     else if (target === "preferencias") { setCoachTarget(target); }
     else if (["evidencias", "profile-evidence"].includes(target)) { setCoachTarget("profile-evidence"); }
   }, [Boolean(profile), location.hash]);
@@ -383,6 +386,7 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
+            <Section id="profile-credentials" icon={CheckCircle2} title="Licencias y tarjetas profesionales"><ProfileCredentials drivingLicenses={profile.driving_licenses} professionalCards={profile.professional_cards} editing={editing} onChange={({ drivingLicenses, professionalCards }) => setProfile((current) => ({ ...current, driving_licenses: drivingLicenses, professional_cards: professionalCards }))} /></Section>
             </div>
             <aside className="profile-side-sections">
             <Section id="profile-links" icon={Link2} title="Enlaces profesionales"><ProfileLinks value={profile.links} editing={editing} onChange={(value) => update("links", value)} onEdit={() => editFromCoach("profile-links")} /></Section>

@@ -10,6 +10,7 @@ from pydantic import (
     model_validator,
 )
 
+from app.api.schemas.credentials import DrivingLicense, ProfessionalCard
 from app.api.schemas.language import LanguageLevel, unique_languages
 from app.domain.services.colombian_locations import canonical_commuting_city
 from app.domain.services.credential_links import certificate_url
@@ -65,6 +66,8 @@ class ProfileBase(BaseModel):
         if any(not skill_key(key) or len(key) > 100 for key in value):
             raise ValueError("Indica nombres válidos de habilidades de hasta 100 caracteres")
         return {skill_key(key): level for key, level in value.items()}
+    driving_licenses: list[DrivingLicense] = Field(default_factory=list, max_length=8)
+    professional_cards: list[ProfessionalCard] = Field(default_factory=list, max_length=20)
     languages: list[LanguageLevel] = Field(default_factory=list, max_length=20)
 
     _unique_languages = field_validator("languages")(unique_languages)
@@ -79,6 +82,13 @@ class ProfileBase(BaseModel):
     desired_salary: float | None = None
     phone: str | None = None
     links: list[ProfileLink] = Field(default_factory=list, max_length=10)
+
+    @field_validator("driving_licenses")
+    @classmethod
+    def unique_driving_categories(cls, values):
+        if values is not None and len({row.category for row in values}) != len(values):
+            raise ValueError("No repitas una categoría de licencia de conducción")
+        return values
 
     @field_validator("links")
     @classmethod
@@ -111,6 +121,8 @@ class ProfileBase(BaseModel):
 
 
 class ProfileUpdate(ProfileBase):
+    driving_licenses: list[DrivingLicense] | None = Field(default=None, max_length=8)
+    professional_cards: list[ProfessionalCard] | None = Field(default=None, max_length=20)
     # Omission preserves links for older clients; an empty list removes them.
     links: list[ProfileLink] | None = Field(default=None, max_length=10)
     experience: str | None = Field(default=None, max_length=3000)

@@ -29,6 +29,41 @@ const AcademicMatchDetails = await component("AcademicMatchDetails", "AcademicMa
 const LearningResourceCard = await component("LearningResourceCard", "LearningResourceCard");
 const ExperienceFields = await component("ExperienceFields", "ExperienceFields");
 const TextItemsEditor = await component("TextItemsEditor", "TextItemsEditor");
+const ProfileCredentials = await component("ProfileCredentials", "ProfileCredentials");
+const CredentialRequirementsEditor = await component("CredentialRequirementsEditor", "CredentialRequirementsEditor");
+const CredentialRequirementsSummary = await component("CredentialSummary", "CredentialRequirementsSummary");
+const CredentialMatchDetails = await component("CredentialSummary", "CredentialMatchDetails");
+
+test("document editors distinguish exact requested alternatives from academic affinity", () => {
+  const html = renderToStaticMarkup(createElement(CredentialRequirementsEditor, { value: { driving_categories: ["B1"], professional_cards: ["Ingeniería civil"] }, onChange() {} }));
+  assert.equal((html.match(/type="checkbox"/g) || []).length, 8);
+  assert.match(html, /se solicitan los dos/);
+  assert.match(html, /Basta con una categoría/);
+  assert.match(html, /no se sustituyen por carreras afines/);
+  assert.ok(!html.includes("Los nombres no reconocidos quedan por revisar"));
+  const summary = renderToStaticMarkup(createElement(CredentialRequirementsSummary, { value: { driving_categories: ["B1", "C1"], professional_cards: ["Ingeniería civil"] } }));
+  assert.match(summary, /B1 o C1/);
+  assert.match(summary, /Ingeniería civil/);
+  assert.equal(renderToStaticMarkup(createElement(CredentialRequirementsSummary, { value: {} })), "");
+});
+
+test("profile documents show expiration and offer accessible editing controls", () => {
+  const props = { drivingLicenses: [{ category: "B1", status: "valid", expires_on: "2000-01-01" }], professionalCards: [{ profession: "Ingeniería civil", number: "CARD-123", status: "valid" }] };
+  const html = renderToStaticMarkup(createElement(ProfileCredentials, props));
+  assert.match(html, /Vencida por fecha/);
+  assert.match(html, /CARD-123/);
+  const edit = renderToStaticMarkup(createElement(ProfileCredentials, { ...props, editing: true, onChange() {} }));
+  assert.match(edit, /aria-label="Quitar licencia 1"/);
+  assert.match(edit, /Añadir tarjeta profesional/);
+  assert.match(edit, /type="date"/);
+});
+
+test("document comparison communicates declarations and missing records without claiming verification", () => {
+  const html = renderToStaticMarkup(createElement(CredentialMatchDetails, { value: { groups: [{ key: "license", label: "Licencia", accepted: ["B1"], status: "declared", reason: "Pendiente de verificación documental." }, { key: "card", label: "Tarjeta", accepted: ["Ingeniería civil"], status: "missing", reason: "No hay registro." }], notice: "Revisión separada de la afinidad profesional." } }));
+  assert.match(html, /Vigencia declarada · por verificar/);
+  assert.match(html, /Sin registro/);
+  assert.match(html, /Revisión separada/);
+});
 
 test("inline AI experience bullets render as separate safe list items", () => {
   const html = renderToStaticMarkup(createElement(StructuredJobText, { text: "• Revisé inventarios. • Analicé movimientos. • Registré <script>datos</script>." }));

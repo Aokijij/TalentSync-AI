@@ -14,6 +14,7 @@ from app.application.use_cases.matching import (
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Notification, Recommendation, User
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.credentials import credential_evaluation
 from app.domain.services.experience_dates import experience_months
 from app.domain.services.match_explanations import requirements_for
 from app.domain.services.skill_levels import declared_skill_levels
@@ -101,6 +102,7 @@ def ranked_candidates(
                 user_id=user.id,
                 name=candidate_alias(job.id, user.id) if hidden else user.name,
                 identity_hidden=hidden,
+                credential_status=credential_evaluation(user.profile, job)["status"],
                 related_skills=related,
                 validated_foundations=validated,
                 profession=user.profile.profession,

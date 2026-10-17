@@ -312,6 +312,18 @@ def build_resume(user, included, include_photo, photo):
                 url = ""
             if url:
                 target.append(Paragraph(f'<link href="{escape(url, {chr(34): "&quot;"})}">Ver certificado</link>', side_body if not single_column else meta))
+    if "certifications" in included:
+        from app.domain.services.credentials import profile_credentials, validity
+        documents = [("Licencia de conducción", row, True) for row in profile_credentials(profile, "driving_licenses")] + [("Tarjeta profesional", row, False) for row in profile_credentials(profile, "professional_cards")]
+        if documents:
+            if not single_column:
+                ancillary_sections.append((len(side), "Licencias y tarjetas"))
+            section(target, "Licencias y tarjetas", not single_column)
+            for label, row, driving in documents:
+                target.append(p(f"{label}: {row.get('category') if driving else row.get('profession')}", side_body if not single_column else body))
+                status = {"declared": "Vigencia declarada", "review": "Por confirmar", "not_met": "Vencida, suspendida o en trámite"}[validity(row, driving=driving)]
+                content = [status, row.get("issuer"), f"N.º {row['number']}" if row.get("number") else None, f"Vence {row['expires_on']}" if row.get("expires_on") else None]
+                target.append(p(" · ".join(str(item) for item in content if item), side_body if not single_column else meta))
     if "preferences" in included:
         values = [profile.preferred_sector, LABELS.get(profile.preferred_modality), LABELS.get(profile.availability)]
         if any(values):

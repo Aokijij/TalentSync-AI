@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from app.domain.services.skill_context import fold
 from app.domain.services.skills import skill_key, skill_set
 
-PROFILE_FIELDS = ("profession", "skills", "skill_levels", "experience", "education", "location", "department", "phone", "availability", "preferred_modality", "preferred_sector", "desired_salary", "experiences", "educations", "certifications", "languages")
+PROFILE_FIELDS = ("profession", "skills", "skill_levels", "experience", "education", "location", "department", "phone", "availability", "preferred_modality", "preferred_sector", "desired_salary", "experiences", "educations", "certifications", "languages", "driving_licenses", "professional_cards")
 
 
 def fingerprint(value):

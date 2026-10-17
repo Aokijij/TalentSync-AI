@@ -1,0 +1,20 @@
+import { Plus, Trash2 } from "lucide-react";
+import { CREDENTIAL_STATUSES, DRIVING_CATEGORIES, credentialStatus } from "../constants/credentials.js";
+
+export function ProfileCredentials({ drivingLicenses = [], professionalCards = [], editing = false, onChange }) {
+  function update(kind, index, patch) {
+    onChange({ drivingLicenses, professionalCards, [kind]: (kind === "drivingLicenses" ? drivingLicenses : professionalCards).map((row, current) => current === index ? { ...row, ...patch } : row) });
+  }
+  function remove(kind, index) {
+    onChange({ drivingLicenses, professionalCards, [kind]: (kind === "drivingLicenses" ? drivingLicenses : professionalCards).filter((_, current) => current !== index) });
+  }
+  return <div className="profile-credentials"><p className="credential-note">Registra tus documentos y su estado actual. Son datos declarados; su verificación corresponde al proceso de contratación.</p>
+    {[["drivingLicenses", "Licencias de conducción", drivingLicenses, 8], ["professionalCards", "Tarjetas profesionales", professionalCards, 20]].map(([kind, title, rows, limit]) => <section key={kind}><h3>{title}</h3>{!rows.length && <p className="credential-note">Sin registros.</p>}{rows.map((row, index) => <article key={index} className="credential-record">{editing ? <>
+      <div className="credential-fields">{kind === "drivingLicenses" ? <label>Categoría (Colombia)<select className="field-control" value={row.category} onChange={(event) => update(kind, index, { category: event.target.value })}><option value="">Elige una categoría</option>{DRIVING_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select></label> : <><label>Profesión de la tarjeta<input className="field-control" maxLength={160} value={row.profession} placeholder="Ej. Ingeniería civil" onChange={(event) => update(kind, index, { profession: event.target.value })} /></label><label>Entidad emisora (opcional)<input className="field-control" maxLength={160} value={row.issuer || ""} placeholder="Ej. Consejo profesional" onChange={(event) => update(kind, index, { issuer: event.target.value })} /></label><label>Número de tarjeta (opcional)<input className="field-control" maxLength={60} value={row.number || ""} onChange={(event) => update(kind, index, { number: event.target.value })} /></label></>}
+      <label>Estado<select className="field-control" value={row.status || "unknown"} onChange={(event) => update(kind, index, { status: event.target.value })}>{Object.entries(CREDENTIAL_STATUSES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <label>{kind === "drivingLicenses" ? "Fecha de vencimiento" : "Vencimiento (si aplica)"}<input className="field-control" type="date" value={row.expires_on || ""} onChange={(event) => update(kind, index, { expires_on: event.target.value || null })} /></label></div>
+      <button type="button" className="button-secondary button-sm" aria-label={`Quitar ${kind === "drivingLicenses" ? "licencia" : "tarjeta"} ${index + 1}`} onClick={() => remove(kind, index)}><Trash2 size={16} />Quitar</button>
+    </> : <><strong>{kind === "drivingLicenses" ? `Categoría ${row.category}` : row.profession}</strong><p>{credentialStatus(row)}{row.expires_on ? ` · Vence: ${row.expires_on}` : kind === "drivingLicenses" ? " · Vencimiento por confirmar" : ""}</p>{kind === "professionalCards" && <p>{[row.issuer, row.number ? `N.º ${row.number}` : ""].filter(Boolean).join(" · ")}</p>}</>}</article>)}
+    {editing && <button type="button" className="button-secondary" disabled={rows.length >= limit} onClick={() => onChange({ drivingLicenses, professionalCards, [kind]: [...rows, kind === "drivingLicenses" ? { category: "", status: "unknown", expires_on: null } : { profession: "", issuer: "", number: "", status: "unknown", expires_on: null }] })}><Plus size={16} />{kind === "drivingLicenses" ? "Añadir licencia" : "Añadir tarjeta profesional"}</button>}</section>)}
+  </div>;
+}

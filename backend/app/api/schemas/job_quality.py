@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.api.schemas.credentials import CredentialRequirements
+
 
 class JobMission(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -44,6 +46,7 @@ class RemoteScope(BaseModel):
 
 
 class QualityDetails(BaseModel):
+    credential_requirements: CredentialRequirements = Field(default_factory=CredentialRequirements)
     model_config = ConfigDict(extra="forbid")
     version: Literal[1] = 1
     salary_max: float | None = Field(default=None, ge=0, le=1_000_000_000, allow_inf_nan=False)

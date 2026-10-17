@@ -208,6 +208,14 @@ class Profile(Base):
         return (self.preferences or {}).get("mobility", {})
 
     @property
+    def driving_licenses(self):
+        return (self.preferences or {}).get("driving_licenses", [])
+
+    @property
+    def professional_cards(self):
+        return (self.preferences or {}).get("professional_cards", [])
+
+    @property
     def links(self):
         return (self.preferences or {}).get("professional_links", [])
 

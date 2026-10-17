@@ -1,3 +1,4 @@
+import { ProfileCredentials } from "../components/ProfileCredentials.jsx";
 import { CandidateMatchExplanation } from "../components/CandidateMatchExplanation.jsx";
 import { ProfileLinks } from "../components/ProfileLinks.jsx";
 import { StructuredJobText } from "../components/StructuredJobText.jsx";
@@ -204,6 +205,7 @@ export function CandidateDetailPage() {
               </>
             )}
           />
+          {!candidate.identity_hidden && <section className="surface-card p-5"><h2 className="font-bold">Licencias y tarjetas profesionales</h2><ProfileCredentials drivingLicenses={candidate.driving_licenses || []} professionalCards={candidate.professional_cards || []} /></section>}
           {!candidate.identity_hidden && <Timeline
             title="Cursos y certificaciones"
             icon={CheckCircle2}

@@ -38,6 +38,8 @@ class Profile(Protocol):
     experiences: list[dict]
     educations: list[dict]
     certifications: list[dict]
+    driving_licenses: list[dict]
+    professional_cards: list[dict]
     languages: list[dict]
     cv_text: str | None
     cv_filename: str | None

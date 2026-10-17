@@ -10,5 +10,5 @@ export function AcademicStudyFields(props) {
     }).catch(() => { /* Free text remains available when catalog loading fails. */ });
     return () => controller.abort();
   }, []);
-  return <TextItemsEditor {...props} suggestions={suggestions} help="Elige una sugerencia o añade otra denominación. Los nombres no reconocidos quedan por revisar al comparar el perfil." />;
+  return <TextItemsEditor {...props} suggestions={suggestions} help={props.help || "Elige una sugerencia o añade otra denominación. Los nombres no reconocidos quedan por revisar al comparar el perfil."} />;
 }

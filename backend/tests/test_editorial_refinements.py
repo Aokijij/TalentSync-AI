@@ -54,7 +54,13 @@ def test_writing_flags_conflicting_experience_without_choosing_an_invented_requi
 
 def test_regenerating_applied_proposals_preserves_text_without_duplicating_sections():
     job = SimpleNamespace(**complete_offer())
+    job.quality_details["credential_requirements"] = {
+        "driving_categories": ["B1", "C1"],
+        "professional_cards": ["Ingeniería civil"],
+    }
     first = writing_draft(job)
+    requirements = next(row["text"] for row in first["proposals"] if row["field"] == "requirements")
+    assert "B1, C1" in requirements and "Ingeniería civil" in requirements
     for proposal in first["proposals"]:
         setattr(job, proposal["field"], proposal["text"])
     second = writing_draft(job)
