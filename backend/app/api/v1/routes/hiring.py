@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
@@ -10,6 +10,15 @@ from app.domain.services.offer_skills import infer_offer_skills
 from app.domain.services.skills import normalize_skills
 
 router = APIRouter()
+
+
+@router.get("/hiring/education/catalog")
+def education_catalog(query: str = Query(default="", max_length=120), user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN))):
+    from app.domain.services.academic_fields import academic_name, catalog
+    data = catalog()
+    terms = academic_name(query).split()
+    rows = [row for row in data["programs"] if all(term in academic_name(" ".join([row["label"], *row["aliases"]])) for term in terms)]
+    return {"version": data["version"], "scope": data["scope"], "classification": data["classification"], "items": [{"label": row["label"], "aliases": row["aliases"]} for row in rows[:100]]}
 
 
 class SkillSearchInput(BaseModel):

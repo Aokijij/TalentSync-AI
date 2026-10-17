@@ -88,11 +88,13 @@ def profile_areas(profile):
     career = skill_key(" ".join([str(getattr(profile, "profession", "") or ""), str(getattr(profile, "preferred_sector", "") or "")]))
     skills = skill_key(" ".join(getattr(profile, "skills", []) or []))
     # Communication is useful across professions; it alone does not imply design.
-    return [area for area, row in AREAS.items() if any(
+    detected = [area for area, row in AREAS.items() if any(
         re.search(r"\b" + re.escape(term) + r"\w*\b", career)
         or term != "comunicacion" and re.search(r"\b" + re.escape(term) + r"\w*\b", skills)
         for term in row["terms"]
-    )] or ["general"]
+    )]
+    from app.domain.services.learning_relevance import context_areas
+    return list(dict.fromkeys([*detected, *sorted(context_areas(profile, AREAS))])) or ["general"]
 
 
 def assessment_banks():

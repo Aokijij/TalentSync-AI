@@ -1,5 +1,5 @@
 {
-  "version": "academic-fields-v1",
+  "version": "academic-fields-v2",
   "reviewed_at": "2026-10-16",
   "classification": {
     "name": "CINE-F 2013 A.C.",
@@ -320,6 +320,17 @@
         "educacion",
         "pedagogia",
         "docencia"
+      ]
+    },
+    {
+      "id": "project_management",
+      "label": "Gestión de Proyectos",
+      "reference_field": null,
+      "aliases": [
+        "gestion de proyectos",
+        "gerencia de proyectos",
+        "direccion de proyectos",
+        "administracion de proyectos"
       ]
     }
   ]

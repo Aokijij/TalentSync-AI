@@ -48,12 +48,20 @@ def catalog(db, user, area="recommended"):
     recommended = profile_areas(user.profile)
     selected = {*recommended, "general"} if area == "recommended" else set(AREAS) if area == "all" else {area}
     available = catalog_resources(db)
-    return {"resources": [row for row in available if row.get("category", "general") in selected],
+    from app.domain.services.learning_relevance import ranked_resources
+    ranked = ranked_resources(available, user.profile, recommended)
+    if area == "recommended":
+        specific = [row for row in ranked if row["relevance"]["kind"] != "complementary"]
+        complementary = [row for row in ranked if row["relevance"]["kind"] == "complementary" and row.get("category", "general") == "general"]
+        visible = [*specific, *complementary[:3]] if specific else complementary
+    else:
+        visible = [row for row in ranked if row.get("category", "general") in selected]
+    return {"resources": visible,
             "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "level": "fundamentals", "category": row["category"], "formats": sorted({q.get("type", "choice") for q in row["questions"]}), "context": row.get("context", "Resuelve cinco decisiones sobre esta habilidad y revisa la explicación al entregar.")}
                             for key, row in ASSESSMENTS.items() if row["category"] in selected],
             "areas": [{"id": key, "label": row["label"]} for key, row in AREAS.items()],
             "recommended_areas": recommended, "selected_area": area,
-            "plan_limit": 3, "external_catalogs_enabled": False, "notice": "Sugerencias por profesión, sector y habilidades. Puedes explorar otra área. Las prácticas locales no son certificaciones profesionales; los cursos externos requieren revisión y validación independientes."}
+            "plan_limit": 3, "external_catalogs_enabled": False, "notice": "Sugerencias ordenadas por habilidades, funciones, experiencia y contexto del CV. Las coincidencias se explican en cada recurso. Puedes explorar otra área. Las prácticas locales no son certificaciones profesionales; los cursos externos requieren revisión y validación independientes."}
 
 
 def opportunities(db, user, job_id, nlp):

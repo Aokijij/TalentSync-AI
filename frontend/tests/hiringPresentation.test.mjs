@@ -26,6 +26,8 @@ const OfferConditions = await component("OfferConditions", "OfferConditions");
 const ProcessStages = await component("ProcessStages", "ProcessStages");
 const EducationRequirementsEditor = await component("EducationRequirementsEditor", "EducationRequirementsEditor");
 const AcademicMatchDetails = await component("AcademicMatchDetails", "AcademicMatchDetails");
+const LearningResourceCard = await component("LearningResourceCard", "LearningResourceCard");
+const ExperienceFields = await component("ExperienceFields", "ExperienceFields");
 const TextItemsEditor = await component("TextItemsEditor", "TextItemsEditor");
 
 test("inline AI experience bullets render as separate safe list items", () => {
@@ -182,4 +184,21 @@ test("academic uncertainty remains visible even without a numeric component", ()
   assert.match(partial, /Ingeniería Informática/);
   assert.match(partial, /Ingeniería de Sistemas/);
   assert.match(partial, /Cumple el nivel/);
+});
+
+test("extracted employment months remain visible and education suggestions allow free text", () => {
+  const html = renderToStaticMarkup(createElement(ExperienceFields, { items: [{ role: "Analista", company: "Avinal", start_year: "2025", end_year: "2025", start_date: "2025-07", end_date: "2025-11" }], editing: false }));
+  assert.match(html, /jul/);
+  assert.match(html, /nov/);
+  const editor = renderToStaticMarkup(createElement(TextItemsEditor, { label: "Carreras", value: [], onChange() {}, suggestions: ["Contaduría Pública", "Gestión de Proyectos"] }));
+  assert.match(editor, /<datalist/);
+  assert.match(editor, /value="Gestión de Proyectos"/);
+  assert.ok(!editor.includes("readonly"));
+});
+
+test("learning cards explain context without displaying a hiring probability", () => {
+  const html = renderToStaticMarkup(createElement(LearningResourceCard, { resource: { id: "projects", title: "Gestión de proyectos", skills: ["gestión de proyectos"], category: "administration", hours: 4, provider: "Proveedor", instructions: "Curso de planificación y seguimiento.", relevance: { kind: "context", score: 75, reasons: ["Relacionado con la planificación y el seguimiento de proyectos de tu experiencia."] } } }));
+  assert.match(html, /Por qué aparece para ti/);
+  assert.match(html, /seguimiento de proyectos/);
+  assert.ok(!html.includes("75%"));
 });

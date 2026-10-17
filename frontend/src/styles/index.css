@@ -1676,3 +1676,7 @@ html[data-theme="dark"][data-role="candidate"] { --scrollbar-accent:#38bdf8; --s
 .academic-match dl { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:.8rem; margin:.9rem 0; }
 .academic-match dt { color:var(--muted); font-size:.7rem; }
 .academic-match dd { margin:.2rem 0 0; overflow-wrap:anywhere; }
+
+.learning-relevance { padding:.8rem; border:1px solid var(--line); border-radius:10px; font-size:.75rem; line-height:1.5; background:var(--surface-subtle); }
+.learning-relevance strong { color:var(--accent); }
+.learning-relevance p { color:var(--muted); margin-top:.3rem; }

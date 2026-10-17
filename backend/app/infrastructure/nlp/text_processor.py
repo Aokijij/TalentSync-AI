@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from app.domain.entities.nlp import NLPResult
+from app.domain.services.cv_periods import PERIOD, period_fields, read_period
 
 COMMON_SKILLS = {
     "python",
@@ -581,11 +582,7 @@ class TextProcessor:
 
     @staticmethod
     def _month_period_pattern() -> re.Pattern[str]:
-        month = r"enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre"
-        return re.compile(
-            rf"(?P<start_month>{month})\s*(?P<start_year>(?:19|20)\d{{2}})\s*[-–—a]+\s*(?P<end_month>{month})?\s*(?P<end_year>(?:19|20)\d{{2}}|presente|actualidad)",
-            re.I,
-        )
+        return PERIOD
 
     def _extract_period_entries(self, block: str, kind: str) -> list[dict]:
         periods = list(self._month_period_pattern().finditer(block))
@@ -625,12 +622,13 @@ class TextProcessor:
                     {
                         "company": company[:140],
                         "role": role[:160],
-                        "start_year": period.group("start_year"),
+                        "start_year": period_fields(period.group(0))["start_year"],
                         "end_year": "Presente"
-                        if period.group("end_year").lower()
+                        if period_fields(period.group(0))["end_year"].lower()
                         in {"presente", "actualidad"}
-                        else period.group("end_year"),
+                        else period_fields(period.group(0))["end_year"],
                         "description": description[:900],
+                        **period_fields(period.group(0)),
                     }
                 )
             else:
@@ -655,12 +653,13 @@ class TextProcessor:
                 entries.append(
                     {
                         "degree": degree[:200],
+                        **period_fields(period.group(0)),
                         "institution": institution[:160],
-                        "start_year": period.group("start_year"),
+                        "start_year": period_fields(period.group(0))["start_year"],
                         "end_year": "Presente"
-                        if period.group("end_year").lower()
+                        if period_fields(period.group(0))["end_year"].lower()
                         in {"presente", "actualidad"}
-                        else period.group("end_year"),
+                        else period_fields(period.group(0))["end_year"],
                     }
                 )
         return entries
@@ -704,26 +703,8 @@ class TextProcessor:
     @staticmethod
     def _resume_period(value: str) -> tuple[str, str, tuple[int, int]] | None:
         """Read common CV periods without depending on one visual template."""
-        month = r"(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)"
-        end_word = r"presente|actualidad|actual|en\s+curso|vigente"
-        patterns = (
-            re.compile(
-                rf"(?:{month}\s+)?(?P<start>(?:19|20)\d{{2}})\s*(?:[-–—]|a|hasta)\s*(?:{month}\s+)?(?P<end>(?:19|20)\d{{2}}|{end_word})",
-                re.I,
-            ),
-            re.compile(
-                rf"(?P<start>(?:19|20)\d{{2}})\s*(?:[-–—]|a|hasta)\s*(?P<end>(?:19|20)\d{{2}}|{end_word})",
-                re.I,
-            ),
-        )
-        for pattern in patterns:
-            match = pattern.search(value)
-            if match:
-                end = match.group("end")
-                if not re.fullmatch(r"(?:19|20)\d{2}", end):
-                    end = "Presente"
-                return match.group("start"), end, match.span()
-        return None
+        result = read_period(value)
+        return (result[0]["start_year"], result[0]["end_year"], result[1]) if result else None
 
     def _extract_semantic_experiences(self, text: str) -> list[dict]:
         """Interpret Docling headings and field labels as employment records.
@@ -841,6 +822,7 @@ class TextProcessor:
             experiences.append(
                 {
                     "company": employer,
+                    **period_fields(lines[line_index]),
                     "role": role[:160],
                     "start_year": start_year,
                     "end_year": end_year,
@@ -983,6 +965,7 @@ class TextProcessor:
                     "start_year": self._period_year(match.group("start")),
                     "end_year": self._period_year(match.group("end")),
                     "description": description[:900],
+                    **period_fields(match.group(0)),
                 }
             )
         return experiences
@@ -1096,13 +1079,7 @@ class TextProcessor:
             )
             experience_blocks.append((period_count, len(block), block))
         experience_block = max(experience_blocks, default=(0, 0, ""))[2]
-        periods = list(
-            re.finditer(
-                r"(?P<start>(?:19|20)\d{2})\s*[-–—]\s*(?P<end>(?:19|20)\d{2}|presente|actualidad)",
-                experience_block,
-                re.I,
-            )
-        )
+        periods = list(PERIOD.finditer(experience_block))
         role_pattern = re.compile(
             r"^(?P<role>(?:desarrollador|analista|ingeniero|coordinador|director|residente|auxiliar|profesional|practicante|diseñador|asistente|supervisor)[^\n]{0,100})$",
             re.I | re.M,
@@ -1186,6 +1163,7 @@ class TextProcessor:
                     if period.group("end").lower() in {"presente", "actualidad"}
                     else period.group("end"),
                     "description": " ".join(description_lines)[:900],
+                    **period_fields(period.group(0)),
                 }
             )
 
@@ -1286,14 +1264,21 @@ class TextProcessor:
         return self._dedupe(experiences, "company"), self._dedupe(educations, "degree")
 
     def _merge_resume_experiences(self, items):
-        merged = {}
+        merged = []
         for item in items:
-            key = (re.sub(r"[^a-z0-9]", "", self.fold_text(item["company"])), item.get("start_year"), item.get("end_year"))
-            previous = merged.get(key)
-            quality = lambda row: (row.get("role") != "Cargo no identificado", len(row.get("description", "")))
-            if previous is None or quality(item) > quality(previous):
-                merged[key] = item
-        return list(merged.values())
+            name = re.sub(r"[^a-z0-9]", "", self.fold_text(item["company"]))
+            previous = next((row for row in merged if re.sub(r"[^a-z0-9]", "", self.fold_text(row["company"])) == name and row.get("start_year") == item.get("start_year") and row.get("end_year") == item.get("end_year") and all(not row.get(key) or not item.get(key) or row[key] == item[key] for key in ("start_date", "end_date"))), None)
+            if previous is None:
+                merged.append(dict(item))
+                continue
+            for key in ("start_date", "end_date", "is_current"):
+                if item.get(key) and not previous.get(key):
+                    previous[key] = item[key]
+            if previous.get("role") == "Cargo no identificado" and item.get("role"):
+                previous["role"] = item["role"]
+            if len(item.get("description", "")) > len(previous.get("description", "")):
+                previous["description"] = item["description"]
+        return merged
 
     @staticmethod
     def _resume_reading_order(text: str) -> str:

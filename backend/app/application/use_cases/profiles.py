@@ -398,7 +398,8 @@ def _merge_imported(existing, detected, keys):
                 if all(value and str(value)[:4].isdigit() for value in (start_a, end_a, start_b, end_b)):
                     # Separate rehires, while retaining confirmed fields when
                     # the imported period overlaps the existing employment.
-                    return not (str(end_a)[:4] < str(start_b)[:4] or str(end_b)[:4] < str(start_a)[:4])
+                    precision = 7 if all(len(str(value)) == 7 for value in (start_a, end_a, start_b, end_b)) else 4
+                    return not (str(end_a)[:precision] < str(start_b)[:precision] or str(end_b)[:precision] < str(start_a)[:precision])
             return True
         previous = next((item for item in merged if same_record(item)), None)
         if previous is None:
