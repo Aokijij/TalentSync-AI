@@ -110,7 +110,7 @@ export function CandidateDetailPage() {
         <ArrowLeft size={16} />
         Volver a candidatos recomendados
       </button>
-      {candidate.identity_hidden && <aside className="identity-note"><ShieldCheck size={22} /><div><h2 className="font-bold">Perfil profesional en selección ciega</h2><p>La vacante oculta nombre, contacto y organizaciones de origen. La identidad se revela al avanzar a entrevista; puedes revisar habilidades, formación y trayectoria desde ahora.</p><Link to={`/procesos/${application?.id || ""}`} className="text-[var(--accent)]">Consultar el proceso →</Link></div></aside>}
+      {candidate.identity_hidden && <aside className="identity-note"><ShieldCheck size={22} /><div><h2 className="font-bold">Perfil profesional en selección ciega</h2><p>La vacante oculta nombre, contacto y organizaciones de origen. La identidad se comparte cuando la persona se postula a esta vacante.</p><Link to={`/procesos/${application?.id || ""}`} className="text-[var(--accent)]">Consultar el proceso →</Link></div></aside>}
       <section className="candidate-overview surface-card overflow-hidden !p-0">
         <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] via-cyan-300 to-[var(--success)]" />
         <div className="p-6 sm:p-8">

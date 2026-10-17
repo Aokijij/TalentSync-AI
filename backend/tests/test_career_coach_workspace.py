@@ -103,7 +103,7 @@ def test_preparation_is_retired_and_advice_is_read_only_owned_and_specific(clien
     assert client.get(BASE + "/jobs/999999/advice", headers=headers).status_code == 404
 
 
-def test_historical_submissions_are_preserved_and_remain_blind_when_required(client):
+def test_historical_submissions_are_preserved_and_visible_after_submission(client):
     user, headers = candidate(client, skills=["python"])
     _, company = company_account(client)
     job = create_job(client, company)
@@ -119,8 +119,8 @@ def test_historical_submissions_are_preserved_and_remain_blind_when_required(cli
         db.get(Job, job["id"]).blind_hiring = True
         db.commit()
     view = client.get(endpoint, headers=company, params={"job_id": job["id"]}).json()
-    assert view["identity_hidden"] and "Organización" not in str(view) and "Preparaba reportes" not in str(view)
-    assert view["cv_guidance"] == {} and view["cv_text"] is None
+    assert not view["identity_hidden"] and "Organización" in str(view) and "Preparaba reportes" in str(view)
+    assert view["profession"] == before["profession"]
 
 
 def test_pdf_original_is_owner_only_and_simple_export_contains_text(client, monkeypatch, tmp_path):

@@ -117,7 +117,7 @@ export function CompanyTalentPage() {
         </div>
         <VacancyPicker jobs={jobs} selected={selectedJob} query={jobSearch} loading={loadingJobs} disabled={sending} remaining={Math.max(0, jobTotal - jobs.length)} onMore={() => setJobOffset(jobs.length)} onQuery={(value) => { setJobSearch(value); setJobOffset(0); }} onSelect={(job) => { setSelectedSnapshot(job); setSelectedJobId(String(job.id)); setQuery(""); setPage(1); }} />
         {!loadingJobs && !jobs.length && !jobSearch && <Link className="button-secondary mt-4" to="/empresa/vacantes">Gestionar vacantes <ArrowRight size={16} /></Link>}
-        {selectedJob && <Link className="talent-job-detail button-secondary button-sm" state={{ returnTo: `${location.pathname}${location.search}` }} to={`/vacantes/${selectedJob.id}`}><BriefcaseBusiness size={15} />Ver detalle de esta vacante<ArrowRight size={15} /></Link>}
+        {selectedJob && <Link className="talent-job-detail" state={{ returnTo: `${location.pathname}${location.search}` }} to={`/vacantes/${selectedJob.id}`}><BriefcaseBusiness size={15} />Ver vacante<ArrowRight size={15} /></Link>}
         {selectedJob && <p className="talent-job-context"><BriefcaseBusiness size={16} />{selectedJob.skills?.length ? `Buscamos experiencia en ${selectedJob.skills.slice(0, 4).join(", ")}.` : "Compararemos la experiencia y la formación con los requisitos del cargo."}</p>}
       </section>
 
@@ -133,7 +133,7 @@ export function CompanyTalentPage() {
               {[{ value: "new", label: "Personas para invitar" }, { value: "applied", label: "Ya se postularon" }].map((tab) => <button key={tab.value} type="button" aria-pressed={audience === tab.value} className="talent-audience-tab" onClick={() => { setAudience(tab.value); setPage(1); }}>{tab.value === "new" ? <Send size={17} /> : <UsersRound size={17} />}<span>{tab.label}<small>{tab.value === "new" ? "Descubre perfiles compatibles" : "Revisa sus postulaciones"}</small></span></button>)}
             </div>
             <div className={`talent-search-filters ${audience === "applied" ? "applied" : ""}`}>
-              <label className="block text-xs font-semibold text-[var(--muted)]">Nombre, profesión o habilidad
+              <label className="block text-xs font-semibold text-[var(--muted)]">{audience === "new" ? "Profesión o habilidad" : "Nombre, profesión o habilidad"}
                 <span className="relative mt-2 block"><Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" /><input className="field-control !pl-10" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Ej. servicio al cliente o administración" /></span>
               </label>
               {audience === "new" && <label className="talent-minimum">Compatibilidad mínima
@@ -180,7 +180,7 @@ function TalentCard({ candidate, job, sending, returnTo, onInvite, onReview }) {
         {candidate.has_applied ? <p className="mt-2 text-xs font-semibold text-[var(--muted)]">Base {Math.round(candidate.base_match_percentage ?? candidate.match_percentage)}% · valoración manual {candidate.screening_adjustment > 0 ? "+" : ""}{candidate.screening_adjustment || 0} · final {Math.round(candidate.match_percentage)}%</p> : null}
       </div>
       <div className="talent-facts">{candidate.location_fit?.message && <p className={`talent-location ${candidate.location_fit.status}`}><strong>Ubicación y movilidad</strong>{candidate.location_fit.message}{candidate.location_fit.factor < 1 && <small>Afinidad profesional: {Math.round(candidate.professional_match_percentage)}% · con disponibilidad: {Math.round(candidate.match_percentage)}%</small>}</p>}
-        {candidate.identity_hidden && <p className="text-xs font-semibold text-[var(--accent)]">Identidad protegida hasta la entrevista</p>}
+        {candidate.identity_hidden && <p className="text-xs font-semibold text-[var(--accent)]">Identidad protegida hasta que se postule</p>}
         <details className="talent-details"><summary>Idiomas, evidencias y habilidades por reforzar</summary><div className="mt-2 space-y-2">
         {candidate.related_skills?.map((row) => <p className="text-xs text-[var(--muted)]" key={row.skill}>Base para aprender {row.skill}: {row.foundations.join(", ")} · aún sin acreditar</p>)}
         {candidate.validated_foundations?.map((row, index) => <p className="text-xs text-[var(--success)]" key={index}>Fundamentos evaluados: {row.skill} · {row.score}%</p>)}
@@ -191,7 +191,7 @@ function TalentCard({ candidate, job, sending, returnTo, onInvite, onReview }) {
       </div>
       <div className="mt-auto border-t border-[var(--line)] pt-4">
         {candidate.has_applied ? <div className="grid gap-2">{candidate.identity_hidden ? <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil anónimo</Link> : <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil del candidato <ArrowRight size={16} /></Link>}{candidate.screening_answers?.length ? <button type="button" className="button-outline w-full" onClick={onReview}>Ver respuestas y valorar</button> : null}</div> : <button type="button" className="button-primary w-full" disabled={candidate.has_pending_invitation || sending || candidate.match_percentage < 60 || candidate.location_fit?.invitation_allowed === false} onClick={onInvite}><Send size={16} />{candidate.has_pending_invitation ? "Invitación enviada" : "Invitar a postularse"}</button>}
-        <p className="mt-2 text-center text-xs text-[var(--muted)]">{candidate.identity_hidden && candidate.has_applied ? "Compara habilidades y resultados antes de avanzar a entrevista." : candidate.has_applied ? "Ya puedes consultar su perfil completo." : candidate.has_pending_invitation ? "Estamos esperando que decida si desea postularse." : "Le enviaremos la vacante. Tú decides después a quién contratar."}</p>
+        <p className="mt-2 text-center text-xs text-[var(--muted)]">{candidate.identity_hidden && candidate.has_applied ? "La identidad se muestra cuando la persona se postula." : candidate.has_applied ? "Ya puedes consultar su perfil completo." : candidate.has_pending_invitation ? "Estamos esperando que decida si desea postularse." : "Le enviaremos la vacante. Tú decides después a quién contratar."}</p>
       </div>
     </article>
   );

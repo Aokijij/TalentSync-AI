@@ -353,7 +353,7 @@ Consulta `/docs` para ver parámetros, esquemas y respuestas del contrato vigent
 
 Cada habilidad del perfil admite un nivel declarado: en aprendizaje, básico, intermedio, avanzado o experto. «Sin indicar» conserva la falta de información. La revisión de una oferta permite solicitar un nivel mínimo; la compatibilidad compara ambos sin inferir dominio por años de experiencia. Si la oferta exige un nivel y el candidato no lo indica, el requisito queda parcial. Los requisitos antiguos sin nivel conservan la comparación por presencia. Estos niveles son declaraciones, no evaluaciones acreditadas.
 
-La ficha del candidato para empresas explica factores, requisitos y ajuste por respuestas de esa vacante. La consulta calcula una sola comparación y respeta los permisos y la selección ciega. Las duraciones se presentan en años y meses.
+La ficha del candidato para empresas explica factores, requisitos y ajuste por respuestas de esa vacante. La consulta calcula una sola comparación y respeta los permisos. Las recomendaciones ocultan la identidad hasta que la persona se postula a esa vacante; la invitación por sí sola no la revela. Tras postularse, esa empresa puede consultar la identidad, el perfil y las respuestas sin esperar a la entrevista. Las duraciones se presentan en años y meses.
 
 El administrador puede pausar, reactivar o cerrar una publicación desde su ficha. Pausar mantiene abiertos los procesos; cerrar finaliza los pendientes y notifica a los candidatos. La eliminación definitiva se confirma por separado. Los cambios de estado quedan en el registro de eventos.
 

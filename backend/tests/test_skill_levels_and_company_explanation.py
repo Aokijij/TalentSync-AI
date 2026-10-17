@@ -77,7 +77,7 @@ def test_company_explanation_is_scoped_private_and_evaluates_only_one_candidate(
     assert response.status_code == 200, response.text
     assert response.json()["match_details"]["components"]
     assert response.json()["match_details"]["requirements"]
-    assert "PRIVATE-EVIDENCE-TITLE" not in response.text
+    assert "PRIVATE-EVIDENCE-TITLE" in response.text
     assert calls == [user["id"]]
     assert client.get(endpoint, headers=stranger).status_code == 403
     assert client.get(endpoint, headers=headers).status_code == 403

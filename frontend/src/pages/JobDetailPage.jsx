@@ -269,6 +269,7 @@ function JobDetailContent({ jobId }) {
           </section>
           {user?.role === "candidate" && <VacancyCvAdvice key={jobId} jobId={jobId} />}
           {user?.role === "candidate" && <section className="job-apply-card"><h2>{alreadyApplied ? "Tu postulación" : "¿Te interesa esta oportunidad?"}</h2><p>{alreadyApplied ? "Puedes consultar su avance desde Postulaciones." : "Revisa los requisitos y envía tu perfil cuando estés listo."}</p>
+          {job.source_kind !== "external" && !alreadyApplied && <p className="mt-3 text-xs leading-5 text-[var(--muted)]">Tu identidad permanece protegida hasta que te postules. Al enviar tu postulación, compartes tu identidad y perfil con esta empresa.</p>}
           {user?.role === "candidate" ? (
             <>
               {job.source_kind === "external" && job.external_url ? (

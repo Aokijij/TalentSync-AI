@@ -82,10 +82,12 @@ def test_local_journey_connects_all_roles_with_sessions_and_mfa(browser):
         request(browser, "PUT", "/learning/plans/project-sql", json={"status": "completed"})
         assert "sql" not in request(browser, "GET", "/profiles/me")["skills"]
 
-        application = request(browser, "POST", "/applications", expected=201, json={"job_id": job["id"]})
         ranking = request(company, "GET", f"/recommendations/jobs/{job['id']}/candidates")
         assert ranking[0]["identity_hidden"] and candidate["name"] not in str(ranking)
         request(company, "GET", f"/profiles/candidates/{candidate['id']}", expected=403)
+        application = request(browser, "POST", "/applications", expected=201, json={"job_id": job["id"]})
+        assert not request(company, "GET", f"/recommendations/jobs/{job['id']}/candidates")[0]["identity_hidden"]
+        request(company, "GET", f"/profiles/candidates/{candidate['id']}")
         attempt = request(browser, "POST", "/learning/practical/sql-paid-totals-v1/start")
         practical = f"/learning/practical/attempts/{attempt['id']}"
         assert request(browser, "POST", practical + "/preview", json={"query": SQL})["ok"]

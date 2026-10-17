@@ -29,29 +29,41 @@ def test_legacy_pipeline_uses_default_stages_but_custom_pipeline_stays_scoped(cl
 
 
 
-def test_blind_hiring_hides_identity_and_text_until_interview(client):
+def test_identity_is_hidden_until_submission_and_consent_is_vacancy_scoped(client):
     _, company = company_account(client)
-    job = client.post("/api/v1/jobs", headers=company, json={"title": "Desarrollador Python", "description": "Desarrolla APIs con Python y SQL", "requirements": "Conocimiento de Python y SQL", "sector": "Tecnologia y software", "application_questions": [{"id": "intro", "prompt": "Cuéntanos un proyecto", "type": "open"}]}).json()
-    assert job["blind_hiring"] is True
+    _, stranger = company_account(client, "private-outsider")
+    payload = {"title": "Desarrollador Python", "description": "Desarrolla APIs con Python y SQL", "requirements": "Conocimiento de Python y SQL", "sector": "Tecnologia y software", "application_questions": [{"id": "intro", "prompt": "Cuéntanos un proyecto", "type": "open"}]}
+    job = client.post("/api/v1/jobs", headers=company, json=payload).json()
+    other_job = client.post("/api/v1/jobs", headers=stranger, json={**payload, "blind_hiring": False}).json()
+    sibling = client.post("/api/v1/jobs", headers=company, json={**payload, "blind_hiring": False}).json()
     candidate, headers = register(client, "private-person", skills=["Python", "SQL"], profession="Desarrollador Python")
-    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "screening_answers": [{"question_id": "intro", "answer": "Me llamo PRIVATE-NAME y estudié en PRIVATE-UNIVERSITY"}]}).json()
-    ranking = client.get(f"/api/v1/recommendations/jobs/{job['id']}/candidates", headers=company)
-    assert ranking.status_code == 200
+    ranking_url = f"/api/v1/recommendations/jobs/{job['id']}/candidates"
+    profile_url = f"/api/v1/profiles/candidates/{candidate['id']}"
+    photo_url = f"/api/v1/profiles/{candidate['id']}/photo"
+    ranking = client.get(ranking_url, headers=company)
+    assert ranking.status_code == 200 and ranking.json()[0]["identity_hidden"] is True
     assert candidate["name"] not in ranking.text
-    assert "PRIVATE-NAME" not in ranking.text
-    assert ranking.json()[0]["identity_hidden"] is True
-    response = client.get(f"/api/v1/applications/jobs/{job['id']}", headers=company)
-    assert "PRIVATE-NAME" not in response.text
-    assert candidate["name"] not in response.text
-    assert client.get(f"/api/v1/profiles/candidates/{candidate['id']}", headers=company).status_code == 403
-    assert client.get(f"/api/v1/profiles/{candidate['id']}/photo", headers=company).status_code == 403
-    notifications = client.get("/api/v1/notifications", headers=company)
-    assert candidate["name"] not in notifications.text
-    assert client.put(f"/api/v1/applications/{application['id']}/status", headers=company, json={"status": "technical_interview"}).status_code == 200
-    ranking = client.get(f"/api/v1/recommendations/jobs/{job['id']}/candidates", headers=company).json()
-    assert ranking[0]["identity_hidden"] is False
-    assert ranking[0]["name"] == candidate["name"]
-    assert client.get(f"/api/v1/profiles/candidates/{candidate['id']}", headers=company).status_code == 200
+    assert client.get(ranking_url + "-page", headers=company, params={"query": candidate["name"], "minimum_match": 0}).json()["items"] == []
+    assert client.post(f"/api/v1/recommendations/jobs/{job['id']}/candidates/{candidate['id']}/invite", headers=company).status_code == 200
+    assert client.get(ranking_url, headers=company).json()[0]["identity_hidden"] is True
+    assert client.get(profile_url, headers=company).status_code == 403
+    assert client.get(profile_url + f"?job_id={job['id']}", headers=company).status_code == 403
+    assert client.get(photo_url, headers=company).status_code == 403
+    submission = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "screening_answers": [{"question_id": "intro", "answer": "Me llamo PRIVATE-NAME y estudié en PRIVATE-UNIVERSITY"}]})
+    assert submission.status_code == 201
+    ranking = client.get(ranking_url, headers=company).json()
+    assert ranking[0]["identity_hidden"] is False and ranking[0]["name"] == candidate["name"]
+    applications = client.get(f"/api/v1/applications/jobs/{job['id']}", headers=company)
+    assert candidate["name"] in applications.text and "PRIVATE-NAME" in applications.text
+    assert candidate["name"] in client.get("/api/v1/notifications", headers=company).text
+    assert client.get(profile_url, headers=company).status_code == 200
+    assert client.get(photo_url, headers=company).status_code == 404  # Authorized, but no photo uploaded.
+    # Applying to one vacancy cannot reveal identity to other companies or unrelated recommendations.
+    for owner, target in [(stranger, other_job), (company, sibling)]:
+        ranking = client.get(f"/api/v1/recommendations/jobs/{target['id']}/candidates", headers=owner)
+        assert ranking.json()[0]["identity_hidden"] is True and candidate["name"] not in ranking.text
+        assert client.get(profile_url + f"?job_id={target['id']}", headers=owner).status_code == 403
+    assert client.get(profile_url, headers=stranger).status_code == 403
 
 
 def test_quality_uses_local_reference_and_retires_new_scenarios(client):
@@ -96,7 +108,7 @@ def test_quality_checklist_changes_after_saving_actionable_corrections(client):
     assert "Cumples todas las habilidades requeridas" in match.json()["reasons"]
 
 
-def test_anonymous_profile_is_scoped_to_owned_application_and_omits_identity(client):
+def test_submitted_profile_is_visible_only_to_the_authorized_company(client):
     from app.infrastructure.database.models import User
 
     _, company = company_account(client, "anonymous-owner")
@@ -117,16 +129,16 @@ def test_anonymous_profile_is_scoped_to_owned_application_and_omits_identity(cli
     endpoint = f"/api/v1/profiles/candidates/{candidate['id']}?job_id={job['id']}"
     response = client.get(endpoint, headers=company)
     assert response.status_code == 200, response.text
-    assert response.json()["identity_hidden"] is True
+    assert response.json()["identity_hidden"] is False
     assert response.json()["skills"] == ["excel", "inventarios"]
     assert response.json()["experiences"][0]["role"] == "Analista"
-    assert "PRIVATE-" not in response.text
+    assert "PRIVATE-PHONE" in response.text and "PRIVATE-EMPLOYER" in response.text
     assert client.get(endpoint, headers=other_company).status_code == 403
     assert client.get(endpoint.replace(f"job_id={job['id']}", "job_id=99999"), headers=company).status_code == 403
-    assert client.get(f"/api/v1/profiles/candidates/{candidate['id']}", headers=company).status_code == 403
-    # A visible second application does not unmask a still-blind process.
+    assert client.get(f"/api/v1/profiles/candidates/{candidate['id']}", headers=company).status_code == 200
+    # Legacy settings cannot re-hide an already submitted profile.
     visible_job = client.post("/api/v1/jobs", headers=company, json={"title": "Analista visible", "description": "Revisa inventarios y controla movimientos", "requirements": "Excel y control de inventarios", "sector": "Logistica y transporte", "blind_hiring": False}).json()
     client.post("/api/v1/applications", headers=headers, json={"job_id": visible_job["id"]})
-    assert client.get(endpoint, headers=company).json()["identity_hidden"] is True
+    assert client.get(endpoint, headers=company).json()["identity_hidden"] is False
     assert client.put(f"/api/v1/applications/{application['id']}/status", headers=company, json={"status": "technical_interview"}).status_code == 200
     assert client.get(endpoint, headers=company).json()["name"] == candidate["name"]

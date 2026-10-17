@@ -7,7 +7,7 @@ from app.application.use_cases.events import record_event
 from app.application.use_cases.workflow import transition
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Application, User
-from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.blind_hiring import identity_hidden
 from app.domain.services.pipeline import stages_for
 
 
@@ -110,7 +110,7 @@ def apply_to_job(
             user_id=job.company.owner_user_id,
             type="application_received",
             title="Nueva postulación",
-            body=f"{candidate_alias(job.id, current_user.id) if job.blind_hiring else current_user.name} se postuló a {job.title}.",
+            body=f"{current_user.name} se postuló a {job.title}.",
             action_url=f"/empresa/postulaciones?job={job.id}",
         )
     )

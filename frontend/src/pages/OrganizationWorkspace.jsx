@@ -42,7 +42,7 @@ export function OrganizationWorkspace() {
       {organization.role === "owner" && organization.verification_status !== "verified" && <CompanyVerificationForm key={organization.id} organization={organization} user={user} busy={busy} act={act} />}
 
     </section>}
-    {tab === "team" && organization.role === "owner" && <TeamManagement refresh={teamRefresh} onCount={setTeamCount} jobs={jobs} busy={busy} act={act} canInvite={user.email_verified} mfaRequired={accessOptions?.company_mfa_required !== false} />}
+    {tab === "team" && organization.role === "owner" && <TeamManagement localMail={!!accessOptions?.local_mail} refresh={teamRefresh} onCount={setTeamCount} jobs={jobs} busy={busy} act={act} canInvite={user.email_verified} mfaRequired={accessOptions?.company_mfa_required !== false} />}
     {tab === "dispatch" && verified && ["owner", "recruiter"].includes(organization.role) && <InterviewAssignmentManager jobs={jobs} busy={busy} act={act} />}
     {tab === "assignments" && <AssignedInterviews assignments={assignments} />}
     </>}

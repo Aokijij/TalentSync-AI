@@ -61,6 +61,9 @@ test("publication status separates the numeric minimum from missing required inf
   assert.match(html, /Contrato definido/);
   const ready = renderToStaticMarkup(createElement(OfferPublicationStatus, { quality: { ...quality, can_publish: true, blockers: [] } }));
   assert.match(ready, /Puedes publicar/);
+  const published = renderToStaticMarkup(createElement(OfferPublicationStatus, { status: "active", quality: { ...quality, can_publish: true } }));
+  assert.match(published, /Oferta publicada/);
+  assert.ok(!published.includes("Lista para publicar") && !published.includes("Puedes publicar"));
 });
 
 test("quality breakdown shows earned responsibility points independently of missions", () => {
@@ -82,6 +85,8 @@ test("schedule editor keeps legacy free text editable", () => {
 test("structured schedule displays calculated hours and custom time triggers", () => {
   const html = renderToStaticMarkup(createElement(WorkScheduleEditor, { details: { work_schedule: { mode: "fixed", days: ["mon", "tue", "wed", "thu", "fri"], start: "05:30", end: "15:30", break_minutes: 60, notes: "" } }, onChange() {} }));
   assert.match(html, /45 horas semanales/);
+  assert.match(html, /descanso ya descontado/);
+  assert.ok(!html.includes("Sin descuento") && !html.includes("sin descansos"));
   assert.match(html, /Se calculan y guardan automáticamente/);
   assert.equal((html.match(/aria-haspopup="dialog"/g) || []).length, 2);
   assert.ok(!html.includes('type="time"'));

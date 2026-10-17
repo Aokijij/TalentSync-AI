@@ -1,3 +1,4 @@
+import { publicationLabel, qualityColor } from "../utils/offerPresentation.js";
 import { ScreeningQuestionsEditor } from "../components/ScreeningQuestionsEditor.jsx";
 import { salaryLabel } from "../utils/offerQuality.js";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -618,7 +619,7 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           {job.description}
         </p>
         <Link
-          className={`company-job-quality ${job.quality_summary?.level === "A" ? "is-complete" : job.quality_summary?.can_publish ? "is-ready" : "is-pending"}`}
+          className={`company-job-quality ${qualityColor(job.quality_summary)}`}
           to={`/empresa/calidad?vacante=${job.id}`}
           aria-label={`Calidad de la oferta ${job.title}: ${job.quality_summary?.score ?? "sin evaluar"}${job.quality_summary ? "%" : ""}. Revisar calidad`}
         >
@@ -628,7 +629,7 @@ function JobCard({ job, onEdit, onToggle, onDelete }) {
           </div>
           {job.quality_summary && <progress aria-label={`Calidad de ${job.title}`} value={job.quality_summary.score} max={100} />}
           <div className="company-job-quality-caption">
-            <span>{job.quality_summary?.rating ? `Nivel ${job.quality_summary.rating.code} · ${job.quality_summary.rating.label}${job.quality_summary.can_publish ? " · Lista para publicar" : " · Revisa los requisitos pendientes"}` : "Sin evaluar · Revisar calidad"}</span>
+            <span>{job.quality_summary?.rating ? `Nivel ${job.quality_summary.rating.code} · ${job.quality_summary.rating.label} · ${publicationLabel(job.status, job.quality_summary.can_publish)}` : "Sin evaluar · Revisar calidad"}</span>
             <ChevronRight size={15} aria-hidden="true" />
           </div>
         </Link>

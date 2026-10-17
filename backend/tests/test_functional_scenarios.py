@@ -87,8 +87,7 @@ def test_connected_bundle_is_idempotent_preserves_existing_data_and_exposes_each
     assert client.put("/api/v1/learning/plans/project-git", headers=headers("plan_lleno"), json={"status": "in_progress"}).status_code == 409
     assert client.get("/api/v1/matching/preferences", headers=headers("condiciones")).json()["minimum_salary"] == 6000000
     company_apps = client.get(f"/api/v1/applications/jobs/{report['jobs']['backend']}", headers=headers("empresa")).json()
-    assert any(row["identity_hidden"] for row in company_apps)
-    assert any(not row["identity_hidden"] for row in company_apps)
+    assert company_apps and all(not row["identity_hidden"] for row in company_apps)
     for invitation in report["invitations"]:
         from urllib.parse import parse_qs, urlsplit
         token = parse_qs(urlsplit(invitation["url"]).query)["token"][0]

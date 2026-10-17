@@ -1662,3 +1662,10 @@ html[data-theme="dark"][data-role="candidate"] { --scrollbar-accent:#38bdf8; --s
 .resume-modern .resume-skill strong { font-size: .8rem; font-weight: 650; }
 .resume-modern .resume-skill small { font-size: .68rem; color: #e2e8f0; }
 @media (max-width: 560px) { .vacancy-learning-heading { align-items: flex-start; flex-wrap: wrap; } .vacancy-resource-count { margin-left: 3.4rem; } .detail-modal-overlay { padding: .5rem; } .detail-modal-content, .detail-modal > header { padding: 1rem; } }
+
+.company-job-quality.is-initial { --quality-color: var(--error); }
+.team-local-invitation { display:flex; gap:1rem; padding:1rem; margin:1rem 0; border:1px solid var(--line); border-radius:12px; background:var(--surface-subtle); }
+.team-local-invitation > svg { flex-shrink:0; color:var(--accent); }
+.team-local-invitation p, .offer-education-affinity p { color:var(--muted); font-size:.8rem; line-height:1.6; margin:.5rem 0 .8rem; }
+.offer-education-affinity { margin-top:1rem; font-size:.8rem; }
+.offer-education-affinity summary { color:var(--accent); cursor:pointer; }

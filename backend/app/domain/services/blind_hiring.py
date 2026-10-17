@@ -7,4 +7,5 @@ def candidate_alias(job_id, user_id):
 
 
 def identity_hidden(job, application=None):
-    return bool(getattr(job, "blind_hiring", False) and not (application and getattr(application, "identity_revealed_at", None)))
+    # Consent is scoped to this vacancy: being recommended or invited is insufficient.
+    return application is None or application.job_id != job.id

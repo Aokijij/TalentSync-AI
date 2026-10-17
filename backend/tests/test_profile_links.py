@@ -57,7 +57,7 @@ def test_invalid_links_are_rejected_without_changing_the_profile(client, links):
     assert client.get("/api/v1/profiles/me", headers=headers).json() == before
 
 
-def test_links_are_visible_to_an_authorized_company_but_hidden_during_blind_hiring(client):
+def test_links_are_visible_after_submission_even_with_legacy_blind_setting(client):
     _, company = company_account(client)
     job = create_job(client, company)
     user, headers = register(client, "links-candidate", profession="Desarrollador Python", skills=["python"])
@@ -71,8 +71,8 @@ def test_links_are_visible_to_an_authorized_company_but_hidden_during_blind_hiri
         db.commit()
     response = client.get(endpoint + f"?job_id={job['id']}", headers=company)
     assert response.status_code == 200
-    assert response.json()["identity_hidden"] and response.json()["links"] == []
-    assert "portfolio-person" not in response.text
+    assert not response.json()["identity_hidden"] and response.json()["links"] == LINKS
+    assert "portfolio-person" in response.text
 
 
 @pytest.mark.parametrize("style", ["classic", "modern", "minimal"])
