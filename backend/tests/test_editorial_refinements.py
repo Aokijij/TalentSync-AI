@@ -61,12 +61,14 @@ def test_regenerating_applied_proposals_preserves_text_without_duplicating_secti
     assert {row["field"]: row["text"] for row in first["proposals"]} == {row["field"]: row["text"] for row in second["proposals"]}
 
 
-def test_writing_separates_inline_actions_preserves_subjects_and_does_not_repeat_conditions():
+@pytest.mark.parametrize("field_policy", ["exact", "related"])
+def test_writing_separates_inline_actions_preserves_subjects_and_does_not_repeat_conditions(field_policy):
     job = SimpleNamespace(**complete_offer())
     job.description = "analizara los reportes semanales • documentará diferencias; el equipo revisará las entregas."
     job.required_education_level = "technical"
     job.required_study_fields = ["Sistemas", "Informática"]
     job.quality_details["education_accepts_in_progress"] = True
+    job.quality_details["education_field_policy"] = field_policy
     result = writing_draft(job)
     texts = {row["field"]: row["text"] for row in result["proposals"]}
     assert "• Analizar los reportes semanales." in texts["description"]

@@ -18,3 +18,11 @@
 .screening-editor .expanding-textarea { max-height:none; height:auto; align-self:start; box-sizing:border-box; }
 @media(max-width:700px) { .screening-option>label:first-child { grid-column:auto; } }
 @media(max-width:550px) { .screening-settings { grid-template-columns:minmax(0,1fr); }.screening-required { justify-self:stretch; }.screening-option-controls { grid-template-columns:minmax(0,1fr); }.screening-option-controls>label { max-width:none; }.screening-remove-option { justify-self:end; } }
+
+.education-policy { display:grid; gap:.7rem; margin:1rem 0; border:0; padding:0; }
+.education-policy legend { font-size:.85rem; font-weight:700; margin-bottom:.7rem; }
+.education-policy label { display:flex; gap:.7rem; align-items:flex-start; border:1px solid var(--line); border-radius:12px; padding:.9rem; cursor:pointer; }
+.education-policy label.selected { border-color:var(--accent); background:var(--surface-subtle); }
+.education-policy input { margin-top:.2rem; accent-color:var(--accent); flex-shrink:0; }
+.education-policy strong,.education-policy small { display:block; font-size:.8rem; line-height:1.5; }
+.education-policy small { color:var(--muted); margin-top:.2rem; }

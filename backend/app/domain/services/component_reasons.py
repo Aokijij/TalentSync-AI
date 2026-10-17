@@ -12,17 +12,16 @@ def component_reasons(details, profile, job):
     experience = details.get("experience_requirement", {})
     if experience.get("required_months") is not None:
         context_lines.append(f"Experiencia relacionada: {experience.get('related_months', 0)} meses registrados frente a {experience['required_months']} solicitados. Esta comparación forma parte del contexto; no suma puntos por separado.")
-    fields = getattr(job, "required_study_fields", None) or []
-    secondary = getattr(job, "required_education_level", None) == "secondary"
-    if secondary:
-        fields = []
-    education_lines = ["Se comparan las áreas de estudio aceptadas (70% del componente) y el nivel académico solicitado (30%). Los estudios en curso no acreditan un título terminado."]
-    if not secondary and (getattr(job, "quality_details", None) or {}).get("education_accepts_in_progress"):
-        education_lines = ["Se comparan las áreas aceptadas (70% del componente) y el nivel académico (30%). Esta vacante acepta estudios en curso del nivel y área solicitados; no exige que estén terminados."]
-    if secondary:
-        education_lines = ["Se compara el nivel de bachillerato terminado. No se exige una carrera específica; los estudios en curso no acreditan este requisito."]
-    if fields:
-        education_lines.append("Áreas aceptadas: " + ", ".join(fields[:5]) + ". Se acepta cualquiera de las alternativas, no se exigen todas.")
+    academic = details.get("education_requirement")
+    if academic is None:
+        from app.domain.services.academic_matching import education_evaluation
+        academic = education_evaluation(profile, job)
+    education_lines = [academic["reason"]]
+    for row in academic.get("comparisons", [])[:8]:
+        level_labels = {"meets": "cumple el nivel", "below": "nivel inferior al solicitado", "unknown": "nivel por confirmar", "in_progress": "estudios en curso; se solicita formación terminada", "not_required": "sin nivel mínimo"}
+        education_lines.append(f"{row['candidate_degree']} → {row['requested_field'] or 'nivel académico'}: {row['reason']} Nivel: {level_labels[row['level_status']]}.")
+    if academic["status"] == "review":
+        education_lines.append("Formación pendiente de revisión; un nombre desconocido no se trata como incompatibilidad confirmada.")
     requested = language_levels(getattr(job, "languages", None))
     available = language_levels(getattr(profile, "languages", None))
     language_lines = ["Se promedia el cumplimiento del nivel mínimo de cada idioma. Alcanzar o superar el mínimo da cumplimiento completo; no registrar un nivel aporta cero para ese idioma."]

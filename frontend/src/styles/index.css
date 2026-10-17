@@ -1669,3 +1669,10 @@ html[data-theme="dark"][data-role="candidate"] { --scrollbar-accent:#38bdf8; --s
 .team-local-invitation p, .offer-education-affinity p { color:var(--muted); font-size:.8rem; line-height:1.6; margin:.5rem 0 .8rem; }
 .offer-education-affinity { margin-top:1rem; font-size:.8rem; }
 .offer-education-affinity summary { color:var(--accent); cursor:pointer; }
+
+.academic-match { margin-top:1rem; border:1px solid var(--line); padding:1rem; border-radius:12px; background:var(--surface-subtle); font-size:.8rem; }
+.academic-match.review > strong { color:var(--warning); }
+.academic-match p,.academic-match small { color:var(--muted); line-height:1.6; display:block; margin-top:.5rem; }
+.academic-match dl { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:.8rem; margin:.9rem 0; }
+.academic-match dt { color:var(--muted); font-size:.7rem; }
+.academic-match dd { margin:.2rem 0 0; overflow-wrap:anywhere; }

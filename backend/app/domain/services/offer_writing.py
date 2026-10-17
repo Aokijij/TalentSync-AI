@@ -111,6 +111,7 @@ def writing_draft(job):
         fields = getattr(job, "required_study_fields", None) or []
         if fields and level != "secondary":
             requirements += ["", "Áreas de formación aceptadas", *[f"• {field}" for field in fields]]
+            requirements.append("Se admiten solo estas áreas y sus variantes de nombre." if details.get("education_field_policy") == "exact" else "También se consideran formaciones afines con cumplimiento parcial y revisión de sus contenidos.")
         changes.append("Aclara la formación solicitada y si se aceptan personas que aún están estudiando.")
     for label, values in [("Esencial al ingresar", essential), ("Deseable, no imprescindible", desirable), ("Puedes aprender durante el ingreso", learnable)]:
         if values:

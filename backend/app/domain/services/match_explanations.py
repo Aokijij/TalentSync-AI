@@ -29,6 +29,9 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
                (getattr(job, "quality_details", None) or {}).get("experience_years"),
                (getattr(profile, "preferences", None) or {}).get("cv_skill_context", []), (getattr(profile, "preferences", None) or {}).get("writing_contexts", []), date.today().strftime("%Y-%m")]
     details = getattr(job, "quality_details", None) or {}
+    if getattr(job, "required_study_fields", None) or getattr(job, "required_education_level", None):
+        from app.domain.services.academic_fields import catalog, catalog_fingerprint
+        payload.append({"academic_catalog": catalog()["version"], "academic_catalog_sha256": catalog_fingerprint(), "education_field_policy": details.get("education_field_policy", "related"), "academic_policy": "record-comparison-v1"})
     if getattr(job, "required_education_level", None) == "secondary":
         payload.append({"secondary_education_policy": "completed_without_study_fields-v1"})
     if details.get("experience_months") is not None:
@@ -70,6 +73,8 @@ def explain(profile, job, *, context, skills, language, education, certification
             components.pop(2)
     if language is not None:
         components.append({"key": "languages", "label": "Idiomas", "score": language, "weight": .1})
+    from app.domain.services.academic_matching import education_evaluation
+    academic = education_evaluation(profile, job)
     rows = requirement_details if requirement_details is not None else requirement_rows(profile, job)
     preferences = preference_alignment(profile, job)
     factor = .75 + confidence / 400 if getattr(job, "source_kind", "internal") == "external" else 1
@@ -79,6 +84,7 @@ def explain(profile, job, *, context, skills, language, education, certification
             "notice": "Índice de afinidad con los datos registrados; no es una probabilidad de contratación.",
             "text_method": text_method, "components": components, "requirements": rows, "section_scores": section_scores or [], "retained_writing_context": retained_writing_context,
             "experience_requirement": experience_details or relevant_experience(profile, job),
+            "education_requirement": academic,
             "context_notice": "Se comparan cargos, funciones y conocimientos por separado. Cuando se pide experiencia mínima, los meses relacionados aportan el 20% de la señal de contexto; no son una señal adicional al total.",
             "unmet_essential_skills": [row["skill"] for row in rows if row.get("essential") and not row["covered"]],
             "preferences": preferences, "candidate_interest_score": preferences["score"], "overall_score": percentage,

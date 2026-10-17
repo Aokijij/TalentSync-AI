@@ -25,6 +25,7 @@ const RemoteScopeEditor = await component("RemoteScopeEditor", "RemoteScopeEdito
 const OfferConditions = await component("OfferConditions", "OfferConditions");
 const ProcessStages = await component("ProcessStages", "ProcessStages");
 const EducationRequirementsEditor = await component("EducationRequirementsEditor", "EducationRequirementsEditor");
+const AcademicMatchDetails = await component("AcademicMatchDetails", "AcademicMatchDetails");
 const TextItemsEditor = await component("TextItemsEditor", "TextItemsEditor");
 
 test("inline AI experience bullets render as separate safe list items", () => {
@@ -160,4 +161,25 @@ test("process stages preserve the company's configured order in a compact list",
   assert.equal((html.match(/<li/g) || []).length, 2);
   assert.ok(html.indexOf("Recibidas") < html.indexOf("Entrevista"));
   assert.ok(!html.includes("Etapa del tablero"));
+});
+
+test("academic policy is separate from level and students, and hidden for secondary", () => {
+  const html = renderToStaticMarkup(createElement(EducationRequirementsEditor, { level: "university", fields: ["Contaduría Pública"], fieldPolicy: "exact", acceptsStudents: false, onChange() {} }));
+  assert.match(html, /Solo las áreas seleccionadas/);
+  assert.match(html, /También formaciones afines/);
+  assert.match(html, /checked="" value="exact"/);
+  assert.match(html, /Aceptar personas que aún están estudiando/);
+  const secondary = renderToStaticMarkup(createElement(EducationRequirementsEditor, { level: "secondary", fields: [], onChange() {} }));
+  assert.ok(!secondary.includes("education-policy") && !secondary.includes('type="radio"'));
+});
+
+test("academic uncertainty remains visible even without a numeric component", () => {
+  const html = renderToStaticMarkup(createElement(AcademicMatchDetails, { value: { status: "review", reason: "Denominación no reconocida", policy: "related" } }));
+  assert.match(html, /Formación por revisar/);
+  assert.ok(!html.includes("0%"));
+  const partial = renderToStaticMarkup(createElement(AcademicMatchDetails, { value: { status: "partial", reason: "Áreas distintas relacionadas", policy: "related", required_level: "university", selected: { candidate_degree: "Ingeniería Informática", requested_field: "Ingeniería de Sistemas", actual_level: "university", level_status: "meets" } } }));
+  assert.match(partial, /Afinidad académica parcial/);
+  assert.match(partial, /Ingeniería Informática/);
+  assert.match(partial, /Ingeniería de Sistemas/);
+  assert.match(partial, /Cumple el nivel/);
 });

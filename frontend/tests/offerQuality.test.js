@@ -92,3 +92,11 @@ test("secondary offers remove career and ongoing-study restrictions and new guid
   assert.equal(payload.quality_details.education_accepts_in_progress, false);
   assert.equal(payload.blind_hiring, true);
 });
+
+test("academic matching policy survives editing and student changes", () => {
+  const draft = offerDraft({ quality_details: { education_field_policy: "exact" }, required_education_level: "university", required_study_fields: ["Contaduría"] });
+  draft.quality_details.education_accepts_in_progress = true;
+  assert.equal(offerPayload(draft).quality_details.education_field_policy, "exact");
+  assert.equal(offerPayload(draft).quality_details.education_accepts_in_progress, true);
+  assert.equal(offerDraft().quality_details.education_field_policy, "related");
+});

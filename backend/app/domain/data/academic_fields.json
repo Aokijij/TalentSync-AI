@@ -1,0 +1,326 @@
+{
+  "version": "academic-fields-v1",
+  "reviewed_at": "2026-10-16",
+  "classification": {
+    "name": "CINE-F 2013 A.C.",
+    "source_url": "https://www.dane.gov.co/files/noticias/CINE/cine-2013/Documento-CINE-F-2013-AC.pdf",
+    "adoption_url": "https://snies.mineducacion.gov.co/1778/w3-article-391382.html?_noredirect=1"
+  },
+  "scope": "Catálogo inicial de denominaciones y reglas de afinidad de TalentSync. No es un registro de programas SNIES ni acredita equivalencia de títulos. Las referencias CINE orientan la separación de campos; la asignación de cada programa requiere revisar su contenido.",
+  "related_pairs": [
+    [
+      "systems",
+      "software"
+    ],
+    [
+      "systems",
+      "informatics"
+    ],
+    [
+      "software",
+      "informatics"
+    ],
+    [
+      "accounting",
+      "accounting_finance"
+    ],
+    [
+      "finance",
+      "accounting_finance"
+    ],
+    [
+      "data",
+      "statistics"
+    ],
+    [
+      "data",
+      "mathematics"
+    ],
+    [
+      "data",
+      "informatics"
+    ],
+    [
+      "electronics",
+      "telecom"
+    ]
+  ],
+  "programs": [
+    {
+      "id": "accounting",
+      "label": "Contaduría Pública",
+      "reference_field": "0411",
+      "aliases": [
+        "contaduria",
+        "contabilidad",
+        "contabilidad publica",
+        "contaduria publica",
+        "contabilidad e impuestos"
+      ]
+    },
+    {
+      "id": "finance",
+      "label": "Finanzas",
+      "reference_field": "0412",
+      "aliases": [
+        "finanzas",
+        "administracion financiera",
+        "gestion financiera",
+        "banca",
+        "finanzas y banca"
+      ]
+    },
+    {
+      "id": "accounting_finance",
+      "label": "Contabilidad y Finanzas",
+      "reference_field": null,
+      "aliases": [
+        "contabilidad y finanzas"
+      ]
+    },
+    {
+      "id": "economics",
+      "label": "Economía",
+      "reference_field": "0311",
+      "aliases": [
+        "economia",
+        "economics"
+      ]
+    },
+    {
+      "id": "business",
+      "label": "Administración de Empresas",
+      "reference_field": "0413",
+      "aliases": [
+        "administracion de empresas",
+        "gestion empresarial",
+        "administracion empresarial"
+      ]
+    },
+    {
+      "id": "software",
+      "label": "Ingeniería de Software",
+      "reference_field": "0613",
+      "aliases": [
+        "ingenieria de software",
+        "desarrollo de software",
+        "desarrollo de aplicaciones",
+        "analisis y desarrollo de software",
+        "analisis y desarrollo de sistemas"
+      ]
+    },
+    {
+      "id": "informatics",
+      "label": "Ingeniería Informática",
+      "reference_field": "0613",
+      "aliases": [
+        "ingenieria informatica",
+        "informatica",
+        "ciencias de la computacion",
+        "ciencias informaticas"
+      ]
+    },
+    {
+      "id": "systems",
+      "label": "Ingeniería de Sistemas",
+      "reference_field": null,
+      "aliases": [
+        "ingenieria de sistemas",
+        "ingeniero de sistemas",
+        "sistemas",
+        "tecnologia en sistemas",
+        "tecnico en sistemas",
+        "tecnico profesional en sistemas"
+      ]
+    },
+    {
+      "id": "statistics",
+      "label": "Estadística",
+      "reference_field": "0542",
+      "aliases": [
+        "estadistica",
+        "estadistica aplicada"
+      ]
+    },
+    {
+      "id": "mathematics",
+      "label": "Matemáticas",
+      "reference_field": "0541",
+      "aliases": [
+        "matematicas",
+        "matematica aplicada"
+      ]
+    },
+    {
+      "id": "data",
+      "label": "Ciencia de Datos",
+      "reference_field": null,
+      "aliases": [
+        "ciencia de datos",
+        "analitica de datos",
+        "ingenieria de datos",
+        "inteligencia de negocios",
+        "business intelligence"
+      ]
+    },
+    {
+      "id": "electronics",
+      "label": "Ingeniería Electrónica",
+      "reference_field": "0714",
+      "aliases": [
+        "ingenieria electronica",
+        "electronica",
+        "automatizacion",
+        "mecatronica"
+      ]
+    },
+    {
+      "id": "electrical",
+      "label": "Ingeniería Eléctrica",
+      "reference_field": "0713",
+      "aliases": [
+        "ingenieria electrica",
+        "electricidad"
+      ]
+    },
+    {
+      "id": "telecom",
+      "label": "Telecomunicaciones",
+      "reference_field": "0714",
+      "aliases": [
+        "telecomunicaciones",
+        "ingenieria de telecomunicaciones"
+      ]
+    },
+    {
+      "id": "civil",
+      "label": "Ingeniería Civil",
+      "reference_field": "0732",
+      "aliases": [
+        "ingenieria civil",
+        "construccion",
+        "obras civiles",
+        "gestion de la construccion"
+      ]
+    },
+    {
+      "id": "architecture",
+      "label": "Arquitectura",
+      "reference_field": "0731",
+      "aliases": [
+        "arquitectura",
+        "arquitectura y urbanismo"
+      ]
+    },
+    {
+      "id": "marketing",
+      "label": "Mercadeo",
+      "reference_field": "0414",
+      "aliases": [
+        "mercadeo",
+        "marketing",
+        "publicidad",
+        "mercadotecnia"
+      ]
+    },
+    {
+      "id": "communication",
+      "label": "Comunicación Social",
+      "reference_field": "0321",
+      "aliases": [
+        "comunicacion social",
+        "comunicacion digital",
+        "periodismo"
+      ]
+    },
+    {
+      "id": "psychology",
+      "label": "Psicología",
+      "reference_field": "0313",
+      "aliases": [
+        "psicologia",
+        "psicologia clinica"
+      ]
+    },
+    {
+      "id": "social_work",
+      "label": "Trabajo Social",
+      "reference_field": "0923",
+      "aliases": [
+        "trabajo social"
+      ]
+    },
+    {
+      "id": "hr",
+      "label": "Gestión Humana",
+      "reference_field": "0413",
+      "aliases": [
+        "gestion humana",
+        "recursos humanos",
+        "administracion de recursos humanos"
+      ]
+    },
+    {
+      "id": "industrial",
+      "label": "Ingeniería Industrial",
+      "reference_field": null,
+      "aliases": [
+        "ingenieria industrial"
+      ]
+    },
+    {
+      "id": "logistics",
+      "label": "Logística",
+      "reference_field": null,
+      "aliases": [
+        "logistica",
+        "tecnologia logistica",
+        "gestion logistica"
+      ]
+    },
+    {
+      "id": "medicine",
+      "label": "Medicina",
+      "reference_field": "0912",
+      "aliases": [
+        "medicina"
+      ]
+    },
+    {
+      "id": "nursing",
+      "label": "Enfermería",
+      "reference_field": "0913",
+      "aliases": [
+        "enfermeria"
+      ]
+    },
+    {
+      "id": "physio",
+      "label": "Fisioterapia",
+      "reference_field": "0915",
+      "aliases": [
+        "fisioterapia"
+      ]
+    },
+    {
+      "id": "law",
+      "label": "Derecho",
+      "reference_field": "0421",
+      "aliases": [
+        "derecho",
+        "abogacia",
+        "ciencias juridicas"
+      ]
+    },
+    {
+      "id": "education",
+      "label": "Educación",
+      "reference_field": null,
+      "aliases": [
+        "educacion",
+        "pedagogia",
+        "docencia"
+      ]
+    }
+  ]
+}

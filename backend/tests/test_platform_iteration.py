@@ -55,7 +55,7 @@ def test_delete_versions_is_owner_scoped_and_never_undoes_applied_text(client):
 
 def test_explicit_education_level_wins_over_title_and_current_study_is_not_completed(client):
     job = Row(required_education_level="university", required_study_fields=["sistemas"])
-    profile = Row(profession="Ingeniería de Sistemas", education="", educations=[{"degree": "Desarrollo de sistemas", "level": "university", "end_year": "2024"}])
+    profile = Row(profession="Ingeniería de Sistemas", education="", educations=[{"degree": "Tecnología en sistemas", "level": "university", "end_year": "2024"}])
     assert education_match(profile, job) == 100
     profile.educations[0]["level"] = "technical"
     assert education_match(profile, job) == 80

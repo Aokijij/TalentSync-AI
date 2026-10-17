@@ -32,7 +32,7 @@ def test_current_studies_have_explicit_status_and_cannot_claim_a_completion_year
         ProfileUpdate(educations=[{"start_year": "3000"}])
     profile = SimpleNamespace(educations=[item], profession=item["degree"], education=item["degree"])
     job = SimpleNamespace(required_study_fields=[], required_education_level="university")
-    assert education_match(profile, job) == 70  # In-progress field relevance is retained, completed level is not claimed.
+    assert education_match(profile, job) == 0  # A level-only requirement grants no area points for ongoing studies.
 
 
 def test_profile_api_preserves_study_status_and_rejects_multiple_current_jobs(client):

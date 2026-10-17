@@ -3,8 +3,7 @@
 import re
 import unicodedata
 
-from app.domain.services.profile_status import is_ongoing
-
+# Broad profession groups remain for market-sector analysis only, never academic matching.
 PROFESSION_GROUPS = {
     "software": ("ingenieria de sistemas", "ingenieria informatica", "ingenieria de software", "ciencias de la computacion", "desarrollo de software", "tecnologia en sistemas", "tecnico en sistemas", "tecnico profesional en sistemas", "analisis y desarrollo de sistemas"),
     "data": ("ciencia de datos", "analitica de datos", "estadistica", "matematicas", "inteligencia de negocios", "business intelligence", "ingenieria de datos"),
@@ -35,8 +34,8 @@ def career_groups(value):
 
 
 def fields_are_related(candidate, requested):
-    left, right = normalize(candidate), normalize(requested)
-    return bool(left and right and (left in right or right in left or career_groups(left) & career_groups(right)))
+    from app.domain.services.academic_fields import compare_fields
+    return compare_fields(candidate, requested)["status"] in {"exact", "name_variant", "related"}
 
 
 def infer_education_level(value):
@@ -50,32 +49,22 @@ def infer_education_level(value):
 
 
 def infer_study_fields(value):
+    from app.domain.services.academic_fields import alias_index
     text = normalize(value)
-    found = []
-    for aliases in PROFESSION_GROUPS.values():
-        for alias in aliases:
-            if normalize(alias) in text:
-                found.append(alias.title())
-                break
-    return list(dict.fromkeys(found))[:8]
+    mentions = []
+    for alias, row in alias_index().items():
+        for match in re.finditer(rf"(?<!\w){re.escape(alias)}(?!\w)", text):
+            mentions.append((match.start(), match.end(), row["label"]))
+    selected = []
+    for start, end, label in sorted(mentions, key=lambda item: item[1] - item[0], reverse=True):
+        if not any(start < other_end and end > other_start for other_start, other_end, _ in selected):
+            selected.append((start, end, label))
+    return list(dict.fromkeys(label for _, _, label in sorted(selected)))[:8]
 
 
 def education_match(profile, job):
-    fields = list(getattr(job, "required_study_fields", None) or [])
-    required_level = getattr(job, "required_education_level", None)
-    if required_level == "secondary":
-        fields = []
-    if not fields and not required_level: return None
-    records = getattr(profile, "educations", None) or []
-    entries = [str(item.get("degree", "")) for item in records] if records else [str(getattr(profile, "profession", "") or ""), str(getattr(profile, "education", "") or "")]
-    # The listed study fields are accepted alternatives, not simultaneous degrees.
-    field_score = 100.0 if not fields or any(fields_are_related(entry, field) for entry in entries for field in fields) else 0.0
-    level_score = 100.0
-    accepts_students = required_level != "secondary" and (getattr(job, "quality_details", None) or {}).get("education_accepts_in_progress", False)
-    if required_level:
-        best = max((LEVEL_RANK.get(item.get("level") or infer_education_level(item.get("degree", "")), 0) for item in records if (accepts_students or not is_ongoing(item)) and (not fields or any(fields_are_related(item.get("degree", ""), field) for field in fields))), default=0) if records else max((LEVEL_RANK.get(infer_education_level(entry), 0) for entry in entries), default=0)
-        level_score = min(100.0, best / LEVEL_RANK[required_level] * 100)
-    return round(level_score if required_level == "secondary" else field_score * .7 + level_score * .3, 2)
+    from app.domain.services.academic_matching import education_evaluation
+    return education_evaluation(profile, job)["score"]
 
 
 def certification_match(profile, job):

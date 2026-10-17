@@ -29,7 +29,7 @@ def test_language_duplicates_missing_and_invalid_legacy_values_are_safe():
 def test_study_fields_are_alternatives_and_technical_engineering_is_not_a_university_degree():
     profile = Row(profession="", education="", educations=[{"degree": "Ingeniería de sistemas", "level": "university"}])
     job = Row(required_study_fields=["Ingeniería informática", "Estadística"], required_education_level="university")
-    assert education_match(profile, job) == 100
+    assert education_match(profile, job) == 79
     assert infer_education_level("Técnico profesional en ingeniería de software") == "technical"
     assert infer_education_level("Tecnólogo en ingeniería de sistemas") == "technologist"
 

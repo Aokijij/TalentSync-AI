@@ -192,11 +192,16 @@ def recommendation_reasons(
         )
     elif semantic < 65:
         reasons.append("Para mejorar la afinidad: describe logros relacionados con las funciones del cargo e indica qué hiciste, con qué herramientas y qué resultado obtuviste")
-    required_fields = getattr(job, "required_study_fields", None) or []
-    if required_fields and (education_score or 0) < 70:
-        reasons.append(f"Formación solicitada: {', '.join(required_fields[:4])}. Revisa el nombre de tu título o agrega esa formación si realmente la tienes")
-    elif required_fields:
-        reasons.append("Tu formación académica es compatible con el área solicitada")
+    from app.domain.services.academic_matching import education_evaluation
+    academic = education_evaluation(profile, job)
+    if academic["status"] == "review":
+        reasons.append("Formación pendiente de revisión: faltan datos o una denominación no está reconocida; no se confirma incompatibilidad.")
+    elif academic["status"] == "fulfilled":
+        reasons.append("Tu formación registrada coincide con el área y nivel solicitados")
+    elif academic["status"] == "partial":
+        reasons.append("Tu formación aporta afinidad parcial; revisa el área, el nivel y el estado de los estudios solicitados")
+    elif academic["status"] == "not_met":
+        reasons.append("La formación registrada no cumple la combinación de área, nivel y estado solicitada")
     if certification_score:
         reasons.append("Tus certificaciones respaldan conocimientos solicitados por la vacante")
     if not reasons:

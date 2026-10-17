@@ -59,6 +59,7 @@ class QualityDetails(BaseModel):
     experience_years: int | None = Field(default=None, ge=0, le=50)
     experience_months: int | None = Field(default=None, ge=0, le=600)
     education_accepts_in_progress: bool = False
+    education_field_policy: Literal["exact", "related"] = "related"
     remote_scope: RemoteScope | None = None
     learnable_skills: list[str] = Field(default_factory=list, max_length=20)
     missions: list[JobMission] = Field(default_factory=list, max_length=5)

@@ -30,7 +30,7 @@ def test_profession_bank_rejects_cross_domain_degrees_and_accepts_equivalents():
     civil_profile = SimpleNamespace(profession="Profesional en construcción", education="Ingeniería Civil", educations=[{"degree": "Ingeniería Civil"}])
     software_profile = SimpleNamespace(profession="Desarrolladora", education="", educations=[{"degree": "Ingeniería Informática"}])
     assert education_match(civil_profile, software_job) < 45
-    assert education_match(software_profile, software_job) == 100
+    assert education_match(software_profile, software_job) == 79  # Related area, not the same degree.
     assert fields_are_related("Tecnología en sistemas", "Ingeniería de software")
 
 
