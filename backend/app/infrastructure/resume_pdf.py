@@ -15,7 +15,7 @@ from reportlab.platypus import (
 
 from app.application.errors import UseCaseError
 
-SECTIONS = {"contact", "summary", "experiences", "educations", "certifications", "skills", "languages", "evidence", "preferences"}
+SECTIONS = {"contact", "summary", "experiences", "educations", "certifications", "driving_licenses", "professional_cards", "skills", "languages", "evidence", "preferences"}
 PALETTES = {"forest": "#166534", "wine": "#881337", "slate": "#334155", "navy": "#1e3a8a", "blue": "#1d4ed8", "teal": "#0f766e", "rose": "#be185d"}
 
 

@@ -145,7 +145,7 @@ def test_saving_design_changes_only_presentation_and_restores_options(client):
     assert client.patch(path, headers=headers, json={**payload, "style": "unknown"}).status_code == 422
     assert client.patch(path, headers=headers, json=payload).status_code == 200
     after = client.get("/api/v1/profiles/me", headers=headers).json()
-    assert after["resume_export_options"] == {"sections": payload["sections"], "include_photo": False}
+    assert after["resume_export_options"] == {"sections": payload["sections"], "include_photo": False, "version": 2}
     assert after["resume_style"] == "modern" and after["resume_color"] == "teal"
     for field in ["skills", "profession", "experience", "experiences", "educations", "cv_text"]:
         assert after[field] == before[field]

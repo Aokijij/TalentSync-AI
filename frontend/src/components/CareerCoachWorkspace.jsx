@@ -1,3 +1,5 @@
+import { AutoResizeTextarea } from "./AutoResizeTextarea.jsx";
+import { bulletKeyDown } from "../utils/bulletEditing.js";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2, ChevronDown, Lightbulb, PencilLine, Search, Sparkles, Undo2, RotateCcw, ArrowUpRight, SlidersHorizontal, Trash2 } from "lucide-react";
@@ -70,7 +72,7 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
       {primary && <h4 ref={reviewRef} tabIndex={-1}>Tu propuesta está lista</h4>}
       <div className="coach-columns">
         <div><h4>Texto actual</h4><blockquote>{row.before || "Sin descripción"}</blockquote></div>
-        <label><span className="coach-proposal-label">Propuesta para tu perfil</span><textarea className="field-control" rows={6} maxLength={3000} disabled={row.status !== "prepared" || busy} value={texts[row.id] ?? row.after} onChange={(event) => setTexts((value) => ({ ...value, [row.id]: event.target.value }))} /></label>
+        <label><span className="coach-proposal-label">Propuesta para tu perfil</span><AutoResizeTextarea rows={6} maxLength={3000} disabled={row.status !== "prepared" || busy} value={texts[row.id] ?? row.after} onChange={(event) => setTexts((value) => ({ ...value, [row.id]: event.target.value }))} onKeyDown={(event) => bulletKeyDown(event, (text) => setTexts((value) => ({ ...value, [row.id]: text })))} /></label>
       </div>
       {!!row.changes?.length && <p>{row.changes.join(" ")}</p>}<p className="writing-context-note">Al aplicar la propuesta generada conservamos su contexto original. Si corriges el texto manualmente, tu corrección reemplaza ese respaldo. La redacción no añade habilidades ni garantiza subir la compatibilidad.</p>
       {!!row.questions?.length && <aside className="coach-writing-idea"><strong>Una idea para concretar tu aporte</strong>{row.questions.map((question) => <p key={question}>{question}</p>)}<small>Si recuerdas ese dato, añádelo al resultado opcional y genera otra propuesta.</small></aside>}

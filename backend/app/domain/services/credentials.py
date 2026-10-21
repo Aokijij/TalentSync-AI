@@ -1,6 +1,4 @@
-"""Declared credentials: exact accepted categories, current validity, no registry verification."""
-
-from datetime import date
+"""Declared credentials: exact accepted categories and professions, no registry checks."""
 
 from app.domain.services.professions import normalize
 
@@ -9,21 +7,6 @@ def profile_credentials(profile, field):
     return getattr(profile, field, None) or (
         getattr(profile, "preferences", None) or {}
     ).get(field, [])
-
-
-def validity(record, *, driving=False, today=None):
-    today = today or date.today()
-    status = record.get("status", "unknown")
-    if status in {"expired", "suspended", "in_progress"}:
-        return "not_met"
-    expires = record.get("expires_on")
-    if expires:
-        try:
-            if date.fromisoformat(str(expires)) < today:
-                return "not_met"
-        except ValueError:
-            return "review"
-    return "declared" if status == "valid" and (expires or not driving) else "review"
 
 
 def same_profession(left, right):
@@ -39,7 +22,7 @@ def same_profession(left, right):
     return bool(key(left) and key(left) == key(right))
 
 
-def credential_evaluation(profile, job, today=None):
+def credential_evaluation(profile, job):
     required = (getattr(job, "quality_details", None) or {}).get(
         "credential_requirements"
     ) or {}
@@ -62,23 +45,9 @@ def credential_evaluation(profile, job, today=None):
                 for wanted in alternatives
             )
         ]
-        states = [
-            validity(record, driving=key == "driving_categories", today=today)
-            for record in relevant
-        ]
-        state = (
-            "declared"
-            if "declared" in states
-            else "review"
-            if "review" in states
-            else "not_met"
-            if states
-            else "missing"
-        )
+        state = "recorded" if relevant else "missing"
         message = {
-            "declared": "Registrada como vigente por la persona; pendiente de verificación documental.",
-            "review": "Hay un registro, pero falta confirmar su estado o vencimiento.",
-            "not_met": "El registro está vencido, suspendido o en trámite.",
+            "recorded": "La persona registró una de las alternativas solicitadas. Su autenticidad se revisa durante la contratación.",
             "missing": "No hay un registro de las alternativas solicitadas.",
         }[state]
         groups.append(
@@ -93,14 +62,12 @@ def credential_evaluation(profile, job, today=None):
     state = (
         "not_required"
         if not groups
-        else "declared"
-        if all(row["status"] == "declared" for row in groups)
+        else "recorded"
+        if all(row["status"] == "recorded" for row in groups)
         else "not_met"
-        if any(row["status"] in {"missing", "not_met"} for row in groups)
-        else "review"
     )
     return {
         "status": state,
         "groups": groups,
-        "notice": "Revisión documental separada de la afinidad profesional. Los datos son declarados; TalentSync no verifica registros oficiales ni autoriza el ejercicio profesional.",
+        "notice": "Se comparan los documentos registrados, por separado de la afinidad profesional. TalentSync no verifica su autenticidad.",
     }

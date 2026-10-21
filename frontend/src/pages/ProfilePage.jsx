@@ -1,3 +1,5 @@
+import { ProfileIdentity } from "../components/ProfileIdentity.jsx";
+import { CertificationFields } from "../components/CertificationFields.jsx";
 import { ProfileCredentials } from "../components/ProfileCredentials.jsx";
 import { addProfileSkill } from "../utils/skillLevels.js";
 import { ProfessionalSummary } from "../components/ProfessionalSummary.jsx";
@@ -17,14 +19,13 @@ import { useEffect, useState } from "react";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import {
   BookOpen,
+  CarFront,
+  IdCard,
   BriefcaseBusiness,
   CheckCircle2,
   Download,
   Edit3,
-  Mail,
   Link2,
-  MapPin,
-  Phone,
   Plus,
   Save,
   Sparkles,
@@ -38,10 +39,6 @@ import "../styles/profile-page.css";
 import { ProfileCompletionRing, getProfileCompletion } from "../components/ProfileCompletionRing.jsx";
 import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { getResumePalette } from "../constants/resumePalettes.js";
-import {
-  COLOMBIA_LOCATIONS,
-  COLOMBIAN_DEPARTMENTS,
-} from "../constants/colombianCities.js";
 import { useAuth } from "../hooks/useAuth.js";
 
 const blanks = {
@@ -137,7 +134,7 @@ export function ProfilePage() {
   useEffect(() => {
     if (!profile || !location.hash) return;
     const target = location.hash.slice(1);
-    if (["profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations", "profile-links", "profile-credentials"].includes(target)) { setEditing(true); setCoachTarget(target); }
+    if (["profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations", "profile-links", "profile-credentials", "profile-driving-licenses", "profile-professional-cards"].includes(target)) { setEditing(true); setCoachTarget(target); }
     else if (target === "preferencias") { setCoachTarget(target); }
     else if (["evidencias", "profile-evidence"].includes(target)) { setCoachTarget("profile-evidence"); }
   }, [Boolean(profile), location.hash]);
@@ -263,98 +260,7 @@ export function ProfilePage() {
           {error || message}
         </p>
       )}
-      {(
-          <header className="profile-identity">
-            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[var(--accent)] to-[var(--success)]" />
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                {editing ? (
-                  <label className="mb-3 block max-w-xl text-sm font-semibold text-[var(--muted)]">
-                    Nombre completo
-                    <input className="field-control input-lg mt-1" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nombres y apellidos" />
-                  </label>
-                ) : (
-                  <><p className="profile-eyebrow">PRESENTACIÓN PROFESIONAL</p><h2 className="profile-name">{name || "Candidato"}</h2></>
-                )}
-                <div className={`${editing ? "" : "mt-1"} text-xl font-bold text-[var(--ink)]`}>
-                  {editing ? (
-                    <input
-                      className="field-control input-md max-w-xl"
-                      value={profile.profession || ""}
-                      onChange={(e) => update("profession", e.target.value)}
-                      placeholder="Profesión" aria-label="Profesión"
-                      id="profile-profession"
-                    />
-                  ) : (
-                    profile.profession || "Perfil profesional"
-                  )}
-                </div>
-                <div id="profile-contact" className="mt-5 flex flex-wrap gap-2 text-sm text-[var(--muted)]">
-                  <span className="flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)]/80 px-3 py-2">
-                    <Mail size={15} className="text-[var(--muted)]" />
-                    {email || "Correo no registrado"}
-                  </span>
-                  <span className="flex flex-wrap items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)]/80 px-3 py-2">
-                    <MapPin size={15} className="text-[var(--muted)]" />
-                    {editing ? (
-                      <>
-                        <select
-                          className="field-control input-sm w-44"
-                          value={profile.department || ""}
-                          onChange={(event) =>
-                            setProfile((current) => ({
-                              ...current,
-                              department: event.target.value,
-                              location: "",
-                            }))
-                          }
-                        >
-                          <option value="">Departamento</option>
-                          {COLOMBIAN_DEPARTMENTS.map((department) => (
-                            <option key={department}>{department}</option>
-                          ))}
-                        </select>
-                        <select
-                          className="field-control input-sm w-44"
-                          value={profile.location || ""}
-                          disabled={!profile.department}
-                          onChange={(event) =>
-                            update("location", event.target.value)
-                          }
-                        >
-                          <option value="">Ciudad</option>
-                          {(COLOMBIA_LOCATIONS[profile.department] || []).map(
-                            (city) => (
-                              <option key={city}>{city}</option>
-                            ),
-                          )}
-                        </select>
-                      </>
-                    ) : (
-                      [profile.location, profile.department]
-                        .filter(Boolean)
-                        .join(", ") || "Ciudad no registrada"
-                    )}
-                  </span>
-                  <span className="flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)]/80 px-3 py-2">
-                    <Phone size={15} className="text-[var(--muted)]" />
-                    {editing ? (
-                      <input
-                        className="field-control profile-phone-input"
-                        value={profile.phone || ""}
-                        onChange={(e) => update("phone", e.target.value)}
-                        placeholder="Teléfono"
-                      />
-                    ) : (
-                      profile.phone || "Teléfono no registrado"
-                    )}
-                  </span>
-                </div>
-              </div>
-
-            </div>
-          </header>
-      )}
+      <ProfileIdentity profile={profile} name={name} email={email} editing={editing} onNameChange={setName} onChange={(patch) => setProfile((current) => ({ ...current, ...patch }))} />
       <ResumeExportDialog open={exportOpen} onClose={() => setExportOpen(false)} profile={profile} name={name} photoVersion={photoVersion} onPhoto={uploadPhoto} onDesignSaved={(design) => setProfile((current) => ({ ...current, ...design }))} onEdit={() => editFromCoach("profile-experiences")} />
       <CoachDialog open={completionOpen} onClose={() => setCompletionOpen(false)} title="Qué puedes completar en tu perfil" className="profile-completion-dialog"><div className="profile-completion-body"><p>Este indicador revisa información incluida; no mide tu compatibilidad. Completa solo lo que corresponda a tu trayectoria.</p>{getProfileCompletion(profile).missing.length ? <ul>{getProfileCompletion(profile).missing.map((label) => <li key={label}><span><Plus size={16} />{label}</span><button type="button" onClick={() => { setCompletionOpen(false); const target = { "Título profesional": "profile-profession", "Teléfono, ciudad y departamento": "profile-contact", "6 habilidades específicas": "profile-skills", "Resumen profesional de 120 caracteres": "profile-summary", "2 experiencias completas": "profile-experiences", "Formación académica completa": "profile-educations", "Curso o certificación": "profile-certifications", "Idioma con nivel": "profile-languages", "Preferencias laborales completas": "preferencias" }[label]; if (target) editFromCoach(target); else document.querySelector('.profile-toolbar input[type="file"]')?.click(); }}>Completar <span aria-hidden="true">→</span></button></li>)}</ul> : <div className="profile-completion-success"><CheckCircle2 size={28} /><strong>Tienes información en los diez apartados</strong><p>Mantenla actualizada y revisa que refleje tu experiencia real.</p></div>}</div></CoachDialog>
       <CoachDialog open={coachOpen} onClose={() => setCoachOpen(false)}>
@@ -386,7 +292,7 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
-            <Section id="profile-credentials" icon={CheckCircle2} title="Licencias y tarjetas profesionales"><ProfileCredentials drivingLicenses={profile.driving_licenses} professionalCards={profile.professional_cards} editing={editing} onChange={({ drivingLicenses, professionalCards }) => setProfile((current) => ({ ...current, driving_licenses: drivingLicenses, professional_cards: professionalCards }))} /></Section>
+            {[["drivingLicenses", "profile-driving-licenses", "Licencias de conducción", CarFront], ["professionalCards", "profile-professional-cards", "Tarjetas profesionales", IdCard]].map(([kind, id, title, Icon]) => <Section key={kind} id={id} icon={Icon} title={title}><ProfileCredentials kind={kind} drivingLicenses={profile.driving_licenses} professionalCards={profile.professional_cards} editing={editing} onChange={({ drivingLicenses, professionalCards }) => setProfile((current) => ({ ...current, driving_licenses: drivingLicenses, professional_cards: professionalCards }))} /></Section>)}
             </div>
             <aside className="profile-side-sections">
             <Section id="profile-links" icon={Link2} title="Enlaces profesionales"><ProfileLinks value={profile.links} editing={editing} onChange={(value) => update("links", value)} onEdit={() => editFromCoach("profile-links")} /></Section>
@@ -544,6 +450,7 @@ function Section({ id, icon: Icon, title, children }) {
   );
 }
 function Items({ type, profile, editing, update, updateItem }) {
+  if (type === "certifications") return <CertificationFields items={profile.certifications} editing={editing} onChange={(items) => update("certifications", items)} />;
   if (type === "educations") return <EducationFields items={profile.educations} editing={editing} onChange={(items) => update("educations", items)} />;
   if (type === "experiences") return <ExperienceFields items={profile.experiences} editing={editing} onChange={(items) => update("experiences", items)} />;
   const fields =

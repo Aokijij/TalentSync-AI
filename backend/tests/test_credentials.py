@@ -1,4 +1,3 @@
-from datetime import date
 from types import SimpleNamespace as Row
 
 import pytest
@@ -9,25 +8,16 @@ from app.api.schemas.profile import ProfileUpdate
 from app.domain.services.credentials import (
     credential_evaluation,
     same_profession,
-    validity,
 )
 
 
-@pytest.mark.parametrize(
-    "record,driving,expected",
-    [
-        ({"status": "valid", "expires_on": "2030-01-01"}, True, "declared"),
-        ({"status": "valid", "expires_on": "2020-01-01"}, True, "not_met"),
-        ({"status": "valid", "expires_on": "2026-10-16"}, True, "declared"),
-        ({"status": "valid"}, True, "review"),
-        ({"status": "valid"}, False, "declared"),
-        ({"status": "unknown", "expires_on": "2030-01-01"}, True, "review"),
-        ({"status": "suspended", "expires_on": "2030-01-01"}, False, "not_met"),
-        ({"status": "in_progress"}, False, "not_met"),
-    ],
-)
-def test_validity_is_separate_from_official_verification(record, driving, expected):
-    assert validity(record, driving=driving, today=date(2026, 10, 16)) == expected
+@pytest.mark.parametrize("legacy", [{}, {"status": "expired", "expires_on": "2020-01-01"}, {"status": "unknown"}])
+def test_retired_dates_and_status_do_not_change_document_registration(legacy):
+    profile = Row(driving_licenses=[{"category": "B1", **legacy}])
+    job = Row(quality_details={"credential_requirements": {"driving_categories": ["B1"]}})
+    assert credential_evaluation(profile, job)["status"] == "recorded"
+    dumped = DrivingLicense(category="B1", **legacy).model_dump(mode="json")
+    assert dumped == {"category": "B1"}
 
 
 def test_alternative_categories_and_both_document_groups():
@@ -46,12 +36,12 @@ def test_alternative_categories_and_both_document_groups():
         professional_cards=[],
     )
     result = credential_evaluation(profile, job)
-    assert result["status"] == "not_met" and result["groups"][0]["status"] == "declared"
+    assert result["status"] == "not_met" and result["groups"][0]["status"] == "recorded"
     profile.professional_cards = [
         {"profession": "Ingeniero civil", "status": "valid", "number": "PRIVATE-CARD"}
     ]
     result = credential_evaluation(profile, job)
-    assert result["status"] == "declared"
+    assert result["status"] == "recorded"
     assert "PRIVATE-CARD" not in str(result)
     assert not same_profession("Ingeniería de software", "Ingeniería de sistemas")
     assert not same_profession("Técnico en sistemas", "Ingeniería de sistemas")

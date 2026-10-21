@@ -37,7 +37,7 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
     credentials = details.get("credential_requirements") or {}
     if credentials.get("driving_categories") or credentials.get("professional_cards"):
         from app.domain.services.credentials import profile_credentials
-        payload.append({"credential_policy": "declared-validity-v1", "requirements": credentials, "driving_licenses": profile_credentials(profile, "driving_licenses"), "professional_cards": profile_credentials(profile, "professional_cards"), "credential_date": date.today().isoformat()})
+        payload.append({"credential_policy": "declared-registration-v2", "requirements": credentials, "driving_licenses": profile_credentials(profile, "driving_licenses"), "professional_cards": profile_credentials(profile, "professional_cards")})
     if details.get("experience_months") is not None:
         payload.append({"experience_months": details["experience_months"]})
     if details.get("education_accepts_in_progress"):

@@ -21,6 +21,7 @@ from app.domain.services.profile_status import (
     validate_educations,
 )
 from app.domain.services.skills import skill_key
+from app.domain.services.training_types import validate_training
 
 
 class Mobility(BaseModel):
@@ -133,7 +134,7 @@ class ProfileUpdate(ProfileBase):
     @field_validator("certifications")
     @classmethod
     def certificate_links(cls, values):
-        return [{**item, "url": certificate_url(item.get("url"))} for item in values or []]
+        return [{**item, "url": certificate_url(item.get("url"))} for item in validate_training(values) or []]
 
 
 class ProfileResponse(ProfileBase):

@@ -48,8 +48,20 @@ def validate_generated_text(generated, record, result=""):
 
 def responsibility_parts(description):
     """Recover responsibilities concatenated by PDF extraction, without truncation."""
-    source = re.sub(r"(?<=[a-záéíóúñ0-9])\s+(?=(?:Gestión|Análisis|Elaboración|Validación|Preparación|Atención|Apoyo|Participación|Diseño|Ejecución|Identificación|Trabajo|Desarrollo|Actualización|Control|Seguimiento)\b)", "\n", description)
-    parts = [re.sub(r"^(?:[•*]|-(?=\s))\s*", "", part.strip()).rstrip(".") for part in re.split(r"\n+|;\s*|(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ])", source)]
+    # Split only standalone action openings; do not break verbs inside an object,
+    # a parenthetical detail, or a coordinated phrase such as "Gestionar y controlar".
+    openings = r"Gestión|Análisis|Elaboración|Validación|Preparación|Atención|Apoyo|Participación|Diseño|Ejecución|Identificación|Trabajo|Desarrollo|Actualización|Control|Seguimiento|Controlar|Llevar|Gestionar|Apoyar|Manejar|Verificar|Coordinar|Analizar|Elaborar|Preparar|Documentar|Registrar|Supervisar|Realizar|Diseñar|Ejecutar|Atender|Desarrollar|Actualizar|Validar|Organizar|Implementar"
+    depth, boundaries = 0, set()
+    for match in re.finditer(r"[()]|\s+(?=(?:" + openings + r")\b)", description):
+        token = match.group()
+        if token == "(":
+            depth += 1
+        elif token == ")":
+            depth = max(0, depth - 1)
+        elif not depth and description[:match.start()].strip() and not re.search(r"\b(?:y|o|para|de|en|sin|no)\s*$", description[:match.start()], re.I):
+            boundaries.add(match.start())
+    source = "".join("\n" + char if index in boundaries else char for index, char in enumerate(description))
+    parts = [re.sub(r"^(?:[•*]|-(?=\s))\s*", "", part.strip()).rstrip(".") for part in re.split(r"\n+|[•●]\s*|;\s*|(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ])", source)]
     return [part for part in parts if part]
 
 
@@ -141,8 +153,7 @@ def rewrite_experience(record, *, style="paragraph", result=""):
         raise ValueError("Sustituye los marcadores del resultado por información real")
     current = record.get("is_current") is True or fold(record.get("end_year")) in {"presente", "actualidad", "actual"}
     # Imported PDFs sometimes concatenate separate responsibilities.
-    source = re.sub(r"(?<=[a-záéíóúñ0-9])\s+(?=(?:Gestión|Análisis|Elaboración|Validación|Preparación|Atención|Apoyo|Participación)\b)", "\n", original)
-    parts = re.split(r"\n+|;\s*|(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ])", source)
+    parts = responsibility_parts(original)
     sentences, seen = [], set()
     transformed = False
     for position, part in enumerate([*parts, result]):

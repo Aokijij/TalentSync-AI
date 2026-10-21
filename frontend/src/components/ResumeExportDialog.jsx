@@ -4,12 +4,12 @@ import { CoachDialog } from "./CoachDialog.jsx";
 import { ResumeDesignControls } from "./ResumeDesignControls.jsx";
 import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
 import { getResumePalette } from "../constants/resumePalettes.js";
-import { exportSections, resumeExportPayload } from "../utils/resumeExport.js";
+import { exportSections, resumeExportPayload, savedResumeSections } from "../utils/resumeExport.js";
 import { resumeFilename } from "../utils/resumeFilename.js";
 import "../styles/resume-export.css";
 
 export function ResumeExportDialog({ open, onClose, profile, name, photoVersion, onPhoto, onDesignSaved, onEdit }) {
-  const [sections, setSections] = useState(() => profile.resume_export_options?.sections || exportSections.map(([key]) => key));
+  const [sections, setSections] = useState(() => savedResumeSections(profile));
   const [includePhoto, setIncludePhoto] = useState(profile.resume_export_options?.include_photo ?? true), [style, setStyle] = useState(profile.resume_style), [color, setColor] = useState(profile.resume_color);
   const [saving, setSaving] = useState(false), [message, setMessage] = useState("");
   const [preview, setPreview] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [retry, setRetry] = useState(0);

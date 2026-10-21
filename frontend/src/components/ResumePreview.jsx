@@ -1,3 +1,4 @@
+import { TRAINING_TYPES } from "../constants/trainingTypes.js";
 import { skillLevels, skillLevelFor } from "../utils/skillLevels.js";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { AuthenticatedImage } from "./AuthenticatedImage.jsx";
@@ -81,10 +82,10 @@ export function ResumePreview({ profile, name, email, photoVersion }) {
             </div>
           </ResumeSection>
           {profile.certifications?.length ? (
-            <ResumeSection title="Certificaciones" compact>
+            <ResumeSection title="Formación complementaria" compact>
               {profile.certifications.map((item, index) => (
                 <div key={`${item.name}-${index}`} className="resume-compact-item">
-                  <p className="font-bold">{item.name}</p>
+                  <p className="font-bold">{item.name}</p><small>{TRAINING_TYPES[item.kind] || "Tipo sin indicar"}</small>
                   <p className="opacity-70">
                     {item.issuer}
                     {item.year ? ` · ${item.year}` : ""}

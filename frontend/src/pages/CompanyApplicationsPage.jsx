@@ -1,3 +1,4 @@
+import { DateTimePicker } from "../components/DateTimePicker.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
@@ -929,15 +930,7 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
                 placeholder="Observaciones para el equipo de selección..."
               />
             </label>
-            <label className="text-sm font-semibold text-[var(--muted)]">
-              Fecha y hora de entrevista
-              <input
-                className="field-control mt-1"
-                type="datetime-local"
-                value={interviewAt}
-                onChange={(event) => setInterviewAt(event.target.value)}
-              />
-            </label>
+            <DateTimePicker label="Fecha y hora de entrevista" value={interviewAt} onChange={setInterviewAt} />
           </div>
           <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-[var(--line)] pt-5">
             <button

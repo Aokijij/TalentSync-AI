@@ -1,3 +1,4 @@
+import { TRAINING_TYPES } from "../constants/trainingTypes.js";
 import { ProfileCredentials } from "../components/ProfileCredentials.jsx";
 import { CandidateMatchExplanation } from "../components/CandidateMatchExplanation.jsx";
 import { ProfileLinks } from "../components/ProfileLinks.jsx";
@@ -205,7 +206,7 @@ export function CandidateDetailPage() {
               </>
             )}
           />
-          {!candidate.identity_hidden && <section className="surface-card p-5"><h2 className="font-bold">Licencias y tarjetas profesionales</h2><ProfileCredentials drivingLicenses={candidate.driving_licenses || []} professionalCards={candidate.professional_cards || []} /></section>}
+          {!candidate.identity_hidden && [["drivingLicenses", "Licencias de conducción"], ["professionalCards", "Tarjetas profesionales"]].map(([kind, title]) => <section key={kind} className="surface-card p-5"><h2 className="font-bold mb-3">{title}</h2><ProfileCredentials kind={kind} drivingLicenses={candidate.driving_licenses || []} professionalCards={candidate.professional_cards || []} /></section>)}
           {!candidate.identity_hidden && <Timeline
             title="Cursos y certificaciones"
             icon={CheckCircle2}
@@ -219,7 +220,7 @@ export function CandidateDetailPage() {
                 <p className="mt-1 text-sm text-[var(--muted)]">
                   {item.issuer}
                   {item.year ? ` · ${item.year}` : ""}
-                </p><div className="candidate-certificate-details"><span>Certificado aportado por el candidato</span>{item.url?.startsWith("https://") && <a className="button-secondary button-sm" href={item.url} target="_blank" rel="noopener noreferrer">Ver documento aportado ↗</a>}</div>
+                </p><div className="candidate-certificate-details"><span>{TRAINING_TYPES[item.kind] || "Tipo sin indicar"} · Aportado por el candidato</span>{item.url?.startsWith("https://") && <a className="button-secondary button-sm" href={item.url} target="_blank" rel="noopener noreferrer">Ver documento aportado ↗</a>}</div>
               </>
             )}
           />}

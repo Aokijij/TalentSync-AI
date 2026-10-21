@@ -1,4 +1,5 @@
 """Original CV layouts, with independently paginated columns and one PDF preview."""
+from copy import deepcopy
 from io import BytesIO
 from xml.sax.saxutils import escape
 
@@ -26,6 +27,7 @@ from app.domain.services.profile_links import link_label, professional_link_url
 from app.domain.services.resume_filename import resume_filename
 from app.domain.services.skill_levels import SKILL_LEVEL_LABELS, declared_skill_levels
 from app.domain.services.skills import skill_key
+from app.domain.services.training_types import TRAINING_TYPES
 from app.infrastructure.resume_pdf import date_label, portrait
 
 PALETTES = {
@@ -232,8 +234,8 @@ def build_resume(user, included, include_photo, photo):
                 title_row = Table([[p(item.get(primary), role), p(date, ParagraphStyle("CardDate", parent=meta, alignment=2))]], colWidths=[main_width - 124, 104])
                 title_row.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 0)]))
                 content = [title_row]
-                if item.get(secondary):
-                    content.append(p(item[secondary], company))
+                if item.get(secondary) or item.get("level"):
+                    content.append(p(" · ".join(filter(None, [item.get(secondary), EDUCATION_LEVEL_LABELS.get(item.get("level"))])), company))
                 if item.get("description"):
                     content.append(p(item["description"]))
                 card = Table([[content]], colWidths=[main_width], splitInRow=1, cornerRadii=[7, 7, 7, 7])
@@ -248,9 +250,9 @@ def build_resume(user, included, include_photo, photo):
                 main.append(p(item.get(primary), role, timeline=True))
                 if date:
                     main.append(p(date, meta))
-            if secondary and item.get(secondary):
+            if secondary and (item.get(secondary) or key == "educations" and item.get("level")):
                 label = EDUCATION_LEVEL_LABELS.get(item.get("level")) if key == "educations" else None
-                main.append(p(" · ".join(filter(None, [item[secondary], label])), company, timeline=True))
+                main.append(p(" · ".join(filter(None, [item.get(secondary), label])), company, timeline=True))
             if item.get("description"):
                 main.append(p(item["description"], timeline_body, timeline=True))
             main.append(Spacer(1, 12))
@@ -274,24 +276,35 @@ def build_resume(user, included, include_photo, photo):
     if "skills" in included and profile.skills:
         section(target, "Habilidades", not single_column)
         levels = declared_skill_levels(profile)
-        skills = [f"{skill} · {SKILL_LEVEL_LABELS[levels[skill_key(skill)]]}" if skill_key(skill) in levels else skill for skill in profile.skills]
-        # Each pill remains a splittable paragraph, so long skill lists never clip.
-        pill = ParagraphStyle("Pill", parent=side_body if not single_column else body, fontName=PILL_FONT, fontSize=PILL_SIZE, leading=11, backColor=colors.white if classic else soft_accent if not minimal else tint,
-                              textColor=accent if classic else colors.white if not minimal else ink, borderColor=line if classic else side_line if not minimal else line,
-                              borderWidth=.5, borderPadding=5, borderRadius=3 if minimal else 9, spaceAfter=11)
-        width, row, used = (519 if long_skills else 155 if minimal else 124), [], 0
-        def flush():
-            if row:
-                target.append(SkillPills(list(row), pill.textColor, pill.backColor, pill.borderColor, transparent=modern, square=minimal))
-                row.clear()
-        for skill in skills:
-            length = pdfmetrics.stringWidth(str(skill), PILL_FONT, PILL_SIZE) + 14
-            if length > width:
-                flush(); used = 0; target.append(p(skill, pill)); continue
-            if used + length > width:
-                flush(); used = 0
-            row.append(str(skill)); used += length + 5
-        flush()
+        if single_column:
+            skills = [f"{skill} · {SKILL_LEVEL_LABELS[levels[skill_key(skill)]]}" if skill_key(skill) in levels else skill for skill in profile.skills]
+            # Each pill remains a splittable paragraph, so long skill lists never clip.
+            pill = ParagraphStyle("Pill", parent=side_body if not single_column else body, fontName=PILL_FONT, fontSize=PILL_SIZE, leading=11, backColor=colors.white if classic else soft_accent if not minimal else tint,
+                                  textColor=accent if classic else colors.white if not minimal else ink, borderColor=line if classic else side_line if not minimal else line,
+                                  borderWidth=.5, borderPadding=5, borderRadius=3 if minimal else 9, spaceAfter=11)
+            width, row, used = (519 if long_skills else 155 if minimal else 124), [], 0
+            def flush():
+                if row:
+                    target.append(SkillPills(list(row), pill.textColor, pill.backColor, pill.borderColor, transparent=modern, square=minimal))
+                    row.clear()
+            for skill in skills:
+                length = pdfmetrics.stringWidth(str(skill), PILL_FONT, PILL_SIZE) + 14
+                if length > width:
+                    flush(); used = 0; target.append(p(skill, pill)); continue
+                if used + length > width:
+                    flush(); used = 0
+                row.append(str(skill)); used += length + 5
+            flush()
+        else:
+            # A full-width card reserves its real wrapped height, including padding.
+            # Paragraph borders previously painted outside their allocated row.
+            skill_style = ParagraphStyle("SkillCard", parent=side_body, fontName="Resume", fontSize=7.2, leading=10.5, spaceAfter=0)
+            for skill in profile.skills:
+                level = SKILL_LEVEL_LABELS.get(levels.get(skill_key(skill)))
+                text = "<b>" + escape(str(skill)) + "</b>" + ('<br/><font size="6.7">' + escape(level) + '</font>' if level else "")
+                card = Table([[Paragraph(text, skill_style)]], colWidths=[124], hAlign="LEFT", splitInRow=0, cornerRadii=[6, 6, 6, 6], spaceAfter=5)
+                card.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), colors.white if classic else soft_accent if modern else tint), ("BOX", (0, 0), (-1, -1), .5, line if classic or minimal else side_line), ("LEFTPADDING", (0, 0), (-1, -1), 7), ("RIGHTPADDING", (0, 0), (-1, -1), 7), ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
+                target.append(card)
     ancillary_sections = []
     if "languages" in included and profile.languages:
         if not single_column:
@@ -305,24 +318,25 @@ def build_resume(user, included, include_photo, photo):
         section(target, "Cursos y certificaciones", not single_column)
         for item in profile.certifications:
             target.append(p(item.get("name"), ParagraphStyle("Course", parent=side_body if not single_column else body, fontName="ResumeBold", keepWithNext=True)))
-            target.append(p(" · ".join(str(item.get(key)) for key in ["issuer", "year"] if item.get(key)), side_body if not single_column else meta))
+            target.append(p(" · ".join(str(value) for value in [TRAINING_TYPES.get(item.get("kind")), item.get("issuer"), item.get("year")] if value), side_body if not single_column else meta))
             try:
                 url = certificate_url(item.get("url"))
             except ValueError:
                 url = ""
             if url:
                 target.append(Paragraph(f'<link href="{escape(url, {chr(34): "&quot;"})}">Ver certificado</link>', side_body if not single_column else meta))
-    if "certifications" in included:
-        from app.domain.services.credentials import profile_credentials, validity
-        documents = [("Licencia de conducción", row, True) for row in profile_credentials(profile, "driving_licenses")] + [("Tarjeta profesional", row, False) for row in profile_credentials(profile, "professional_cards")]
-        if documents:
-            if not single_column:
-                ancillary_sections.append((len(side), "Licencias y tarjetas"))
-            section(target, "Licencias y tarjetas", not single_column)
-            for label, row, driving in documents:
-                target.append(p(f"{label}: {row.get('category') if driving else row.get('profession')}", side_body if not single_column else body))
-                status = {"declared": "Vigencia declarada", "review": "Por confirmar", "not_met": "Vencida, suspendida o en trámite"}[validity(row, driving=driving)]
-                content = [status, row.get("issuer"), f"N.º {row['number']}" if row.get("number") else None, f"Vence {row['expires_on']}" if row.get("expires_on") else None]
+    from app.domain.services.credentials import profile_credentials
+    for field, title in [("driving_licenses", "Licencias de conducción"), ("professional_cards", "Tarjetas profesionales")]:
+        documents = profile_credentials(profile, field)
+        if field not in included or not documents:
+            continue
+        if not single_column:
+            ancillary_sections.append((len(side), title))
+        section(target, title, not single_column)
+        for row in documents:
+            target.append(p("Categoría " + row.get("category", "") if field == "driving_licenses" else row.get("profession"), side_body if not single_column else body))
+            content = [row.get("issuer"), f"N.º {row['number']}" if row.get("number") else None]
+            if any(content):
                 target.append(p(" · ".join(str(item) for item in content if item), side_body if not single_column else meta))
     if "preferences" in included:
         values = [profile.preferred_sector, LABELS.get(profile.preferred_modality), LABELS.get(profile.availability)]
@@ -350,7 +364,9 @@ def build_resume(user, included, include_photo, photo):
         doc = BaseDocTemplate(output, pagesize=(595, 842), leftMargin=0, rightMargin=0, topMargin=0, bottomMargin=0, pageCompression=1)
         frame = lambda top: Frame(x, 42, width, top - 42, leftPadding=8, rightPadding=8, topPadding=9, bottomPadding=8)
         doc.addPageTemplates([PageTemplate(id="First", frames=[frame(body_top)], autoNextPageTemplate="Next"), PageTemplate(id="Next", frames=[frame(807)])])
-        doc.build(list(story) or [Spacer(1, 1)])
+        # ReportLab mutates flowables while splitting. Balancing reuses stories,
+        # so each pagination attempt needs fresh table/paragraph state.
+        doc.build(deepcopy(list(story)) or [Spacer(1, 1)])
         return PdfReader(BytesIO(output.getvalue())).pages
 
     main_pages = paginate(main, 30 if single_column else 186, 535 if single_column else 379)

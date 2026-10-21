@@ -43,7 +43,7 @@ def infer_education_level(value):
     if any(term in text for term in ("especializacion", "maestria", "master", "posgrado", "doctorado")): return "postgraduate"
     if re.search(r"\btecnolog[oa]\b|\btecnologia\s+en\b", text): return "technologist"
     if any(term in text for term in ("tecnico", "tecnica")): return "technical"
-    if any(term in text for term in ("profesional", "universidad", "universitario", "ingenieria", "licenciatura")): return "university"
+    if any(term in text for term in ("pregrado", "profesional", "universidad", "universitario", "ingenieria", "licenciatura")): return "university"
     if any(term in text for term in ("bachiller", "secundaria", "educacion media")): return "secondary"
     return None
 

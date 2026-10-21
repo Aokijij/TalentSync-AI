@@ -120,9 +120,9 @@ def writing_draft(job):
         changes.append("Distingue lo esencial, lo deseable y lo que puede aprenderse; evita repetir una habilidad aprendible como exigencia deseable.")
     credential_requirements = details.get("credential_requirements") or {}
     if credential_requirements.get("driving_categories"):
-        requirements.append("Licencia de conducción vigente en alguna de estas categorías: " + ", ".join(credential_requirements["driving_categories"]) + ".")
+        requirements.append("Licencia de conducción en alguna de estas categorías: " + ", ".join(credential_requirements["driving_categories"]) + ".")
     if credential_requirements.get("professional_cards"):
-        requirements.append("Tarjeta profesional vigente para alguna de estas profesiones: " + ", ".join(credential_requirements["professional_cards"]) + ".")
+        requirements.append("Tarjeta profesional para alguna de estas profesiones: " + ", ".join(credential_requirements["professional_cards"]) + ".")
     languages = getattr(job, "languages", None) or []
     if languages:
         requirements += ["", "Idiomas solicitados", *[f"• {row['name']}: nivel mínimo {row['level'] if row['level'] != 'NATIVE' else 'nativo'}." for row in languages]]

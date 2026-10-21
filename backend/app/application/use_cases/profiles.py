@@ -205,7 +205,7 @@ def save_resume_design(db, user, payload):
     profile = owner_profile(user)
     db.profiles.lock_owner(user.id); db.refresh(profile)
     profile.resume_style, profile.resume_color = payload["style"], payload["color"]
-    options = {"sections": list(dict.fromkeys(payload["sections"])), "include_photo": payload["include_photo"]}
+    options = {"sections": list(dict.fromkeys(payload["sections"])), "include_photo": payload["include_photo"], "version": 2}
     profile.preferences = {**(profile.preferences or {}), "resume_export_options": options}
     db.add(profile); db.commit()
     return {"resume_style": profile.resume_style, "resume_color": profile.resume_color, "resume_export_options": options}

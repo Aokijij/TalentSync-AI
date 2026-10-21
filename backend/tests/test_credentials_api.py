@@ -34,7 +34,8 @@ def test_profile_credentials_are_saved_preserved_for_old_clients_and_private(cli
             }
         ],
     )
-    assert profile["driving_licenses"][0]["expires_on"] == "2099-12-31"
+    assert profile["driving_licenses"] == [{"category": "B1"}]
+    assert "expires_on" not in profile["professional_cards"][0] and "status" not in profile["professional_cards"][0]
     legacy = {
         key: value
         for key, value in profile.items()
@@ -94,7 +95,7 @@ def test_job_documents_are_public_compared_and_invalidate_cached_explanations(cl
         ],
     )
     declared = client.get(endpoint, headers=candidate).json()
-    assert declared["credential_requirements"]["status"] == "declared"
+    assert declared["credential_requirements"]["status"] == "recorded"
     assert initial["input_version"] != declared["input_version"]
     assert (
         initial["overall_score"] == declared["overall_score"]
@@ -111,7 +112,7 @@ def test_job_documents_are_public_compared_and_invalidate_cached_explanations(cl
     )
     assert ranking.status_code == 200
     assert "PRIVATE-CARD" not in ranking.text
-    assert ranking.json()[0]["credential_status"] == "declared"
+    assert ranking.json()[0]["credential_status"] == "recorded"
     profile_endpoint = f"/api/v1/profiles/candidates/{person['id']}?job_id={job['id']}"
     assert "PRIVATE-CARD" in client.get(profile_endpoint, headers=company).text
     assert client.get(profile_endpoint, headers=outsider).status_code == 403
@@ -134,7 +135,7 @@ def test_resume_export_includes_credentials_only_when_selected(client, style):
         "/api/v1/profiles/me/export",
         headers=candidate,
         json={
-            "sections": ["certifications"],
+            "sections": ["driving_licenses", "professional_cards"],
             "include_photo": False,
             "profile": {"resume_style": style},
         },
@@ -143,7 +144,7 @@ def test_resume_export_includes_credentials_only_when_selected(client, style):
     text = " ".join(
         page.extract_text() for page in PdfReader(BytesIO(response.content)).pages
     )
-    assert "Licencia de conducción" in text and "B1" in text and "CARD-123" in text
+    assert "LICENCIAS DE CONDUCCIÓN" in text and "B1" in text and "CARD-123" in text
     response = client.post(
         "/api/v1/profiles/me/export",
         headers=candidate,

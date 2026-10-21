@@ -13,7 +13,10 @@ def single_current_employment(items):
 
 
 def validate_educations(items):
-    for item in items or []:
+    for index, item in enumerate(items or []):
+        if str(item.get("end_year") or "").casefold() in {"presente", "actualidad", "actual", "en curso"}:
+            item = {**item, "is_current": True, "end_year": ""}
+            items[index] = item
         if item.get("level") not in {None, "", "secondary", "technical", "technologist", "university", "postgraduate"}:
             raise ValueError("Selecciona un nivel de formación válido")
         if item.get("is_current") is not None and type(item["is_current"]) is not bool:

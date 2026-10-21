@@ -7,6 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from app.domain.entities.nlp import NLPResult
 from app.domain.services.cv_periods import PERIOD, period_fields, read_period
+from app.domain.services.professions import infer_education_level
 
 COMMON_SKILLS = {
     "python",
@@ -926,6 +927,7 @@ class TextProcessor:
             items.append(
                 {
                     "degree": degree[:200],
+                    "level": infer_education_level(label),
                     "institution": institution[:160],
                     "start_year": "",
                     "end_year": end_year,
@@ -984,13 +986,13 @@ class TextProcessor:
         for line in block.splitlines():
             cleaned = re.sub(r"^[•\-]\s*", "", line).strip()
             match = re.match(
-                r"(?:pregrado|tecn.loga|t.cnica|bachiller|profesional|especializaci.n|maestr.a)\s*:\s*(.+)",
+                r"(pregrado|posgrado|postgrado|tecn.log[oa]|t.cnic[oa]|bachiller|profesional|especializaci.n|maestr.a|doctorado)\s*:\s*(.+)",
                 cleaned,
                 re.I,
             )
             if not match:
                 continue
-            content = match.group(1).strip()
+            content = match.group(2).strip()
             year_match = re.search(
                 r"(?:-|–|—)\s*(\d{4}|en\s+curso|presente)\s*$", content, re.I
             )
@@ -998,10 +1000,14 @@ class TextProcessor:
             degree = (
                 content[: year_match.start()].strip(" -") if year_match else content
             )
+            institution = "No especificada"
+            if match.group(1).casefold().startswith("bachiller"):
+                institution, degree = degree, "Bachiller"
             educations.append(
                 {
                     "degree": degree,
-                    "institution": "No especificada",
+                    "level": infer_education_level(match.group(1)),
+                    "institution": institution,
                     "start_year": "",
                     "end_year": end,
                 }
@@ -1049,6 +1055,7 @@ class TextProcessor:
                     certifications.append(
                         {
                             "name": name[:180],
+                            "kind": "certificate",
                             "issuer": "Documento adjunto",
                             "year": year,
                         }
@@ -1354,14 +1361,24 @@ class TextProcessor:
         for item in merged_experiences:
             description = item.get("description", "")
             item["description"] = re.split(r"\b(?:PERFIL\s+PROFESIONAL|FORMACI[ÓO]N\s+ACAD[ÉE]MICA|EDUCACI[ÓO]N|TECNOLOG[IÍ]AS|REFERENCIAS\s+(?:PERSONALES|LABORALES))\b", description, maxsplit=1, flags=re.I)[0].strip()
+        # Labelled lines already have structured records. The visual fallback
+        # can append the following heading to those same lines.
+        if semantic_educations:
+            visual_educations = [item for item in visual_educations if not re.match(r"^(?:pregrado|posgrado|postgrado|tecn[oó]log[oa]|t[eé]cnic[oa]|bachiller|profesional|especializaci[oó]n|maestr[ií]a|doctorado)\s*:", item.get("degree", ""), re.I)]
         merged_educations = [item for item in [*semantic_educations, *visual_educations, *educations]
                              if not re.search(r"\b(?:tecnolog[ií]as|proyectos|experiencia laboral|perfil profesional)\b", item.get("degree", ""), re.I)]
+        from app.domain.services.training_types import infer_training_type
+        for item in merged_educations:
+            item["level"] = item.get("level") or infer_education_level(item.get("degree", ""))
+        merged_certifications = self._dedupe(certifications + self._extract_certifications(text), "name")
+        for item in merged_certifications:
+            item["kind"] = item.get("kind") or infer_training_type(item.get("name", ""))
         return (
             self._merge_resume_experiences(merged_experiences),
             self._dedupe(
                 merged_educations, "degree"
             ),
-            self._dedupe(certifications + self._extract_certifications(text), "name"),
+            merged_certifications,
         )
 
     def embed(self, text: str) -> list[float]:
