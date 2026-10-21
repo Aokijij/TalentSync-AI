@@ -18,20 +18,21 @@ export function normalizeProfessionalUrl(value) {
 }
 
 export function profileLinksPayload(rows = []) {
-  if (rows.length > 10) throw new Error("Puedes añadir hasta 10 enlaces profesionales.");
+  const invalid = (path, message) => { const error = new Error(message); error.fieldPath = path; throw error; };
+  if (rows.length > 10) invalid("links", "Puedes añadir hasta 10 enlaces profesionales.");
   const urls = new Set();
   return rows.map((row, index) => {
     const platform = linkPlatforms.find((item) => item.value === row.platform);
     let url;
     try { url = new URL(normalizeProfessionalUrl(row.url)); } catch { /* Show a field-specific message below. */ }
     if (!platform || !url || !["http:", "https:"].includes(url.protocol) || url.username || url.password || /[\s\\]/.test(String(row.url).trim()) || url.href.length > 500) {
-      throw new Error(`Completa el enlace ${index + 1} con una dirección web válida, o elimínalo.`);
+      invalid(`links.${index}.url`, "Escribe una dirección web válida o elimina este enlace.");
     }
-    if (platform.domain && url.hostname !== platform.domain && !url.hostname.endsWith(`.${platform.domain}`)) throw new Error(`El enlace de ${platform.label} debe pertenecer a ${platform.domain}.`);
-    if (urls.has(url.href)) throw new Error("No repitas el mismo enlace profesional.");
+    if (platform.domain && url.hostname !== platform.domain && !url.hostname.endsWith(`.${platform.domain}`)) invalid(`links.${index}.url`, `El enlace de ${platform.label} debe pertenecer a ${platform.domain}.`);
+    if (urls.has(url.href)) invalid(`links.${index}.url`, "Este enlace ya está añadido. Usa otro o elimina el duplicado.");
     urls.add(url.href);
     const label = (row.label || "").trim();
-    if (label.length > 60) throw new Error("El nombre de un enlace admite hasta 60 caracteres.");
+    if (label.length > 60) invalid(`links.${index}.label`, "El nombre de un enlace admite hasta 60 caracteres.");
     return { platform: platform.value, url: url.href, label };
   });
 }

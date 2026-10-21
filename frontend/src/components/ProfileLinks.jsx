@@ -1,3 +1,4 @@
+import { FormField, SectionFieldIssues } from "./ProfileFormFeedback.jsx";
 import { useId } from "react";
 import { ExternalLink, Github, Globe, Linkedin, Link2, Plus, Trash2 } from "lucide-react";
 import { linkPlatforms, normalizeProfessionalUrl, profileLinksPayload } from "../utils/profileLinks.js";
@@ -22,11 +23,11 @@ export function ProfileLinks({ value = [], editing = false, onChange, onEdit }) 
     <div className="profile-links-fields">{value.map((row, index) => {
       const platform = linkPlatforms.find((item) => item.value === row.platform) || linkPlatforms[0];
       return <fieldset key={index} className="profile-link-editor"><legend><Link2 size={14} />Enlace {index + 1}</legend><button type="button" className="profile-link-remove" aria-label={`Eliminar enlace ${index + 1}`} onClick={() => onChange(value.filter((_, current) => current !== index))}><Trash2 size={16} /></button>
-        <label>Plataforma<select className="field-control" value={row.platform} onChange={(event) => update(index, { platform: event.target.value, label: "" })}>{linkPlatforms.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-        <label>Enlace<input className="field-control" type="url" required maxLength={500} value={row.url} placeholder={platform.placeholder} aria-describedby={helpId} onChange={(event) => update(index, { url: event.target.value })} onBlur={(event) => update(index, { url: normalizeProfessionalUrl(event.target.value) })} /></label>
-        {["other", "portfolio"].includes(row.platform) && <label>Nombre del enlace <span className="profile-links-help">(opcional)</span><input className="field-control" maxLength={60} value={row.label || ""} placeholder="Ej.: Mi sitio web" onChange={(event) => update(index, { label: event.target.value })} /></label>}
+        <FormField label="Plataforma" path={`links.${index}.platform`}><select className="field-control" value={row.platform} onChange={(event) => update(index, { platform: event.target.value, label: "" })}>{linkPlatforms.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></FormField>
+        <FormField label="Enlace" path={`links.${index}.url`}><input className="field-control" type="url" required maxLength={500} value={row.url} placeholder={platform.placeholder} aria-describedby={helpId} onChange={(event) => update(index, { url: event.target.value })} onBlur={(event) => update(index, { url: normalizeProfessionalUrl(event.target.value) })} /></FormField>
+        {["other", "portfolio"].includes(row.platform) && <FormField label="Nombre del enlace (opcional)" path={`links.${index}.label`}><input className="field-control" maxLength={60} value={row.label || ""} placeholder="Ej.: Mi sitio web" onChange={(event) => update(index, { label: event.target.value })} /></FormField>}
       </fieldset>;
     })}</div>
-    <button type="button" className="button-secondary button-sm" disabled={value.length >= 10} onClick={() => onChange([...value, { platform: value.length ? "portfolio" : "linkedin", url: "", label: "" }])}><Plus size={16} />Añadir enlace</button>
+    <SectionFieldIssues prefix="links" exact /><button type="button" className="button-secondary button-sm" disabled={value.length >= 10} onClick={() => onChange([...value, { platform: value.length ? "portfolio" : "linkedin", url: "", label: "" }])}><Plus size={16} />Añadir enlace</button>
   </div>;
 }

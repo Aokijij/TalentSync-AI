@@ -11,7 +11,7 @@ async function component(file, name) {
   const compiled = await build({ entryPoints: [fileURLToPath(new URL(`../src/components/${file}.jsx`, import.meta.url))], bundle: true, write: false, platform: "node", format: "cjs", jsx: "automatic", packages: "external", loader: { ".css": "empty" } });
   const module = { exports: {} };
   new Function("require", "module", "exports", compiled.outputFiles[0].text)(require, module, module.exports);
-  return module.exports[name];
+  return name ? module.exports[name] : module.exports;
 }
 
 const StructuredJobText = await component("StructuredJobText", "StructuredJobText");
@@ -65,9 +65,9 @@ test("date picker uses a themed dialog trigger and submits ISO dates separately"
 test("document editors distinguish exact requested alternatives from academic affinity", () => {
   const html = renderToStaticMarkup(createElement(CredentialRequirementsEditor, { value: { driving_categories: ["B1"], professional_cards: ["Ingeniería civil"] }, onChange() {} }));
   assert.equal((html.match(/type="checkbox"/g) || []).length, 8);
-  assert.match(html, /se solicitan los dos/);
-  assert.match(html, /Basta con una categoría/);
-  assert.match(html, /no se sustituyen por carreras afines/);
+  assert.match(html, /solicitará licencia de conducción y tarjeta profesional/);
+  assert.match(html, /tener al menos una de ellas/);
+  assert.match(html, /no sustituyen automáticamente/);
   assert.ok(!html.includes("Los nombres no reconocidos quedan por revisar"));
   const summary = renderToStaticMarkup(createElement(CredentialRequirementsSummary, { value: { driving_categories: ["B1", "C1"], professional_cards: ["Ingeniería civil"] } }));
   assert.match(summary, /B1 o C1/);
@@ -75,15 +75,18 @@ test("document editors distinguish exact requested alternatives from academic af
   assert.equal(renderToStaticMarkup(createElement(CredentialRequirementsSummary, { value: {} })), "");
 });
 
-test("profile documents hide retired status fields and offer accessible editing controls", () => {
+test("profile forms retain status and expiry while categories use the corresponding vehicle icon", () => {
   const props = { drivingLicenses: [{ category: "B1", status: "valid", expires_on: "2000-01-01" }], professionalCards: [{ profession: "Ingeniería civil", number: "CARD-123", status: "valid" }] };
   const html = renderToStaticMarkup(createElement(ProfileCredentials, props));
-  assert.ok(!/Vencida|Vigente|2000-01-01/.test(html));
+  assert.match(html, /Vencida por fecha/);
+  assert.match(html, /credential-state expired/);
   assert.match(html, /CARD-123/);
   const edit = renderToStaticMarkup(createElement(ProfileCredentials, { ...props, editing: true, onChange() {} }));
   assert.match(edit, /aria-label="Quitar licencia 1"/);
   assert.match(edit, /Añadir tarjeta profesional/);
-  assert.ok(!/type="date"|Fecha de vencimiento/.test(edit));
+  assert.match(edit, /Fecha de vencimiento/);
+  assert.match(edit, /Estado declarado/);
+  assert.ok(!edit.includes('type="date"'));
 });
 
 test("document comparison communicates declarations and missing records without claiming verification", () => {
@@ -240,10 +243,10 @@ test("academic policy is separate from level and students, and hidden for second
 
 test("academic uncertainty remains visible even without a numeric component", () => {
   const html = renderToStaticMarkup(createElement(AcademicMatchDetails, { value: { status: "review", reason: "Denominación no reconocida", policy: "related" } }));
-  assert.match(html, /Formación por revisar/);
+  assert.match(html, /Falta información académica/);
   assert.ok(!html.includes("0%"));
-  const partial = renderToStaticMarkup(createElement(AcademicMatchDetails, { value: { status: "partial", reason: "Áreas distintas relacionadas", policy: "related", required_level: "university", selected: { candidate_degree: "Ingeniería Informática", requested_field: "Ingeniería de Sistemas", actual_level: "university", level_status: "meets" } } }));
-  assert.match(partial, /Afinidad académica parcial/);
+  const partial = renderToStaticMarkup(createElement(AcademicMatchDetails, { value: { status: "partial", reason: "Áreas distintas relacionadas", policy: "related", requested_fields: ["Ingeniería de Sistemas"], required_level: "university", selected: { status: "related", candidate_degree: "Ingeniería Informática", requested_field: "Ingeniería de Sistemas", actual_level: "university", level_status: "meets" } } }));
+  assert.match(partial, /Afinidad parcial/);
   assert.match(partial, /Ingeniería Informática/);
   assert.match(partial, /Ingeniería de Sistemas/);
   assert.match(partial, /Cumple el nivel/);
@@ -264,4 +267,20 @@ test("learning cards explain context without displaying a hiring probability", (
   assert.match(html, /Por qué aparece para ti/);
   assert.match(html, /seguimiento de proyectos/);
   assert.ok(!html.includes("75%"));
+});
+
+
+test("field feedback connects its local message to the invalid input", async () => {
+  const { ProfileFormFeedback, FormField } = await component("ProfileFormFeedback");
+  const html = renderToStaticMarkup(createElement(ProfileFormFeedback, { errors: { "links.2.url": "Corrige este enlace" }, clearError() {} }, createElement(FormField, { path: "links.2.url", label: "Enlace" }, createElement("input", { value: "mal", onChange() {} }))));
+  assert.match(html, /data-field-path="links.2.url"/);
+  assert.match(html, /aria-invalid="true"/);
+  assert.match(html, /aria-describedby="[^"]+-error"/);
+  assert.match(html, /role="alert"/);
+  assert.match(html, /Corrige este enlace/);
+});
+
+test("saved driving categories show motorcycle, car, heavy and articulated icons", () => {
+  const html = renderToStaticMarkup(createElement(ProfileCredentials, { kind: "drivingLicenses", drivingLicenses: ["A2", "B1", "C2", "B3"].map((category) => ({ category })) }));
+  for (const vehicle of ["motorcycle", "car", "heavy", "articulated"]) assert.match(html, new RegExp(`data-vehicle="${vehicle}"`));
 });

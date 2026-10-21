@@ -1,3 +1,6 @@
+import { ProfileFormFeedback, SectionFieldIssues } from "../components/ProfileFormFeedback.jsx";
+import { PrivateProfileDetails } from "../components/PrivateProfileDetails.jsx";
+import { profileValidation, profileServerErrors, focusProfileError } from "../utils/profileValidation.js";
 import { ProfileIdentity } from "../components/ProfileIdentity.jsx";
 import { CertificationFields } from "../components/CertificationFields.jsx";
 import { ProfileCredentials } from "../components/ProfileCredentials.jsx";
@@ -20,6 +23,7 @@ import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import {
   BookOpen,
   CarFront,
+  LockKeyhole,
   IdCard,
   BriefcaseBusiness,
   CheckCircle2,
@@ -75,6 +79,7 @@ const normalize = (data) => ({
   experiences: data.experiences || [],
   educations: data.educations || [],
   certifications: data.certifications || [],
+  birth_date: data.birth_date || null,
   driving_licenses: data.driving_licenses || [],
   professional_cards: data.professional_cards || [],
   languages: data.languages || [],
@@ -98,6 +103,8 @@ export function ProfilePage() {
   const [skill, setSkill] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const clearFieldError = (path) => setFieldErrors((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== path && !path.startsWith(`${key}.`) && !key.startsWith(`${path}.`))));
   const [photoVersion, setPhotoVersion] = useState(0);
   const [uploadingCv, setUploadingCv] = useState(false);
   const [coachTarget, setCoachTarget] = useState("");
@@ -134,11 +141,11 @@ export function ProfilePage() {
   useEffect(() => {
     if (!profile || !location.hash) return;
     const target = location.hash.slice(1);
-    if (["profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations", "profile-links", "profile-credentials", "profile-driving-licenses", "profile-professional-cards"].includes(target)) { setEditing(true); setCoachTarget(target); }
+    if (["profile-profession", "profile-contact", "profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations", "profile-links", "profile-credentials", "profile-driving-licenses", "profile-professional-cards", "profile-private"].includes(target)) { setEditing(true); setCoachTarget(target); }
     else if (target === "preferencias") { setCoachTarget(target); }
     else if (["evidencias", "profile-evidence"].includes(target)) { setCoachTarget("profile-evidence"); }
   }, [Boolean(profile), location.hash]);
-  const update = (key, value) => setProfile((p) => ({ ...p, [key]: value }));
+  const update = (key, value) => { clearFieldError(key); setProfile((p) => ({ ...p, [key]: value })); };
   const updateItem = (key, index, field, value) =>
     update(
       key,
@@ -152,14 +159,19 @@ export function ProfilePage() {
   };
   async function save() {
     setError("");
+    const issues = profileValidation(profile, name);
+    setFieldErrors(issues);
+    if (Object.keys(issues).length) { requestAnimationFrame(() => focusProfileError(issues)); return null; }
     try {
-      const { data } = await api.put("/profiles/me", { ...profile, name, links: profileLinksPayload(profile.links), mobility: { ...profile.mobility, commuting_cities: (profile.mobility?.commuting_cities || []).map((value) => value.trim()).filter(Boolean) } });
+      const { data } = await api.put("/profiles/me", { ...profile, name, links: profileLinksPayload(profile.links), mobility: { ...profile.mobility, commuting_cities: (profile.mobility?.commuting_cities || []).map((value) => value.trim()).filter(Boolean) } }, { __quiet: true });
       setProfile(normalize(data));
       await refreshUser();
       setEditing(false);
       setMessage("Hoja de vida actualizada correctamente");
       return data;
     } catch (requestError) {
+      const issues = profileServerErrors(requestError);
+      if (Object.keys(issues).length) { setFieldErrors(issues); requestAnimationFrame(() => focusProfileError(issues)); return null; }
       setError(requestError instanceof Error && !requestError.isAxiosError ? requestError.message : getApiErrorMessage(requestError, "No fue posible actualizar la hoja de vida"));
       return null;
     }
@@ -213,7 +225,7 @@ export function ProfilePage() {
       </section>
     );
   return (
-    <div className={`profile-page space-y-6 ${editing ? "profile-is-editing" : ""}`}>
+    <ProfileFormFeedback errors={fieldErrors} clearError={clearFieldError}><div className={`profile-page space-y-6 ${editing ? "profile-is-editing" : ""}`}>
       <header className="profile-page-heading">
         <div><h1>Mi perfil</h1></div>
         <div className="profile-heading-actions"><button type="button" className="profile-coach-launch" aria-haspopup="dialog" onClick={() => setCoachOpen(true)}><span><Sparkles size={22} /></span><span><strong>Ideas para mejorar tu hoja de vida</strong><small>Tu ayuda de redacción, a un clic</small></span></button><span className="profile-mode"><span />{editing ? "Editando tu perfil" : "Tu perfil guardado"}</span></div>
@@ -261,6 +273,7 @@ export function ProfilePage() {
         </p>
       )}
       <ProfileIdentity profile={profile} name={name} email={email} editing={editing} onNameChange={setName} onChange={(patch) => setProfile((current) => ({ ...current, ...patch }))} />
+      <Section id="profile-private" icon={LockKeyhole} title="Datos personales privados"><PrivateProfileDetails birthDate={profile.birth_date} editing={editing} onChange={(birth_date) => update("birth_date", birth_date)} /></Section>
       <ResumeExportDialog open={exportOpen} onClose={() => setExportOpen(false)} profile={profile} name={name} photoVersion={photoVersion} onPhoto={uploadPhoto} onDesignSaved={(design) => setProfile((current) => ({ ...current, ...design }))} onEdit={() => editFromCoach("profile-experiences")} />
       <CoachDialog open={completionOpen} onClose={() => setCompletionOpen(false)} title="Qué puedes completar en tu perfil" className="profile-completion-dialog"><div className="profile-completion-body"><p>Este indicador revisa información incluida; no mide tu compatibilidad. Completa solo lo que corresponda a tu trayectoria.</p>{getProfileCompletion(profile).missing.length ? <ul>{getProfileCompletion(profile).missing.map((label) => <li key={label}><span><Plus size={16} />{label}</span><button type="button" onClick={() => { setCompletionOpen(false); const target = { "Título profesional": "profile-profession", "Teléfono, ciudad y departamento": "profile-contact", "6 habilidades específicas": "profile-skills", "Resumen profesional de 120 caracteres": "profile-summary", "2 experiencias completas": "profile-experiences", "Formación académica completa": "profile-educations", "Curso o certificación": "profile-certifications", "Idioma con nivel": "profile-languages", "Preferencias laborales completas": "preferencias" }[label]; if (target) editFromCoach(target); else document.querySelector('.profile-toolbar input[type="file"]')?.click(); }}>Completar <span aria-hidden="true">→</span></button></li>)}</ul> : <div className="profile-completion-success"><CheckCircle2 size={28} /><strong>Tienes información en los diez apartados</strong><p>Mantenla actualizada y revisa que refleje tu experiencia real.</p></div>}</div></CoachDialog>
       <CoachDialog open={coachOpen} onClose={() => setCoachOpen(false)}>
@@ -292,7 +305,7 @@ export function ProfilePage() {
                 updateItem={updateItem}
               />
             </Section>
-            {[["drivingLicenses", "profile-driving-licenses", "Licencias de conducción", CarFront], ["professionalCards", "profile-professional-cards", "Tarjetas profesionales", IdCard]].map(([kind, id, title, Icon]) => <Section key={kind} id={id} icon={Icon} title={title}><ProfileCredentials kind={kind} drivingLicenses={profile.driving_licenses} professionalCards={profile.professional_cards} editing={editing} onChange={({ drivingLicenses, professionalCards }) => setProfile((current) => ({ ...current, driving_licenses: drivingLicenses, professional_cards: professionalCards }))} /></Section>)}
+            {[["drivingLicenses", "profile-driving-licenses", "Licencias de conducción", CarFront], ["professionalCards", "profile-professional-cards", "Tarjetas profesionales", IdCard]].map(([kind, id, title, Icon]) => <Section key={kind} id={id} icon={Icon} title={title}><ProfileCredentials kind={kind} drivingLicenses={profile.driving_licenses} professionalCards={profile.professional_cards} editing={editing} onChange={({ drivingLicenses, professionalCards }) => { clearFieldError(kind === "drivingLicenses" ? "driving_licenses" : "professional_cards"); setProfile((current) => ({ ...current, driving_licenses: drivingLicenses, professional_cards: professionalCards })); }} /></Section>)}
             </div>
             <aside className="profile-side-sections">
             <Section id="profile-links" icon={Link2} title="Enlaces profesionales"><ProfileLinks value={profile.links} editing={editing} onChange={(value) => update("links", value)} onEdit={() => editFromCoach("profile-links")} /></Section>
@@ -435,7 +448,7 @@ export function ProfilePage() {
       )}
       {editing && <p className="surface-card p-5 text-sm text-[var(--muted)]">Guarda tus cambios para gestionar las evidencias de tu perfil.</p>}
       {!editing && <div id="profile-evidence"><ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} /></div>}
-    </div>
+    </div></ProfileFormFeedback>
   );
 }
 function Section({ id, icon: Icon, title, children }) {
@@ -445,7 +458,7 @@ function Section({ id, icon: Icon, title, children }) {
         <span className="profile-section-icon"><Icon size={18} /></span>
         {title}
       </h2>
-      <div className="profile-section-body space-y-3">{children}</div>
+      <div className="profile-section-body space-y-3">{children}{({ "profile-experiences": "experiences", "profile-educations": "educations", "profile-languages": "languages", "profile-skills": "skill_levels", preferencias: "mobility" })[id] && <SectionFieldIssues prefix={({ "profile-experiences": "experiences", "profile-educations": "educations", "profile-languages": "languages", "profile-skills": "skill_levels", preferencias: "mobility" })[id]} />}</div>
     </section>
   );
 }

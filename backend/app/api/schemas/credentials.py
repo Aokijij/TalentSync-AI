@@ -10,9 +10,8 @@ CredentialStatus = Literal["valid", "expired", "suspended", "in_progress", "unkn
 class DrivingLicense(BaseModel):
     model_config = ConfigDict(extra="forbid")
     category: DrivingCategory
-    # Accept legacy inputs without exposing or persisting retired fields.
-    status: CredentialStatus | None = Field(default=None, exclude=True)
-    expires_on: date | None = Field(default=None, exclude=True)
+    status: CredentialStatus = "unknown"
+    expires_on: date | None = None
 
 
 class ProfessionalCard(BaseModel):
@@ -20,8 +19,8 @@ class ProfessionalCard(BaseModel):
     profession: str = Field(min_length=2, max_length=160)
     issuer: str = Field(default="", max_length=160)
     number: str = Field(default="", max_length=60)
-    status: CredentialStatus | None = Field(default=None, exclude=True)
-    expires_on: date | None = Field(default=None, exclude=True)
+    status: CredentialStatus = "unknown"
+    expires_on: date | None = None
 
 
 class CredentialRequirements(BaseModel):

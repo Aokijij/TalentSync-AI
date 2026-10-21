@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import (
@@ -122,6 +122,15 @@ class ProfileBase(BaseModel):
 
 
 class ProfileUpdate(ProfileBase):
+    birth_date: date | None = None
+
+    @field_validator("birth_date")
+    @classmethod
+    def valid_birth_date(cls, value):
+        if value is not None and (value > date.today() or value.year < 1900):
+            raise ValueError("Indica una fecha de nacimiento válida, entre 1900 y hoy")
+        return value
+
     driving_licenses: list[DrivingLicense] | None = Field(default=None, max_length=8)
     professional_cards: list[ProfessionalCard] | None = Field(default=None, max_length=20)
     # Omission preserves links for older clients; an empty list removes them.
@@ -138,6 +147,7 @@ class ProfileUpdate(ProfileBase):
 
 
 class ProfileResponse(ProfileBase):
+    birth_date: date | None = None
     skill_level_sources: dict = Field(default_factory=dict)
     id: int
     user_id: int
@@ -155,6 +165,8 @@ class ProfileResponse(ProfileBase):
 
 
 class CandidateProfileResponse(ProfileResponse):
+    # This private field must never be shared through company-facing profiles.
+    birth_date: date | None = Field(default=None, exclude=True)
     submitted_version: str | None = None
     name: str
     email: str | None = None

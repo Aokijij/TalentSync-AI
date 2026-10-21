@@ -212,6 +212,10 @@ class Profile(Base):
         return (self.preferences or {}).get("driving_licenses", [])
 
     @property
+    def birth_date(self):
+        return (self.preferences or {}).get("birth_date")
+
+    @property
     def professional_cards(self):
         return (self.preferences or {}).get("professional_cards", [])
 

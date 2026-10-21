@@ -12,12 +12,12 @@ from app.domain.services.credentials import (
 
 
 @pytest.mark.parametrize("legacy", [{}, {"status": "expired", "expires_on": "2020-01-01"}, {"status": "unknown"}])
-def test_retired_dates_and_status_do_not_change_document_registration(legacy):
+def test_status_and_dates_are_retained_without_claiming_document_verification(legacy):
     profile = Row(driving_licenses=[{"category": "B1", **legacy}])
     job = Row(quality_details={"credential_requirements": {"driving_categories": ["B1"]}})
     assert credential_evaluation(profile, job)["status"] == "recorded"
     dumped = DrivingLicense(category="B1", **legacy).model_dump(mode="json")
-    assert dumped == {"category": "B1"}
+    assert dumped == {"category": "B1", "status": legacy.get("status", "unknown"), "expires_on": legacy.get("expires_on")}
 
 
 def test_alternative_categories_and_both_document_groups():

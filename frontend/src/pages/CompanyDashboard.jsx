@@ -1,311 +1,43 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowRight,
-  BriefcaseBusiness,
-  CheckCircle2,
-  ClipboardList,
-  Sparkles,
-  UsersRound,
-} from "lucide-react";
+import { ArrowRight, BellRing, BriefcaseBusiness, CalendarDays, Clock3, FilePenLine, Plus, RotateCcw, Search, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
-
-import { api } from "../api/client.js";
-import { PageHeader } from "../components/PageHeader.jsx";
-
-const statusLabels = {
-  submitted: "Recibida",
-  seen: "Recibida",
-  reviewing: "En revisión",
-  shortlisted: "En revisión",
-  technical_interview: "Entrevista",
-  psychometric_test: "Entrevista",
-  hired: "Contratado",
-  accepted: "Contratado",
-  rejected: "No seleccionado",
-};
+import { api, getApiErrorMessage } from "../api/client.js";
+import { DashboardAgenda, DashboardEmpty, DashboardSection, DashboardStat } from "../components/DashboardElements.jsx";
+import { processOverview, companyOpportunities, applicationLabels, dashboardDate, timestamp } from "../utils/dashboardData.js";
+import "../styles/dashboards.css";
 
 export function CompanyDashboard() {
-  const [company, setCompany] = useState(null);
-  const [jobs, setJobs] = useState([]);
-  const [applications, setApplications] = useState([]);
-  useEffect(() => {
-    api
-      .get("/companies/me")
-      .then(async ({ data: companyData }) => {
-        setCompany(companyData);
-        const { data: allJobs } = await api.get("/jobs", {
-          params: { status: "" },
-        });
-        const ownJobs = allJobs.filter(
-          (job) => job.company_id === companyData.id,
-        );
-        setJobs(ownJobs);
-        const responses = await Promise.all(
-          ownJobs.map((job) =>
-            api.get(`/applications/jobs/${job.id}`).catch(() => ({ data: [] })),
-          ),
-        );
-        setApplications(responses.flatMap((response) => response.data));
-      })
-      .catch(() => {});
-  }, []);
-  const stats = useMemo(
-    () => ({
-      active: jobs.filter((job) => job.status === "active").length,
-      applicants: applications.length,
-      reviewing: applications.filter((item) =>
-        ["reviewing", "submitted", "seen"].includes(item.status),
-      ).length,
-    }),
-    [jobs, applications],
-  );
-  const funnel = useMemo(
-    () => [
-      {
-        label: "Recibidas",
-        value: applications.filter((item) =>
-          ["submitted", "seen"].includes(item.status),
-        ).length,
-      },
-      {
-        label: "En revisión",
-        value: applications.filter((item) =>
-          ["reviewing", "shortlisted"].includes(item.status),
-        ).length,
-      },
-      {
-        label: "Entrevistas",
-        value: applications.filter((item) =>
-          ["technical_interview", "psychometric_test"].includes(item.status),
-        ).length,
-      },
-      {
-        label: "Finalizados",
-        value: applications.filter((item) =>
-          ["accepted", "hired", "rejected"].includes(item.status),
-        ).length,
-      },
-    ],
-    [applications],
-  );
-  const jobActivity = useMemo(
-    () =>
-      jobs
-        .map((job) => ({
-          ...job,
-          applications: applications.filter((item) => item.job_id === job.id)
-            .length,
-        }))
-        .sort((left, right) => left.applications - right.applications)
-        .slice(0, 4),
-    [jobs, applications],
-  );
-  const funnelMax = Math.max(1, ...funnel.map((item) => item.value));
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        kicker="Espacio empresa"
-        title={`Hola, ${company?.name ?? "empresa"}`}
-        description="Prioriza talento, sigue procesos y mantén activas las vacantes correctas."
-        actions={
-          <>
-            <Link to="/empresa/vacantes" className="button-primary">
-              <BriefcaseBusiness size={16} />
-              Gestionar vacantes
-            </Link>
-            <Link to="/empresa/talento" className="button-secondary">
-              <Sparkles size={16} />
-              Buscar talento
-            </Link>
-          </>
-        }
-      />
-      <section className="grid gap-4 sm:grid-cols-3">
-        <Stat
-          icon={BriefcaseBusiness}
-          label="Vacantes activas"
-          value={stats.active}
-          to="/empresa/vacantes"
-        />
-        <Stat
-          icon={UsersRound}
-          label="Candidatos en proceso"
-          value={stats.applicants}
-          to="/empresa/postulaciones"
-        />
-        <Stat
-          icon={ClipboardList}
-          label="Pendientes por revisar"
-          value={stats.reviewing}
-          to="/empresa/postulaciones?stage=submitted"
-        />
-      </section>
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="surface-card overflow-hidden !p-0">
-          <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-5">
-            <div>
-              <p className="section-kicker">Actividad de selección</p>
-              <h2 className="mt-1 text-xl font-bold text-[var(--ink-strong)]">
-                Postulaciones recientes
-              </h2>
-            </div>
-            <Link
-              to="/empresa/postulaciones"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--accent)] hover:underline"
-            >
-              Ver todas
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-          <div className="divide-y divide-[var(--line)]">
-            {applications.slice(0, 5).map((item) => (
-              <Link
-                key={item.id}
-                to={`/empresa/postulaciones?job=${item.job_id}&focus=${item.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-[var(--surface-hover)]"
-              >
-                <div>
-                  <p className="font-semibold text-[var(--ink-strong)]">
-                    {item.candidate_name || `Candidato #${item.user_id}`}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">
-                    {item.job_title || "Vacante"}
-                  </p>
-                </div>
-                <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1.5 text-xs font-semibold text-[var(--accent)]">
-                  {statusLabels[item.status] || item.status}
-                </span>
-                <ArrowRight size={16} className="text-[var(--muted)]" />
-              </Link>
-            ))}
-            {!applications.length ? (
-              <p className="px-5 py-12 text-center text-sm text-[var(--muted)]">
-                Aún no tienes postulaciones. Publica una vacante para iniciar el
-                proceso.
-              </p>
-            ) : null}
-          </div>
-        </div>
-        <div className="surface-card p-5">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-[var(--radius-lg)] bg-[var(--success)]/10 text-[var(--success)]">
-              <CheckCircle2 size={20} />
-            </div>
-            <div>
-              <h2 className="font-bold text-[var(--ink-strong)]">
-                Siguiente acción
-              </h2>
-              <p className="text-sm text-[var(--muted)]">
-                Mantén tus procesos de selección al día.
-              </p>
-            </div>
-          </div>
-          <div className="mt-5 space-y-3">
-            <Quick
-              to="/empresa/vacantes"
-              title="Publicar una vacante"
-              detail="Encuentra personas compatibles con el cargo."
-            />
-            <Quick
-              to="/empresa/talento"
-              title="Revisar talento compatible"
-              detail="Prioriza por porcentaje y habilidades."
-            />
-            <Quick
-              to="/empresa/postulaciones"
-              title="Actualizar procesos"
-              detail="Mueve candidatos de etapa."
-            />
-          </div>
-        </div>
-      </section>
-      <section className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
-        <div className="surface-card p-5">
-          <p className="section-kicker">Conversión</p>
-          <h2 className="mt-1 text-xl font-bold text-[var(--ink-strong)]">
-            Avance de candidatos
-          </h2>
-          <div className="mt-5 space-y-4">
-            {funnel.map((item) => (
-              <div key={item.label}>
-                <div className="mb-1.5 flex justify-between text-sm">
-                  <span className="font-semibold text-[var(--muted)]">
-                    {item.label}
-                  </span>
-                  <strong>{item.value}</strong>
-                </div>
-                <div className="h-2.5 rounded-full bg-[var(--line)]">
-                  <div
-                    className="h-full rounded-full bg-[var(--accent)]"
-                    style={{
-                      width: `${item.value ? Math.max(8, (item.value / funnelMax) * 100) : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="surface-card p-5">
-          <p className="section-kicker">Atención</p>
-          <h2 className="mt-1 text-xl font-bold text-[var(--ink-strong)]">
-            Vacantes para impulsar
-          </h2>
-          <div className="mt-5 space-y-3">
-            {jobActivity.map((job) => (
-              <Link
-                key={job.id}
-                to={`/empresa/talento?job=${job.id}`}
-                className="flex items-center justify-between gap-4 rounded-[var(--radius-lg)] bg-[var(--surface-subtle)] p-4 hover:bg-[var(--surface-hover)]"
-              >
-                <div>
-                  <p className="font-bold text-[var(--ink-strong)]">
-                    {job.title}
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">
-                    {job.applications
-                      ? `${job.applications} postulaciones`
-                      : "Sin postulaciones aún"}
-                  </p>
-                </div>
-                <ArrowRight size={17} className="text-[var(--accent)]" />
-              </Link>
-            ))}
-            {!jobActivity.length ? (
-              <p className="text-sm text-[var(--muted)]">
-                Publica tu primera vacante para ver recomendaciones.
-              </p>
-            ) : null}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function Stat({ icon: Icon, label, value, to }) {
-  return (
-    <Link to={to} className="surface-card group relative block p-5 hover:border-[var(--accent)] focus-ring">
-      <div className="grid h-10 w-10 place-items-center rounded-[var(--radius-lg)] bg-[var(--accent)]/10 text-[var(--accent)]">
-        <Icon size={20} />
-      </div>
-      <p className="mt-5 text-3xl font-bold tracking-tight text-[var(--ink-strong)]">
-        {value}
-      </p>
-      <p className="mt-1 text-sm text-[var(--muted)]">{label}</p>
-      <ArrowRight className="absolute right-5 top-5 text-[var(--muted)] transition-transform group-hover:translate-x-1 group-hover:text-[var(--accent)]" size={17} />
-    </Link>
-  );
-}
-function Quick({ to, title, detail }) {
-  return (
-    <Link
-      to={to}
-      className="block rounded-[var(--radius-lg)] bg-[var(--surface-subtle)] p-3 transition-colors hover:bg-[var(--surface-hover)]"
-    >
-      <p className="font-semibold text-[var(--ink-strong)]">{title}</p>
-      <p className="mt-1 text-sm text-[var(--muted)]">{detail}</p>
-    </Link>
-  );
+  const [company, setCompany] = useState(null), [jobs, setJobs] = useState([]), [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true), [error, setError] = useState("");
+  async function load() {
+    setLoading(true); setError("");
+    try {
+      const [{ data: companyData }, { data: allJobs }] = await Promise.all([api.get("/companies/me"), api.get("/jobs", { params: { status: "" } })]);
+      setCompany(companyData);
+      const ownJobs = allJobs.filter((job) => job.company_id === companyData.id);
+      setJobs(ownJobs);
+      const responses = await Promise.allSettled(ownJobs.map((job) => api.get(`/applications/jobs/${job.id}`)));
+      setApplications(responses.flatMap((row) => row.status === "fulfilled" ? row.value.data : []));
+      if (responses.some((row) => row.status === "rejected")) setError("Algunas postulaciones no pudieron cargarse. Los totales pueden estar incompletos; vuelve a intentarlo.");
+    } catch (failure) { setError(getApiErrorMessage(failure, "No pudimos cargar tu espacio de contratación.")); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, []);
+  const activity = useMemo(() => processOverview(applications), [applications]);
+  const offers = useMemo(() => companyOpportunities(jobs, applications), [jobs, applications]);
+  const jobsById = useMemo(() => new Map(jobs.map((job) => [job.id, job])), [jobs]);
+  const queue = [...new Map([...activity.urgent, ...activity.pending].map((row) => [row.id, row])).values()].slice(0, 5);
+  const next = activity.urgent[0] || activity.pending[0];
+  const attentionLink = next ? `/empresa/postulaciones?job=${next.job_id}&focus=${next.id}` : "/empresa/postulaciones";
+  const visibleJobs = [...offers.active].sort((a, b) => (offers.counts.get(a.id) || 0) - (offers.counts.get(b.id) || 0)).slice(0, 5);
+  const openStages = [{ label: "Recibidas", count: activity.pending.length, tone: "received" }, { label: "En revisión", count: activity.active.filter((row) => ["reviewing", "shortlisted"].includes(row.status)).length, tone: "review" }, { label: "En entrevista", count: activity.active.filter((row) => ["technical_interview", "psychometric_test"].includes(row.status)).length, tone: "interview" }];
+  return <main className="dashboard-home company-home" aria-busy={loading}>
+    <header className="dashboard-welcome"><div><span className="dashboard-eyebrow">CENTRO DE CONTRATACIÓN</span><h1>Así van tus contrataciones</h1><p>{company?.name || "Tu empresa"} · {loading ? "Cargando el estado de tus procesos…" : activity.pending.length ? `${activity.pending.length} postulaciones esperan una primera revisión.` : "Revisa tus procesos y prepara la próxima incorporación."}</p><div className="dashboard-welcome-actions"><Link className="button-primary" to={next ? attentionLink : "/empresa/calidad"}>{next ? <UsersRound size={17} /> : <Plus size={17} />}{next ? "Revisar postulaciones" : "Crear una vacante"}</Link><Link className="button-secondary" to="/empresa/talento"><Search size={17} />Buscar talento</Link></div></div><aside className={`dashboard-focus ${activity.urgent.length ? "attention" : ""}`}><span>{activity.urgent.length ? "REQUIEREN RESPUESTA" : "VISTA DE TU EQUIPO"}</span><strong>{loading ? "—" : activity.urgent.length ? `${activity.urgent.length} plazos por atender` : `${offers.active.length} vacantes activas`}</strong><p>{activity.urgent.length ? "Hay procesos con el plazo vencido o que vence en las próximas 24 horas." : `${activity.active.length} candidaturas en seguimiento y ${offers.drafts.length} borradores por continuar.`}</p><Link to={activity.urgent.length ? attentionLink : "/empresa/vacantes"}>{activity.urgent.length ? "Abrir el primer pendiente" : "Gestionar mis vacantes"}<ArrowRight size={15} /></Link></aside></header>
+    {error && <div className="dashboard-load-note" role="alert"><p>{error}</p><button type="button" onClick={load}><RotateCcw size={16} />Reintentar</button></div>}
+    <div className="dashboard-stat-grid"><DashboardStat icon={BriefcaseBusiness} label="Vacantes activas" value={loading ? "—" : offers.active.length} detail={`${offers.drafts.length} borradores guardados`} to="/empresa/vacantes" /><DashboardStat icon={UsersRound} label="Candidaturas en curso" value={loading ? "—" : activity.active.length} detail="Procesos que siguen abiertos" to="/empresa/postulaciones" /><DashboardStat icon={BellRing} label="Por revisar" value={loading ? "—" : activity.pending.length} detail="Recibidas sin primera revisión" to="/empresa/postulaciones" tone="warning" /><DashboardStat icon={CalendarDays} label="Entrevistas próximas" value={loading ? "—" : activity.interviews.length} detail="Con fecha registrada" to="/empresa/postulaciones" tone="success" /></div>
+    <div className="dashboard-main-grid"><div className="dashboard-main-column"><DashboardSection title="Atiende lo importante" subtitle="Primero los plazos cercanos; después, las postulaciones nuevas." to="/empresa/postulaciones" action="Abrir tablero"><div className="dashboard-attention-list">{queue.map((row) => { const urgent = activity.urgent.some((item) => item.id === row.id), overdue = urgent && timestamp(row.response_due_at) < Date.now(); return <Link key={row.id} to={`/empresa/postulaciones?job=${row.job_id}&focus=${row.id}`}><span className={`dashboard-attention-icon ${urgent ? "urgent" : ""}`}>{urgent ? <Clock3 size={20} /> : <UsersRound size={20} />}</span><div><strong>{row.candidate_name || "Candidato"}</strong><p>{row.job_title || jobsById.get(row.job_id)?.title}</p><small>{urgent ? `Respuesta: ${dashboardDate(row.response_due_at)}` : `Recibida el ${dashboardDate(row.created_at, false)}`}</small></div><span className={`dashboard-state ${urgent ? "warning" : ""}`}>{overdue ? "Plazo vencido" : urgent ? "Por vencer" : "Por revisar"}</span><ArrowRight size={16} /></Link>; })}</div>{!loading && !queue.length && <DashboardEmpty title="No tienes revisiones pendientes" description="Continúa con las candidaturas en curso o busca talento para tus vacantes activas." to="/empresa/postulaciones" action="Ver procesos" />}{loading && !queue.length && <p className="dashboard-loading" role="status">Cargando postulaciones…</p>}</DashboardSection>
+    <DashboardSection title="Tus vacantes activas" subtitle="Empieza por las que aún necesitan postulaciones." to="/empresa/vacantes" action="Gestionar todas"><div className="dashboard-offer-list">{visibleJobs.map((job) => <article key={job.id}><div><h3><Link to={`/vacantes/${job.id}`}>{job.title}</Link></h3><p>{job.location || "Ubicación por definir"} · {({ onsite: "Presencial", hybrid: "Híbrido", remote: "Remoto" })[job.modality] || ""}</p><span className={`dashboard-offer-count ${!offers.counts.get(job.id) ? "quiet" : ""}`}>{offers.counts.get(job.id) || 0} postulaciones</span></div><Link className="button-secondary button-sm" to={offers.counts.get(job.id) ? `/empresa/postulaciones?job=${job.id}` : `/empresa/talento?job=${job.id}`}>{offers.counts.get(job.id) ? "Ver tablero" : "Buscar candidatos"}<ArrowRight size={14} /></Link></article>)}</div>{!loading && !visibleJobs.length && <DashboardEmpty title="Prepara tu próxima vacante" description="Define funciones, condiciones y requisitos para empezar una búsqueda." to="/empresa/calidad" action="Crear vacante" />}</DashboardSection>
+    <DashboardSection title="Movimiento reciente" subtitle="Últimas postulaciones recibidas, con su estado actual." to="/empresa/postulaciones"><div className="dashboard-process-list">{activity.recent.slice(0, 4).map((row) => <Link key={row.id} to={`/empresa/postulaciones?job=${row.job_id}&focus=${row.id}`}><span className={`dashboard-process-dot ${row.status}`} /><div><strong>{row.candidate_name || "Candidato"}</strong><small>{row.job_title || jobsById.get(row.job_id)?.title}</small></div><span className="dashboard-state">{applicationLabels[row.status] || "En seguimiento"}</span><ArrowRight size={15} /></Link>)}</div>{!loading && !activity.recent.length && <DashboardEmpty title="La actividad aparecerá aquí" description="Cuando una persona se postule a una vacante, podrás consultar su proceso." />}</DashboardSection></div>
+    <aside className="dashboard-side-column"><DashboardSection title="Agenda de entrevistas" subtitle="Próximos encuentros de procesos activos."><DashboardAgenda items={activity.interviews.slice(0, 3)} company jobsById={jobsById} />{!activity.interviews.length && <DashboardEmpty title="Sin entrevistas programadas" description="Puedes programarlas desde el tablero de cada vacante." to="/empresa/postulaciones" action="Ir al tablero" />}</DashboardSection><DashboardSection title="En qué etapa van" subtitle="Distribución actual de los procesos abiertos."><div className="dashboard-stage-track">{openStages.filter((stage) => stage.count).map((stage) => <span key={stage.label} className={stage.tone} style={{ flex: stage.count }} title={`${stage.label}: ${stage.count}`} />)}</div><ul className="dashboard-stage-list">{openStages.map((stage) => <li key={stage.label}><span className={stage.tone} />{stage.label}<strong>{stage.count}</strong></li>)}</ul></DashboardSection><DashboardSection title="Borradores por continuar" to="/empresa/calidad" action="Crear nuevo"><div className="dashboard-draft-list">{offers.drafts.slice(0, 3).map((job) => <Link key={job.id} to={`/empresa/calidad?job=${job.id}`}><FilePenLine size={20} /><span><strong>{job.title || "Vacante sin título"}</strong><small>Continuar edición</small></span><ArrowRight size={15} /></Link>)}</div>{!offers.drafts.length && <DashboardEmpty title="Sin borradores pendientes" description="Puedes preparar una nueva oferta y guardarla antes de publicar." />}</DashboardSection></aside></div>
+  </main>;
 }

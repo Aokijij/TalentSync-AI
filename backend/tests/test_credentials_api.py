@@ -34,8 +34,9 @@ def test_profile_credentials_are_saved_preserved_for_old_clients_and_private(cli
             }
         ],
     )
-    assert profile["driving_licenses"] == [{"category": "B1"}]
-    assert "expires_on" not in profile["professional_cards"][0] and "status" not in profile["professional_cards"][0]
+    assert profile["driving_licenses"] == [{"category": "B1", "status": "valid", "expires_on": "2099-12-31"}]
+    assert profile["professional_cards"][0]["status"] == "valid"
+    assert profile["professional_cards"][0]["expires_on"] is None
     legacy = {
         key: value
         for key, value in profile.items()
@@ -145,6 +146,8 @@ def test_resume_export_includes_credentials_only_when_selected(client, style):
         page.extract_text() for page in PdfReader(BytesIO(response.content)).pages
     )
     assert "LICENCIAS DE CONDUCCIÓN" in text and "B1" in text and "CARD-123" in text
+    assert "TARJETAS PROFESIONALES" in text
+    assert "2099" not in text and "Vigente" not in text and "Vence" not in text
     response = client.post(
         "/api/v1/profiles/me/export",
         headers=candidate,

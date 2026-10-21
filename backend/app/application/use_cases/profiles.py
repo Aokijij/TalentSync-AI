@@ -242,6 +242,9 @@ def update_my_profile(
     profile.desired_salary = payload["desired_salary"]
     profile.phone = payload["phone"]
     from datetime import date
+    if "birth_date" in payload:
+        birthday = payload["birth_date"]
+        profile.preferences = {**(profile.preferences or {}), "birth_date": birthday.isoformat() if birthday is not None else None}
     for credential_field in ("driving_licenses", "professional_cards"):
         if payload.get(credential_field) is not None:
             records = [{key: value.isoformat() if isinstance(value, date) else value for key, value in record.items()} for record in payload[credential_field]]

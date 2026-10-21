@@ -12,7 +12,7 @@ test("profile links accept pasted domains and preserve a custom portfolio label"
 
 test("profile links catch incomplete entries, unsafe protocols, credentials and misleading platform domains", () => {
   for (const row of [{ platform: "github", url: "" }, { platform: "other", url: "javascript:alert(1)" }, { platform: "other", url: "https://user:secret@example.com" }, { platform: "github", url: "https://github.com.example.com/user" }, { platform: "linkedin", url: "https://example.com" }]) assert.throws(() => profileLinksPayload([row]));
-  assert.throws(() => profileLinksPayload([{ platform: "github", url: "github.com/user" }, { platform: "github", url: "https://github.com/user" }]), /No repitas/);
+  assert.throws(() => profileLinksPayload([{ platform: "github", url: "github.com/user" }, { platform: "github", url: "https://github.com/user" }]), /ya está añadido/);
 });
 
 test("resume previews use the links in the current draft", () => {
