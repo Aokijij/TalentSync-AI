@@ -80,6 +80,8 @@ const normalize = (data) => ({
   educations: data.educations || [],
   certifications: data.certifications || [],
   birth_date: data.birth_date || null,
+  identification: data.identification || null,
+  personal_visibility: data.personal_visibility || {},
   driving_licenses: data.driving_licenses || [],
   professional_cards: data.professional_cards || [],
   languages: data.languages || [],
@@ -272,8 +274,8 @@ export function ProfilePage() {
           {error || message}
         </p>
       )}
-      <ProfileIdentity profile={profile} name={name} email={email} editing={editing} onNameChange={setName} onChange={(patch) => setProfile((current) => ({ ...current, ...patch }))} />
-      <Section id="profile-private" icon={LockKeyhole} title="Datos personales privados"><PrivateProfileDetails birthDate={profile.birth_date} editing={editing} onChange={(birth_date) => update("birth_date", birth_date)} /></Section>
+      <ProfileIdentity profile={profile} name={name} email={email} editing={editing} photoVersion={photoVersion} onNameChange={setName} onChange={(patch) => setProfile((current) => ({ ...current, ...patch }))} />
+      <Section id="profile-private" icon={LockKeyhole} title="Datos personales"><PrivateProfileDetails birthDate={profile.birth_date} identification={profile.identification} visibility={profile.personal_visibility} editing={editing} onChange={(patch) => { Object.keys(patch).forEach(clearFieldError); setProfile((current) => ({ ...current, ...patch })); }} /></Section>
       <ResumeExportDialog open={exportOpen} onClose={() => setExportOpen(false)} profile={profile} name={name} photoVersion={photoVersion} onPhoto={uploadPhoto} onDesignSaved={(design) => setProfile((current) => ({ ...current, ...design }))} onEdit={() => editFromCoach("profile-experiences")} />
       <CoachDialog open={completionOpen} onClose={() => setCompletionOpen(false)} title="Qué puedes completar en tu perfil" className="profile-completion-dialog"><div className="profile-completion-body"><p>Este indicador revisa información incluida; no mide tu compatibilidad. Completa solo lo que corresponda a tu trayectoria.</p>{getProfileCompletion(profile).missing.length ? <ul>{getProfileCompletion(profile).missing.map((label) => <li key={label}><span><Plus size={16} />{label}</span><button type="button" onClick={() => { setCompletionOpen(false); const target = { "Título profesional": "profile-profession", "Teléfono, ciudad y departamento": "profile-contact", "6 habilidades específicas": "profile-skills", "Resumen profesional de 120 caracteres": "profile-summary", "2 experiencias completas": "profile-experiences", "Formación académica completa": "profile-educations", "Curso o certificación": "profile-certifications", "Idioma con nivel": "profile-languages", "Preferencias laborales completas": "preferencias" }[label]; if (target) editFromCoach(target); else document.querySelector('.profile-toolbar input[type="file"]')?.click(); }}>Completar <span aria-hidden="true">→</span></button></li>)}</ul> : <div className="profile-completion-success"><CheckCircle2 size={28} /><strong>Tienes información en los diez apartados</strong><p>Mantenla actualizada y revisa que refleje tu experiencia real.</p></div>}</div></CoachDialog>
       <CoachDialog open={coachOpen} onClose={() => setCoachOpen(false)}>

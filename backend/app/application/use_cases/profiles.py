@@ -154,7 +154,9 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
             detail="Solo puedes ver el perfil completo de candidatos que se postularon a tus vacantes",
         )
     profile = _submitted_profile(candidate.profile, application)
+    from app.domain.services.personal_details import shared_personal_details
     return {
+        **shared_personal_details(candidate.profile),
         "id": profile.id,
         "user_id": profile.user_id,
         "name": candidate.name,
@@ -245,6 +247,9 @@ def update_my_profile(
     if "birth_date" in payload:
         birthday = payload["birth_date"]
         profile.preferences = {**(profile.preferences or {}), "birth_date": birthday.isoformat() if birthday is not None else None}
+    for personal_field in ("identification", "personal_visibility"):
+        if personal_field in payload:
+            profile.preferences = {**(profile.preferences or {}), personal_field: payload[personal_field]}
     for credential_field in ("driving_licenses", "professional_cards"):
         if payload.get(credential_field) is not None:
             records = [{key: value.isoformat() if isinstance(value, date) else value for key, value in record.items()} for record in payload[credential_field]]

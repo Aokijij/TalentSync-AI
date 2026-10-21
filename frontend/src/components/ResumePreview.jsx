@@ -1,3 +1,4 @@
+import { personalDetailLines } from "../utils/personalDetails.js";
 import { TRAINING_TYPES } from "../constants/trainingTypes.js";
 import { skillLevels, skillLevelFor } from "../utils/skillLevels.js";
 import { Mail, Phone, MapPin } from "lucide-react";
@@ -62,7 +63,7 @@ export function ResumePreview({ profile, name, email, photoVersion }) {
             </p>
           </div>
         </div>
-        <div className="resume-contact-list">
+        <div className="resume-contact-list">{personalDetailLines(profile).map(([label, value]) => <p key={label}>{label}: {value}</p>)}
           {email ? <span><Mail size={14} />{email}</span> : null}
           {profile.phone ? <span><Phone size={14} />{profile.phone}</span> : null}
           {location ? <span><MapPin size={14} />{location}</span> : null}
@@ -75,7 +76,7 @@ export function ResumePreview({ profile, name, email, photoVersion }) {
             <div className="resume-skills">
               {(profile.skills || []).map((item) => (
                 <span key={item} className="resume-skill">
-                  {profile.resume_style === "modern" ? <><strong>{item}</strong><small>{skillLevels[skillLevelFor(profile.skill_levels, item)] || "Nivel sin indicar"}</small></> : <>{item}{skillLevelFor(profile.skill_levels, item) !== "unspecified" ? ` · ${skillLevels[skillLevelFor(profile.skill_levels, item)]}` : ""}</>}
+                  {profile.resume_style === "modern" ? <><strong>{item}</strong><small>{skillLevels[skillLevelFor(profile.skill_levels, item)] || "Nivel sin indicar"}</small><span className="resume-skill-meter" aria-hidden="true"><i style={{ width: `${({ learning: 20, basic: 40, intermediate: 60, advanced: 80, expert: 100 })[skillLevelFor(profile.skill_levels, item)] || 0}%` }} /></span></> : <>{item}{skillLevelFor(profile.skill_levels, item) !== "unspecified" ? ` · ${skillLevels[skillLevelFor(profile.skill_levels, item)]}` : ""}</>}
                 </span>
               ))}
               {!profile.skills?.length ? <span className="text-sm opacity-70">Sin habilidades registradas</span> : null}

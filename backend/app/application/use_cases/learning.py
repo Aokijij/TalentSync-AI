@@ -56,8 +56,14 @@ def catalog(db, user, area="recommended"):
         visible = [*specific, *complementary[:3]] if specific else complementary
     else:
         visible = [row for row in ranked if row.get("category", "general") in selected]
+    latest = {}
+    for attempt in db.learning.attempts(user.id):
+        latest.setdefault(attempt.assessment_id, attempt)
+    def attempt_summary(key):
+        row = latest.get(key)
+        return {field: getattr(row, field) for field in ("id", "status", "started_at", "expires_at", "score", "passed")} if row else None
     return {"resources": visible,
-            "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "level": "fundamentals", "category": row["category"], "formats": sorted({q.get("type", "choice") for q in row["questions"]}), "context": row.get("context", "Resuelve cinco decisiones sobre esta habilidad y revisa la explicación al entregar.")}
+            "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "last_attempt": attempt_summary(key), "relevance_reason": "Practica una habilidad que declaraste en tu perfil." if skill_set([row["skill"]]) & skill_set(user.profile.skills or []) else "Relacionada con el área que estás explorando.", "level": "fundamentals", "category": row["category"], "formats": sorted({q.get("type", "choice") for q in row["questions"]}), "context": row.get("context", "Resuelve cinco decisiones sobre esta habilidad y revisa la explicación al entregar.")}
                             for key, row in ASSESSMENTS.items() if row["category"] in selected],
             "areas": [{"id": key, "label": row["label"]} for key, row in AREAS.items()],
             "recommended_areas": recommended, "selected_area": area,

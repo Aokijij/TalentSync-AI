@@ -37,6 +37,24 @@ def test_birth_date_is_private_preserved_when_omitted_and_does_not_affect_matchi
     shared = client.get(f"/api/v1/profiles/candidates/{person['id']}?job_id={job['id']}", headers=company)
     assert shared.status_code == 200, shared.text
     assert "birth_date" not in shared.json() and "1994-06-17" not in shared.text
+    document = {"type": "CC", "number": "ID-EXAMPLE-7788"}
+    save(client, candidate, identification=document, personal_visibility={"birth_date": True, "identification": True})
+    endpoint = f"/api/v1/profiles/candidates/{person['id']}?job_id={job['id']}"
+    shared = client.get(endpoint, headers=company).json()
+    assert shared["birth_date"] == "1994-06-17" and shared["identification"] == document
+    assert "personal_visibility" not in shared
+    own = client.get("/api/v1/profiles/me", headers=candidate).json()
+    legacy = {key: value for key, value in own.items() if key not in {"birth_date", "identification", "personal_visibility"}}
+    preserved = client.put("/api/v1/profiles/me", headers=candidate, json=legacy).json()
+    assert preserved["identification"] == document and preserved["personal_visibility"]["birth_date"] is True
+    with client.session_factory() as session:
+        assert "ID-EXAMPLE-7788" not in str(snapshot(session.get(User, person["id"]).profile))
+    save(client, candidate, personal_visibility={"birth_date": False, "identification": True})
+    shared = client.get(endpoint, headers=company).json()
+    assert "birth_date" not in shared and shared["identification"] == document
+    save(client, candidate, personal_visibility={})
+    assert "identification" not in client.get(endpoint, headers=company).json()
+    assert client.get(matching, headers=candidate).json()["input_version"] == before["input_version"]
     assert save(client, candidate, birth_date=None)["birth_date"] is None
 
 
@@ -56,3 +74,14 @@ def test_private_birth_date_is_never_exported_in_cv(client, style):
     assert response.status_code == 200, response.text
     text = " ".join(page.extract_text() for page in PdfReader(BytesIO(response.content)).pages)
     assert "1994" not in text and "nacimiento" not in text.lower()
+    document = {"type": "passport", "number": "SHARE-EXAMPLE-7788"}
+    save(client, candidate, identification=document, personal_visibility={"birth_date": True, "identification": True})
+    response = client.post("/api/v1/profiles/me/export", headers=candidate, json={"include_photo": False, "profile": {"resume_style": style}})
+    assert response.status_code == 200, response.text
+    text = " ".join(page.extract_text() for page in PdfReader(BytesIO(response.content)).pages)
+    assert "17/06/1994" in text and "SHARE-EXAMPLE-7788" in text
+    # A private draft can hide one field without saving a change to the profile.
+    response = client.post("/api/v1/profiles/me/export", headers=candidate, json={"include_photo": False, "profile": {"resume_style": style, "personal_visibility": {"birth_date": False, "identification": True}}})
+    text = " ".join(page.extract_text() for page in PdfReader(BytesIO(response.content)).pages)
+    assert "1994" not in text and "SHARE-EXAMPLE-7788" in text
+    assert client.get("/api/v1/profiles/me", headers=candidate).json()["personal_visibility"]["birth_date"] is True

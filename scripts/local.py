@@ -45,6 +45,7 @@ def prepare_environment(*, testing=False):
                    "SMTP_ENABLED": "false", "SMTP_HOST": "", "SMTP_USERNAME": "", "SMTP_PASSWORD": "", "SMTP_FROM": "",
                    "SMTP_PORT": "587", "SMTP_SECURITY": "starttls",
                    "SESSION_AUTH_ENABLED": "true", "LOCAL_MAIL_ENABLED": "true",
+                   "LOCAL_MFA_REVIEW_ENABLED": "true", "COMPANY_MFA_REQUIRED": "false",
                    "WORKFLOW_MAINTENANCE_ENABLED": "true",
                    "MODEL_MAINTENANCE_ENABLED": "true", "MATCH_MODEL_PATH": values.get("MATCH_MODEL_PATH", ""),
                    "CAREER_WRITER_MODEL": values.get("CAREER_WRITER_MODEL", ""),

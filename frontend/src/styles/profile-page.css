@@ -207,3 +207,6 @@ html[data-theme="dark"] .profile-page .button-primary { color:#082f49; }
 .profile-page .profile-identity-fields .form-field { display:flex; }
 .profile-page .training-fields .form-field { color:var(--muted); }
 @media(max-width:650px) { .profile-private { grid-template-columns:1fr; gap:1rem; } }
+
+.profile-identity-avatar { overflow:hidden; }
+.profile-identity-avatar > img { width:100%; height:100%; object-fit:cover; }

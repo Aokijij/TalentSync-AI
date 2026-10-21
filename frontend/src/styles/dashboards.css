@@ -125,3 +125,10 @@
 @media(max-width:1200px) { .dashboard-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .dashboard-main-grid { grid-template-columns:minmax(0,1fr) 300px; } }
 @media(max-width:1000px) { .dashboard-welcome { grid-template-columns:1fr; gap:1.25rem; } .dashboard-focus { padding:1rem; } .dashboard-main-grid { grid-template-columns:1fr; } .dashboard-side-column { grid-template-columns:repeat(2,minmax(0,1fr)); } .dashboard-side-column > :last-child:nth-child(odd) { grid-column:1/-1; } }
 @media(max-width:600px) { .dashboard-welcome { padding:1.3rem; } .dashboard-stat-grid { gap:.6rem; } .dashboard-stat { padding:.9rem; gap:.5rem; } .dashboard-stat-icon { display:none; } .dashboard-stat > svg { display:none; } .dashboard-stat strong { font-size:1.6rem; } .dashboard-side-column { grid-template-columns:1fr; } .dashboard-panel > header,.dashboard-panel-body { padding:1rem; } .dashboard-job-icon { display:none; } .dashboard-job-card > footer { align-items:stretch; } .dashboard-job-card > footer > div:last-child { margin-left:auto; } .dashboard-attention-list > a { flex-wrap:wrap; } .dashboard-attention-list > a > div { flex-basis:calc(100% - 60px); } .dashboard-attention-list .dashboard-state { margin-left:46px; } .dashboard-attention-list > a > svg { margin-left:auto; } .dashboard-offer-list > article { flex-wrap:wrap; } .dashboard-process-list .dashboard-state { max-width:90px; white-space:normal; } .dashboard-process-list > a > svg { display:none; } .dashboard-local-success { flex-wrap:wrap; } }
+
+.dashboard-learning-panel > header > svg { color:var(--accent); flex-shrink:0; }
+.dashboard-course-row { display:flex; gap:.65rem; align-items:flex-start; padding:.7rem 0; border-bottom:1px solid var(--line); color:var(--accent); }
+.dashboard-course-row > div { flex:1; min-width:0; }
+.dashboard-course-row > svg { flex-shrink:0; margin-top:.2rem; }
+.dashboard-course-row strong { display:block; color:var(--ink-strong); font-size:.8rem; line-height:1.6; }
+.dashboard-course-row small { display:block; color:var(--muted); font-size:.68rem; line-height:1.5; margin-top:.2rem; }

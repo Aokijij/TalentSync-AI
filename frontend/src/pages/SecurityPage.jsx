@@ -1,3 +1,4 @@
+import { requiresAuthenticator } from "../utils/accountAccess.js";
 import { SecuritySessions } from "../components/SecuritySessions.jsx";
 import { ShieldCheck, Mail, LockKeyhole, Monitor, Eye } from "lucide-react";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
@@ -14,7 +15,7 @@ export function SecurityPage() {
   const location = useLocation();
   const requested = location.hash.replace("#security-", "");
   const { confirm } = useFeedback();
-  const { user, refreshUser, accessOptions, logout } = useAuth();
+  const { user, refreshUser, accessOptions, refreshAccessOptions, logout } = useAuth();
   const panel = ["email", "mfa", "sessions", ...(user.role === "candidate" ? ["privacy"] : [])].includes(requested) ? requested : "email";
   const sections = [["email", "Correo y acceso", "Tu dirección y cuentas conectadas", Mail], ["mfa", "Verificación en dos pasos", "Estado del autenticador", ShieldCheck], ...(user.role === "candidate" ? [["privacy", "Privacidad", "Controla tus preferencias", Eye]] : []), ["sessions", "Dispositivos", "Dónde está abierta tu cuenta", Monitor]];
   const [sessions, setSessions] = useState([]);
@@ -28,7 +29,7 @@ export function SecurityPage() {
     try { const [a, b] = await Promise.all([api.get("/account/sessions"), user.role === "candidate" ? api.get("/account/privacy") : Promise.resolve({ data: null })]); setSessions(a.data); setPrivacy(b.data); }
     catch (failure) { setError(getApiErrorMessage(failure)); }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); refreshAccessOptions().catch(() => setError("No pudimos actualizar la política de acceso. Vuelve a cargar esta página.")); }, []);
   async function act(action) {
     setBusy(true); setError(""); setMessage("");
     try { await action(); } catch (failure) { setError(getApiErrorMessage(failure)); }
@@ -43,7 +44,7 @@ export function SecurityPage() {
 
     {error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}
     {message && <p role="status" className="surface-card p-4">{message}</p>}
-    {!accessOptions.mfa_review && (user.role === "admin" && accessOptions.admin_mfa_required !== false || user.role === "company" && accessOptions.company_mfa_required !== false) && !user.mfa_enabled && <p className="surface-card p-4">Para operar como empresa o administrador, configura primero una aplicación autenticadora.</p>}
+    {requiresAuthenticator(user, accessOptions) && <p className="surface-card p-4">Para operar como empresa o administrador, configura primero una aplicación autenticadora.</p>}
     {panel === "email" && <><section id="security-email" className="security-panel"><h2 className="flex items-center gap-3 text-lg font-bold"><Mail size={21} className="text-[var(--accent)]" />Correo electrónico</h2><p className="mt-2">{user.email} · {user.email_verified ? "Confirmado" : "Pendiente de confirmar"}</p>
       {!user.email_verified && <button disabled={busy} className="button-secondary mt-3" onClick={() => act(async () => { const { data } = await api.post("/account/verify-email"); setMessage(data.message); })}>Enviar confirmación</button>}
       {accessOptions.local_mail && <Link className="ml-3 text-sm text-[var(--accent)]" to="/desarrollo/correos">Bandeja local</Link>}

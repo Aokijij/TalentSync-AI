@@ -4,11 +4,12 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { createElement } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const require = createRequire(import.meta.url);
 async function component(file, name) {
-  const compiled = await build({ entryPoints: [fileURLToPath(new URL(`../src/components/${file}.jsx`, import.meta.url))], bundle: true, write: false, platform: "node", format: "cjs", jsx: "automatic", packages: "external", loader: { ".css": "empty" } });
+  const compiled = await build({ entryPoints: [fileURLToPath(new URL(`../src/components/${file}.jsx`, import.meta.url))], bundle: true, write: false, platform: "node", format: "cjs", jsx: "automatic", packages: "external", loader: { ".css": "empty" }, plugins: [{ name: "no-network-in-render", setup(builder) { builder.onResolve({ filter: /api\/client\.js$/ }, () => ({ path: "api", namespace: "test" })); builder.onLoad({ filter: /.*/, namespace: "test" }, () => ({ contents: "export const api = {};", loader: "js" })); } }] });
   const module = { exports: {} };
   new Function("require", "module", "exports", compiled.outputFiles[0].text)(require, module, module.exports);
   return name ? module.exports[name] : module.exports;
@@ -283,4 +284,25 @@ test("field feedback connects its local message to the invalid input", async () 
 test("saved driving categories show motorcycle, car, heavy and articulated icons", () => {
   const html = renderToStaticMarkup(createElement(ProfileCredentials, { kind: "drivingLicenses", drivingLicenses: ["A2", "B1", "C2", "B3"].map((category) => ({ category })) }));
   for (const vehicle of ["motorcycle", "car", "heavy", "articulated"]) assert.match(html, new RegExp(`data-vehicle="${vehicle}"`));
+});
+
+
+test("academic comparison starts collapsed and retains all three explanations", () => {
+  const html = renderToStaticMarkup(createElement(AcademicMatchDetails, { value: { status: "partial", required_level: "university", requested_fields: ["Ingeniería de Sistemas"], selected: { status: "exact", actual_level: "university", in_progress: true, candidate_degree: "Ingeniería de Sistemas" } } }));
+  assert.match(html, /<details/);
+  assert.match(html, /<summary/);
+  assert.ok(!html.includes('open=""'));
+  for (const text of ["Área de formación", "Nivel académico", "Finalización del estudio"]) assert.ok(html.includes(text));
+});
+
+test("dashboard formation shows saved courses and opens the chosen plan directly", async () => {
+  const DashboardLearning = await component("DashboardLearning", "DashboardLearning");
+  const render = (props) => renderToStaticMarkup(createElement(MemoryRouter, null, createElement(DashboardLearning, props)));
+  const active = render({ plans: [{ id: 1, status: "in_progress", resource: { id: "sql-one", title: "SQL aplicado", provider: "Ejemplo" } }] });
+  assert.match(active, /SQL aplicado/);
+  assert.match(active, /resource=sql-one#mi-plan/);
+  assert.ok(!active.includes("Aprende con un objetivo"));
+  const saved = render({ certifications: [{ name: "Excel básico", issuer: "Instituto" }] });
+  assert.match(saved, /Excel básico/);
+  assert.match(saved, /profile-certifications/);
 });

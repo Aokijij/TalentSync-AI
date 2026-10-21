@@ -22,6 +22,7 @@ from reportlab.platypus import (
 
 from app.domain.services.credential_links import certificate_url
 from app.domain.services.experience_dates import recent_experiences
+from app.domain.services.personal_details import personal_detail_lines
 from app.domain.services.professions import EDUCATION_LEVEL_LABELS
 from app.domain.services.profile_links import link_label, professional_link_url
 from app.domain.services.resume_filename import resume_filename
@@ -150,6 +151,54 @@ class SkillPills(Flowable):
             x += width + 5
 
 
+class SkillMeter(Flowable):
+    """A wrapped label and a discrete declared-level bar, with real layout height."""
+    def __init__(self, skill, level, accent, background, ink):
+        super().__init__()
+        self.label = Paragraph(escape(str(skill)), ParagraphStyle("MeterLabel", fontName="ResumeBold", fontSize=7.2, leading=10, textColor=ink))
+        self.level = level
+        self.accent, self.background, self.ink = accent, background, ink
+        self.width = min(124, max(45, pdfmetrics.stringWidth(str(skill), "ResumeBold", 7.2) + 16, pdfmetrics.stringWidth(SKILL_LEVEL_LABELS.get(level, "Sin nivel indicado"), "Resume", 6) + 14))
+        self.spaceAfter = 0
+
+    def wrap(self, width, height):
+        self.width = min(self.width, width)
+        self.label_height = self.label.wrap(self.width - 14, height)[1]
+        self.height = self.label_height + 21
+        return self.width, self.height
+
+    def draw(self):
+        c = self.canv
+        c.setFillColor(self.background)
+        c.roundRect(0, 0, self.width, self.height, 7, fill=1, stroke=0)
+        self.label.drawOn(c, 7, self.height - 5 - self.label_height)
+        c.setFont("Resume", 6)
+        c.setFillColor(self.ink)
+        c.drawString(7, 10, SKILL_LEVEL_LABELS.get(self.level, "Sin nivel indicado"))
+        c.setFillColor(colors.HexColor("#cbd5e1"))
+        c.roundRect(7, 4, self.width - 14, 3, 1.5, fill=1, stroke=0)
+        steps = {"learning": 1, "basic": 2, "intermediate": 3, "advanced": 4, "expert": 5}
+        if self.level in steps:
+            gradient_panel(c, 7, 4, (self.width - 14) * steps[self.level] / 5, 3, self.accent, colors.HexColor("#0d9488"))
+
+
+def skill_meter_rows(skills, levels, accent, background, ink):
+    row, used = [], 0
+    def table():
+        result = Table([list(row)], colWidths=[item.width + (5 if index < len(row) - 1 else 0) for index, item in enumerate(row)], hAlign="LEFT", spaceAfter=5)
+        result.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 0)]))
+        return result
+    for skill in skills:
+        meter = SkillMeter(skill, levels.get(skill_key(skill)), accent, background, ink)
+        if row and used + 5 + meter.width > 124:
+            yield table()
+            row, used = [], 0
+        used += (5 if row else 0) + meter.width
+        row.append(meter)
+    if row:
+        yield table()
+
+
 def build_resume(user, included, include_photo, photo):
     profile = user.profile
     layout = profile.resume_style if profile.resume_style in {"classic", "modern", "minimal"} else "classic"
@@ -212,6 +261,9 @@ def build_resume(user, included, include_photo, photo):
         story.extend([p(title.upper(), heading), rule])
 
     main, side = [], []
+    if "contact" in included and personal_detail_lines(profile):
+        section(main, "Datos personales")
+        main.extend(p(f"{label}: {value}", meta) for label, value in personal_detail_lines(profile))
     if long_profession:
         main.append(p(profile.profession))
     if long_contact:
@@ -295,6 +347,8 @@ def build_resume(user, included, include_photo, photo):
                     flush(); used = 0
                 row.append(str(skill)); used += length + 5
             flush()
+        elif modern:
+            target.extend(skill_meter_rows(profile.skills, levels, accent, tint, ink))
         else:
             # A full-width card reserves its real wrapped height, including padding.
             # Paragraph borders previously painted outside their allocated row.

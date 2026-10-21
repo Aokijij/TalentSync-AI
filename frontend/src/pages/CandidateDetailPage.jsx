@@ -1,3 +1,4 @@
+import { SharedPersonalDetails } from "../components/SharedPersonalDetails.jsx";
 import { TRAINING_TYPES } from "../constants/trainingTypes.js";
 import { ProfileCredentials } from "../components/ProfileCredentials.jsx";
 import { CandidateMatchExplanation } from "../components/CandidateMatchExplanation.jsx";
@@ -130,6 +131,7 @@ export function CandidateDetailPage() {
               {candidate.experience ? <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">{candidate.experience}</p> : null}
               <div className="candidate-contact mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                 {candidate.email && <span className="inline-flex items-center gap-1.5"><Mail size={15} />{candidate.email}</span>}
+                <SharedPersonalDetails profile={candidate} />
                 {candidate.phone && (
                   <span className="inline-flex items-center gap-1.5">
                     <Phone size={15} />

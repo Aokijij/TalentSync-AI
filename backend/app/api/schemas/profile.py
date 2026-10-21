@@ -7,11 +7,13 @@ from pydantic import (
     Field,
     HttpUrl,
     field_validator,
+    model_serializer,
     model_validator,
 )
 
 from app.api.schemas.credentials import DrivingLicense, ProfessionalCard
 from app.api.schemas.language import LanguageLevel, unique_languages
+from app.api.schemas.personal_details import Identification, PersonalVisibility
 from app.domain.services.colombian_locations import canonical_commuting_city
 from app.domain.services.credential_links import certificate_url
 from app.domain.services.experience_dates import validate_experiences
@@ -123,6 +125,8 @@ class ProfileBase(BaseModel):
 
 class ProfileUpdate(ProfileBase):
     birth_date: date | None = None
+    identification: Identification | None = None
+    personal_visibility: PersonalVisibility = Field(default_factory=PersonalVisibility)
 
     @field_validator("birth_date")
     @classmethod
@@ -148,6 +152,8 @@ class ProfileUpdate(ProfileBase):
 
 class ProfileResponse(ProfileBase):
     birth_date: date | None = None
+    identification: Identification | None = None
+    personal_visibility: PersonalVisibility = Field(default_factory=PersonalVisibility)
     skill_level_sources: dict = Field(default_factory=dict)
     id: int
     user_id: int
@@ -165,8 +171,15 @@ class ProfileResponse(ProfileBase):
 
 
 class CandidateProfileResponse(ProfileResponse):
-    # This private field must never be shared through company-facing profiles.
-    birth_date: date | None = Field(default=None, exclude=True)
+    personal_visibility: PersonalVisibility = Field(default_factory=PersonalVisibility, exclude=True)
+
+    @model_serializer(mode="wrap")
+    def only_shared_personal_details(self, handler):
+        result = handler(self)
+        for key in ("birth_date", "identification"):
+            if getattr(self, key) is None:
+                result.pop(key, None)
+        return result
     submitted_version: str | None = None
     name: str
     email: str | None = None

@@ -8,6 +8,7 @@ export function profileValidation(profile, name, today = localToday()) {
   if (!name?.trim() || name.trim().length < 2) errors.name = "Escribe tu nombre completo, con al menos dos caracteres.";
   try { profileLinksPayload(profile.links); } catch (error) { errors[error.fieldPath || "links"] = error.message; }
   if (profile.birth_date && (!/^\d{4}-\d{2}-\d{2}$/.test(profile.birth_date) || profile.birth_date < "1900-01-01" || profile.birth_date > today)) errors.birth_date = "Elige una fecha de nacimiento válida, que no esté en el futuro.";
+  if (profile.identification && (!/^[\w .\-/]{3,40}$/.test(profile.identification.number?.trim() || ""))) errors["identification.number"] = "Escribe entre 3 y 40 caracteres o quita la identificación.";
   const categories = new Set();
   (profile.driving_licenses || []).forEach((row, index) => {
     if (!DRIVING_CATEGORIES.includes(row.category)) errors[`driving_licenses.${index}.category`] = "Elige la categoría de esta licencia.";
@@ -32,7 +33,7 @@ export function profileServerErrors(error) {
 }
 
 export function focusProfileError(errors, root = document) {
-  const sections = { experiences: "profile-experiences", educations: "profile-educations", certifications: "profile-certifications", languages: "profile-languages", skills: "profile-skills", links: "profile-links", driving_licenses: "profile-driving-licenses", professional_cards: "profile-professional-cards", birth_date: "profile-private", mobility: "preferencias", skill_levels: "profile-skills" };
+  const sections = { experiences: "profile-experiences", educations: "profile-educations", certifications: "profile-certifications", languages: "profile-languages", skills: "profile-skills", links: "profile-links", driving_licenses: "profile-driving-licenses", professional_cards: "profile-professional-cards", birth_date: "profile-private", identification: "profile-private", personal_visibility: "profile-private", mobility: "preferencias", skill_levels: "profile-skills" };
   const path = Object.keys(errors)[0];
   let target = [...root.querySelectorAll("[data-field-path]")].find((element) => element.dataset.fieldPath === path);
   if (!target) target = [...root.querySelectorAll("[data-field-path]")].filter((element) => path?.startsWith(`${element.dataset.fieldPath}.`)).sort((a, b) => b.dataset.fieldPath.length - a.dataset.fieldPath.length)[0];

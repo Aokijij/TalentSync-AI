@@ -150,10 +150,11 @@ def preview_resume_export(payload: ResumeExport, user=Depends(require_roles(User
     from app.domain.services.career_coach import snapshot
     profile = coach.owner_profile(user)
     values = {**snapshot(profile), "resume_style": profile.resume_style, "resume_color": profile.resume_color,
+              "birth_date": profile.birth_date, "identification": profile.identification, "personal_visibility": profile.personal_visibility,
               "photo_filename": profile.photo_filename, "evidence": getattr(profile, "evidence", []), "links": getattr(profile, "links", [])}
     name = user.name
     if payload.profile:
-        values.update(payload.profile.model_dump(mode="json", exclude={"name"} | {key for key in ("links", "driving_licenses", "professional_cards") if getattr(payload.profile, key) is None}))
+        values.update(payload.profile.model_dump(mode="json", exclude={"name"} | {key for key in ("links", "driving_licenses", "professional_cards") if getattr(payload.profile, key) is None} | {key for key in ("birth_date", "identification", "personal_visibility") if key not in payload.profile.model_fields_set}))
         name = payload.profile.name or name
     document_user = SimpleNamespace(name=name, email=user.email, profile=SimpleNamespace(**values))
     return Response(exporter(document_user, sections=payload.sections, include_photo=payload.include_photo), media_type="application/pdf", headers={
@@ -201,7 +202,7 @@ def update_my_profile(
     nlp: TextAnalysis = Depends(get_text_analysis),
 ) -> Profile:
     return use_cases.update_my_profile(
-        payload=payload.model_dump(exclude={key for key in ("mobility", "birth_date") if key not in payload.model_fields_set}), current_user=current_user, db=db, nlp=nlp
+        payload=payload.model_dump(exclude={key for key in ("mobility", "birth_date", "identification", "personal_visibility") if key not in payload.model_fields_set}), current_user=current_user, db=db, nlp=nlp
     )
 
 

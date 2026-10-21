@@ -1,6 +1,7 @@
 const closed = new Set(["rejected", "accepted", "hired"]);
 export const isOpenProcess = (row) => !closed.has(row.status) && !row.released_at;
 export function timestamp(value) {
+  if (typeof value === "number") return value;
   if (!value) return NaN;
   const text = String(value);
   return Date.parse(text.includes("T") && !/(?:Z|[+-]\d{2}:\d{2})$/i.test(text) ? `${text}Z` : text);

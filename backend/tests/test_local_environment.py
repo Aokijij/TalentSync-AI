@@ -25,6 +25,9 @@ def test_local_environment_overrides_inherited_production_configuration(monkeypa
     assert env["AZURE_STORAGE_ACCOUNT_URL"] == ""
     assert env["PERIODIC_MAINTENANCE_ENABLED"] == "false"
     assert env["JSEARCH_API_KEY"] == ""
+    assert env["LOCAL_MFA_REVIEW_ENABLED"] == "true"
+    assert env["COMPANY_MFA_REQUIRED"] == "false"
+    assert module.prepare_environment(testing=True)["LOCAL_MFA_REVIEW_ENABLED"] == "false"
     secret = env["SECRET_KEY"]
     assert len(secret) >= 32
     assert module.prepare_environment()["SECRET_KEY"] == secret

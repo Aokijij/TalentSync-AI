@@ -39,6 +39,12 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function refreshAccessOptions() {
+    const { data } = await api.get("/auth/options", { timeout: 8000, __skipRetry: true, __skipSessionEvent: true });
+    setAccessOptions(data);
+    return data;
+  }
+
   async function retryAuth() {
     setLoading(true);
     try {
@@ -103,6 +109,7 @@ export function AuthProvider({ children }) {
       if (data.mfa_required) return data;
       localStorage.removeItem("talentsync_token");
     }
+    await refreshAccessOptions();
     const me = await api.get("/auth/me");
     setUser(me.data);
     setAuthError("");
@@ -135,7 +142,7 @@ export function AuthProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ user, loading, authError, accessOptions, login, register, logout, refreshUser, retryAuth }),
+    () => ({ user, loading, authError, accessOptions, login, register, logout, refreshUser, refreshAccessOptions, retryAuth }),
     [user, loading, authError, accessOptions],
   );
 
