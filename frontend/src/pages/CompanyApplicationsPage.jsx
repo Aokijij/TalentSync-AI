@@ -25,6 +25,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import { ReopenJobModal } from "../components/ReopenJobModal.jsx";
+import { applicationBaseMatch, mergeApplicationMatch } from "../utils/applicationMatch.js";
 
 const stageAccents = [
   "var(--accent)",
@@ -88,6 +89,7 @@ export function CompanyApplicationsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const loadId = useRef(0);
+  const matchRequests = useRef(new Map());
   const activeJob = useRef(jobId);
   activeJob.current = jobId;
 
@@ -112,10 +114,28 @@ export function CompanyApplicationsPage() {
 
   const selectedJob = jobs.find((job) => String(job.id) === jobId);
   const columns = useMemo(() => columnsFor(selectedJob), [selectedJob]);
+  const answersApplication = answersFor ? applications.find((row) => row.id === answersFor.id) : null;
+
+  function loadCompatibility(item, requestId = loadId.current, requestedJob = jobId) {
+    const key = `${requestId}:${requestedJob}:${item.user_id}`;
+    if (!matchRequests.current.has(key)) {
+      const request = api.get(`/recommendations/jobs/${requestedJob}/candidates/${item.user_id}/explanation`, { __skipRetry: true, __quiet: true }).then(({ data }) => {
+        if (applicationBaseMatch(data) == null) throw new Error("No se recibió la compatibilidad base del perfil.");
+        if (requestId === loadId.current && activeJob.current === requestedJob) {
+          setScores((current) => ({ ...current, [item.user_id]: data.match_percentage }));
+          setApplications((current) => current.map((row) => row.id === item.id ? mergeApplicationMatch(row, data) : row));
+        }
+        return data;
+      }).catch((failure) => { matchRequests.current.delete(key); throw failure; });
+      matchRequests.current.set(key, request);
+    }
+    return matchRequests.current.get(key);
+  }
 
   async function loadApplications() {
     if (!jobId) return;
     const requestId = ++loadId.current;
+    matchRequests.current.clear();
     setLoadingApplications(true);
     try {
       const applicationsResponse = await api.get(`/applications/jobs/${jobId}`);
@@ -136,8 +156,8 @@ export function CompanyApplicationsPage() {
         if (requestId === loadId.current && activeJob.current === jobId) setApplications((current) => current.map((item) => item.status === "submitted" ? { ...item, status: "seen" } : item));
       }).catch(() => {});
       setScores(Object.fromEntries(applicationsResponse.data.filter((item) => item.adjusted_match_percentage != null).map((item) => [item.user_id, item.adjusted_match_percentage])));
-      const pending = applicationsResponse.data.filter((item) => item.adjusted_match_percentage == null);
-      const loadScore = async () => { while (pending.length && requestId === loadId.current && activeJob.current === jobId) { const item = pending.shift(); try { const { data } = await api.get(`/recommendations/jobs/${jobId}/candidates/${item.user_id}/explanation`, { __skipRetry: true }); if (requestId === loadId.current && activeJob.current === jobId) setScores((current) => ({ ...current, [item.user_id]: data.match_percentage })); } catch { /* The profile still opens when a score is unavailable. */ } } };
+      const pending = applicationsResponse.data.filter((item) => item.base_match_percentage == null || item.adjusted_match_percentage == null);
+      const loadScore = async () => { while (pending.length && requestId === loadId.current && activeJob.current === jobId) { const item = pending.shift(); try { await loadCompatibility(item, requestId, jobId); } catch { /* Answer review offers an explicit retry without blocking the board. */ } } };
       void loadScore(); void loadScore();
     } catch (requestError) {
       if (requestId !== loadId.current || activeJob.current !== jobId) return;
@@ -476,7 +496,7 @@ export function CompanyApplicationsPage() {
           onClose={() => setShowStageEditor(false)}
         />
       ) : null}
-      {answersFor && <ApplicationAnswersModal key={answersFor.id} application={answersFor} onClose={() => setAnswersFor(null)} onPrepare={(changes) => { if (queueUpdate(answersFor.id, changes)) setAnswersFor(null); }} />}
+      {answersApplication && <ApplicationAnswersModal key={answersApplication.id} application={answersApplication} loadCompatibility={() => loadCompatibility(answersApplication)} onClose={() => setAnswersFor(null)} onPrepare={(changes) => { if (queueUpdate(answersApplication.id, changes)) setAnswersFor(null); }} />}
       {selected ? (
         <RecruiterProcessDialog
           application={selected}

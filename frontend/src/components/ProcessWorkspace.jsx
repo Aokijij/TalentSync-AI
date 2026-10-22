@@ -1,0 +1,40 @@
+import { BriefcaseBusiness, ClipboardCheck, Clock3, History, LayoutDashboard, MessageSquare, UserRound } from "lucide-react";
+import { useState } from "react";
+import { OfferConditions } from "./OfferConditions.jsx";
+import { ProcessInterview } from "./InterviewAgenda.jsx";
+import { StructuredJobText } from "./StructuredJobText.jsx";
+import { Panel, WorkspaceTabs } from "./ui/Panel.jsx";
+import { processDate } from "../utils/interviewAgenda.js";
+import "../styles/process-workspace.css";
+
+export const processLabels = { submitted: "Recibida", seen: "Vista", reviewing: "En revisión", shortlisted: "Preselección", technical_interview: "Entrevista técnica", psychometric_test: "Evaluación", accepted: "Seleccionado", hired: "Contratado", rejected: "Finalizado" };
+export const processTime = (value, fallback = "Sin plazo activo") => processDate(value)?.toLocaleString("es-CO", { timeZone: "America/Bogota", dateStyle: "medium", timeStyle: "short" }) || fallback;
+
+// Panels stay mounted: changing sections must not discard an evaluation or feedback draft.
+export function ProcessWorkspace({ process, role, evaluation, communication, preparation }) {
+  const [tab, setTab] = useState("overview");
+  const company = role === "company";
+  const closed = !!process.released_at || ["accepted", "hired", "rejected"].includes(process.status);
+  const stage = process.stage_title || processLabels[process.stage] || "En seguimiento";
+  const status = processLabels[process.status] || "En seguimiento";
+  const items = [["overview", "Resumen", LayoutDashboard], ["vacancy", company ? "Preparar entrevista" : "La vacante", BriefcaseBusiness], ...(company ? [["evaluation", "Evaluación interna", ClipboardCheck]] : []), ["history", "Historial", History], ...(communication ? [["communicate", "Comunicar avance", MessageSquare]] : [])];
+  const activeTab = items.some(([key]) => key === tab) ? tab : "overview";
+  const panels = {
+    overview: <div className="process-summary-grid">
+      <div className="process-summary-main"><ProcessInterview process={process} />
+        {process.feedback?.message ? <Panel title={process.feedback.source === "company" ? "Último mensaje de la empresa" : "Aviso del sistema"}><p className="process-feedback">{process.feedback.message}</p></Panel> : <Panel title="Próximo paso"><p>{closed ? "El proceso ha finalizado. Puedes consultar sus avances en el historial." : company ? "Revisa las evidencias y registra tu evaluación antes de comunicar el siguiente avance." : "La empresa comunicará aquí los siguientes avances de tu postulación."}</p></Panel>}
+        <div className="process-quick-actions">{company && <button type="button" className="button-secondary" onClick={() => setTab("evaluation")}><ClipboardCheck size={17} />{process.can_evaluate ? "Registrar evaluación" : "Consultar evaluaciones"}</button>}{communication && <button type="button" className="button-primary" onClick={() => setTab("communicate")}><MessageSquare size={17} />Comunicar avance</button>}{preparation}</div>
+      </div>
+      <Panel title="Plazos del proceso" className="process-deadlines"><Clock3 size={20} aria-hidden="true" /><h3>{closed ? "Proceso finalizado" : process.response_due_at ? "Próxima respuesta" : "Sin plazo activo"}</h3>{!closed && process.response_due_at && <p className="process-deadline-date">{processTime(process.response_due_at)}</p>}{!closed && <p>Plazo por avance: {process.response_days} días naturales.</p>}<p className="process-meta">Hora de Colombia · Cada avance puede actualizar el plazo de respuesta.</p><dl><div><dt>Postulación enviada</dt><dd>{processTime(process.created_at, "Fecha no disponible")}</dd></div></dl></Panel>
+    </div>,
+    vacancy: <div className="process-vacancy-grid"><Panel title={company ? "Contexto y responsabilidades" : "Responsabilidades de la vacante"} description={company ? "Contrasta las tareas del cargo con ejemplos y evidencias de la entrevista." : undefined}><StructuredJobText text={process.job_description} /></Panel><div className="process-vacancy-side"><Panel title={company ? "Requisitos a contrastar" : "Requisitos de la vacante"}><StructuredJobText text={process.job_requirements} /></Panel>{process.job_conditions?.quality_details && <details className="surface-card process-conditions"><summary>Condiciones actuales de la oferta</summary><div><OfferConditions job={process.job_conditions} />{process.process_estimated_end && <p className="process-meta">Finalización estimada: {processTime(process.process_estimated_end)}. El plazo por avance se consulta en Resumen.</p>}</div></details>}</div></div>,
+    evaluation,
+    history: <Panel title="Historial del proceso" description="Avances y comunicaciones, en orden cronológico."><ol className="process-timeline"><li><span aria-hidden="true" /><div><h3>Postulación creada</h3><p>{processTime(process.created_at)}</p></div></li>{(process.events || []).map((event) => <li key={event.id}><span aria-hidden="true" /><div><h3>{event.type === "application.withdrawn" ? "Retirada por el candidato" : event.type === "application.deadline_released" ? "Plazo vencido; proceso cerrado" : event.type === "application.feedback_shared" ? "Feedback compartido" : `${processLabels[event.status] || event.status || "Avance del proceso"} · ${processLabels[event.stage] || "En seguimiento"}`}</h3><p>{processTime(event.at)} · {event.source === "company" ? "Empresa" : event.source === "candidate" ? "Candidato" : "Sistema"}</p></div></li>)}</ol></Panel>,
+    communicate: communication,
+  };
+  return <div className="process-workspace">
+    <section className="process-identity surface-card" aria-label="Estado del proceso"><div><span className="process-status">{closed ? "Proceso cerrado" : status === stage ? "Proceso activo" : status}</span><h2>{stage}</h2><p>{process.company_name}{company && process.candidate_name && <> · <UserRound size={15} aria-hidden="true" />{process.candidate_name}</>}</p></div><button type="button" className="button-secondary button-sm" onClick={() => setTab("history")}><History size={16} />Ver historial</button></section>
+    <WorkspaceTabs id="process" label="Secciones del seguimiento" value={activeTab} onChange={setTab} items={items} />
+    {items.map(([key]) => <div key={key} role="tabpanel" id={`process-panel-${key}`} aria-labelledby={`process-tab-${key}`} tabIndex={0} hidden={activeTab !== key}>{panels[key]}</div>)}
+  </div>;
+}

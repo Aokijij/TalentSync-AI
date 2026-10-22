@@ -6,6 +6,7 @@ function textBlocks(value) {
     .replace(/\s+[•*]\s+/g, "\n• ")
     .replace(/\s+-\s*(requerimientos|requisitos|responsabilidades|funciones|competencias)\s*-\s*/gi, "\n$1\n")
     .replace(/\s+(?=(?:Requisitos|Responsabilidades|Funciones|Perfil requerido|Condiciones|Competencias):)/g, "\n")
+    .replace(/(^|\n)((?:Requisitos|Responsabilidades|Funciones|Perfil requerido|Condiciones|Competencias):)\s*(?=\S)/gi, "$1$2\n")
     .split(/\n+/)
     .map((item) => item.trim())
     .filter(Boolean);

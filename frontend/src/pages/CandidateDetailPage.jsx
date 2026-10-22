@@ -25,6 +25,7 @@ import { resumeFilename } from "../utils/resumeFilename.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
+import { applicationBaseMatch, mergeApplicationMatch, projectedMatch } from "../utils/applicationMatch.js";
 
 const modalityLabels = {
   remote: "Remoto",
@@ -60,10 +61,10 @@ export function CandidateDetailPage() {
       .then(([{ data }, candidateMatch, application]) => {
         if (cancelled) return;
         setCandidate(data);
-        const base = Number(candidateMatch?.base_match_percentage ?? candidateMatch?.match_percentage ?? application?.base_match_percentage ?? 0);
+        const base = applicationBaseMatch(candidateMatch) ?? applicationBaseMatch(application);
         const adjustment = Number(application?.screening_adjustment ?? candidateMatch?.screening_adjustment ?? 0);
         setApplication(application ? { ...application, base_match_percentage: base } : null);
-        setMatch(candidateMatch ? { ...candidateMatch, base_match_percentage: base, screening_adjustment: adjustment, match_percentage: Math.max(0, Math.min(100, base + adjustment)) } : null);
+        setMatch(candidateMatch ? { ...candidateMatch, base_match_percentage: base, screening_adjustment: adjustment, match_percentage: projectedMatch(base, adjustment) } : null);
       })
       .catch((requestError) => {
         if (!cancelled) setError(
@@ -127,7 +128,7 @@ export function CandidateDetailPage() {
       {jobId && !match && !matchError && <section className="surface-card p-4 text-sm text-[var(--muted)]" role="status">Preparando la explicación de compatibilidad… Puedes revisar el perfil mientras termina.</section>}
       {match?.match_details && <CandidateMatchExplanation match={match} />}
       {matchError && <section className="surface-card p-4" role="alert"><p className="text-sm text-[var(--error)]">{matchError}</p><button type="button" className="button-secondary mt-3" onClick={() => setRetry((value) => value + 1)}>Reintentar explicación</button></section>}
-      <ApplicationAnswersModal application={showAnswers ? application : null} candidateName={candidate.name} onClose={() => setShowAnswers(false)} onSaved={(updated) => { setApplication(updated); setMatch((current) => current ? { ...current, screening_adjustment: updated.screening_adjustment, match_percentage: Math.max(0, Math.min(100, current.base_match_percentage + updated.screening_adjustment)) } : current); }} />
+      <ApplicationAnswersModal application={showAnswers ? application : null} candidateName={candidate.name} onClose={() => setShowAnswers(false)} onSaved={(updated) => { setApplication((current) => mergeApplicationMatch(updated, current)); setMatch((current) => current ? { ...current, screening_adjustment: updated.screening_adjustment, match_percentage: projectedMatch(current.base_match_percentage, updated.screening_adjustment) } : current); }} />
       <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="company-candidate-profile space-y-6">
           <Timeline

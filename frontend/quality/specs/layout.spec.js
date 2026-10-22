@@ -46,6 +46,19 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     await comparison.getByRole("button", { name: "Cerrar ventana" }).click();
     await expect(page.getByRole("button", { name: "Comparar (2)", exact: true })).toBeFocused();
     await expect(page.getByRole("heading", { name: "Tu agenda de entrevistas" })).toBeVisible();
+    const tracking = page.locator('[data-quality="tracking"]');
+    await expect(tracking.getByRole("tabpanel", { name: "Resumen", exact: true })).toBeVisible();
+    await tracking.getByRole("tab", { name: role === "company" ? "Preparar entrevista" : "La vacante", exact: true }).click();
+    await expect(tracking.getByText("Revisar los registros de inventario.", { exact: true })).toBeVisible();
+    if (role === "company") {
+      await tracking.getByRole("tab", { name: "Evaluación interna", exact: true }).click();
+      await tracking.getByLabel("Evaluación de ejemplo").fill("Borrador que debe conservarse");
+      await tracking.getByRole("tab", { name: "Historial", exact: true }).click();
+      await expect(tracking.getByLabel("Evaluación de ejemplo")).toBeHidden();
+      await tracking.getByRole("tab", { name: "Evaluación interna", exact: true }).click();
+      await expect(tracking.getByLabel("Evaluación de ejemplo")).toHaveValue("Borrador que debe conservarse");
+    } else await expect(tracking.getByRole("tab", { name: "Evaluación interna", exact: true })).toHaveCount(0);
+    await tracking.getByRole("tab", { name: "Resumen", exact: true }).click();
     await expect(page.getByRole("button", { name: "Añadir al calendario", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Gestionar proceso de ejemplo" }).click();
     const process = page.getByRole("dialog", { name: "Candidata de ejemplo", exact: true });

@@ -1,40 +1,72 @@
-import { OfferConditions } from "../components/OfferConditions.jsx";
-import { InterviewEvaluationPanel } from "../components/InterviewEvaluationPanel.jsx";
-import { Building2, CalendarClock, CheckCircle2 } from "lucide-react";
-import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
+import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ApplicationPreparation } from "../components/ApplicationPreparation.jsx";
-import { ProcessInterview } from "../components/InterviewAgenda.jsx";
-
-const labels = { submitted: "Recibida", seen: "Vista", reviewing: "En revisión", shortlisted: "Preselección", technical_interview: "Entrevista técnica", psychometric_test: "Evaluación", accepted: "Seleccionado", hired: "Contratado", rejected: "Finalizado" };
-const date = (value) => value ? new Date(value.endsWith("Z") || /[+-]\d\d:\d\d$/.test(value) ? value : value + "Z").toLocaleString("es-CO") : "Sin plazo activo";
+import { InterviewEvaluationPanel } from "../components/InterviewEvaluationPanel.jsx";
+import { ProcessWorkspace, processLabels } from "../components/ProcessWorkspace.jsx";
+import { Panel } from "../components/ui/Panel.jsx";
 
 export function ProcessPage() {
   const { applicationId } = useParams();
-  return <ProcessWorkspace key={applicationId} applicationId={applicationId} />;
+  return <ProcessController key={applicationId} applicationId={applicationId} />;
 }
 
-function ProcessWorkspace({ applicationId }) {
+function ProcessController({ applicationId }) {
   const { confirm } = useFeedback();
   const { user } = useAuth();
-  const [process, setProcess] = useState(null); const [error, setError] = useState(""); const [busy, setBusy] = useState(false); const [message, setMessage] = useState("");
-  async function load() { setProcess((await api.get(`/workflow/applications/${applicationId}`)).data); }
-  useEffect(() => { load().catch((failure) => setError(getApiErrorMessage(failure))); }, [applicationId]);
-  return <div className="process-page space-y-5"><PageHeader kicker="Seguimiento transparente" title={process?.job_title || "Tu proceso de selección"} description={process ? `${process.company_name} · ${user.role === "company" ? "Revisa el proceso y registra los criterios de tu evaluación." : "Sigue los avances y las respuestas de tu postulación."}` : "Consulta los avances de tu postulación."} />{error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}{message && <p role="status">{message}</p>}{process && <>
-    <div className="security-overview">{[[Building2, "Empresa", process.company_name], [CalendarClock, "Postulación enviada", date(process.created_at)], [CheckCircle2, "Estado actual", process.released_at ? "Proceso cerrado" : labels[process.status] || "En seguimiento"]].map(([Icon, title, value]) => <article className="surface-card flex items-center gap-3 p-5" key={title}><Icon className="shrink-0 text-[var(--accent)]" size={22} /><div><p className="text-xs text-[var(--muted)]">{title}</p><p className="mt-1 text-sm font-bold">{value}</p></div></article>)}</div>
-    {process.candidate_name && <p className="text-lg font-bold">Candidato: {process.candidate_name}</p>}
-    <ProcessInterview process={process} />
-    {user.role === "candidate" && <ApplicationPreparation key={applicationId} applicationId={applicationId} jobId={process.job_id} />}
-    <section className="surface-card space-y-3 p-5"><h2 className="font-bold">{labels[process.status] || process.status}{process.released_at && " · Proceso cerrado"}</h2><p>Etapa: {process.stage_title || labels[process.stage] || "En seguimiento"}</p><p>Próxima respuesta antes de: {date(process.response_due_at)}</p><p className="text-sm text-[var(--muted)]">Plazo por avance: {process.response_days} días naturales. Cada avance puede incluir un plazo de respuesta.</p>{process.feedback?.message && <div className="rounded-lg bg-[var(--surface-subtle)] p-4"><h3 className="font-semibold">{process.feedback.source === "company" ? "Feedback de la empresa" : "Aviso del sistema"}</h3><p className="mt-2 text-sm">{process.feedback.message}</p></div>}</section>
-    {user.role === "company" && <details className="surface-card p-5"><summary className="cursor-pointer font-bold">Preparar la entrevista · contexto de la vacante</summary><div className="mt-4 space-y-4 text-sm"><p className="font-semibold">{process.interview_at ? `Entrevista programada: ${date(process.interview_at)}` : "La entrevista aún no tiene fecha; el reclutador la programa desde el tablero."}</p><div><h3 className="font-semibold">Responsabilidades</h3><p className="mt-2 text-[var(--muted)]">{process.job_description}</p></div><div><h3 className="font-semibold">Requisitos a contrastar con ejemplos</h3><p className="mt-2 text-[var(--muted)]">{process.job_requirements}</p></div></div></details>}
-    {process.job_conditions?.quality_details && <details className="surface-card p-5"><summary className="cursor-pointer font-bold">Condiciones actuales y misiones de la oferta</summary><div className="mt-4"><OfferConditions job={process.job_conditions} />{process.process_estimated_end && <p className="mt-4 text-sm text-[var(--muted)]">Finalización estimada desde tu postulación: {date(process.process_estimated_end)}. El plazo de respuesta por avance se muestra por separado.</p>}</div></details>}
-    <section className="surface-card p-5"><h2 className="font-bold">Línea de tiempo</h2><ol className="mt-4 space-y-4 border-l-2 border-[var(--line)] pl-5"><li><p className="font-semibold">Postulación creada</p><p className="text-xs text-[var(--muted)]">{date(process.created_at)}</p></li>{process.events.map((event) => <li key={event.id}><p className="font-semibold">{event.type === "application.withdrawn" ? "Retirada por el candidato" : event.type === "application.deadline_released" ? "Plazo vencido; proceso cerrado" : event.type === "application.feedback_shared" ? "Feedback compartido" : `${labels[event.status] || event.status} · ${labels[event.stage] || "En seguimiento"}`}</p><p className="text-xs text-[var(--muted)]">{date(event.at)} · {event.source === "company" ? "Empresa" : event.source === "candidate" ? "Candidato" : "Sistema"}</p></li>)}</ol></section>
-    {user.role === "company" && <InterviewEvaluationPanel process={process} onSaved={setProcess} />}
-    {process.can_manage && !process.released_at && <section className="surface-card space-y-4 p-5"><h2 className="font-bold">Comunicar avance o resultado</h2><form className="grid gap-3" onSubmit={async (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); const payload = { status: data.get("status"), expected_version: process.version }; if (data.get("message").trim()) payload.candidate_feedback = { message: data.get("message"), reason_code: data.get("reason_code") }; if (!await confirm({ title: "Comunicar este avance", description: "El estado y el mensaje se guardarán en el historial y estarán disponibles para el candidato.", confirmLabel: "Guardar y comunicar" })) return; setBusy(true); setError(""); try { await api.put(`/applications/${applicationId}/status`, payload); await load(); setMessage("Avance comunicado y guardado en el historial"); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }}><label>Estado<select className="field-control mt-1" name="status" defaultValue={process.status}>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Motivo del feedback<select className="field-control mt-1" name="reason_code"><option value="other">Otro motivo</option><option value="skills_gap">Habilidades por acreditar</option><option value="experience_gap">Experiencia solicitada</option><option value="position_closed">Vacante cerrada</option></select></label><label>Mensaje que recibirá el candidato (opcional)<textarea className="field-control mt-1" name="message" minLength={10} maxLength={1500} placeholder="Describe evidencia concreta y cómo puede mejorar" /></label><button disabled={busy} className="button-primary">Guardar y comunicar</button></form></section>}
-    <div className="flex flex-wrap gap-3"><Link className="button-secondary inline-flex" to={user.role === "candidate" ? "/postulaciones" : user.role === "company" ? process.can_manage ? `/empresa/postulaciones?job=${process.job_id}` : "/empresa/equipo" : "/admin"}>Volver a mi espacio</Link></div>
-  </>}</div>;
+  const [process, setProcess] = useState(null), [error, setError] = useState("");
+  const [busy, setBusy] = useState(false), [message, setMessage] = useState("");
+  useEffect(() => {
+    const controller = new AbortController();
+    api.get(`/workflow/applications/${applicationId}`, { signal: controller.signal })
+      .then(({ data }) => { if (!controller.signal.aborted) setProcess(data); })
+      .catch((failure) => { if (!controller.signal.aborted) setError(getApiErrorMessage(failure)); });
+    return () => controller.abort();
+  }, [applicationId]);
+
+  async function communicate(values) {
+    if (busy) return false;
+    if (!await confirm({ title: "Comunicar este avance", description: "El estado y el mensaje se guardarán en el historial y estarán disponibles para el candidato.", confirmLabel: "Guardar y comunicar" })) return false;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const payload = { status: values.status, expected_version: process.version };
+      if (values.message.trim()) payload.candidate_feedback = { message: values.message.trim(), reason_code: values.reason_code };
+      await api.put(`/applications/${applicationId}/status`, payload);
+      setProcess((await api.get(`/workflow/applications/${applicationId}`)).data);
+      setMessage("Avance comunicado y guardado en el historial.");
+      return true;
+    } catch (failure) { setError(getApiErrorMessage(failure)); return false; }
+    finally { setBusy(false); }
+  }
+
+  return <div className="process-page space-y-5">
+    <PageHeader kicker="Seguimiento transparente" title={process?.job_title || "Tu proceso de selección"} description={user.role === "company" ? "Consulta el avance, prepara la entrevista y comunica el siguiente paso." : "Consulta el estado y los próximos pasos de tu postulación."} />
+    {error && <p role="alert" className="ui-inline-notice is-error">{error}</p>}
+    {message && <p role="status" className="ui-inline-notice">{message}</p>}
+    {!process && !error && <p role="status" className="text-sm text-[var(--muted)]">Cargando el proceso…</p>}
+    {process && <>
+      <ProcessWorkspace process={process} role={user.role}
+        evaluation={user.role === "company" ? <InterviewEvaluationPanel process={process} onSaved={setProcess} /> : null}
+        communication={process.can_manage && !process.released_at ? <CommunicationForm process={process} busy={busy} onCommunicate={communicate} /> : null}
+        preparation={user.role === "candidate" ? <ApplicationPreparation applicationId={applicationId} jobId={process.job_id} /> : null}
+      />
+      <Link className="button-secondary inline-flex" to={user.role === "candidate" ? "/postulaciones" : user.role === "company" ? process.can_manage ? `/empresa/postulaciones?job=${process.job_id}` : "/empresa/equipo" : "/admin"}>Volver a mi espacio</Link>
+    </>}
+  </div>;
+}
+
+function CommunicationForm({ process, busy, onCommunicate }) {
+  const [values, setValues] = useState({ status: process.status, message: "", reason_code: "other" });
+  const change = (event) => setValues((current) => ({ ...current, [event.target.name]: event.target.value }));
+  return <Panel title="Comunicar avance o resultado" description="El candidato podrá consultar este estado y el mensaje en su seguimiento." className="process-communicate">
+    <form onSubmit={async (event) => { event.preventDefault(); if (await onCommunicate(values)) setValues((current) => ({ ...current, message: "" })); }}>
+      <label>Estado<select className="field-control" name="status" value={values.status} onChange={change} disabled={busy}>{Object.entries(processLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <label>Motivo del feedback<select className="field-control" name="reason_code" value={values.reason_code} onChange={change} disabled={busy}><option value="other">Otro motivo</option><option value="skills_gap">Habilidades por acreditar</option><option value="experience_gap">Experiencia solicitada</option><option value="position_closed">Vacante cerrada</option></select></label>
+      <label>Mensaje para el candidato (opcional)<textarea className="field-control" name="message" rows={4} minLength={10} maxLength={1500} placeholder="Describe evidencia concreta y cómo puede mejorar" value={values.message} onChange={change} disabled={busy} /></label>
+      <footer><p>Los cambios se publican al guardar.</p><button disabled={busy} className="button-primary">{busy ? "Guardando…" : "Guardar y comunicar"}</button></footer>
+    </form>
+  </Panel>;
 }

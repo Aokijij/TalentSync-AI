@@ -1021,8 +1021,6 @@ html[data-theme="dark"] .auth-stage {
 .role-admin .access-story { background: radial-gradient(ellipse at 100% 0%, #7365c255, transparent 65%), linear-gradient(145deg, #29194b, #131629); }
 @media (max-width: 640px) { .security-overview { grid-template-columns: 1fr; gap: .65rem; } .activity-match, .skill-market-row { grid-template-columns: 1fr; gap: .6rem; } .security-jump { position: static; } .activity-order { gap: .4rem; padding: .6rem; } }
 
-.process-page ol li { position: relative; padding: .75rem 1rem; margin-left: .25rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-subtle); }
-.process-page ol li::before { content: ""; position: absolute; left: -2rem; top: 1.1rem; width: 12px; height: 12px; border: 3px solid var(--surface); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 
 /* Administration has its own warm palette in both themes. */
 .role-admin {
