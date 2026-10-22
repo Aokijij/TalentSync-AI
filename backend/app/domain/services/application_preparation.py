@@ -16,8 +16,17 @@ def resume_profile(profile):
     visibility = getattr(profile, "personal_visibility", None) or {}
     values.update(shared_personal_details(profile))
     values["personal_visibility"] = visibility
-    values["preferences"] = {key: deepcopy((getattr(profile, "preferences", None) or {}).get(key, {})) for key in ("skill_levels", "mobility")}
+    values["preferences"] = {key: deepcopy((getattr(profile, "preferences", None) or {}).get(key, {})) for key in ("skill_levels", "mobility", "resume_export_options")}
     return json.loads(json.dumps(values, default=str))
+
+
+def resume_options(profile):
+    saved = (profile.get("preferences") or {}).get("resume_export_options") or {}
+    defaults = ["contact", "summary", "experiences", "educations", "certifications", "driving_licenses", "professional_cards", "skills", "languages", "preferences", "evidence"]
+    sections = list(saved.get("sections", defaults))
+    if saved.get("version") != 2 and "certifications" in sections:
+        sections = list(dict.fromkeys([*sections, "driving_licenses", "professional_cards"]))
+    return {"sections": sections, "include_photo": saved.get("include_photo", True)}
 
 
 def source_version(user):

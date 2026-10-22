@@ -32,7 +32,7 @@ test("market demand uses the filtered report and avoids a second search form", (
 });
 test("saved export selections restore without exposing omitted contact or triggering a download", () => {
   const html = renderToStaticMarkup(createElement(Export, { open: true, name: "Candidata", profile: { resume_style: "modern", resume_color: "teal", resume_export_options: { sections: ["summary"], include_photo: false } } }));
-  assert.match(html, /Guardar mi diseño/);
+  assert.match(html, /Guardar diseño y preferencias/);
   assert.match(html, /Vista previa del PDF/);
   assert.match(html, /type="checkbox" checked=""\/>Resumen profesional/);
   assert.doesNotMatch(html, /type="checkbox" checked=""\/>Datos de contacto/);

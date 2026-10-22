@@ -72,6 +72,14 @@ Mercado laboral incorpora **Cualquiera** como mínimo inicial, sin cambiar el um
 
 Se comprobaron 215 pruebas frontend y 24 recorridos visuales de componentes. Además, el frontend completo y la API local se probaron en móvil y escritorio, con ambos temas: filtros, guardar y desguardar, ocultar y restaurar, comparación y navegación entre postulación, proceso y vacante. Estos recorridos utilizan una copia desechable de los datos. El informe privado está en `.local/verification/market-vacancies.json` y las capturas en `.local/market-review/`.
 
+## CV y confirmación de postulaciones
+
+Inicio, recomendaciones y detalle de vacante comparten la confirmación previa: preguntas de la oferta y elección del documento antes de enviar. Se puede adjuntar el CV del perfil, una versión guardada o continuar sin PDF. Los nuevos envíos conservan el PDF del perfil o de la versión seleccionada; su descarga requiere autorización sobre el proceso. Las postulaciones históricas con datos conservados pueden generar el documento desde esos datos, sin utilizar ediciones posteriores del perfil.
+
+La foto y los apartados del CV por vacante respetan las preferencias guardadas del perfil. La preparación oculta los controles de apartados excluidos y dirige sus cambios al perfil. La empresa recibe una descarga con un nombre normal de hoja de vida, sin avisos de adaptación a la oferta. El encabezado tiene menos espacio vacío y mantiene visible el perfil si falla una descarga.
+
+Las verificaciones específicas incluyen permisos de descarga, ausencia de PDF al elegir no adjuntarlo, conservación del documento, preferencias y solicitudes repetidas. El modal se comprobó con ambos temas en móvil y escritorio; las capturas y el resumen privado se guardan en `.local/application-cv-review/` y `.local/verification/application-cv-flow.json`.
+
 ## Límites de la revisión
 
 - Se comprobaron las rutas principales con cuentas de demostración y una selección representativa de capturas. No hay comparaciones automáticas contra imágenes aprobadas. Los recorridos no cubren todas las combinaciones posibles de datos, permisos de miembros de equipo, dispositivos o navegadores.

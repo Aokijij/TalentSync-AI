@@ -189,7 +189,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
         "resume_style": profile.resume_style,
         "resume_color": profile.resume_color,
         "submitted_version": saved.get("resume_version_id") or saved.get("draft_id") or (f"profile-{application.id}" if saved.get("schema") == 2 else None),
-        "submitted_resume_url": f"/api/v1/applications/{application.id}/resume" if saved.get("resume_version_id") else None,
+        "submitted_resume_url": f"/api/v1/applications/{application.id}/resume" if application and saved.get("attach_resume") is not False and (saved.get("resume_version_id") or saved.get("profile_resume_id") or saved.get("schema") == 2 and saved.get("profile")) else None,
     }
 
 

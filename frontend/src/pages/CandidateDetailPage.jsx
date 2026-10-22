@@ -47,11 +47,12 @@ export function CandidateDetailPage() {
   const [matchError, setMatchError] = useState("");
   const [retry, setRetry] = useState(0);
   const [downloadingResume, setDownloadingResume] = useState(false);
+  const [resumeError, setResumeError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
-    setError(""); setMatchError(""); setCandidate(null); setMatch(null); setApplication(null);
+    setError(""); setResumeError(""); setMatchError(""); setCandidate(null); setMatch(null); setApplication(null);
     const profileRequest = api.get(`/profiles/candidates/${userId}`, { signal: controller.signal, params: jobId ? { job_id: jobId } : {} }).then((response) => { if (!cancelled) setCandidate(response.data); return response; });
     const matchRequest = jobId ? api.get(`/recommendations/jobs/${jobId}/candidates/${userId}/explanation`, { signal: controller.signal }).then(({ data }) => { if (!cancelled) setMatch(data); return data; }).catch((failure) => { if (!cancelled) setMatchError(getApiErrorMessage(failure, "No pudimos cargar la explicación de compatibilidad.")); return null; }) : Promise.resolve(null);
     const applicationRequest = jobId
@@ -94,14 +95,7 @@ export function CandidateDetailPage() {
     return <p className="text-sm text-[var(--muted)]">Cargando perfil...</p>;
 
   return (
-    <div className="company-candidate-profile space-y-6">
-      {candidate.submitted_version && <p className="surface-card p-4 text-sm text-[var(--muted)]">Estás viendo la versión del perfil enviada para esta vacante. Los cambios posteriores del perfil principal se mantienen separados. La compatibilidad base se calcula con el perfil actual registrado.</p>}
-      {candidate.submitted_resume_url && !candidate.identity_hidden && <button type="button" className="button-secondary" disabled={downloadingResume} onClick={async () => {
-        setDownloadingResume(true); setError("");
-        try { const { data } = await api.get(apiFileUrl(candidate.submitted_resume_url), { responseType: "blob" }); saveBlob(data, resumeFilename(candidate.name)); }
-        catch (failure) { setError(getApiErrorMessage(failure, "No pudimos descargar el CV enviado.")); }
-        finally { setDownloadingResume(false); }
-      }}><Download size={16} />{downloadingResume ? "Descargando…" : "Descargar CV enviado"}</button>}
+    <div className="company-candidate-profile candidate-detail-page space-y-6">
       <button
         type="button"
         onClick={() => navigate(location.state?.returnTo || (jobId ? `/empresa/talento?job=${jobId}&audience=applied&min=40` : "/empresa/talento"))}
@@ -111,14 +105,19 @@ export function CandidateDetailPage() {
         Volver a candidatos recomendados
       </button>
       {candidate.identity_hidden && <aside className="identity-note"><ShieldCheck size={22} /><div><h2 className="font-bold">Perfil profesional en selección ciega</h2><p>La vacante oculta nombre, contacto y organizaciones de origen. La identidad se comparte cuando la persona se postula a esta vacante.</p><Link to={`/procesos/${application?.id || ""}`} className="text-[var(--accent)]">Consultar el proceso →</Link></div></aside>}
-      <CandidateHero candidate={candidate}>
+      <CandidateHero candidate={candidate} actions={candidate.submitted_resume_url && !candidate.identity_hidden && <><button type="button" className="candidate-resume-download" disabled={downloadingResume} onClick={async () => {
+        setDownloadingResume(true); setResumeError("");
+        try { const { data } = await api.get(apiFileUrl(candidate.submitted_resume_url), { responseType: "blob" }); saveBlob(data, resumeFilename(candidate.name)); }
+        catch (failure) { setResumeError(getApiErrorMessage(failure, "No pudimos descargar la hoja de vida. Intenta de nuevo.")); }
+        finally { setDownloadingResume(false); }
+      }}><Download size={16} />{downloadingResume ? "Descargando…" : "Descargar hoja de vida"}</button>{resumeError && <p className="candidate-resume-error" role="alert">{resumeError}</p>}</>}>
           {match ? (
             <div className="w-full rounded-[var(--radius-xl)] border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-4 lg:w-72">
               <p className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--ink-strong)]">
                 <Sparkles size={16} className="text-[var(--accent)]" />
                 Compatibilidad para esta vacante
               </p>
-              <CompatibilityBar value={match.match_percentage} />
+              <CompatibilityBar value={match.match_percentage} compact />
               {match.screening_adjustment ? <p className="mt-2 text-xs text-[var(--muted)]">Base {Math.round(match.base_match_percentage)}% · respuestas {match.screening_adjustment > 0 ? "+" : ""}{match.screening_adjustment} puntos. Este ajuste es privado para la empresa.</p> : null}
               {application?.screening_answers?.length ? <button type="button" className="button-outline mt-3 w-full" onClick={() => setShowAnswers(true)}>Ver respuestas y valorar</button> : null}
             </div>

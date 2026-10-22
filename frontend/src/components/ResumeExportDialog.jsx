@@ -42,14 +42,14 @@ export function ResumeExportDialog({ open, onClose, profile, name, photoVersion,
   }
   async function saveDesign() {
     setSaving(true); setMessage("");
-    try { const { data } = await api.patch("/profiles/me/resume-design", { style, color, sections, include_photo: includePhoto }); onDesignSaved?.(data); setMessage("Diseño guardado para tus próximas exportaciones."); }
+    try { const { data } = await api.patch("/profiles/me/resume-design", { style, color, sections, include_photo: includePhoto }); onDesignSaved?.(data); setMessage("Diseño y preferencias guardados para tus exportaciones y postulaciones."); }
     catch (failure) { setMessage(getApiErrorMessage(failure)); }
     finally { setSaving(false); }
   }
   return <CoachDialog open={open} onClose={onClose} title="Diseña y exporta tu hoja de vida" className="resume-export-dialog">
     <div className="resume-export-workspace"><aside className="resume-export-options"><p>Elige qué compartir. Los cambios de esta ventana se aplican al PDF; tu perfil conserva su información.</p>
       <ResumeDesignControls profile={profile} photoVersion={photoVersion} style={style} color={color} onStyle={(next) => { setStyle(next); setColor(getResumePalette(next, color).id); }} onColor={setColor} onPhoto={onPhoto} />
-      <div className="resume-design-actions"><button type="button" className="button-secondary" disabled={saving} onClick={saveDesign}><Save size={15} />{saving ? "Guardando…" : "Guardar mi diseño"}</button>{onEdit && <button type="button" className="button-secondary" onClick={() => { onClose(); onEdit(); }}><PencilLine size={15} />Editar textos</button>}{message && <p role="status">{message}</p>}</div>
+      <div className="resume-design-actions"><button type="button" className="button-secondary" disabled={saving} onClick={saveDesign}><Save size={15} />{saving ? "Guardando…" : "Guardar diseño y preferencias"}</button>{onEdit && <button type="button" className="button-secondary" onClick={() => { onClose(); onEdit(); }}><PencilLine size={15} />Editar textos</button>}{message && <p role="status">{message}</p>}</div>
       <fieldset className="resume-section-picker"><legend>¿Qué quieres incluir?</legend><label><input type="checkbox" checked={includePhoto} onChange={(event) => setIncludePhoto(event.target.checked)} />Foto de perfil</label>{exportSections.map(([key, label]) => <label key={key}><input type="checkbox" checked={sections.includes(key)} onChange={(event) => setSections((items) => event.target.checked ? [...items, key] : items.filter((value) => value !== key))} />{label}</label>)}</fieldset>
     </aside><section className="resume-export-preview"><header><span><Eye size={17} />Vista previa del PDF</span><small>Este es el documento que descargarás</small></header>
       {busy && <div role="status" className="resume-preview-placeholder"><RefreshCw size={25} className="animate-spin" /><p>Actualizando tu documento…</p></div>}

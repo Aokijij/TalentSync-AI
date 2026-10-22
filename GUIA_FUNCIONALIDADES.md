@@ -45,13 +45,15 @@ Esta función permite adaptar la presentación de una trayectoria real al cargo,
 
 1. En **Contenido**, revisa el resumen y despliega experiencias o habilidades si quieres cambiar la selección.
 2. Pulsa **Continuar al diseño**.
-3. En **Diseño y guardado**, elige un diseño moderno, clásico o minimalista y si quieres incluir la foto.
+3. En **Diseño y guardado**, elige un diseño moderno, clásico o minimalista. La foto y los apartados visibles se toman de las preferencias guardadas del CV en tu perfil; para cambiarlos, ve allí y pulsa **Guardar diseño y preferencias**.
 4. Guarda la versión. En **Versiones**, abre el PDF para revisarlo.
 5. Pulsa **Usar al postularme** para seleccionarla. Después debes enviar la postulación desde su botón habitual.
 
 **Ejemplo:** puedes destacar experiencia de pruebas y calidad para una vacante de QA, y experiencia de interfaces para una de frontend, sin borrar ninguna del perfil principal.
 
-Guardar el documento no envía una postulación ni lo selecciona automáticamente. Si lo eliges al enviar, se conserva ese PDF exacto: editar después tu perfil no cambia el archivo recibido por la empresa. Candidato y empresa autorizada pueden consultarlo desde el proceso, respetando la visibilidad de identidad. Sin elegir una versión, una nueva postulación conserva los datos enviados del perfil, sin generar un PDF adicional.
+Guardar el documento no envía una postulación ni lo selecciona automáticamente. Antes de enviar desde el inicio, las recomendaciones o el detalle de una vacante, un modal permite responder sus preguntas y confirmar qué hoja de vida adjuntar: **Mi CV del perfil** (opción inicial), una versión guardada para la oferta o **Continuar sin adjunto**. Puedes revisar el PDF antes de confirmar.
+
+Tanto el CV del perfil como una versión elegida se conservan como un PDF de esa postulación: editar después el perfil no cambia el archivo recibido por la empresa. La empresa autorizada ve **Descargar hoja de vida**, sin avisos sobre adaptaciones para la oferta. Sin adjunto, se comparte el perfil profesional y sus respuestas, sin ofrecer un PDF descargable. La visibilidad de identidad y los permisos del proceso se siguen aplicando.
 
 En ofertas externas puedes preparar y descargar el CV; lo que envíes después en otro portal depende de la acción que realices allí. TalentSync no confirma una entrega externa.
 

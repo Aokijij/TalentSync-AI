@@ -18,6 +18,7 @@ class ScreeningAnswer(BaseModel):
 
 class ApplicationCreate(BaseModel):
     job_id: int
+    attach_resume: bool = True
     resume_version_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{32}$")
 
     @model_validator(mode="before")

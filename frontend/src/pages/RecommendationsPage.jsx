@@ -19,7 +19,7 @@ import {
   Building2,
   MapPin,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { api } from "../api/client.js";
 import { getRecommendations } from "../api/recommendations.js";
@@ -32,12 +32,12 @@ import { JobInterestButtons } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
 import { searchJob, visibleInterest, meetsRequiredPreferences } from "../utils/jobDiscovery.js";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
+import { ApplicationSubmitDialog } from "../components/ApplicationSubmitDialog.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { externalPortal } from "../utils/externalPortal.js";
 import { pageItems, totalPages } from "../utils/pagination.js";
 
 export function RecommendationsPage() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
   const { refreshing: refreshingMatches, error: matchLoadError, retry: retryMatches } = useRecommendationUpdates(user.id, setRecommendations);
@@ -52,6 +52,7 @@ export function RecommendationsPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [externalJob, setExternalJob] = useState(null);
+  const [submitJob, setSubmitJob] = useState(null);
   const [sourceFilter, setSourceFilter] = useState(() => readRecommendationSettings(localStorage, user.id).source);
   const [minCompatibility, setMinCompatibility] = useState(() => readRecommendationSettings(localStorage, user.id).minimum);
 
@@ -129,28 +130,10 @@ export function RecommendationsPage() {
     [applications],
   );
 
-  async function apply(job) {
-    setMessage("");
-    setError("");
-    if (job?.source_kind === "external" && job.external_url) {
-      setExternalJob(job);
-      return;
-    }
-    if (job.application_questions?.length || job.application_questions_count) {
-      navigate(`/vacantes/${job.id}#postularme`);
-      return;
-    }
-    try {
-      await api.post("/applications", { job_id: job.id });
-      setMessage("Postulación registrada correctamente");
-      const { data } = await api.get("/applications/me");
-      setApplications(data);
-    } catch (requestError) {
-      setError(
-        requestError.response?.data?.detail ||
-          "No fue posible registrar la postulación",
-      );
-    }
+  function apply(job) {
+    setMessage(""); setError("");
+    if (job?.source_kind === "external" && job.external_url) setExternalJob(job);
+    else setSubmitJob(job);
   }
 
   return (
@@ -408,6 +391,7 @@ export function RecommendationsPage() {
           </Link>
         </div>
       </section>
+      {submitJob && <ApplicationSubmitDialog key={submitJob.id} job={submitJob} onClose={() => setSubmitJob(null)} onSubmitted={(submitted) => { setApplications((current) => [...current.filter((row) => row.job_id !== submitted.job_id), submitted]); setSubmitJob(null); setMessage("Postulación registrada correctamente"); }} />}
       <ExternalApplicationDialog
         job={externalJob}
         onClose={() => setExternalJob(null)}

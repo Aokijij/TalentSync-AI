@@ -21,7 +21,7 @@ export function ApplicationPreparation({ jobId, applicationId, selectedVersion, 
     api.get(`${base}/preparation`, { signal: controller.signal }).then(({ data: response }) => {
       if (controller.signal.aborted) return;
       setData(response); setAnswers(response.interview.answers); setDirty(false); setQuestionIndex(0);
-      setForm({ summary: response.profile.summary, experiences: response.profile.experiences.map((_, index) => index), skills: response.profile.skills, style: "modern", includePhoto: true });
+      setForm({ summary: response.profile.summary, experiences: response.profile.experiences.map((_, index) => index), skills: response.profile.skills, style: response.profile.resume_style || "modern", includePhoto: response.profile.resume_options?.include_photo ?? true });
       pendingVersion.current = null;
     }).catch((failure) => { if (!controller.signal.aborted) setError(getApiErrorMessage(failure, "No pudimos cargar tu preparación.")); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -48,7 +48,7 @@ export function ApplicationPreparation({ jobId, applicationId, selectedVersion, 
   }
   async function createVersion() {
     return perform(async () => {
-      pendingVersion.current ??= { request_key: crypto.randomUUID(), source_version: data.source_version, job_version: data.job_version, summary: form.summary, experience_indices: form.experiences, skills: form.skills, style: form.style, include_photo: form.includePhoto };
+      pendingVersion.current ??= { request_key: crypto.randomUUID(), source_version: data.source_version, job_version: data.job_version, summary: form.summary, experience_indices: form.experiences, skills: form.skills, style: form.style };
       const { data: version } = await api.post(`/profiles/me/coach/jobs/${jobId}/cv-versions`, pendingVersion.current, { __quiet: true });
       setData((current) => ({ ...current, versions: [version, ...current.versions.filter((row) => row.id !== version.id)] }));
       pendingVersion.current = null;

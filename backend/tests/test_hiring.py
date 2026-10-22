@@ -125,8 +125,9 @@ def test_submitted_profile_is_visible_only_to_the_authorized_company(client):
         profile.experiences = [{"role": "Analista", "company": "PRIVATE-EMPLOYER", "description": "PRIVATE-DESCRIPTION", "start_year": "2022", "end_year": "2026"}]
         profile.educations = [{"degree": "Tecnología logística", "institution": "PRIVATE-SCHOOL", "start_year": "2018", "end_year": "2021"}]
         db.commit()
-    # The submitted profile is now frozen; populate the facts before submitting.
-    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"]}).json()
+    # This profile-access fixture uses photo metadata without an image file.
+    # Submit without a PDF attachment; the professional profile is still shared.
+    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "attach_resume": False}).json()
     endpoint = f"/api/v1/profiles/candidates/{candidate['id']}?job_id={job['id']}"
     response = client.get(endpoint, headers=company)
     assert response.status_code == 200, response.text
@@ -139,7 +140,7 @@ def test_submitted_profile_is_visible_only_to_the_authorized_company(client):
     assert client.get(f"/api/v1/profiles/candidates/{candidate['id']}", headers=company).status_code == 200
     # Legacy settings cannot re-hide an already submitted profile.
     visible_job = client.post("/api/v1/jobs", headers=company, json={"title": "Analista visible", "description": "Revisa inventarios y controla movimientos", "requirements": "Excel y control de inventarios", "sector": "Logistica y transporte", "blind_hiring": False}).json()
-    client.post("/api/v1/applications", headers=headers, json={"job_id": visible_job["id"]})
+    client.post("/api/v1/applications", headers=headers, json={"job_id": visible_job["id"], "attach_resume": False})
     assert client.get(endpoint, headers=company).json()["identity_hidden"] is False
     assert client.put(f"/api/v1/applications/{application['id']}/status", headers=company, json={"status": "technical_interview"}).status_code == 200
     assert client.get(endpoint, headers=company).json()["name"] == candidate["name"]

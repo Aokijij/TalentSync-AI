@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
 import { preparationText, reviewAnswer } from "../src/utils/preparation.js";
 
 const require = createRequire(import.meta.url);
@@ -20,6 +21,15 @@ const data = {
   interview: { questions: [{ id: "introduction", title: "¿Qué experiencia se relaciona con este cargo?", hint: "Elige un ejemplo real", experiences: [] }], ask_company: ["¿Qué esperan en los primeros meses?"], answers: {}, version: 0 },
 };
 const props = { data, tab: "cv", onTab: noop, form: { summary: "Preparaba reportes", experiences: [0], skills: ["excel"], style: "modern", includePhoto: false }, onForm: noop, answers: {}, onAnswer: noop, questionIndex: 0, onQuestion: noop, onSaveInterview: noop, onDownloadNotes: noop, onCreateVersion: noop, onPreview: noop, onDownload: noop };
+
+test("vacancy CV preparation respects hidden profile sections and directs visibility changes to the profile", () => {
+  const limited = { ...data, profile: { ...data.profile, resume_options: { sections: ["summary"], include_photo: false } } };
+  const html = renderToStaticMarkup(createElement(MemoryRouter, {}, createElement(PreparationWorkspace, { ...props, data: limited })));
+  assert.match(html, /Resumen para esta vacante/);
+  assert.match(html, /href="\/perfil"/);
+  assert.match(html, /Sin foto/);
+  assert.doesNotMatch(html, /Experiencias que quieres incluir|Habilidades de tu perfil|Bodega|Incluir mi foto/);
+});
 
 test("CV preparation starts with content and collapsed choices, keeping design and history in separate steps", () => {
   const html = renderToStaticMarkup(createElement(PreparationWorkspace, props));

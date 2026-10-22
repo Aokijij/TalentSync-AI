@@ -17,12 +17,12 @@ import {
   Send,
   BriefcaseBusiness,
   ExternalLink,
-  X,
 } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import { OfferConditions } from "../components/OfferConditions.jsx";
 import { VacancyCvAdvice } from "../components/VacancyCvAdvice.jsx";
+import { ApplicationSubmitDialog } from "../components/ApplicationSubmitDialog.jsx";
 import { ApplicationPreparation } from "../components/ApplicationPreparation.jsx";
 import { OfferFeedback } from "../components/OfferFeedback.jsx";
 import { salaryLabel } from "../utils/offerQuality.js";
@@ -56,14 +56,12 @@ function JobDetailContent({ jobId }) {
   const [application, setApplication] = useState(null);
   const alreadyApplied = Boolean(application);
   const [selectedVersion, setSelectedVersion] = useState(null);
-  const [applying, setApplying] = useState(false);
-  const [showQuestions, setShowQuestions] = useState(false);
+  const [showSubmit, setShowSubmit] = useState(false);
   const [showExternalWarning, setShowExternalWarning] = useState(false);
-  const [answers, setAnswers] = useState({});
   const [availableJobs, setAvailableJobs] = useState([]);
   const [companyId, setCompanyId] = useState(null);
   const [companyRole, setCompanyRole] = useState(null);
-  useEffect(() => { if (routeLocation.hash === "#postularme" && job?.application_questions?.length) setShowQuestions(!alreadyApplied); }, [job, routeLocation.hash, alreadyApplied]);
+  useEffect(() => { if (routeLocation.hash === "#postularme" && job && job.source_kind !== "external") setShowSubmit(!alreadyApplied); }, [job, routeLocation.hash, alreadyApplied]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
     return loadVacancyData(api, { jobId, role: user?.role }, {
@@ -96,37 +94,6 @@ function JobDetailContent({ jobId }) {
       .slice(0, 3);
   }, [availableJobs, job]);
 
-  async function apply() {
-    if (applying) return;
-    const missing = (job.application_questions || []).find(
-      (question) => question.required && !String(answers[question.id] || "").trim(),
-    );
-    if (missing) {
-      setErrorMessage(`Responde la pregunta: ${missing.prompt}`);
-      return;
-    }
-    try {
-      setApplying(true);
-      const { data: submitted } = await api.post("/applications", {
-        job_id: Number(jobId),
-        resume_version_id: selectedVersion?.id || null,
-        screening_answers: Object.entries(answers)
-          .filter(([, answer]) => String(answer).trim())
-          .map(([question_id, answer]) => ({ question_id, answer: String(answer).trim() })),
-      });
-      setApplication(submitted);
-      setSuccessMessage((submitted.resume_version_id || null) !== (selectedVersion?.id || null)
-        ? "Tu postulación ya estaba registrada. Conservamos la versión enviada inicialmente; puedes consultarla en Postulaciones."
-        : "Postulación enviada correctamente");
-      setShowQuestions(false);
-    } catch (error) {
-      setErrorMessage(
-        error.response?.data?.detail || "No fue posible enviar la postulación",
-      );
-    } finally {
-      setApplying(false);
-    }
-  }
 
   if (!job)
     return (
@@ -305,7 +272,7 @@ function JobDetailContent({ jobId }) {
                   </button>
                 </div>
               ) : (
-                <button id="job-apply-action" disabled={applying} onClick={() => job.application_questions?.length ? setShowQuestions(true) : apply()} className="button-primary mt-8 w-full">
+                <button id="job-apply-action" onClick={() => setShowSubmit(true)} className="button-primary mt-8 w-full">
                   <Send size={16} />
                   Postularme
                 </button>
@@ -345,20 +312,7 @@ function JobDetailContent({ jobId }) {
         </section>
       ) : null}
       {user?.role === "candidate" && !alreadyApplied && job.status === "active" && job.source_kind !== "external" && <OfferFeedback key={job.id} jobId={job.id} />}
-      {showQuestions ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/65 p-4 backdrop-blur-xs">
-          <section role="dialog" aria-modal="true" aria-labelledby="questions-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">
-            <header className="flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4"><div><p className="section-kicker">Último paso</p><h2 id="questions-title" className="mt-1 text-2xl font-bold">Responde antes de postularte</h2><p className="mt-2 text-sm text-[var(--muted)]">Tus respuestas serán revisadas por {job.company_name}. Los campos con * son obligatorios.</p></div><button type="button" className="button-secondary !h-10 !w-10 !p-0" onClick={() => setShowQuestions(false)} aria-label="Cerrar"><X size={18} /></button></header>
-            <div className="mt-5 space-y-5">
-              {job.application_questions.map((question, index) => (
-                <label key={question.id} className="block text-sm font-semibold text-[var(--ink-strong)]"><span>{index + 1}. {question.prompt}{question.required ? " *" : ""}</span>{question.type === "choice" ? <select className="field-control mt-2" value={answers[question.id] || ""} onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))}><option value="">Selecciona una respuesta</option>{question.options.map((option) => <option key={option}>{option}</option>)}</select> : <textarea className="field-control mt-2 min-h-28" maxLength={2000} value={answers[question.id] || ""} onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))} placeholder="Escribe una respuesta clara y concreta" />}</label>
-              ))}
-            </div>
-            {errorMessage ? <p className="mt-4 rounded-xl bg-[var(--error)]/10 p-3 text-sm text-[var(--error)]">{errorMessage}</p> : null}
-            <footer className="mt-6 flex justify-end gap-2 border-t border-[var(--line)] pt-5"><button type="button" className="button-secondary" disabled={applying} onClick={() => setShowQuestions(false)}>Cancelar</button><button type="button" className="button-primary" disabled={applying} onClick={apply}><Send size={16} />{applying ? "Enviando…" : "Enviar postulación"}</button></footer>
-          </section>
-        </div>
-      ) : null}
+      {showSubmit && !alreadyApplied && <ApplicationSubmitDialog job={job} selectedVersion={selectedVersion} onClose={() => setShowSubmit(false)} onSubmitted={(submitted) => { setApplication(submitted); setShowSubmit(false); setSuccessMessage("Postulación enviada correctamente"); }} />}
       {showExternalWarning ? (
         <ExternalApplicationDialog
           job={job}

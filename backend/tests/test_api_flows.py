@@ -950,7 +950,11 @@ def test_profile_photo_and_resume_style_are_saved(client, monkeypatch, tmp_path)
     )
     assert invalid.status_code == 422
 
-    image = b"\x89PNG\r\n\x1a\n" + b"local-profile-image"
+    from PIL import Image
+
+    photo_buffer = io.BytesIO()
+    Image.new("RGB", (32, 32), "navy").save(photo_buffer, format="PNG")
+    image = photo_buffer.getvalue()
     uploaded = client.post(
         "/api/v1/profiles/me/photo",
         headers=headers,

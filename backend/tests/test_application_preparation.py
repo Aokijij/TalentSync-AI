@@ -19,6 +19,15 @@ from app.infrastructure.database.models import (
 BASE = "/api/v1/profiles/me/coach"
 
 
+def test_resume_options_match_profile_defaults_and_legacy_section_preferences():
+    from app.domain.services.application_preparation import resume_options
+
+    assert "preferences" in resume_options({})["sections"]
+    legacy = resume_options({"preferences": {"resume_export_options": {"sections": ["certifications"], "include_photo": False}}})
+    assert legacy == {"sections": ["certifications", "driving_licenses", "professional_cards"], "include_photo": False}
+    assert resume_options({"preferences": {"resume_export_options": {"version": 2, "sections": []}}})["sections"] == []
+
+
 def test_prioritizing_skills_preserves_existing_private_notes(client):
     _, headers, _, job = setup_case(client)
     with client.session_factory() as db:
@@ -53,6 +62,83 @@ def setup_case(client):
     updated = client.put("/api/v1/profiles/me", headers=headers, json=profile)
     assert updated.status_code == 200, updated.text
     return owner, headers, company, job
+
+
+def test_default_profile_cv_is_attached_downloadable_and_frozen_with_saved_preferences(client):
+    owner, headers, company, job = setup_case(client)
+    options = {"style": "minimal", "color": "teal", "sections": ["summary"], "include_photo": False}
+    assert client.patch("/api/v1/profiles/me/resume-design", headers=headers, json=options).status_code == 200
+    response = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"]})
+    assert response.status_code == 201, response.text
+    application_id = response.json()["id"]
+    endpoint = f"/api/v1/applications/{application_id}/resume"
+    pdf = client.get(endpoint, headers=company)
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+    text = " ".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+    assert "Fortalezas en python, excel" in text and "Equipo de reportes" not in text and "SENA" not in text
+    assert "preparation-owner@example.com" not in text
+    preview = client.post("/api/v1/profiles/me/export", headers=headers, json={"sections": options["sections"], "include_photo": False})
+    assert preview.status_code == 200
+    assert " ".join(page.extract_text() for page in PdfReader(BytesIO(preview.content)).pages) == text
+    view = client.get(f"/api/v1/profiles/candidates/{owner['id']}", headers=company, params={"job_id": job["id"]}).json()
+    assert view["submitted_resume_url"] == endpoint
+    assert pack(client, headers, job["id"])["versions"] == []
+    submitted = client.get(f"{BASE}/applications/{application_id}/preparation", headers=headers).json()
+    assert len(submitted["versions"]) == 1 and submitted["versions"][0]["id"] == submitted["submitted_resume_id"]
+    with client.session_factory() as db:
+        profile = db.get(User, owner["id"]).profile
+        profile.experience = "Un resumen distinto después del envío"
+        profile.preferences = {}
+        db.commit()
+    assert client.get(endpoint, headers=headers).content == pdf.content
+    duplicate = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "attach_resume": False})
+    assert duplicate.json()["id"] == application_id
+    with client.session_factory() as db:
+        assert db.query(ResumeVersion).count() == 1
+    _, stranger = register(client, "default-resume-stranger")
+    assert client.get(endpoint, headers=stranger).status_code == 403
+
+
+def test_vacancy_versions_use_profile_visibility_and_detect_changed_preferences(client):
+    _, headers, _, job = setup_case(client)
+    before = pack(client, headers, job["id"])
+    options = {"style": "minimal", "color": "teal", "sections": ["summary"], "include_photo": False}
+    assert client.patch("/api/v1/profiles/me/resume-design", headers=headers, json=options).status_code == 200
+    stale = client.post(f"{BASE}/jobs/{job['id']}/cv-versions", headers=headers, json={"request_key": str(uuid4()), "source_version": before["source_version"], "job_version": before["job_version"]})
+    assert stale.status_code == 409
+    version, _ = create_version(client, headers, job["id"], include_photo=True)
+    pdf = client.get(f"{BASE}/cv-versions/{version['id']}/pdf", headers=headers)
+    text = " ".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+    assert "Fortalezas en python, excel" in text and "SENA" not in text and "Equipo de reportes" not in text
+    with client.session_factory() as db:
+        assert db.get(ResumeVersion, version["id"]).snapshot["include_photo"] is False
+    assert pack(client, headers, job["id"])["profile"]["resume_options"] == {"sections": ["summary"], "include_photo": False}
+
+
+def test_explicit_no_attachment_keeps_profile_but_exposes_no_pdf(client):
+    owner, headers, company, job = setup_case(client)
+    response = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "attach_resume": False})
+    assert response.status_code == 201, response.text
+    assert client.get(f"/api/v1/applications/{response.json()['id']}/resume", headers=company).status_code == 404
+    view = client.get(f"/api/v1/profiles/candidates/{owner['id']}", headers=company, params={"job_id": job["id"]}).json()
+    assert view["submitted_resume_url"] is None and view["experience"] == client.get("/api/v1/profiles/me", headers=headers).json()["experience"]
+    with client.session_factory() as db:
+        assert db.query(ResumeVersion).count() == 0
+
+
+def test_historical_profile_submission_download_uses_submitted_facts(client):
+    owner, headers, company, job = setup_case(client)
+    response = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "attach_resume": False})
+    application_id = response.json()["id"]
+    with client.session_factory() as db:
+        application = db.get(Application, application_id)
+        application.coach_snapshot = {key: value for key, value in application.coach_snapshot.items() if key != "attach_resume"}
+        db.get(User, owner["id"]).profile.experience = "ONLY-NEW-PROFILE-TEXT"
+        db.commit()
+    pdf = client.get(f"/api/v1/applications/{application_id}/resume", headers=company)
+    assert pdf.status_code == 200, pdf.text if pdf.status_code != 200 else ""
+    text = " ".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+    assert "Equipo de reportes" in text and "ONLY-NEW-PROFILE-TEXT" not in text
 
 
 def pack(client, headers, job_id):

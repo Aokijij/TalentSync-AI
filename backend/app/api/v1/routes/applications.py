@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import Response
 
-from app.api.deps import get_current_user, get_unit_of_work, require_roles
+from app.api.deps import (
+    get_current_user,
+    get_resume_exporter,
+    get_unit_of_work,
+    require_roles,
+)
 from app.api.schemas.application import (
     ApplicationCreate,
     ApplicationResponse,
@@ -19,8 +24,8 @@ router = APIRouter()
 
 
 @router.get("/{application_id}/resume", response_class=Response)
-def application_resume(application_id: int, user=Depends(get_current_user), db=Depends(get_unit_of_work)):
-    row = application_preparation.submitted_resume(db, user, application_id)
+def application_resume(application_id: int, user=Depends(get_current_user), db=Depends(get_unit_of_work), exporter=Depends(get_resume_exporter)):
+    row = application_preparation.submitted_resume(db, user, application_id, exporter)
     return Response(row.pdf, media_type="application/pdf", headers={"Content-Disposition": resume_disposition(row.snapshot["name"]), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
@@ -31,9 +36,10 @@ def apply_to_job(
     payload: ApplicationCreate,
     current_user: User = Depends(require_roles(UserRole.CANDIDATE)),
     db: UnitOfWork = Depends(get_unit_of_work),
+    exporter=Depends(get_resume_exporter),
 ) -> Application:
     return use_cases.apply_to_job(
-        payload=payload.model_dump(), current_user=current_user, db=db
+        payload=payload.model_dump(), current_user=current_user, db=db, exporter=exporter
     )
 
 

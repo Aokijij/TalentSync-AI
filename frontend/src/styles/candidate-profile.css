@@ -31,3 +31,11 @@
 .candidate-factor-tooltip>strong { display:block; color:var(--accent); margin-bottom:7px; }
 .candidate-factor-tooltip p { margin-top:7px; color:var(--muted); }
 .candidate-factor-tooltip .candidate-factor-formula { border-top:1px solid var(--line); padding-top:9px; font-weight:600; color:var(--ink-strong); }
+.candidate-detail-page { padding-block:12px; }
+.company-candidate-profile .candidate-profile-hero > .profile-identity { justify-content:flex-start; }
+.candidate-profile-actions { margin-top:18px; }
+.candidate-resume-download { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:42px; padding:10px 15px; border:1px solid var(--line); border-radius:10px; color:var(--accent); background:var(--surface-subtle); font-size:13px; font-weight:650; }
+.candidate-resume-download:hover { border-color:var(--accent); }
+.candidate-resume-download:disabled { opacity:.6; cursor:wait; }
+.candidate-resume-error { color:var(--error); font-size:12px; line-height:1.6; margin-top:8px; }
+.candidate-profile-score .recommendation-match { max-width:none; }

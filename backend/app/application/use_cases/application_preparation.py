@@ -18,6 +18,7 @@ from app.domain.services.application_preparation import (
     interview_questions,
     job_snapshot,
     preparation_revision,
+    resume_options,
     resume_profile,
     source_version,
     suggested_skills,
@@ -60,9 +61,9 @@ def preparation(db, user, job_id, *, application_id=None):
     answers = {key: value for key, value in note.get("answers", {}).items() if key in known}
     return {"job": offer, "source": "submitted" if submitted.get("profile") else "current",
             "source_version": source_version(user), "job_version": fingerprint(offer), "revision": revision,
-            "profile": {"profession": profile.get("profession"), "summary": profile.get("experience") or "", "experiences": profile.get("experiences") or [], "skills": suggested_skills(profile, offer)},
-            "versions": [version_view(row) for row in db.resume_versions.for_job(user.id, job_id)],
-            "submitted_resume_id": submitted.get("resume_version_id"),
+            "profile": {"profession": profile.get("profession"), "summary": profile.get("experience") or "", "experiences": profile.get("experiences") or [], "skills": suggested_skills(profile, offer), "resume_style": profile.get("resume_style") or "modern", "resume_options": resume_options(profile)},
+            "versions": [version_view(row) for row in db.resume_versions.for_job(user.id, job_id) if row.snapshot.get("kind") != "profile" or application and row.id == submitted.get("profile_resume_id")],
+            "submitted_resume_id": submitted.get("resume_version_id") or submitted.get("profile_resume_id"),
             "interview": {"questions": questions, "answers": answers, "version": note.get("version", 0),
                 "outdated": bool(note and note.get("revision") != revision), "saved_at": note.get("updated_at"),
                 "reviews": {row["id"]: answer_review(answers.get(row["id"], {})) for row in questions},
@@ -109,9 +110,10 @@ def create_version(db, user, job_id, payload, exporter):
     if payload.get("summary") is not None:
         profile["experience"] = payload["summary"].strip()
     profile["resume_style"] = payload["style"]
-    include_photo = payload["include_photo"]
+    options = resume_options(profile)
+    include_photo = options["include_photo"]
     document = SimpleNamespace(name=user.name, email=user.email, profile=SimpleNamespace(**profile))
-    pdf = exporter(document, include_photo=include_photo)
+    pdf = exporter(document, **options)
     if len(pdf) > 5_000_000:
         raise UseCaseError(status_code=422, detail="El PDF supera el límite de 5 MB. Prueba sin foto")
     row = db.resume_versions.new(id=uuid4().hex, user_id=user.id, job_id=job_id,
@@ -139,14 +141,36 @@ def save_application_interview(db, user, application_id, payload):
     return save_interview(db, user, application.job_id, payload, application_id=application_id)
 
 
-def submitted_resume(db, user, application_id):
+def submitted_resume(db, user, application_id, exporter):
     application = accessible_application(db, user, application_id)
     if user.role != UserRole.CANDIDATE and user.role != UserRole.ADMIN and identity_hidden(application.job, application):
         raise UseCaseError(status_code=403, detail="El CV estará disponible cuando se revele la identidad en este proceso")
-    version_id = (application.coach_snapshot or {}).get("resume_version_id")
+    saved = application.coach_snapshot or {}
+    if saved.get("attach_resume") is False:
+        raise UseCaseError(status_code=404, detail="Esta postulación se envió sin CV adjunto")
+    version_id = saved.get("resume_version_id") or saved.get("profile_resume_id")
     row = db.resume_versions.get(version_id) if version_id else None
+    if not version_id and saved.get("schema") == 2 and saved.get("profile"):
+        # Older applications stored professional facts without a PDF. Export only
+        # those submitted facts, never a later edition of the candidate's profile.
+        document = SimpleNamespace(name=saved["name"], email=saved["email"], profile=SimpleNamespace(**saved["profile"]))
+        return SimpleNamespace(pdf=exporter(document, **resume_options(saved["profile"])), snapshot=saved)
     if row is None or row.user_id != application.user_id or row.job_id != application.job_id:
         raise UseCaseError(status_code=404, detail="Esta postulación no tiene un PDF guardado")
+    return row
+
+
+def profile_resume(db, user, job, profile, exporter):
+    options = resume_options(profile)
+    document = SimpleNamespace(name=user.name, email=user.email, profile=SimpleNamespace(**profile))
+    pdf = exporter(document, **options)
+    if len(pdf) > 5_000_000:
+        raise UseCaseError(status_code=422, detail="El CV supera 5 MB. Revisa su foto desde tu perfil")
+    saved = {"schema": 2, "kind": "profile", "name": user.name, "email": user.email, "profile": profile, "job": job_snapshot(job), **options}
+    row = db.resume_versions.new(id=uuid4().hex, user_id=user.id, job_id=job.id, request_key=uuid4().hex,
+        request_digest=fingerprint(saved), source_version=source_version(user), snapshot=saved,
+        filename=resume_filename(user.name), pdf_sha256=sha256(pdf).hexdigest(), pdf=pdf)
+    db.add(row)
     return row
 
 

@@ -1,0 +1,8 @@
+.resume-preferences-summary { min-width:0; font-size:12px; line-height:1.6; }
+.resume-preferences-summary > strong { color:var(--ink-strong); font-weight:650; }
+.resume-preferences-summary p { color:var(--muted); margin:4px 0; }
+.resume-preferences-summary details { margin-top:7px; color:var(--muted); }
+.resume-preferences-summary summary { color:var(--accent); cursor:pointer; }
+.resume-preferences-summary ul { padding:7px 0 7px 16px; list-style:disc; }
+.resume-preferences-summary > a { display:block; margin-top:8px; color:var(--accent); font-weight:600; }
+.resume-preferences-summary small { display:block; color:var(--muted); font-weight:400; }

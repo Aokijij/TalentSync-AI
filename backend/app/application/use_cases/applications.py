@@ -71,7 +71,7 @@ LEGACY_STAGE_STATUS = {
 
 
 def apply_to_job(
-    payload: dict[str, Any], current_user: User, db: UnitOfWork
+    payload: dict[str, Any], current_user: User, db: UnitOfWork, *, exporter
 ) -> Application:
     job = db.jobs.get(payload["job_id"])
     if job is None:
@@ -91,22 +91,31 @@ def apply_to_job(
         )
     from copy import deepcopy
 
-    from app.application.use_cases.application_preparation import owned_version
+    from app.application.use_cases.application_preparation import (
+        owned_version,
+        profile_resume,
+    )
     from app.domain.services.application_preparation import job_snapshot, resume_profile
-    saved = {}
+    answers, screening_adjustment = _screening_result(job, payload.get("screening_answers", []))
+    attach_resume = payload.get("attach_resume", True)
+    saved = {"attach_resume": attach_resume}
     version_id = payload.get("resume_version_id")
     if version_id:
+        if not attach_resume:
+            raise UseCaseError(status_code=422, detail="Elige un CV o continúa sin adjunto")
         version = owned_version(db, current_user, version_id)
         if version.job_id != job.id:
             raise UseCaseError(status_code=422, detail="El CV guardado pertenece a otra vacante")
-        saved = {**deepcopy(version.snapshot), "resume_version_id": version.id, "pdf_sha256": version.pdf_sha256}
+        saved = {**deepcopy(version.snapshot), "resume_version_id": version.id, "pdf_sha256": version.pdf_sha256, "attach_resume": True}
     elif current_user.profile:
         db.refresh(current_user.profile)
         saved = {"schema": 2, "name": current_user.name, "email": current_user.email,
-                 "profile": resume_profile(current_user.profile), "job": job_snapshot(job)}
-    answers, screening_adjustment = _screening_result(
-        job, payload.get("screening_answers", [])
-    )
+                 "profile": resume_profile(current_user.profile), "job": job_snapshot(job), "attach_resume": attach_resume}
+        if attach_resume:
+            pdf = profile_resume(db, current_user, job, saved["profile"], exporter)
+            saved.update(profile_resume_id=pdf.id, pdf_sha256=pdf.pdf_sha256)
+    elif attach_resume:
+        raise UseCaseError(status_code=422, detail="Completa tu perfil antes de adjuntar tu hoja de vida")
     first_stage = (job.pipeline_stages or [{"id": "submitted"}])[0]["id"]
     application = db.applications.new(
         user_id=current_user.id,
