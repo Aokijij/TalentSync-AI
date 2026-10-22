@@ -57,7 +57,28 @@ export function MarketRadar() {
   return <section className="market-radar" aria-busy={busy}>
     <header className="market-radar-heading"><span><BarChart3 size={24} /></span><div><p className="section-kicker">TU SIGUIENTE PASO</p><h2>Radar laboral</h2><p>Explora qué se pide, qué declaran perfiles comparables y qué salarios publican las ofertas.</p></div></header>
     {report?.suggested_filters && <div className="market-profile-shortcut"><p>Comenzamos con tu área, ciudad y un nivel orientativo según las fechas actuales de tu experiencia. Puedes cambiar todos los filtros.</p><button type="button" disabled={busy} onClick={() => load({ ...defaults, personalized: true })}><span><UserRound size={18} /></span><strong>Usar mi perfil</strong><RotateCcw size={14} /></button></div>}
-    <form className="market-filters" onSubmit={(event) => { event.preventDefault(); load(filters); }}><div className="market-filter-main"><label>Área profesional<select className="field-control" value={filters.family} onChange={(event) => setFilters({ ...filters, family: event.target.value })}><option value="">Todas las áreas</option>{Object.entries(report?.families || {}).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label>Nivel<select className="field-control" value={filters.level} onChange={(event) => setFilters({ ...filters, level: event.target.value })}><option value="">Todos los niveles</option>{Object.entries(LEVELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><div className="market-location-filter"><label>Ubicación<select className="field-control" value={filters.location_scope} onChange={(event) => setFilters({ ...filters, location_scope: event.target.value, location: "" })}><option value="country">Todo el país</option><option value="city">Una ciudad</option></select></label>{filters.location_scope === "city" && <Autocomplete label="Ciudad" value={filters.location} options={cities} onChange={(location) => setFilters({ ...filters, location })} placeholder="Buscar ciudad…" maxLength={120} />}</div></div>
+    <form className="market-filters" onSubmit={(event) => { event.preventDefault(); load(filters); }}>
+      <div className={`market-filter-main market-primary-filters${filters.location_scope === "city" ? " has-city" : ""}`}>
+        <label>Área profesional
+          <select className="field-control" value={filters.family} onChange={(event) => setFilters({ ...filters, family: event.target.value })}>
+            <option value="">Todas las áreas</option>
+            {Object.entries(report?.families || {}).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+          </select>
+        </label>
+        <label>Nivel
+          <select className="field-control" value={filters.level} onChange={(event) => setFilters({ ...filters, level: event.target.value })}>
+            <option value="">Todos los niveles</option>
+            {Object.entries(LEVELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+          </select>
+        </label>
+        <label>Ubicación
+          <select className="field-control" value={filters.location_scope} onChange={(event) => setFilters({ ...filters, location_scope: event.target.value, location: "" })}>
+            <option value="country">Todo el país</option>
+            <option value="city">Una ciudad</option>
+          </select>
+        </label>
+        {filters.location_scope === "city" && <Autocomplete label="Ciudad" value={filters.location} options={cities} onChange={(location) => setFilters({ ...filters, location })} placeholder="Buscar ciudad…" maxLength={120} />}
+      </div>
       <details className="market-extra-filters"><summary><SlidersHorizontal size={15} />Afinar las ofertas</summary><div className="market-filter-main"><label>Cargo (solo ofertas)<input className="field-control" maxLength={160} value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Ej. desarrollador frontend" /></label><label>Sector<select className="field-control" value={filters.sector} onChange={(event) => setFilters({ ...filters, sector: event.target.value })}><option value="">Todos los sectores</option>{JOB_SECTORS.map((sector) => <option key={sector}>{sector}</option>)}</select></label><label>Modalidad<select className="field-control" value={filters.modality} onChange={(event) => setFilters({ ...filters, modality: event.target.value })}><option value="">Todas</option>{Object.entries(modalityLabel).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label></div></details>
       <footer><small>Área, nivel y ubicación (ciudad o todo el país) definen el grupo; los filtros adicionales solo ajustan las ofertas. Aplica los cambios para actualizar.</small><div><button type="button" className="market-reset" disabled={busy} onClick={() => { setFilters(defaults); load(defaults); }}><RotateCcw size={14} />Restablecer</button><button type="submit" className="market-explore-button" disabled={busy}><span><Search size={18} /></span><strong>{busy ? "Buscando…" : "Actualizar radar"}</strong><ArrowRight size={16} /></button></div></footer>
     </form>

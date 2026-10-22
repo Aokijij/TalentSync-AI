@@ -25,6 +25,7 @@ for (const width of [360, 1440]) for (const theme of ["light", "dark"]) test(`Na
   const scope = page.getByRole("combobox", { name: "Ubicación", exact: true });
   await expect(scope).toHaveValue("city");
   await expect(page.getByRole("combobox", { name: "Ciudad", exact: true })).toHaveValue("Medellín");
+  await testInfo.attach("radar-filtros-ciudad", { body: await page.locator(".market-filters").screenshot({ animations: "disabled" }), contentType: "image/png" });
   await scope.selectOption("country");
   await expect(page.getByRole("combobox", { name: "Ciudad", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Actualizar radar", exact: true }).click();
