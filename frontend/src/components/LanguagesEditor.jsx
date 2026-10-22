@@ -1,14 +1,16 @@
+import { LanguageSummary } from "./LanguageSummary.jsx";
 import { AddItemButton } from "./AddItemButton.jsx";
 import { useEffect, useId, useState } from "react";
 import { Check, ChevronDown, Languages, Trash2 } from "lucide-react";
-import { LANGUAGE_NAMES, LANGUAGE_LEVELS, languageLevelLabel } from "../constants/languages.js";
+import { LANGUAGE_NAMES, LANGUAGE_LEVELS } from "../constants/languages.js";
 
 export function LanguagesEditor({ value = [], onChange, editing = true, required = false }) {
+  if (!editing) return <LanguageSummary value={value} required={required} />;
   const change = (index, field, next) => onChange(value.map((item, i) => i === index ? { ...item, [field]: next } : item));
   return (
     <div className="space-y-3">
-      <p className="text-xs leading-5 text-[var(--muted)]">{editing ? (required ? "Añade solo los idiomas necesarios para el cargo y el nivel mínimo solicitado." : "Registra tu nivel real. Se comparará con el nivel mínimo que solicite cada empresa.") : (required ? "Idiomas y niveles mínimos solicitados para el cargo." : "Idiomas y niveles registrados en el perfil.")}</p>
-      {value.map((item, index) => editing ? (
+      <p className="text-xs leading-5 text-[var(--muted)]">{required ? "Añade solo los idiomas necesarios para el cargo y el nivel mínimo solicitado." : "Registra tu nivel real. Se comparará con el nivel mínimo que solicite cada empresa."}</p>
+      {value.map((item, index) => (
         <div key={index} className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-3 sm:p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <span className="inline-flex items-center gap-2 text-xs font-bold"><Languages size={16} className="text-[var(--accent)]" />Idioma {index + 1}</span>
@@ -19,9 +21,9 @@ export function LanguagesEditor({ value = [], onChange, editing = true, required
             <LanguagePicker label={`Nivel del idioma ${index + 1}`} displayLabel={required ? "Nivel mínimo solicitado" : "Mi nivel de dominio"} value={item.level} onChange={(next) => change(index, "level", next)} options={Object.entries(LANGUAGE_LEVELS).map(([key, label]) => ({ value: key, label }))} />
           </div>
         </div>
-      ) : <p key={index} className="rounded-lg border border-[var(--line)] px-3 py-2 text-sm"><span className="font-semibold capitalize">{item.name}</span> · {languageLevelLabel(item.level)}</p>)}
+      ))}
       {!value.length && <p className="text-sm text-[var(--muted)]">{required ? "Sin requisitos de idioma registrados." : "No has registrado idiomas."}</p>}
-      {editing && <AddItemButton icon={Languages} help={required ? "Elige el idioma y el nivel mínimo que necesita el cargo." : "Indica el idioma y tu nivel de dominio."} onClick={() => onChange([...value, { name: "", level: "B1" }])} disabled={value.length >= 20}>Añadir idioma</AddItemButton>}
+      <AddItemButton icon={Languages} help={required ? "Elige el idioma y el nivel mínimo que necesita el cargo." : "Indica el idioma y tu nivel de dominio."} onClick={() => onChange([...value, { name: "", level: "B1" }])} disabled={value.length >= 20}>Añadir idioma</AddItemButton>
     </div>
   );
 }

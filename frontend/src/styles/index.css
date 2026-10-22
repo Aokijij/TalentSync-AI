@@ -1922,14 +1922,17 @@ html[data-theme="dark"] .date-picker-days button[aria-pressed="true"] { color:#0
 .resume-skill-meter { display:block; width:100%; height:4px; margin-top:.2rem; border-radius:2px; overflow:hidden; background:#cbd5e1; }
 .resume-skill-meter i { display:block; height:100%; background:linear-gradient(90deg,var(--resume-accent,#4338ca),#0d9488); }
 
-.candidate-profile-hero { display:grid; gap:1.2rem; align-items:start; }
-.candidate-profile-has-score { grid-template-columns:minmax(0,1fr) 285px; }
-.candidate-profile-hero > .profile-identity { padding:1.5rem; min-width:0; margin:0; }
+.candidate-profile-hero { display:grid; gap:0; align-items:stretch; overflow:hidden; border:1px solid var(--line); border-top:3px solid var(--accent); border-radius:17px; background:var(--surface); }
+.candidate-profile-has-score { grid-template-columns:minmax(0,1fr) 300px; }
+.candidate-profile-hero > .profile-identity { display:flex; flex-direction:column; justify-content:center; padding:1.4rem 1.5rem; min-width:0; margin:0; border:0; border-radius:0; background:transparent; }
+.candidate-profile-hero .profile-identity-heading { margin-bottom:1.1rem; }
 .candidate-profile-hero .profile-name { font-size:1.45rem; line-height:1.4; font-weight:750; color:var(--ink-strong); }
 .candidate-profile-contact { display:flex; flex-wrap:wrap; gap:.7rem 1.2rem; padding-top:1rem; border-top:1px solid var(--line); }
-.candidate-profile-contact > span { display:inline-flex; align-items:center; gap:.45rem; font-size:.78rem; color:var(--muted); overflow-wrap:anywhere; }
-.candidate-profile-contact .shared-personal-details { gap:1.2rem; width:100%; }
-.candidate-profile-score { padding:1.1rem; border:1px solid var(--line); border-radius:15px; background:var(--surface); min-width:0; }
+.candidate-profile-contact > span { min-width:0; max-width:100%; display:inline-flex; align-items:center; gap:.45rem; font-size:.78rem; color:var(--muted); overflow-wrap:anywhere; }
+.candidate-profile-contact .shared-personal-details { min-width:0; max-width:100%; gap:.6rem 1rem; width:auto; align-items:center; }
+.candidate-profile-contact .shared-personal-details > div { display:flex; flex-wrap:wrap; min-width:0; max-width:100%; align-items:baseline; gap:.4rem; }
+.candidate-profile-contact .shared-personal-details dd { min-width:0; overflow-wrap:anywhere; margin:0; font-size:.78rem; }
+.candidate-profile-score { display:flex; align-items:center; padding:1.2rem; border-left:1px solid var(--line); background:var(--surface-subtle); min-width:0; }
 .candidate-profile-score > div { width:100%; border:0; background:transparent; padding:0; }
 .candidate-profile-summary { padding:1.3rem 1.5rem; }
 .candidate-profile-summary h2 { color:var(--ink-strong); font-size:.95rem; font-weight:700; }
@@ -1989,3 +1992,6 @@ html[data-theme="dark"] .date-picker-days button[aria-pressed="true"] { color:#0
 .connector-body > .youtube-connector > header { padding-top:0; }
 @media(max-width:1000px) { .candidate-profile-hero { grid-template-columns:1fr; } .ecosystem-navigation,.learning-demand-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:650px) { .vacancy-learning-resources,.official-opportunity-grid { grid-template-columns:1fr; } .official-opportunity-filter { align-items:stretch; flex-direction:column; } .youtube-connector > header { flex-wrap:wrap; } .youtube-connection-state { margin-left:0; } .youtube-connector-body > form:first-of-type { align-items:stretch; flex-direction:column; } .learning-demand > header { flex-wrap:wrap; } .learning-demand header > small { margin-left:0; } }
+
+@media(max-width:1000px) { .candidate-profile-hero > .candidate-profile-score { border-left:0; border-top:1px solid var(--line); } }
+@media(max-width:600px) { .candidate-profile-hero > .profile-identity { padding:1.1rem; } .candidate-profile-hero .profile-name { font-size:1.2rem; } .candidate-profile-contact { gap:.65rem 1rem; } }

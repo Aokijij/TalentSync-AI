@@ -22,6 +22,29 @@ async function component(name, exportName = name, folder = "components") {
   return module.exports[exportName];
 }
 
+test("vacancy training starts as a native closed disclosure with an accessible summary", async () => {
+  const Panel = await component("VacancyLearningPanel");
+  const html = renderToStaticMarkup(createElement(Panel, { jobId: 1 }));
+  const opening = html.match(/^<details[^>]*>/)?.[0];
+  assert.ok(opening);
+  assert.doesNotMatch(opening, /\bopen(?:=|\s|>)/);
+  assert.match(html, /<summary[^>]*>/);
+  assert.match(html, /Formación para reforzar tu perfil/);
+  assert.match(html, /vacancy-learning-content/);
+});
+
+test("language summaries distinguish a CEFR level from native proficiency and keep requested levels explicit", async () => {
+  const Panel = await component("LanguagesEditor");
+  const value = [{ name: "inglés", level: "B1" }, { name: "español", level: "NATIVE" }];
+  const html = renderToStaticMarkup(createElement(Panel, { value, editing: false }));
+  for (const text of ["inglés", "B1", "Intermedio", "español", "Nativo"]) assert.ok(html.includes(text));
+  assert.equal((html.match(/class="is-filled"/g) || []).length, 3);
+  assert.doesNotMatch(html, /role="combobox"/);
+  assert.match(html, /Niveles declarados en el perfil/);
+  const requested = renderToStaticMarkup(createElement(Panel, { value, editing: false, required: true }));
+  assert.match(requested, /Nivel mínimo solicitado para el cargo/);
+});
+
 test("the vacancy picker shows provided application counts and sector and distinguishes unavailable counts from zero", async () => {
   const Picker = await component("CompanyApplicationsPage", "JobPickerModal", "pages");
   const html = renderToStaticMarkup(createElement(Picker, { selectedId: "1", jobs: [{ id: 1, title: "Analista de inventario", sector: "Logística", applications_count: 7, status: "active" }, { id: 2, title: "Auxiliar", sector: "Servicios", applications_count: 0, status: "draft" }, { id: 3, title: "Vacante por cargar", sector: "Construcción", status: "paused" }] }));
