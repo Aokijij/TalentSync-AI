@@ -1,7 +1,7 @@
 import { ArrowRight, Check, Clock3, Target } from "lucide-react";
 import { AreaIcon } from "./LearningVisuals.jsx";
 import { challengeState } from "../utils/learningChallenges.js";
-import { dashboardDate } from "../utils/dashboardData.js";
+import { dashboardDate, timestamp } from "../utils/dashboardData.js";
 
 export function ChallengeCatalog({ assessments, areas, busy, attempt, onStart, onReview, onExplore, now = Date.now() }) {
   const rows = assessments.map((row) => attempt?.assessment_id === row.id ? { ...row, last_attempt: attempt } : row).sort((a, b) => Number(challengeState(b, now).active) - Number(challengeState(a, now).active) || Number(Boolean(a.last_attempt?.passed)) - Number(Boolean(b.last_attempt?.passed)));
