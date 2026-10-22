@@ -15,6 +15,7 @@ from app.api.deps import (
 from app.api.schemas.career_coach import (
     InterviewPreparationUpdate,
     ResumeVersionCreate,
+    ResumeVersionRename,
     WritingDecision,
     WritingGeneration,
     WritingProposal,
@@ -106,6 +107,11 @@ def coach_create_cv_version(job_id: int, payload: ResumeVersionCreate, user=Depe
 def coach_version_pdf(version_id: str, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
     row = preparation.owned_version(db, user, version_id)
     return Response(row.pdf, media_type="application/pdf", headers={"Content-Disposition": resume_disposition(row.snapshot["name"]), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@router.patch("/me/coach/cv-versions/{version_id}")
+def coach_rename_cv_version(version_id: str, payload: ResumeVersionRename, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return preparation.rename_version(db, user, version_id, payload.label)
 
 
 @router.put("/me/coach/jobs/{job_id}/interview")

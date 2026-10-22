@@ -17,7 +17,18 @@
 .preparation-cv-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; align-items:start; }
 .preparation-cv-layout.is-submitted { grid-template-columns:1fr; }
 .preparation-field { display:grid; gap:.45rem; min-width:0; color:var(--ink-strong); font-size:.85rem; font-weight:600; }
-.preparation-field > :is(textarea,select) { width:100%; min-height:var(--control-height); padding:.75rem; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font:inherit; font-weight:400; line-height:1.7; }
+.preparation-field > :is(input,textarea,select) { width:100%; min-height:var(--control-height); padding:.75rem; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font:inherit; font-weight:400; line-height:1.7; }
+.preparation-cv-name { margin-bottom:20px; }
+.preparation-version-heading > div { min-width:0; }
+.preparation-version-heading strong { display:block; font-size:14px; font-weight:650; overflow-wrap:anywhere; }
+.preparation-version-heading time { display:block; font-size:11px; color:var(--muted); margin-top:4px; }
+.preparation-version-label-actions { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.preparation-version-label-actions > span { display:inline-flex; align-items:center; gap:4px; color:var(--accent); font-size:11px; }
+.preparation-rename-button { display:inline-flex; align-items:center; gap:5px; padding:7px 9px; min-height:36px; border:1px solid var(--line); border-radius:7px; color:var(--muted); font-size:11px; }
+.preparation-rename-button:hover { border-color:var(--accent); color:var(--accent); }
+.preparation-rename { display:grid; gap:10px; width:100%; }
+.preparation-rename label { display:grid; gap:7px; font-size:12px; }
+.preparation-rename > div { display:flex; gap:8px; flex-wrap:wrap; }
 .preparation-field textarea { resize:vertical; }
 .preparation-field > small { color:var(--muted); font-size:.75rem; font-weight:400; line-height:1.6; }
 .preparation-selection { margin-top:1.5rem; }

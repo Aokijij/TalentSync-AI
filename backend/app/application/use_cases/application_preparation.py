@@ -30,7 +30,7 @@ from app.domain.services.resume_filename import resume_filename
 
 def version_view(row):
     return {"id": row.id, "job_id": row.job_id, "created_at": row.created_at,
-            "filename": row.filename, "sha256": row.pdf_sha256,
+            "filename": row.filename, "label": row.snapshot.get("label") or ("CV del perfil" if row.snapshot.get("kind") == "profile" else "CV guardado"), "sha256": row.pdf_sha256,
             "summary": row.snapshot["profile"].get("experience") or "",
             "skills": row.snapshot["profile"].get("skills") or [],
             "experiences": row.snapshot["profile"].get("experiences") or [],
@@ -90,7 +90,8 @@ def create_version(db, user, job_id, payload, exporter):
         raise UseCaseError(status_code=409, detail="Tu perfil cambió. Actualiza la preparación antes de guardar el CV")
     if fingerprint(job_snapshot(job)) != payload["job_version"]:
         raise UseCaseError(status_code=409, detail="La oferta cambió. Actualiza la preparación y revisa sus requisitos antes de guardar el CV")
-    if db.resume_versions.count_for_job(user.id, job_id) >= 30:
+    version_count = db.resume_versions.count_for_job(user.id, job_id)
+    if version_count >= 30:
         raise UseCaseError(status_code=409, detail="Ya tienes 30 versiones para esta vacante. Puedes reutilizar una versión guardada")
     profile = resume_profile(user.profile)
     indices = payload.get("experience_indices")
@@ -118,7 +119,7 @@ def create_version(db, user, job_id, payload, exporter):
         raise UseCaseError(status_code=422, detail="El PDF supera el límite de 5 MB. Prueba sin foto")
     row = db.resume_versions.new(id=uuid4().hex, user_id=user.id, job_id=job_id,
         request_key=payload["request_key"], request_digest=digest, source_version=payload["source_version"],
-        snapshot={"schema": 2, "name": user.name, "email": user.email, "profile": profile, "job": job_snapshot(job), "include_photo": include_photo},
+        snapshot={"schema": 2, "label": payload.get("label") or f"CV {version_count + 1}", "name": user.name, "email": user.email, "profile": profile, "job": job_snapshot(job), "include_photo": include_photo},
         filename=resume_filename(user.name), pdf_sha256=sha256(pdf).hexdigest(), pdf=pdf)
     db.add(row); db.commit(); db.refresh(row)
     return version_view(row)
@@ -129,6 +130,16 @@ def owned_version(db, user, version_id):
     if row is None or row.user_id != user.id:
         raise UseCaseError(status_code=404, detail="Versión no encontrada")
     return row
+
+
+def rename_version(db, user, version_id, label):
+    row = owned_version(db, user, version_id)
+    db.profiles.lock_owner(user.id)
+    db.refresh(row)
+    # The private label is metadata: PDF bytes, digest and submitted copies stay intact.
+    row.snapshot = {**row.snapshot, "label": label}
+    db.add(row); db.commit(); db.refresh(row)
+    return version_view(row)
 
 
 def for_application(db, user, application_id):

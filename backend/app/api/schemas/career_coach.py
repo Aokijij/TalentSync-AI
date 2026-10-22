@@ -1,7 +1,9 @@
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+
+ResumeLabel = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80, pattern=r"^[^\x00-\x1f\x7f]+$")]
 
 
 class Facts(BaseModel):
@@ -34,6 +36,7 @@ class WritingGeneration(BaseModel):
 class ResumeVersionCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     request_key: UUID
+    label: ResumeLabel | None = None
     source_version: str = Field(pattern=r"^[a-f0-9]{64}$")
     job_version: str = Field(pattern=r"^[a-f0-9]{64}$")
     summary: str | None = Field(default=None, max_length=3000)
@@ -41,6 +44,11 @@ class ResumeVersionCreate(BaseModel):
     skills: list[str] | None = Field(default=None, max_length=100)
     style: Literal["classic", "modern", "minimal"] = "modern"
     include_photo: bool = True
+
+
+class ResumeVersionRename(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    label: ResumeLabel
 
 
 class InterviewAnswer(BaseModel):

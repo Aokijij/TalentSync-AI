@@ -13,6 +13,7 @@ import { FeedbackProvider } from "../src/contexts/FeedbackContext.jsx";
 import { VacancyCard } from "../src/components/VacancyCard.jsx";
 import { ApplicationAnswersModal } from "../src/components/ApplicationAnswersModal.jsx";
 import { ApplicationSubmitDialog } from "../src/components/ApplicationSubmitDialog.jsx";
+import { ApplicationPreparation } from "../src/components/ApplicationPreparation.jsx";
 import { RecruiterProcessDialog } from "../src/components/RecruiterProcessDialog.jsx";
 import { ChallengeCatalog } from "../src/components/ChallengeCatalog.jsx";
 import { ChallengeWorkspace, ChallengeResult } from "../src/components/ChallengeWorkspace.jsx";
@@ -47,6 +48,7 @@ function QualityPage() {
   const [selected, setSelected] = useState([101, 102]);
   const [tab, setTab] = useState("cv"), [filters, setFilters] = useState({}), [answers, setAnswers] = useState({}), [dirty, setDirty] = useState(false), [saved, setSaved] = useState(false);
   const [form, setForm] = useState({ summary: data.profile.summary, experiences: [0], skills: data.profile.skills, style: "modern", includePhoto: false });
+  if (params.has("cvnames")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><CvNamesExample /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("submit")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><button className="button-primary" type="button" onClick={() => { setSubmittedExample(null); setSubmitOpen(true); }}>Postularme</button>{submittedExample && <p role="status">Postulación enviada</p>}{submitOpen && <ApplicationSubmitDialog job={comparisonJobs[0]} onClose={() => setSubmitOpen(false)} onSubmitted={(row) => { setSubmittedExample(row); setSubmitOpen(false); }} />}</main></FeedbackProvider></MemoryRouter>;
   if (practiceMode === "active") return <MemoryRouter><div className={`quality-shell role-${role}`}><ChallengeWorkspace attempt={practiceExample} seconds={441} answers={practiceAnswers} step={practiceStep} onStep={setPracticeStep} onAnswer={(id, value) => setPracticeAnswers((current) => ({ ...current, [id]: value }))} onExit={() => setPracticeMode(null)} onSubmit={() => setPracticeMode("result")} /></div></MemoryRouter>;
   if (practiceMode === "result") return <MemoryRouter><div className={`quality-shell role-${role}`}><ChallengeResult attempt={{ ...practiceExample, status: "completed", score: 100, passed: true, feedback: practiceExample.questions.map((row) => ({ question_id: row.id, prompt: row.prompt, correct: true, message: "Respuesta revisada en el ejemplo de interfaz." })) }} onExit={() => setPracticeMode(null)} onResults={() => setPracticeMode(null)} /></div></MemoryRouter>;
@@ -67,3 +69,8 @@ function QualityPage() {
 }
 
 createRoot(document.getElementById("root")).render(<QualityPage />);
+
+function CvNamesExample() {
+  const [selected, setSelected] = useState(null);
+  return <><ApplicationPreparation jobId={101} selectedVersion={selected} onVersionSelected={setSelected} />{selected && <p role="status">CV seleccionado: {selected.label}</p>}</>;
+}

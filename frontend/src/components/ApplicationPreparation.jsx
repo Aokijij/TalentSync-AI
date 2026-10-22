@@ -21,7 +21,7 @@ export function ApplicationPreparation({ jobId, applicationId, selectedVersion, 
     api.get(`${base}/preparation`, { signal: controller.signal }).then(({ data: response }) => {
       if (controller.signal.aborted) return;
       setData(response); setAnswers(response.interview.answers); setDirty(false); setQuestionIndex(0);
-      setForm({ summary: response.profile.summary, experiences: response.profile.experiences.map((_, index) => index), skills: response.profile.skills, style: response.profile.resume_style || "modern", includePhoto: response.profile.resume_options?.include_photo ?? true });
+      setForm({ label: "", summary: response.profile.summary, experiences: response.profile.experiences.map((_, index) => index), skills: response.profile.skills, style: response.profile.resume_style || "modern", includePhoto: response.profile.resume_options?.include_photo ?? true });
       pendingVersion.current = null;
     }).catch((failure) => { if (!controller.signal.aborted) setError(getApiErrorMessage(failure, "No pudimos cargar tu preparación.")); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -48,11 +48,19 @@ export function ApplicationPreparation({ jobId, applicationId, selectedVersion, 
   }
   async function createVersion() {
     return perform(async () => {
-      pendingVersion.current ??= { request_key: crypto.randomUUID(), source_version: data.source_version, job_version: data.job_version, summary: form.summary, experience_indices: form.experiences, skills: form.skills, style: form.style };
+      pendingVersion.current ??= { request_key: crypto.randomUUID(), source_version: data.source_version, job_version: data.job_version, label: form.label?.trim() || null, summary: form.summary, experience_indices: form.experiences, skills: form.skills, style: form.style };
       const { data: version } = await api.post(`/profiles/me/coach/jobs/${jobId}/cv-versions`, pendingVersion.current, { __quiet: true });
       setData((current) => ({ ...current, versions: [version, ...current.versions.filter((row) => row.id !== version.id)] }));
       pendingVersion.current = null;
       setMessage("Versión guardada. Abre el PDF para revisarlo y elige «Usar al postularme» cuando esté listo.");
+    });
+  }
+  async function renameVersion(row, label) {
+    return perform(async () => {
+      const { data: updated } = await api.patch(`/profiles/me/coach/cv-versions/${row.id}`, { label }, { __quiet: true });
+      setData((current) => ({ ...current, versions: current.versions.map((version) => version.id === updated.id ? updated : version) }));
+      if (selectedVersion?.id === updated.id) onVersionSelected?.(updated);
+      setMessage("Nombre del CV actualizado.");
     });
   }
   async function pdf(row, download) {
@@ -73,7 +81,7 @@ export function ApplicationPreparation({ jobId, applicationId, selectedVersion, 
       {data && form && !loading && <PreparationWorkspace data={data} tab={tab} onTab={setTab} form={form} onForm={(next) => { setForm(next); pendingVersion.current = null; }} busy={busy} saving={busy} answers={answers} onAnswer={(id, key, value) => { setAnswers((current) => ({ ...current, [id]: { ...current[id], [key]: value } })); setDirty(true); }} questionIndex={questionIndex} onQuestion={setQuestionIndex} dirty={dirty} onSaveInterview={() => perform(async () => {
         const { data: saved } = await api.put(`${base}/interview`, { expected_version: data.interview.version, revision: data.revision, answers }, { __quiet: true });
         setData((current) => ({ ...current, interview: { ...current.interview, ...saved, saved_at: saved.updated_at, outdated: false } })); setDirty(false); setMessage("Respuestas guardadas. Solo tú puedes consultarlas.");
-      })} onDownloadNotes={() => saveBlob(new Blob([preparationText(data.job, data.interview.questions, answers)], { type: "text/plain;charset=utf-8" }), "Preparacion de entrevista - TalentSync.txt")} onCreateVersion={createVersion} onPreview={(row) => pdf(row, false)} onDownload={(row) => pdf(row, true)} onSelect={onVersionSelected ? (row) => onVersionSelected(selectedVersion?.id === row.id ? null : row) : undefined} selectedId={selectedVersion?.id} application={Boolean(applicationId)} preview={preview} onClosePreview={() => setPreview(null)} />}
+      })} onDownloadNotes={() => saveBlob(new Blob([preparationText(data.job, data.interview.questions, answers)], { type: "text/plain;charset=utf-8" }), "Preparacion de entrevista - TalentSync.txt")} onCreateVersion={createVersion} onRename={renameVersion} onPreview={(row) => pdf(row, false)} onDownload={(row) => pdf(row, true)} onSelect={onVersionSelected ? (row) => onVersionSelected(selectedVersion?.id === row.id ? null : row) : undefined} selectedId={selectedVersion?.id} application={Boolean(applicationId)} preview={preview} onClosePreview={() => setPreview(null)} />}
     </CoachDialog>
   </>;
 }

@@ -45,8 +45,8 @@ Esta función permite adaptar la presentación de una trayectoria real al cargo,
 
 1. En **Contenido**, revisa el resumen y despliega experiencias o habilidades si quieres cambiar la selección.
 2. Pulsa **Continuar al diseño**.
-3. En **Diseño y guardado**, elige un diseño moderno, clásico o minimalista. La foto y los apartados visibles se toman de las preferencias guardadas del CV en tu perfil; para cambiarlos, ve allí y pulsa **Guardar diseño y preferencias**.
-4. Guarda la versión. En **Versiones**, abre el PDF para revisarlo.
+3. En **Diseño y guardado**, escribe un **Nombre del CV** (por ejemplo, «Frontend · React») y elige un diseño moderno, clásico o minimalista. La foto y los apartados visibles se toman de las preferencias guardadas del CV en tu perfil; para cambiarlos, ve allí y pulsa **Guardar diseño y preferencias**.
+4. Guarda la versión. En **Versiones**, el nombre aparece junto a su fecha. Puedes **Renombrar** cualquier CV guardado, incluidos los anteriores, y abrir el PDF para revisarlo. Si no indicas un nombre, se asigna «CV 1», «CV 2», etc. El nombre es privado: permite organizar y elegir tus documentos sin alterar el PDF enviado a la empresa.
 5. Pulsa **Usar al postularme** para seleccionarla. Después debes enviar la postulación desde su botón habitual.
 
 **Ejemplo:** puedes destacar experiencia de pruebas y calidad para una vacante de QA, y experiencia de interfaces para una de frontend, sin borrar ninguna del perfil principal.

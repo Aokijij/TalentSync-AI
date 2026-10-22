@@ -155,6 +155,47 @@ def create_version(client, headers, job_id, **changes):
     return response.json(), payload
 
 
+def test_cv_names_persist_and_renaming_preserves_pdf_and_submitted_document(client):
+    _, headers, company, job = setup_case(client)
+    version, payload = create_version(client, headers, job["id"], label="  Frontend · React  ")
+    assert version["label"] == "Frontend · React"
+    pdf_url = f"{BASE}/cv-versions/{version['id']}/pdf"
+    before = client.get(pdf_url, headers=headers)
+    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "resume_version_id": version["id"]}).json()
+    endpoint = f"{BASE}/cv-versions/{version['id']}"
+    renamed = client.patch(endpoint, headers=headers, json={"label": "PRIVATE-NAME-ONLY-ME"})
+    assert renamed.status_code == 200, renamed.text
+    assert renamed.json()["label"] == "PRIVATE-NAME-ONLY-ME" and renamed.json()["sha256"] == version["sha256"]
+    assert pack(client, headers, job["id"])["versions"][0]["label"] == "PRIVATE-NAME-ONLY-ME"
+    assert client.get(pdf_url, headers=headers).content == before.content
+    delivered = client.get(f"/api/v1/applications/{application['id']}/resume", headers=company)
+    assert delivered.content == before.content
+    assert "PRIVATE-NAME" not in delivered.headers["content-disposition"]
+    assert "PRIVATE-NAME" not in " ".join(page.extract_text() for page in PdfReader(BytesIO(delivered.content)).pages)
+    replay = client.post(f"{BASE}/jobs/{job['id']}/cv-versions", headers=headers, json=payload)
+    assert replay.json()["id"] == version["id"] and replay.json()["label"] == "PRIVATE-NAME-ONLY-ME"
+    for label in ["", "   ", "x" * 81, "name\nsecond line"]:
+        assert client.patch(endpoint, headers=headers, json={"label": label}).status_code == 422
+    _, stranger = register(client, "cv-label-stranger")
+    assert client.patch(endpoint, headers=stranger, json={"label": "Other"}).status_code == 404
+    assert client.patch(endpoint, headers=company, json={"label": "Other"}).status_code == 403
+
+
+def test_unnamed_and_historical_cv_versions_remain_usable_and_can_be_named(client):
+    _, headers, _, job = setup_case(client)
+    version, _ = create_version(client, headers, job["id"])
+    second, _ = create_version(client, headers, job["id"])
+    assert version["label"] == "CV 1" and second["label"] == "CV 2"
+    with client.session_factory() as db:
+        historical = db.get(ResumeVersion, version["id"])
+        historical.snapshot = {key: value for key, value in historical.snapshot.items() if key != "label"}
+        db.commit()
+    legacy = next(row for row in pack(client, headers, job["id"])["versions"] if row["id"] == version["id"])
+    assert legacy["label"] == "CV guardado"
+    response = client.patch(f"{BASE}/cv-versions/{version['id']}", headers=headers, json={"label": "Mi CV anterior"})
+    assert response.status_code == 200 and response.json()["label"] == "Mi CV anterior"
+
+
 def test_cv_selection_is_private_does_not_change_profile_and_keeps_exact_pdf(client):
     owner, headers, company, job = setup_case(client)
     before = client.get("/api/v1/profiles/me", headers=headers).json()

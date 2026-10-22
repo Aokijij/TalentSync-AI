@@ -10,7 +10,7 @@ for (const width of [360, 1440]) for (const theme of ["light", "dark"]) test(`CV
     const url = new URL(route.request().url());
     if (!["127.0.0.1", "localhost"].includes(url.hostname)) return route.abort();
     if (!url.pathname.startsWith("/api/")) return route.continue();
-    if (url.pathname.endsWith("/jobs/101/preparation")) return route.fulfill({ json: { profile: { resume_options: { sections: ["summary", "experiences"], include_photo: false } }, versions: [{ id: versionId, filename: "Hoja de vida.pdf", created_at: "2026-10-22T12:00:00Z" }] } });
+    if (url.pathname.endsWith("/jobs/101/preparation")) return route.fulfill({ json: { profile: { resume_options: { sections: ["summary", "experiences"], include_photo: false } }, versions: [{ id: versionId, label: "Frontend · React", filename: "Hoja de vida.pdf", created_at: "2026-10-22T12:00:00Z" }] } });
     if (url.pathname.endsWith("/jobs/101")) return route.fulfill({ json: job });
     if (url.pathname.endsWith("/applications") && route.request().method() === "POST") { const body = route.request().postDataJSON(); payloads.push(body); return route.fulfill({ status: 201, json: { id: 901, job_id: 101, status: "submitted" } }); }
     throw new Error(`Unexpected request: ${url.pathname}`);
@@ -35,6 +35,7 @@ for (const width of [360, 1440]) for (const theme of ["light", "dark"]) test(`CV
     await dialog.getByRole("textbox").fill("Verifiqué los registros originales.");
     await dialog.getByRole("button", { name: "Elegir CV", exact: true }).click();
     await dialog.locator(`input[value="${choice}"]`).check();
+    if (choice === "version") await expect(dialog.getByRole("option", { name: /Frontend · React/ })).toHaveCount(1);
     await dialog.getByRole("button", { name: "Enviar postulación", exact: true }).click();
     await expect(dialog).toHaveCount(0);
   }
