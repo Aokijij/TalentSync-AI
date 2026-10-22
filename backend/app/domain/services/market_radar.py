@@ -49,7 +49,7 @@ def selected_jobs(jobs, filters, now):
             continue
         if filters.get("level") and details.get("seniority") != filters["level"]:
             continue
-        if filters.get("location") and city_key(job.location) != city_key(filters["location"]):
+        if filters.get("location_scope") != "country" and filters.get("location") and city_key(job.location) != city_key(filters["location"]):
             continue
         if filters.get("sector") and fold(filters["sector"]) != fold(job.sector):
             continue
@@ -64,10 +64,11 @@ def selected_jobs(jobs, filters, now):
 
 
 def peer_report(profile, candidates, filters, now):
-    # Fixed area/city/level partitions: search terms, sector and modality never
+    # Fixed area/level groups by city or country: search, sector and modality never
     # create arbitrary overlapping subsets of private candidate profiles.
-    if not all(filters.get(key) for key in ("family", "level", "location")):
-        return {"status": "choose_cohort", "minimum_sample": MINIMUM_SAMPLE, "skills": [], "note": "Elige área, nivel y ciudad para ver un grupo comparable."}
+    national = filters.get("location_scope") == "country"
+    if not filters.get("family") or not filters.get("level") or (not national and not filters.get("location")):
+        return {"status": "choose_cohort", "minimum_sample": MINIMUM_SAMPLE, "skills": [], "note": "Elige área y nivel, y selecciona una ciudad o Todo el país para ver un grupo comparable."}
     cohort, used = [], set()
     demo = filters.get("dataset") == "demo"
     for row in candidates:
@@ -81,7 +82,7 @@ def peer_report(profile, candidates, filters, now):
         if (row.user_id == profile.user_id or row.user_id in used or not row.email_verified
                 or (not getattr(row, "is_demo", False) if demo else getattr(row, "is_demo", False) or (not local_fixture and (getattr(row, "is_local_fixture", False) or synthetic_email(row.email) or row.email.lower().endswith((".invalid", ".localhost")))))
                 or not consent.get("enabled") or (not demo and not local_fixture and not consent.get("confirmed_real")) or not recent
-                or consent.get("family") != filters["family"] or consent.get("level") != filters["level"] or city_key(row.location) != city_key(filters["location"])):
+                or consent.get("family") != filters["family"] or consent.get("level") != filters["level"] or (not national and city_key(row.location) != city_key(filters["location"]))):
             continue
         used.add(row.user_id); cohort.append(row)
     if len(cohort) < MINIMUM_SAMPLE:
@@ -108,8 +109,8 @@ def salary_report(jobs, filters):
               for job in jobs if job.salary and math.isfinite(job.salary) and job.salary > 0
               and all((job.quality_details or {}).get(key) == value for key, value in (("salary_currency", "COP"), ("salary_period", "monthly"), ("salary_basis", "gross_base")))]
     observations = {"offers": sorted(offers, key=lambda row: (row["salary"], row["id"])), "total_offers": len(jobs), "offers_with_salary": len(offers)}
-    if not all(filters.get(key) for key in ("family", "level", "location")):
-        return {**observations, "status": "choose_cohort", "groups": [], "minimum_sample": MINIMUM_SAMPLE, "note": "Puedes consultar los salarios de las ofertas filtradas. Para una mediana comparable, elige área, nivel y ciudad."}
+    if not filters.get("family") or not filters.get("level") or (filters.get("location_scope") != "country" and not filters.get("location")):
+        return {**observations, "status": "choose_cohort", "groups": [], "minimum_sample": MINIMUM_SAMPLE, "note": "Puedes consultar los salarios de las ofertas filtradas. Para una mediana comparable, elige área y nivel, y selecciona una ciudad o Todo el país."}
     groups = defaultdict(lambda: defaultdict(list))
     eligible = 0
     for job in jobs:

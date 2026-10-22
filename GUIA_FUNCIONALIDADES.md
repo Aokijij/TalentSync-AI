@@ -92,7 +92,7 @@ Antes de entregar puedes consultar todas las respuestas y editar cualquiera. La 
 | Seguimiento de postulaciones | Consultar estado, etapas, plazos, historial y feedback comunicado por la empresa; retirar una postulación cuando el proceso lo permite. |
 | Cursos y prácticas | Filtrar recursos, ver las habilidades que refuerzan y añadir actividades al plan personal. Completar un curso no acredita automáticamente dominio de una habilidad. |
 | Mi plan y resultados | Continuar actividades iniciadas y consultar sus entregas o resultados, distinguiendo práctica, información declarada y evaluación disponible. |
-| Radar laboral | Explorar habilidades solicitadas por las ofertas de la plataforma y referencias agregadas disponibles. La muestra no representa todo el mercado laboral colombiano. |
+| Radar laboral | Explorar habilidades solicitadas, perfiles comparables y salarios publicados. En Ubicación puedes elegir Todo el país o Una ciudad y pulsar Actualizar radar. Las comparaciones de perfiles y medianas salariales requieren área, nivel y muestra suficiente; Usar mi perfil recupera tu ciudad y los filtros sugeridos. La muestra corresponde a los datos disponibles en la plataforma y no representa todo el mercado laboral colombiano. |
 
 ## Funciones principales de la empresa
 

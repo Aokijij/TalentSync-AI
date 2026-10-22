@@ -16,9 +16,11 @@ def report(db, user, filters, *, local_fixture_mode=False):
     months = experience_months(profile.experiences)
     suggestion = {"family": next(iter(families), ""),
                   "level": "entry" if months < 12 else "junior" if months < 36 else "mid" if months < 60 else "senior",
-                  "location": profile.location or ""}
+                  "location": profile.location or "", "location_scope": "city" if profile.location else "country"}
     if filters.pop("personalized", False):
         filters = {**filters, **suggestion}
+    if filters.get("location_scope") == "country":
+        filters = {**filters, "location": ""}
     demo = filters.get("dataset") == "demo"
     filters = {**filters, "allow_local_fixtures": local_fixture_mode}
     result = market_report(owner_profile(user), db.jobs.market_jobs(now - timedelta(days=90), demo=demo),

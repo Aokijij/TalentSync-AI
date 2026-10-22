@@ -12,7 +12,7 @@ from app.domain.services.market_radar import (
     salary_report,
     selected_jobs,
 )
-from app.infrastructure.database.models import Profile, User
+from app.infrastructure.database.models import Job, Profile, User
 
 NOW = datetime(2026, 10, 14)
 FILTERS = {"family": "software", "level": "junior", "location": "Medellín", "sector": "", "modality": "", "search": ""}
@@ -83,6 +83,58 @@ def test_salary_requires_twenty_distinct_companies_and_preserves_conditions():
     # One company has one statistical vote, even with multiple offers.
     result = salary_report([*rows, job(40, company_id=19, salary=9_000_000)], FILTERS)
     assert result["groups"][0]["sample"] == 20 and result["groups"][0]["offers"] == 21
+
+
+def test_country_scope_combines_cities_for_demand_peers_and_comparable_pay():
+    rows = [job(i, location="Medellín" if i < 10 else "Bogotá") for i in range(20)]
+    participants = [peer(i, location="Medellín" if i < 10 else "Bogotá") for i in range(20)]
+    national = {**FILTERS, "location_scope": "country"}  # A stale city must not restrict this explicit scope.
+    result = market_report(own(), rows, participants, [], national, NOW)
+    assert result["demand"]["sample"] == 20
+    assert result["peers"]["status"] == "ready" and result["peers"]["sample"] == 20
+    assert result["salary"]["groups"][0]["sample"] == 20
+    assert result["salary"]["groups"][0]["median"] == 2_950_000
+    local = market_report(own(), rows, participants, [], FILTERS, NOW)
+    assert local["demand"]["sample"] == 10
+    assert local["peers"]["status"] == local["salary"]["status"] == "insufficient_data"
+    assert "sample" not in local["peers"]
+    assert peer_report(own(), participants[:19], national, NOW)["status"] == "insufficient_data"
+
+
+def test_national_pay_and_peer_statistics_still_require_a_comparable_area_and_level():
+    national = {**FILTERS, "location_scope": "country", "location": "", "family": ""}
+    assert peer_report(own(), [peer(i) for i in range(20)], national, NOW)["status"] == "choose_cohort"
+    pay = salary_report([job(i) for i in range(20)], national)
+    assert pay["status"] == "choose_cohort" and len(pay["offers"]) == 20
+
+
+def test_national_api_clears_city_and_profile_shortcut_restores_it(client):
+    viewer, headers = register(client, "national-viewer", profession="Desarrollador Python")
+    _, company = company_account(client, "national-company")
+    offers = [create_job(client, company) for _ in range(2)]
+    with client.session_factory() as db:
+        db.get(User, viewer["id"]).profile.location = "Medellín"
+        for index, offer in enumerate(offers):
+            row = db.get(Job, offer["id"])
+            row.location = "Medellín" if index == 0 else "Bogotá"
+            row.quality_details = {"seniority": "junior"}
+        for i in range(20):
+            candidate = User(name=f"Private national person {i}", email=f"national-{i}@workmail.co", password_hash="unused", role="candidate", email_verified=True)
+            db.add(candidate); db.flush()
+            db.add(Profile(user_id=candidate.id, location="Medellín" if i < 10 else "Bogotá", skills=["python"] if i < 15 else ["sql"], preferences={"market_participation": {"enabled": True, "confirmed_real": True, "family": "software", "level": "junior", "updated_at": datetime.utcnow().isoformat() + "Z"}}))
+        db.commit()
+    path = "/api/v1/profiles/me/market"
+    response = client.get(path, headers=headers, params={**FILTERS, "location_scope": "country"})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["filters"]["location"] == "" and result["filters"]["location_scope"] == "country"
+    assert result["demand"]["sample"] == 2 and result["peers"]["sample"] == 20
+    assert "Private national person" not in response.text and "workmail.co" not in response.text
+    local = client.get(path, headers=headers, params={**FILTERS, "location_scope": "city"}).json()
+    assert local["demand"]["sample"] == 1 and local["peers"]["status"] == "insufficient_data"
+    personalized = client.get(path, headers=headers, params={"personalized": True, "location_scope": "country"}).json()
+    assert personalized["filters"]["location_scope"] == "city" and personalized["filters"]["location"] == "Medellín"
+    assert client.get(path, headers=headers, params={"location_scope": "unknown"}).status_code == 422
 
 
 @pytest.mark.parametrize("missing", ["salary_currency", "salary_period", "salary_basis", "weekly_hours", "contract_type"])

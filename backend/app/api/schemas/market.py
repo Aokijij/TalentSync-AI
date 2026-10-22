@@ -13,6 +13,7 @@ class MarketFilters(BaseModel):
     family: MarketFamily = ""
     level: MarketLevel = ""
     location: str = Field(default="", max_length=120)
+    location_scope: Literal["city", "country"] = "city"
     sector: str = Field(default="", max_length=120)
     modality: Literal["", "remote", "hybrid", "onsite"] = ""
 
