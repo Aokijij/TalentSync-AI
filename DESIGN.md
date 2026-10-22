@@ -60,3 +60,10 @@ Las capturas sirven para revisión. Todavía no hay imágenes de referencia apro
 - Salario, habilidades o compatibilidad desconocidos necesitan texto explícito. No usar cero como sustituto de un dato ausente.
 - Las citas muestran hora de Colombia y el estado real del proceso. No presentar una cita pasada o de un proceso finalizado como próxima.
 - La descarga del calendario explica su importación manual y cómo actuar ante cambios; duración y ubicación pendientes no se completan con suposiciones.
+
+## Densidad y tareas separadas
+
+- Las tarjetas de vacantes muestran título, ubicación/modalidad, una descripción breve, tres habilidades y salario. La compatibilidad ocupa una línea; la comparación utiliza una acción en la esquina y no necesita un bloque vacío permanente.
+- La preparación del CV separa contenido, diseño y versiones. Las listas extensas comienzan plegadas con un contador de selección.
+- Gestionar un proceso y valorar respuestas son tareas distintas. No mezclar notas y calendario con todas las respuestas en una sola ventana. La revisión de respuestas presenta una pregunta cada vez y conserva su valoración al navegar.
+- Las preguntas de práctica deben mostrar el requisito que las origina y orientar una decisión o comprobación concreta, conservando las notas existentes.

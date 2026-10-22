@@ -54,7 +54,7 @@ def preparation(db, user, job_id, *, application_id=None):
     offer = deepcopy(submitted.get("job") or job_snapshot(job))
     _, content = state(db, user)
     note = content.get("interview_notes", {}).get(str(job_id), {})
-    questions = interview_questions(facts, offer)
+    questions = interview_questions(facts, offer, saved_question_ids=note.get("answers", {}))
     revision = preparation_revision(facts, offer)
     known = {question["id"] for question in questions}
     answers = {key: value for key, value in note.get("answers", {}).items() if key in known}

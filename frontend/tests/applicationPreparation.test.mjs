@@ -21,12 +21,15 @@ const data = {
 };
 const props = { data, tab: "cv", onTab: noop, form: { summary: "Preparaba reportes", experiences: [0], skills: ["excel"], style: "modern", includePhoto: false }, onForm: noop, answers: {}, onAnswer: noop, questionIndex: 0, onQuestion: noop, onSaveInterview: noop, onDownloadNotes: noop, onCreateVersion: noop, onPreview: noop, onDownload: noop };
 
-test("CV preparation presents saved facts, accessible fields and an honest empty history", () => {
+test("CV preparation starts with content and collapsed choices, keeping design and history in separate steps", () => {
   const html = renderToStaticMarkup(createElement(PreparationWorkspace, props));
   assert.match(html, /Analista de inventarios/);
   assert.match(html, /Auxiliar/);
-  assert.match(html, /Todavía no hay versiones guardadas/);
-  assert.match(html, /Guardar versión del CV/);
+  assert.match(html, /Versiones \(0\)/);
+  assert.match(html, /Continuar al diseño/);
+  assert.match(html, /Pasos del CV/);
+  assert.match(html, /<details class="preparation-picker"><summary>Experiencias/);
+  assert.doesNotMatch(html, /Guardar versión del CV|Tus versiones guardadas/);
   assert.match(html, /aria-controls="preparation-panel-cv"/);
   assert.match(html, /role="tabpanel" aria-labelledby="preparation-tab-cv"/);
   assert.doesNotMatch(html, /Enviar postulación/);

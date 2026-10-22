@@ -1,0 +1,21 @@
+.recruiter-process-dialog { width:100%; max-width:600px; max-height:85dvh; overflow-y:auto; padding:24px; border:1px solid var(--line); border-radius:var(--panel-radius); background:var(--surface); box-shadow:0 20px 60px #0004; }
+.recruiter-process-dialog textarea { min-height:100px; max-height:180px; }
+.candidate-answers-link { min-height:40px; width:100%; color:var(--accent); font-size:12px; font-weight:600; text-align:left; }
+.profile-coach-dialog.answers-dialog { width:min(700px,calc(100vw - 2rem)); }
+.answers-workspace { padding:20px; }
+.answers-context { color:var(--muted); font-size:14px; line-height:1.7; }
+.answers-metrics { display:flex; flex-wrap:wrap; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); }
+.answers-metrics > div { flex:1; min-width:100px; }
+.answers-metrics span { display:block; font-size:12px; color:var(--muted); }
+.answers-metrics strong { font-size:18px; font-weight:700; }
+.answers-metrics > div:last-child strong { color:var(--accent); }
+.answers-question { padding:20px 0; }
+.answers-question > p { color:var(--muted); font-size:12px; }
+.answers-question h3 { margin:8px 0 16px; font-size:16px; font-weight:650; line-height:1.6; }
+.answers-response { padding:16px; border:1px solid var(--line); border-radius:10px; background:var(--surface-subtle); white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; line-height:1.7; max-height:200px; overflow:auto; }
+.answers-rating { display:grid; gap:8px; margin-top:16px; font-size:13px; font-weight:600; }
+.answers-question-nav { display:flex; align-items:center; gap:12px; padding-top:16px; }
+.answers-question-nav > span { margin:auto; font-size:12px; color:var(--muted); }
+.answers-footer { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; padding-top:16px; border-top:1px solid var(--line); }
+.answers-empty { padding:24px 0; color:var(--muted); }
+@media(max-width:600px) { .recruiter-process-dialog { padding:16px; } .answers-workspace { padding:16px; } }

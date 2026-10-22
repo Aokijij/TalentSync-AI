@@ -15,6 +15,10 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     await page.goto(`/quality/?role=${role}&theme=${theme}`);
     await expect(page.getByRole("heading", { name: "Prepara tu próxima oportunidad", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "CV por vacante" })).toBeVisible();
+    await page.getByRole("button", { name: "Continuar al diseño" }).click();
+    await expect(page.getByRole("button", { name: "Guardar versión del CV", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: /Versiones \(0\)/ }).click();
+    await expect(page.getByText("Todavía no hay versiones guardadas")).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, "The document must not scroll horizontally").toBeLessThanOrEqual(1);
     for (const card of await page.locator('[data-quality="course"] article.learning-course-card').all()) {
@@ -43,6 +47,21 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     await expect(page.getByRole("button", { name: "Comparar (2)", exact: true })).toBeFocused();
     await expect(page.getByRole("heading", { name: "Tu agenda de entrevistas" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Añadir al calendario", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Gestionar proceso de ejemplo" }).click();
+    const process = page.getByRole("dialog", { name: "Candidata de ejemplo", exact: true });
+    await expect(process.getByLabel("Notas internas")).toBeVisible();
+    await expect(process.getByText("Respuestas de postulación")).toHaveCount(0);
+    const processBox = await process.boundingBox();
+    expect(processBox.height).toBeLessThanOrEqual(950 * .85 + 1);
+    await process.getByRole("button", { name: "Cerrar", exact: true }).click();
+    await page.getByRole("button", { name: "Revisar respuestas de ejemplo" }).click();
+    const answerReview = page.getByRole("dialog", { name: "Respuestas de postulación", exact: true });
+    await expect(answerReview.getByRole("heading", { name: "¿Cómo verificaste los registros de inventario?" })).toBeVisible();
+    await answerReview.getByRole("button", { name: "Siguiente", exact: true }).click();
+    await expect(answerReview.getByRole("heading", { name: "¿Cómo compartiste el resultado con el equipo?" })).toBeVisible();
+    await answerReview.getByLabel("Valoración manual de la empresa").selectOption("2");
+    await answerReview.getByRole("button", { name: "Preparar valoración" }).click();
+    await expect(page.getByText("Valoración preparada")).toBeVisible();
     await page.getByRole("tab", { name: "CV por vacante" }).focus();
     await page.keyboard.press("ArrowRight");
     await expect(page.getByRole("tab", { name: "Practicar entrevista" })).toHaveAttribute("aria-selected", "true");

@@ -1,5 +1,12 @@
 # Mejoras de preparación y consistencia
 
+## Revisión de vacantes, modales y preguntas
+
+- Tarjetas compactas con modalidad sin cortes, tres habilidades iniciales, compatibilidad resumida y una acción principal. El icono de comparación reemplaza la fila de checkbox; el bloque de selección no aparece vacío y sus títulos se consultan desplegando la selección.
+- Separación entre gestionar proceso (notas y fecha) y revisar respuestas (una pregunta por pantalla). Las valoraciones preparadas en el tablero conservan el guardado conjunto y los controles de versión existentes.
+- CV por vacante en tres pasos: contenido, diseño/guardado y versiones. Experiencias y habilidades plegadas, sin una columna permanente de historial vacía. Los errores mantienen la edición; el cierre con notas pendientes se confirma dentro de la propia ventana.
+- Preguntas con extractos reales de la vacante, prioridad de habilidades esenciales, nivel solicitado y puntos específicos para profundizar. Se conservan los identificadores de las preguntas para recuperar las notas; la revisión señala que la guía cambió. No se generan afirmaciones sobre la trayectoria ni puntuaciones de las respuestas privadas.
+
 ## Comparador y agenda · 22 de octubre de 2026
 
 - Candidato → Explorar vacantes: selección de dos o tres ofertas, comparación de condiciones y habilidades del cálculo existente; filtro de condiciones diferentes. Selección por cuenta en la pestaña, sin nuevas solicitudes de compatibilidad al abrir el comparador.

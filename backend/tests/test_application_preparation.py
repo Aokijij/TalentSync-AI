@@ -19,6 +19,28 @@ from app.infrastructure.database.models import (
 BASE = "/api/v1/profiles/me/coach"
 
 
+def test_prioritizing_skills_preserves_existing_private_notes(client):
+    _, headers, _, job = setup_case(client)
+    with client.session_factory() as db:
+        row = db.get(Job, job["id"])
+        row.skills = ["python", "sql", "git", "excel", "react"]
+        row.skill_requirements = []
+        db.commit()
+    original = pack(client, headers, job["id"])
+    question = next(row for row in original["interview"]["questions"] if row.get("skill") == "excel")
+    answers = {question["id"]: {"situation": "", "task": "", "action": "PRIVATE-SAVED-EXCEL-EXAMPLE", "result": ""}}
+    endpoint = f"{BASE}/jobs/{job['id']}/interview"
+    assert client.put(endpoint, headers=headers, json={"expected_version": 0, "revision": original["revision"], "answers": answers}).status_code == 200
+    with client.session_factory() as db:
+        db.get(Job, job["id"]).skill_requirements = [{"skill": "react", "essential": True, "weight": 5}]
+        db.commit()
+    updated = pack(client, headers, job["id"])
+    assert updated["interview"]["outdated"] is True
+    assert updated["interview"]["answers"] == answers
+    assert question["id"] in {row["id"] for row in updated["interview"]["questions"]}
+    assert client.put(endpoint, headers=headers, json={"expected_version": 1, "revision": updated["revision"], "answers": answers}).status_code == 200
+
+
 def setup_case(client):
     owner, headers = register(client, "preparation-owner", profession="Analista de datos", skills=["python", "excel"])
     _, company = company_account(client, "preparation-company")

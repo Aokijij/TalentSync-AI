@@ -10,10 +10,11 @@ export function JobComparison({ selection, jobs, matches, loading, returnTo }) {
   const [open, setOpen] = useState(false);
   const byId = new Map(jobs.map((job) => [job.id, job]));
   const selected = selection.ids.map((id) => byId.get(id)).filter(Boolean);
+  if (!selection.ids.length) return null;
   return <>
     <section className={`comparison-tray${selection.ids.length ? " has-selection" : ""}`} aria-label="Vacantes para comparar">
-      <div className="comparison-tray-title"><Columns3 size={20} /><div><strong>Compara tus opciones</strong><p aria-live="polite">{selection.ids.length ? `${selection.ids.length} de ${COMPARISON_LIMIT} seleccionadas` : "Elige de 2 a 3 vacantes para decidir tu próximo paso."}</p></div></div>
-      {!!selection.ids.length && <ul className="comparison-selection">{selection.ids.map((id) => <li key={id}><span>{byId.get(id)?.title || (loading ? "Cargando oferta…" : "Oferta no disponible")}</span><button type="button" aria-label={`Quitar ${byId.get(id)?.title || "oferta no disponible"} de la comparación`} onClick={() => selection.toggle(id)}><X size={15} /></button></li>)}</ul>}
+      <div className="comparison-tray-title"><Columns3 size={18} /><strong aria-live="polite">{selection.ids.length} de {COMPARISON_LIMIT} vacantes</strong></div>
+      <details className="comparison-selected-details"><summary>Ver selección</summary><ul className="comparison-selection">{selection.ids.map((id) => <li key={id}><span>{byId.get(id)?.title || (loading ? "Cargando oferta…" : "Oferta no disponible")}</span><button type="button" aria-label={`Quitar ${byId.get(id)?.title || "oferta no disponible"} de la comparación`} onClick={() => selection.toggle(id)}><X size={15} /></button></li>)}</ul></details>
       <div className="comparison-tray-actions">{!!selection.ids.length && <button type="button" className="button-secondary button-sm" onClick={selection.clear}>Limpiar</button>}<button type="button" className="button-primary button-sm" disabled={selected.length < 2 || loading} onClick={() => setOpen(true)}><Columns3 size={16} />Comparar{selected.length > 0 ? ` (${selected.length})` : ""}</button></div>
     </section>
     <CoachDialog open={open} onClose={() => setOpen(false)} title="Compara las vacantes" Icon={Columns3} className="job-comparison-dialog">

@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, FileText, MessageSquare, RefreshCw } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
-import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { CoachDialog } from "./CoachDialog.jsx";
 import { PreparationWorkspace } from "./PreparationWorkspace.jsx";
 import { InlineNotice } from "./ui/Panel.jsx";
 import { preparationText, saveBlob } from "../utils/preparation.js";
 
 export function ApplicationPreparation({ jobId, applicationId, selectedVersion, onVersionSelected }) {
-  const { confirm } = useFeedback();
+  const [confirmAction, setConfirmAction] = useState(null);
   const [open, setOpen] = useState(false), [tab, setTab] = useState(applicationId ? "interview" : "cv");
   const [data, setData] = useState(null), [form, setForm] = useState(null), [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState(""), [message, setMessage] = useState("");
@@ -36,18 +35,19 @@ export function ApplicationPreparation({ jobId, applicationId, selectedVersion, 
   }, [dirty]);
   async function close() {
     if (busy) return;
-    if (dirty && !await confirm({ title: "Tienes respuestas sin guardar", description: "Puedes volver y guardarlas, o cerrar y descartar esta edición.", confirmLabel: "Cerrar sin guardar" })) return;
+    if (dirty) { setConfirmAction("close"); return; }
     setDirty(false); setOpen(false); setPreview(null);
   }
   async function perform(action) {
     setBusy(true); setError(""); setMessage("");
-    try { await action(); } catch (failure) {
+    try { await action(); return true; } catch (failure) {
       try { if (failure.response?.data instanceof Blob) failure.response.data = JSON.parse(await failure.response.data.text()); } catch { /* A non-JSON response uses the fallback below. */ }
       setError(getApiErrorMessage(failure, "No pudimos completar la acción. Tus textos siguen en esta ventana."));
+      return false;
     } finally { setBusy(false); }
   }
   async function createVersion() {
-    await perform(async () => {
+    return perform(async () => {
       pendingVersion.current ??= { request_key: crypto.randomUUID(), source_version: data.source_version, job_version: data.job_version, summary: form.summary, experience_indices: form.experiences, skills: form.skills, style: form.style, include_photo: form.includePhoto };
       const { data: version } = await api.post(`/profiles/me/coach/jobs/${jobId}/cv-versions`, pendingVersion.current, { __quiet: true });
       setData((current) => ({ ...current, versions: [version, ...current.versions.filter((row) => row.id !== version.id)] }));
@@ -66,8 +66,9 @@ export function ApplicationPreparation({ jobId, applicationId, selectedVersion, 
   return <>
     <button type="button" className="preparation-launch" aria-haspopup="dialog" onClick={() => setOpen(true)}>{applicationId ? <MessageSquare size={21} /> : <FileText size={21} />}<span><strong>{applicationId ? "Prepara tu entrevista" : "Prepara tu postulación"}</strong><small>{applicationId ? "Practica y consulta el CV enviado" : "CV para esta vacante y práctica de entrevista"}</small></span><ArrowUpRight size={18} /></button>
     <CoachDialog open={open} onClose={close} closeDisabled={busy} title={applicationId ? "Tu preparación para el proceso" : "Prepara tu próxima oportunidad"} className="preparation-dialog" Icon={FileText}>
+      {confirmAction && <div className="preparation-feedback" role="alert"><InlineNotice>Tienes respuestas sin guardar. {confirmAction === "reload" ? "Recargar recuperará la última versión guardada." : "Cerrar descartará esta edición."}</InlineNotice><div className="flex flex-wrap gap-2"><button type="button" className="button-secondary" onClick={() => setConfirmAction(null)}>Seguir editando</button><button type="button" className="button-secondary" onClick={() => { const action = confirmAction; setConfirmAction(null); setDirty(false); if (action === "reload") setRetry((value) => value + 1); else { setOpen(false); setPreview(null); } }}>{confirmAction === "reload" ? "Descartar y recargar" : "Descartar y cerrar"}</button></div></div>}
       {loading && <div className="preparation-loading" role="status"><RefreshCw size={19} className="animate-spin" />Cargando tu perfil y la oferta…</div>}
-      {error && <div className="preparation-feedback"><InlineNotice error>{error}</InlineNotice><button className="button-secondary button-sm" type="button" disabled={busy} onClick={async () => { if (dirty && !await confirm({ title: "Recargar la preparación", description: "Descarga tus notas primero si quieres conservar esta edición. Recargar recuperará las respuestas guardadas.", confirmLabel: "Recargar" })) return; setRetry((value) => value + 1); }}>Recargar preparación</button></div>}
+      {error && <div className="preparation-feedback"><InlineNotice error>{error}</InlineNotice><button className="button-secondary button-sm" type="button" disabled={busy} onClick={() => { if (dirty) setConfirmAction("reload"); else setRetry((value) => value + 1); }}>Recargar preparación</button></div>}
       {message && <div className="preparation-feedback"><InlineNotice>{message}</InlineNotice></div>}
       {data && form && !loading && <PreparationWorkspace data={data} tab={tab} onTab={setTab} form={form} onForm={(next) => { setForm(next); pendingVersion.current = null; }} busy={busy} saving={busy} answers={answers} onAnswer={(id, key, value) => { setAnswers((current) => ({ ...current, [id]: { ...current[id], [key]: value } })); setDirty(true); }} questionIndex={questionIndex} onQuestion={setQuestionIndex} dirty={dirty} onSaveInterview={() => perform(async () => {
         const { data: saved } = await api.put(`${base}/interview`, { expected_version: data.interview.version, revision: data.revision, answers }, { __quiet: true });

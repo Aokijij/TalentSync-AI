@@ -21,10 +21,43 @@ async function components(file) {
 }
 const { JobComparisonTable, JobComparison } = await components("JobComparison");
 const { InterviewAgenda, ProcessInterview } = await components("InterviewAgenda");
+const { VacancyCard } = await components("VacancyCard");
+const { ApplicationAnswersModal } = await components("ApplicationAnswersModal");
+const { RecruiterProcessDialog } = await components("RecruiterProcessDialog");
 const render = (element) => renderToStaticMarkup(createElement(MemoryRouter, {}, element));
 const now = new Date("2026-10-22T12:00:00Z");
 const jobs = [{ id: 1, title: "Analista de inventarios", company_name: "Distribución", modality: "hybrid", salary: 3000000, skills: ["excel"], quality_details: { salary_max: 4000000, weekly_hours: 40, contract_type: "indefinite", experience_months: 0 } }, { id: 2, title: "Operaciones de datos", company_name: "Reportes", skills: ["sql"] }];
 const appointment = { id: 5, application_id: 5, job_title: "Analista de inventarios", company_name: "Distribución", status: "technical_interview", interview_at: "2026-10-26T14:00:00" };
+
+test("comparison has no empty banner and vacancy actions do not repeat a checkbox row", () => {
+  assert.equal(render(createElement(JobComparison, { selection: { ids: [] }, jobs })), "");
+  const html = render(createElement(VacancyCard, { job: { ...jobs[0], created_at: "2026-10-20T10:00:00Z", skills: ["excel", "sql", "git", "python"] }, comparison: { ids: [1], toggle() {} }, match: 75, showMatch: true }));
+  assert.match(html, /vacancy-modality">Híbrido/);
+  assert.match(html, /Quitar de comparación: Analista de inventarios/);
+  assert.match(html, /aria-pressed="true"/);
+  assert.match(html, /75% compatible/);
+  assert.match(html, />\+1</);
+  assert.doesNotMatch(html, /type="checkbox"|Compara tus opciones/);
+});
+
+test("answer review shows one question and preserves pending board adjustments without process fields", () => {
+  const html = render(createElement(ApplicationAnswersModal, { application: { id: 5, candidate_name: "Ejemplo", base_match_percentage: 59, screening_answer_adjustments: { first: 2 }, screening_answers: [{ question_id: "first", question: "Primera pregunta específica", answer: "Mi evidencia", type: "open" }, { question_id: "second", question: "Segunda pregunta específica", answer: "Otra evidencia", type: "open" }] }, onPrepare() {}, onClose() {} }));
+  assert.match(html, /Primera pregunta específica/);
+  assert.doesNotMatch(html, /Segunda pregunta específica|Notas internas|Fecha y hora/);
+  assert.match(html, /value="2" selected/);
+  assert.match(html, /Preparar valoración/);
+  assert.match(html, /61%/);
+  assert.match(html, /Pregunta 1 de 2/);
+});
+
+test("process management keeps notes and scheduling separate from answer scoring", () => {
+  const html = render(createElement(RecruiterProcessDialog, { application: { id: 5, candidate_name: "Ejemplo", recruiter_notes: "Revisar disponibilidad", screening_answers: [{ question_id: "first", question: "Pregunta fuera del proceso", answer: "Respuesta privada" }] }, onClose() {}, onDelete() {}, onSave() {} }));
+  assert.match(html, /Notas internas/);
+  assert.match(html, /Revisar disponibilidad/);
+  assert.match(html, /Fecha y hora de entrevista/);
+  assert.match(html, /Preparar cambios/);
+  assert.doesNotMatch(html, /Pregunta fuera del proceso|Respuesta privada|Valoración manual/);
+});
 
 test("comparison selection survives corrupt storage, deduplicates and enforces three choices", () => {
   assert.deepEqual(comparisonIds("broken"), []);

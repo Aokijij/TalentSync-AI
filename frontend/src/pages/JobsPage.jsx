@@ -1,16 +1,13 @@
 import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
-import { salaryLabel } from "../utils/offerQuality.js";
-import { JobInterestButtons, InterestsToggle } from "../components/JobInterests.jsx";
+import { VacancyCard } from "../components/VacancyCard.jsx";
+import { InterestsToggle } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
 import { useJobComparison } from "../hooks/useJobComparison.js";
 import { JobComparison } from "../components/JobComparison.jsx";
-import { COMPARISON_LIMIT } from "../utils/jobComparison.js";
 import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BriefcaseBusiness,
-  CalendarDays,
-  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -19,14 +16,12 @@ import {
   Clock3,
   FileText,
   Globe2,
-  ExternalLink,
   MapPin,
   Search,
   SlidersHorizontal,
-  Sparkles,
   RotateCcw,
 } from "lucide-react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 import { api } from "../api/client.js";
 import { getRecommendations } from "../api/recommendations.js";
@@ -35,19 +30,9 @@ import {
   COLOMBIA_LOCATIONS,
   COLOMBIAN_DEPARTMENTS,
 } from "../constants/colombianCities.js";
-import { formatRelativeTime, isWithinDays } from "../utils/dates.js";
-import { cleanExternalLocation, externalPortal } from "../utils/externalPortal.js";
+import { isWithinDays } from "../utils/dates.js";
+import { cleanExternalLocation } from "../utils/externalPortal.js";
 
-const modalityLabel = {
-  remote: "Remoto",
-  hybrid: "Híbrido",
-  onsite: "Presencial",
-};
-const contractLabel = {
-  full_time: "Tiempo completo",
-  part_time: "Medio tiempo",
-  contract: "Contrato",
-};
 const defaultFilters = {
   modality: "",
   department: "",
@@ -298,7 +283,7 @@ function JobsWorkspace({ user }) {
       {user?.role === "candidate" && <JobComparison selection={comparison} jobs={jobs} matches={matchDetails} loading={jobsLoading} returnTo={`${location.pathname}${location.search}`} />}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleJobs.map((job) => (
-          <JobCard
+          <VacancyCard
             comparison={user?.role === "candidate" ? comparison : null}
               interests={user?.role === "candidate" ? interests : null}
             key={job.id}
@@ -369,107 +354,6 @@ function JobsWorkspace({ user }) {
         </nav>
       ) : null}
     </div>
-  );
-}
-
-function JobCard({ interests, comparison, job, match, confidence, applied, showMatch, returnTo }) {
-  const score = Number(match ?? 0);
-  return (
-    <article className="job-opportunity-card surface-card flex min-w-0 flex-col p-5 transition-colors hover:border-[var(--accent)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <Link
-            to={`/empresas/${job.company_id}`}
-            className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--accent)] hover:underline"
-          >
-            {job.company_name ?? "Empresa"}
-          </Link>
-          <h2 className="mt-1 text-lg font-bold">{job.title}</h2>
-        </div>
-        {applied ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--success)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--success)]">
-            <CheckCircle2 size={13} />
-            Postulado
-          </span>
-        ) : (
-          <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">
-            {modalityLabel[job.modality] ?? job.modality}
-          </span>
-        )}
-      </div>
-      {job.source_kind === "external" ? (
-        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
-          <ExternalLink size={13} />
-          Disponible en {externalPortal(job)}
-        </p>
-      ) : null}
-      {showMatch ? (
-        <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--muted)]">
-              <Sparkles size={15} />
-              {job.source_kind === "external" ? "Compatibilidad estimada" : "Compatibilidad"}
-            </span>
-            <strong className="text-[var(--accent)]">
-              {score.toFixed(0)}%
-            </strong>
-          </div>
-          {job.source_kind === "external" ? (
-            <p className="mt-2 text-xs text-[var(--muted)]">
-              Confianza de los datos: {Number(confidence ?? 0).toFixed(0)}%
-            </p>
-          ) : null}
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--line)]">
-            <div
-              className="h-full rounded-full bg-[var(--accent)]"
-              style={{ width: `${score}%` }}
-            />
-          </div>
-        </div>
-      ) : null}
-      <p className="mt-4 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
-        {job.description}
-      </p>
-      <div className="mt-4 flex flex-wrap gap-3 text-xs text-[var(--muted)]">
-        <span className="flex items-center gap-1 font-semibold text-[var(--accent)]"><CalendarDays size={14} />{formatRelativeTime(job.created_at)}</span>
-        <span className="flex items-center gap-1">
-          <MapPin size={14} />
-          {[job.location, job.department].filter(Boolean).join(", ") ||
-            "Ubicación flexible"}
-        </span>
-        <span>{contractLabel[job.employment_type] || job.employment_type}</span>
-      </div>
-      <p className="mt-3 text-sm font-semibold text-[var(--accent)]">
-        {job.sector}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {(job.skills || []).slice(0, 5).map((skill) => (
-          <span
-            key={skill}
-            className="rounded-md border border-[var(--line)] px-2 py-1 text-xs text-[var(--muted)]"
-          >
-            {skill}
-          </span>
-        ))}
-      </div>
-      <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-[var(--line)] pt-4">
-        <strong>
-          {job.salary
-            ? salaryLabel(job)
-            : job.source_kind === "external"
-              ? "Salario no informado"
-              : "A convenir"}
-        </strong>
-        <Link to={`/vacantes/${job.id}`} state={{ returnTo }} className="button-primary button-sm">
-          {job.source_kind === "external"
-            ? "Ver oferta"
-            : applied
-              ? "Ver postulación"
-              : "Ver detalle"}
-        </Link>
-        {(interests || comparison) && <div className="col-span-2 flex flex-wrap items-center justify-between gap-2">{interests && <JobInterestButtons job={job} interests={interests} />}{comparison && <label className="comparison-card-toggle"><input type="checkbox" checked={comparison.ids.includes(job.id)} disabled={!comparison.ids.includes(job.id) && comparison.ids.length >= COMPARISON_LIMIT} onChange={() => comparison.toggle(job.id)} />Comparar<span className="sr-only"> {job.title}</span></label>}</div>}
-      </div>
-    </article>
   );
 }
 

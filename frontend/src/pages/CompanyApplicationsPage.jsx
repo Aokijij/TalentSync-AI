@@ -1,5 +1,6 @@
-import { DateTimePicker } from "../components/DateTimePicker.jsx";
-import { interviewInputUtc, interviewInputValue } from "../utils/interviewAgenda.js";
+import { RecruiterProcessDialog } from "../components/RecruiterProcessDialog.jsx";
+import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
+import "../styles/recruiter-dialog.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
@@ -76,6 +77,7 @@ export function CompanyApplicationsPage() {
   const [loadingApplications, setLoadingApplications] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [answersFor, setAnswersFor] = useState(null);
   const [draggedId, setDraggedId] = useState(null);
   const [overColumn, setOverColumn] = useState(null);
   const [showJobPicker, setShowJobPicker] = useState(false);
@@ -156,7 +158,7 @@ export function CompanyApplicationsPage() {
     if (saving) return;
     loadId.current += 1;
     activeJob.current = String(job.id);
-    setLoadingApplications(true); setApplications([]); setScores({}); setSelected(null); setError("");
+    setLoadingApplications(true); setApplications([]); setScores({}); setSelected(null); setAnswersFor(null); setError("");
     setJobId(String(job.id));
     setSearchParams({ job: String(job.id) });
     setShowJobPicker(false);
@@ -431,6 +433,7 @@ export function CompanyApplicationsPage() {
                       columns={columns}
                       onDragStart={() => setDraggedId(item.id)}
                       onOpen={() => setSelected(item)}
+                      onAnswers={() => setAnswersFor(item)}
                       onMove={(pipelineStage) =>
                         queueUpdate(item.id, { pipeline_stage: pipelineStage })
                       }
@@ -473,8 +476,9 @@ export function CompanyApplicationsPage() {
           onClose={() => setShowStageEditor(false)}
         />
       ) : null}
+      {answersFor && <ApplicationAnswersModal key={answersFor.id} application={answersFor} onClose={() => setAnswersFor(null)} onPrepare={(changes) => { if (queueUpdate(answersFor.id, changes)) setAnswersFor(null); }} />}
       {selected ? (
-        <RecruiterModal
+        <RecruiterProcessDialog
           application={selected}
           onClose={() => setSelected(null)}
           onDelete={() => remove(selected.id)}
@@ -497,7 +501,7 @@ export function CompanyApplicationsPage() {
   );
 }
 
-function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
+function CandidateCard({ item, score, columns, onDragStart, onOpen, onAnswers, onMove }) {
   const selectedStage = applicationStage(item, columns);
   return (
     <article
@@ -542,6 +546,7 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
       ) : null}
       <div className="candidate-card-actions">
         <button type="button" className="button-secondary button-sm w-full" onClick={onOpen}><Edit3 size={14} />Gestionar proceso</button>
+        {!!item.screening_answers?.length && <button type="button" className="candidate-answers-link" onClick={onAnswers}>Respuestas de postulación ({item.screening_answers.length})</button>}
         <div><Link to={`/procesos/${item.id}`}>Historial</Link><Link state={{ returnTo: `/empresa/postulaciones?job=${item.job_id}` }} to={`/empresa/candidatos/${item.user_id}?job=${item.job_id}`}><UserRound size={14} />{item.identity_hidden ? "Perfil anónimo" : "Ver perfil"}</Link></div>
       </div>
       <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">
@@ -842,127 +847,6 @@ function StageEditorModal({ stages: initialStages, counts, onSave, onClose }) {
             stages.map((stage) => ({ ...stage, title: stage.title.trim() })),
           )
         }
-      />
-    </>
-  );
-}
-
-function RecruiterModal({ application, onClose, onDelete, onSave }) {
-  const [notes, setNotes] = useState(application.recruiter_notes || "");
-  const [interviewAt, setInterviewAt] = useState(
-    interviewInputValue(application.interview_at),
-  );
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmSave, setConfirmSave] = useState(false);
-  const [answerAdjustments, setAnswerAdjustments] = useState(
-    Object.fromEntries(
-      (application.screening_answers || []).filter((item) => item.type !== "choice").map((item) => [
-        item.question_id,
-        Number(item.reviewer_adjustment || 0),
-      ]),
-    ),
-  );
-  const manualTotal = Object.values(answerAdjustments).reduce(
-    (total, value) => total + Number(value || 0),
-    0,
-  );
-  const configuredTotal = (application.screening_answers || []).reduce(
-    (total, item) => total + Number(item.configured_adjustment || 0),
-    0,
-  );
-  const projectedAdjustment = configuredTotal + manualTotal;
-  const changes = {
-    recruiter_notes: notes || null,
-    interview_at: interviewInputUtc(interviewAt),
-    screening_answer_adjustments: answerAdjustments,
-  };
-  return (
-    <>
-      <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4">
-        <div className="w-full max-w-2xl rounded-[var(--radius-2xl)] bg-[var(--surface)] p-6 shadow-xl">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="section-kicker">Editar postulación</p>
-              <h2 className="mt-1 text-xl font-bold">
-                {application.candidate_name}
-              </h2>
-            </div>
-            <button
-              type="button"
-              className="button-secondary !h-10 !w-10 !p-0"
-              onClick={onClose}
-              aria-label="Cerrar"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="mt-5 grid gap-4">
-            {application.screening_answers?.length ? (
-              <section className="rounded-xl border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
-                <div className="flex items-center justify-between gap-3"><h3 className="font-bold">Respuestas de postulación</h3><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${projectedAdjustment >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}>{projectedAdjustment > 0 ? "+" : ""}{projectedAdjustment} puntos</span></div>
-                <dl className="mt-3 space-y-3">{application.screening_answers.map((item, index) => <div key={`${item.question_id}-${index}`} className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-3"><dt className="text-xs font-bold text-[var(--muted)]">{item.question || `Pregunta ${index + 1}`}</dt><dd className="mt-1 text-sm leading-6 text-[var(--ink-strong)]">{item.answer}</dd>{item.type === "choice" ? <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3 text-xs font-bold text-[var(--muted)]"><span>Efecto configurado al publicar</span><span className="rounded-lg border border-[var(--line)] px-3 py-2 text-[var(--ink-strong)]">{Number(item.configured_adjustment || 0) > 0 ? "+" : ""}{Number(item.configured_adjustment || 0)} · Automático</span></div> : <label className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3 text-xs font-bold text-[var(--muted)]"><span>Valoración manual de la empresa</span><select className="field-control input-sm w-44" value={answerAdjustments[item.question_id] ?? 0} onChange={(event) => setAnswerAdjustments((current) => ({ ...current, [item.question_id]: Number(event.target.value) }))}>{[-3, -2, -1, 0, 1, 2, 3].map((value) => <option key={value} value={value}>{value > 0 ? `+${value}` : value} {value === 0 ? "· Sin ajuste" : value > 0 ? "· Suma" : "· Resta"}</option>)}</select></label>}</div>)}</dl>
-                {application.base_match_percentage != null ? <p className="mt-4 border-t border-[var(--line)] pt-3 text-sm"><strong>Compatibilidad proyectada:</strong> {Math.round(Math.max(0, Math.min(100, application.base_match_percentage + projectedAdjustment)))}% <span className="text-[var(--muted)]">(base {Math.round(application.base_match_percentage || 0)}% · ajuste {projectedAdjustment > 0 ? "+" : ""}{projectedAdjustment})</span></p> : null}
-              </section>
-            ) : null}
-            <label className="text-sm font-semibold text-[var(--muted)]">
-              Notas internas
-              <textarea
-                className="field-control mt-1 min-h-28"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Observaciones para el equipo de selección..."
-              />
-            </label>
-            <DateTimePicker label="Fecha y hora de entrevista · hora de Colombia" value={interviewAt} onChange={setInterviewAt} />
-            {interviewAt && !changes.interview_at && <p role="alert" className="text-sm text-[var(--error)]">Completa una fecha y una hora válidas antes de guardar.</p>}
-          </div>
-          <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-[var(--line)] pt-5">
-            <button
-              type="button"
-              className="button-ghost text-[var(--error)]"
-              disabled={["rejected", "accepted", "hired"].includes(application.status)}
-              onClick={() => setConfirmDelete(true)}
-            >
-              <Trash2 size={16} />
-              Finalizar participación
-            </button>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="button-secondary"
-                onClick={onClose}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="button-primary"
-                disabled={!!interviewAt && !changes.interview_at}
-                onClick={() => setConfirmSave(true)}
-              >
-                <Save size={16} />
-                Guardar edición
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <ConfirmModal
-        open={confirmSave}
-        title="Guardar cambios de la postulación"
-        description={`Se actualizarán las notas, la entrevista y la valoración de respuestas de ${application.candidate_name}.`}
-        confirmLabel="Sí, guardar cambios"
-        onClose={() => setConfirmSave(false)}
-        onConfirm={() => onSave(changes)}
-      />
-      <ConfirmModal
-        open={confirmDelete}
-        title="Finalizar participación"
-        description={`Se comunicará a ${application.candidate_name} que su participación ha finalizado. La postulación y su historial se conservarán.`}
-        confirmLabel="Finalizar y notificar"
-        destructive
-        onClose={() => setConfirmDelete(false)}
-        onConfirm={onDelete}
       />
     </>
   );

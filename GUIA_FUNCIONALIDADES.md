@@ -8,7 +8,7 @@ TalentSync conecta tres recorridos: el candidato organiza su trayectoria y búsq
 
 **Dónde:** candidato → Explorar vacantes (`/vacantes`).
 
-1. Marca **Comparar** en dos o tres tarjetas. Puedes cambiar de filtro, colección o página sin perder la selección.
+1. Usa el icono **Comparar** de la esquina de dos o tres tarjetas. Puedes cambiar de filtro, colección o página sin perder la selección. El bloque de comparación aparece únicamente después de seleccionar una oferta.
 2. Pulsa **Comparar** en el bloque que reúne las ofertas elegidas.
 3. Revisa salario, modalidad, ubicación o alcance remoto, contrato, horario, experiencia, formación, idiomas, beneficios y plazos.
 4. Consulta la compatibilidad y las habilidades cumplidas o por reforzar/confirmar, cuando el cálculo dispone de ese detalle.
@@ -39,10 +39,10 @@ También se corrigió la conversión de fechas: abrir una entrevista ya guardada
 
 Esta función permite adaptar la presentación de una trayectoria real al cargo, conservando el perfil principal.
 
-1. Elige las experiencias y habilidades que ya tienes registradas y que deseas destacar.
-2. Revisa o ajusta el resumen para esa oferta.
-3. Elige diseño moderno, clásico o minimalista y si quieres incluir la foto.
-4. Guarda la versión y abre el PDF para revisarlo.
+1. En **Contenido**, revisa el resumen y despliega experiencias o habilidades si quieres cambiar la selección.
+2. Pulsa **Continuar al diseño**.
+3. En **Diseño y guardado**, elige un diseño moderno, clásico o minimalista y si quieres incluir la foto.
+4. Guarda la versión. En **Versiones**, abre el PDF para revisarlo.
 5. Pulsa **Usar al postularme** para seleccionarla. Después debes enviar la postulación desde su botón habitual.
 
 **Ejemplo:** puedes destacar experiencia de pruebas y calidad para una vacante de QA, y experiencia de interfaces para una de frontend, sin borrar ninguna del perfil principal.
@@ -55,7 +55,7 @@ En ofertas externas puedes preparar y descargar el CV; lo que envíes después e
 
 **Dónde:** detalle de vacante → **Prepara tu postulación** → **Practicar entrevista**. Tras postularte: proceso → **Prepara tu entrevista**.
 
-La preparación reúne preguntas relacionadas con la oferta y ejemplos de experiencias registradas. Puedes trabajar cada respuesta mediante cuatro apartados:
+La preparación reúne preguntas relacionadas con la oferta y ejemplos de experiencias registradas. Prioriza habilidades esenciales y utiliza extractos de responsabilidades o requisitos de la vacante, que puedes desplegar junto a la pregunta. Cada habilidad incorpora puntos concretos para profundizar: por ejemplo, duplicados en SQL, pruebas en Python o validación de fórmulas en Excel. Puedes elegir una pregunta desde el selector y consultar ejemplos de tu trayectoria solo cuando los necesites. Puedes trabajar cada respuesta mediante cuatro apartados:
 
 | Apartado | Qué escribir |
 | --- | --- |
@@ -87,7 +87,7 @@ Las respuestas son privadas: no se muestran a la empresa ni alteran tu compatibi
 - **Vacantes y calidad de ofertas:** publicar y revisar condiciones, responsabilidades, habilidades, formación, documentos requeridos, preguntas y etapas de selección.
 - **Búsqueda de talento:** consultar candidatos compatibles, revisar el detalle del ajuste y comparar candidatos dentro del alcance autorizado.
 - **Tablero de postulaciones:** elegir una vacante, ver sus candidatos y moverlos entre etapas, conservando el historial del proceso.
-- **Gestión de entrevistas:** programar o cancelar la fecha, comunicar cambios y registrar evaluaciones internas según los permisos del equipo.
+- **Gestión de entrevistas:** programar o cancelar la fecha, comunicar cambios y registrar evaluaciones internas según los permisos del equipo. **Gestionar proceso** contiene notas y fecha; **Respuestas de postulación** se abre por separado y presenta una pregunta cada vez. En el tablero, ambas ediciones se aplican con **Guardar y notificar**.
 - **Perfil del candidato y CV enviado:** consultar información compartida y, cuando corresponde, el documento conservado de esa postulación. Las notas privadas de preparación pertenecen al candidato.
 - **Organización y equipo:** gestionar miembros, roles y vacantes asignadas. Un entrevistador no recibe acceso general a todos los procesos.
 - **Feedback y confianza:** comunicar avances o resultados y consultar incidencias relacionadas con la organización.
