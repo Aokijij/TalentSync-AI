@@ -7,9 +7,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const require = createRequire(import.meta.url);
-async function component(name, exportName = name) {
+async function component(name, exportName = name, folder = "components") {
   const compiled = await build({
-    entryPoints: [fileURLToPath(new URL(`../src/components/${name}.jsx`, import.meta.url))],
+    entryPoints: [fileURLToPath(new URL(`../src/${folder}/${name}.jsx`, import.meta.url))],
     bundle: true, write: false, platform: "node", format: "cjs", jsx: "automatic", packages: "external",
     plugins: [{ name: "no-api-in-render", setup(builder) {
       builder.onLoad({ filter: /\.css$/ }, () => ({ contents: "", loader: "js" }));
@@ -21,6 +21,27 @@ async function component(name, exportName = name) {
   new Function("require", "module", "exports", compiled.outputFiles[0].text)(require, module, module.exports);
   return module.exports[exportName];
 }
+
+test("the vacancy picker shows provided application counts and sector and distinguishes unavailable counts from zero", async () => {
+  const Picker = await component("CompanyApplicationsPage", "JobPickerModal", "pages");
+  const html = renderToStaticMarkup(createElement(Picker, { selectedId: "1", jobs: [{ id: 1, title: "Analista de inventario", sector: "Logística", applications_count: 7, status: "active" }, { id: 2, title: "Auxiliar", sector: "Servicios", applications_count: 0, status: "draft" }, { id: 3, title: "Vacante por cargar", sector: "Construcción", status: "paused" }] }));
+  assert.match(html, /Logística/);
+  assert.match(html, />7</);
+  assert.match(html, />0</);
+  assert.match(html, /Borrador/);
+  assert.match(html, /—/);
+  assert.doesNotMatch(html, /Sin sector/);
+});
+
+test("demand cards identify published coverage and missing resources and show the proportion of the sample", async () => {
+  const Card = await component("LearningDemand", "DemandSkillCard");
+  const html = renderToStaticMarkup(createElement(Card, { selected: true, total: 200, row: { skill: "excel", vacancies: 100, companies: 20, published_resources: 1 } }));
+  assert.match(html, /50% de la muestra/);
+  assert.match(html, /1 recurso publicado/);
+  assert.match(html, /aria-pressed="true"/);
+  const empty = renderToStaticMarkup(createElement(Card, { total: 200, row: { skill: "logística", vacancies: 25, companies: 10, published_resources: 0 } }));
+  assert.match(empty, /Por cubrir en el catálogo/);
+});
 
 test("vacancy course cards name the missing skills they reinforce instead of listing unrelated course tags", async () => {
   const Card = await component("LearningResourceCard");

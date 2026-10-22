@@ -1946,9 +1946,6 @@ html[data-theme="dark"] .date-picker-days button[aria-pressed="true"] { color:#0
 .course-target-skills > strong { font-size:.67rem; font-weight:600; color:var(--muted); }
 .course-target-skills > span { padding:.17rem .4rem; border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line)); border-radius:5px; color:var(--accent); font-size:.65rem; }
 .vacancy-learning-resources { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.8rem; }
-.vacancy-learning-resources .learning-resource-compact { align-items:flex-start; gap:.65rem; flex-wrap:wrap; padding:1rem; min-width:0; }
-.vacancy-learning-resources .learning-resource-compact > div { flex-basis:calc(100% - 65px); }
-.vacancy-learning-resources .learning-resource-compact > :is(button,a) { margin-left:auto; }
 .vacancy-learning-gaps button { display:inline-flex; padding:.3rem .5rem; border:1px solid var(--line); border-radius:7px; font-size:.72rem; color:var(--accent); }
 .vacancy-learning-gaps button[aria-pressed="true"] { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 12%,var(--surface)); }
 .course-recommendation-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; padding:.75rem; border:1px solid var(--line); border-radius:10px; }

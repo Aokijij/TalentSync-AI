@@ -8,6 +8,15 @@ from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class JobRepository(SqlAlchemyRepository[Job]):
+    def board_choices(self, company_id):
+        count = select(func.count(Application.id)).where(Application.job_id == Job.id).correlate(Job).scalar_subquery()
+        rows = self.session.query(
+            Job.id, Job.company_id, Job.title, Job.status, Job.skills,
+            Job.location, Job.modality, Job.sector, Job.pipeline_stages,
+            Job.created_at, count.label("applications_count"),
+        ).filter(Job.company_id == company_id).order_by(Job.created_at.desc(), Job.id.desc()).all()
+        return [dict(row._mapping) for row in rows]
+
     def company_choices(self, company_id, search, offset, limit):
         query = self.session.query(Job).filter(Job.company_id == company_id, Job.status != "filled")
         if search:

@@ -121,6 +121,7 @@ export function CompanyApplicationsPage() {
         (item) => item.status === "submitted",
       );
       setApplications(applicationsResponse.data);
+      setJobs((current) => current.map((job) => String(job.id) === jobId ? { ...job, applications_count: applicationsResponse.data.length } : job));
       const focused = searchParams.get("focus");
       if (focused) {
         const focusedApplication = applicationsResponse.data.find(
@@ -560,7 +561,7 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onMove }) {
   );
 }
 
-function JobPickerModal({ jobs, selectedId, onSelect, onClose }) {
+export function JobPickerModal({ jobs, selectedId, onSelect, onClose }) {
   const [query, setQuery] = useState("");
   const visible = jobs.filter((job) =>
     `${job.title} ${job.location || ""} ${job.sector || ""}`
@@ -569,11 +570,11 @@ function JobPickerModal({ jobs, selectedId, onSelect, onClose }) {
   );
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-xs">
-      <section className="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-2xl">
+      <section role="dialog" aria-modal="true" aria-labelledby="board-job-picker-title" className="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--line)] bg-[var(--surface)] shadow-2xl">
         <header className="flex items-start justify-between gap-4 border-b border-[var(--line)] p-5">
           <div>
             <p className="section-kicker">Procesos de selección</p>
-            <h2 className="mt-1 text-2xl font-bold">Elegir una vacante</h2>
+            <h2 id="board-job-picker-title" className="mt-1 text-2xl font-bold">Elegir una vacante</h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
               Consulta la información y cuántos candidatos tiene cada proceso.
             </p>
@@ -639,14 +640,14 @@ function JobPickerModal({ jobs, selectedId, onSelect, onClose }) {
                     <td className="px-4 py-4">
                       <span className="inline-flex items-center gap-1.5 font-bold text-[var(--ink-strong)]">
                         <UsersRound size={15} />
-                        {job.applications_count ?? 0}
+                        {job.applications_count ?? "—"}
                       </span>
                     </td>
                     <td className="px-4 py-4">
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-bold ${job.status === "active" ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}
                       >
-                        {job.status === "active" ? "Activa" : job.status === "filled" ? "Cubierta" : "Pausada"}
+                        {({ active: "Activa", filled: "Cubierta", paused: "Pausada", draft: "Borrador", closed: "Cerrada" })[job.status] || job.status}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right">

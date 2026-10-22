@@ -5,7 +5,7 @@ from test_api_flows import client, company_account, create_job, register  # noqa
 from test_ecosystem import administrator
 
 from app.domain.services.academic_matching import education_evaluation
-from app.infrastructure.database.models import Job
+from app.infrastructure.database.models import Application, Job
 
 
 def test_board_choices_only_include_own_jobs_and_no_nlp_or_unneeded_profile_data(client):
@@ -25,6 +25,31 @@ def test_board_choices_only_include_own_jobs_and_no_nlp_or_unneeded_profile_data
     assert response.json()[0]["pipeline_stages"] is not None
     _, candidate = register(client, "board-no-company-access")
     assert client.get("/api/v1/jobs/mine/board", headers=candidate).status_code == 403
+
+
+def test_board_returns_real_counts_and_sector_for_each_own_vacancy_including_completed_processes(client):
+    _, company = company_account(client, "board-counts-owner")
+    _, outsider = company_account(client, "board-counts-outsider")
+    jobs = [create_job(client, company) for _ in range(3)]
+    other = create_job(client, outsider)
+    first, _ = register(client, "board-counts-first")
+    second, _ = register(client, "board-counts-second")
+    with client.session_factory() as db:
+        db.add_all([
+            Application(job_id=jobs[0]["id"], user_id=first["id"], status="submitted"),
+            Application(job_id=jobs[0]["id"], user_id=second["id"], status="hired"),
+            Application(job_id=jobs[1]["id"], user_id=first["id"], status="rejected"),
+            Application(job_id=other["id"], user_id=second["id"], status="submitted"),
+        ])
+        db.get(Job, jobs[1]["id"]).status = "filled"
+        db.commit()
+    response = client.get("/api/v1/jobs/mine/board", headers=company)
+    assert response.status_code == 200, response.text
+    rows = {row["id"]: row for row in response.json()}
+    assert set(rows) == {job["id"] for job in jobs}
+    assert [rows[job["id"]]["applications_count"] for job in jobs] == [2, 1, 0]
+    assert all(rows[job["id"]]["sector"] == job["sector"] for job in jobs)
+    assert rows[jobs[1]["id"]]["status"] == "filled"
 
 
 def test_logistics_administration_is_recognized_and_compared_automatically_without_inventing_equivalence():

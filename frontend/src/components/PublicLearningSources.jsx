@@ -1,7 +1,8 @@
+import "../styles/learning-discovery.css";
 import { OfficialOpportunitySources } from "./OfficialOpportunitySources.jsx";
 import { formatLearningHours } from "../utils/learningPresentation.js";
 import { useEffect, useState } from "react";
-import { ExternalLink, RefreshCw, Search, GraduationCap } from "lucide-react";
+import { ChevronDown, Clock3, ExternalLink, MapPin, RefreshCw, Search, GraduationCap } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { Pagination } from "./Pagination.jsx";
 import { courseAvailability, enrollmentStatuses } from "../utils/learningPresentation.js";
@@ -14,14 +15,21 @@ export function LearningOpportunities({ admin = false, value = null }) {
   const items = (current?.items || []).map((item) => ({ ...item, ...courseAvailability({ availability: item }) }));
   const filtered = items.filter((item) => status === "all" || item.status === status);
   const pages = Math.max(1, Math.ceil(filtered.length / 4)), safePage = Math.min(page, pages);
-  return <><details open={admin || undefined} className={admin ? "admin-opportunities" : "surface-card p-5"}><summary className="cursor-pointer font-bold">Convocatorias y formación local · Sapiencia</summary>
-    <div className="mt-4 space-y-4"><p className="text-sm text-[var(--muted)]">{admin ? "Revisa vigencia, cobertura y requisitos publicados antes de recomendar estas convocatorias. La inscripción se realiza con la entidad." : "Oportunidades para Medellín. Cada programa tiene sus propios requisitos; consulta si puedes participar. La inscripción se realiza con la entidad."}</p>
-      {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}{current?.warning && <p role="status" className="text-sm text-[var(--muted)]">{current.warning}</p>}
-      <label className="block max-w-sm text-sm">Estado de las convocatorias<select className="field-control mt-1" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="open">Inscripción anunciada</option><option value="all">Todas, incluidas las cerradas</option><option value="closed">Cerradas</option><option value="unknown">Por confirmar</option></select></label>
-      <div className="grid gap-3 md:grid-cols-2">{filtered.slice((safePage - 1) * 4, safePage * 4).map((item) => <article key={item.id} className="space-y-3 rounded-2xl border border-[var(--line)] p-4"><p className="text-xs font-semibold text-[var(--accent)]">{enrollmentStatuses[item.status]}</p><h3 className="font-bold">{item.title}</h3><p className="text-xs text-[var(--muted)]">{item.region}</p><details><summary className="cursor-pointer text-sm font-semibold">Requisitos y alcance</summary><p className="mt-2 text-sm text-[var(--muted)]">{item.summary}</p><p className="mt-2 text-xs text-[var(--muted)]">{item.notes}</p></details><a className="button-secondary button-sm" href={item.url} target="_blank" rel="noopener noreferrer">Consultar convocatoria<ExternalLink size={14} /></a><p className="text-xs text-[var(--muted)]">Última consulta: {item.checked_on || "pendiente"}{item.stale && " · Actualización pendiente"}</p></article>)}</div>
-      {!filtered.length && <p className="learning-empty">No hay convocatorias guardadas con este estado. Puedes consultar las demás o visitar la fuente oficial.</p>}
-      <Pagination page={safePage} pages={pages} total={filtered.length} pageSize={4} onChange={setPage} label="Páginas de convocatorias locales" />
-      <a className="inline-flex items-center gap-2 text-sm text-[var(--accent)]" href="https://sapiencia.gov.co/convocatorias/" target="_blank" rel="noopener noreferrer">Ver todas en Sapiencia<ExternalLink size={14} /></a>
+  return <><details open={admin || undefined} className={`learning-opportunities${admin ? " admin-opportunities" : ""}`}>
+    <summary className="opportunity-heading"><span className="opportunity-heading-icon"><GraduationCap size={23} /></span><span className="opportunity-heading-copy"><small>FORMACIÓN Y APOYOS</small><strong>Convocatorias de Sapiencia</strong><span>Explora opciones de formación y consulta sus requisitos.</span></span><span className="opportunity-city"><MapPin size={13} />Medellín</span><ChevronDown className="opportunity-chevron" size={19} /></summary>
+    <div className="opportunity-content">
+      <p className="opportunity-intro">{admin ? "Revisa las fechas, la cobertura y los requisitos antes de recomendar una convocatoria." : "Cada convocatoria tiene sus propios requisitos de residencia y participación. La inscripción se realiza con la entidad."}</p>
+      {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}{current?.warning && <p role="status" className="opportunity-notice">{current.warning}</p>}
+      <div className="opportunity-filters" role="group" aria-label="Estado de las convocatorias">{[["open", "Inscripción anunciada"], ["unknown", "Por confirmar"], ["closed", "Cerradas"], ["all", "Todas"]].map(([key, label]) => <button type="button" key={key} aria-pressed={status === key} onClick={() => { setStatus(key); setPage(1); }}>{label}<span>{current ? items.filter((item) => key === "all" || item.status === key).length : "—"}</span></button>)}</div>
+      {!current && !error && <p role="status" className="learning-empty">Consultando convocatorias guardadas…</p>}
+      <div className="opportunity-grid">{filtered.slice((safePage - 1) * 4, safePage * 4).map((item) => <article key={item.id} className="opportunity-card">
+        <div className="opportunity-card-top"><span className={`opportunity-state opportunity-state-${item.status}`}>{enrollmentStatuses[item.status]}</span><span className="opportunity-card-location"><MapPin size={12} />Medellín</span></div>
+        <h3>{item.title}</h3><p className="opportunity-region">{item.region}</p>
+        <details className="opportunity-requirements"><summary><ChevronDown size={14} />Requisitos y alcance</summary><div><p>{item.summary}</p>{item.notes && <p>{item.notes}</p>}</div></details>
+        <footer><span className="opportunity-checked"><Clock3 size={13} />{item.checked_on ? `Revisada: ${item.checked_on}` : "Revisión pendiente"}{item.stale && " · Por actualizar"}</span><a className="button-secondary button-sm" href={item.url} target="_blank" rel="noopener noreferrer">Ver convocatoria<ExternalLink size={14} /></a></footer>
+      </article>)}</div>
+      {current && !filtered.length && <p className="learning-empty">No hay convocatorias guardadas con este estado. Consulta las demás o visita la fuente oficial.</p>}
+      <footer className="opportunity-footer">{current && <Pagination page={safePage} pages={pages} total={filtered.length} pageSize={4} onChange={setPage} label="Páginas de convocatorias locales" />}<a href="https://sapiencia.gov.co/convocatorias/" target="_blank" rel="noopener noreferrer">Consultar todas en Sapiencia<ExternalLink size={14} /></a></footer>
     </div></details>{!admin && <OfficialOpportunitySources />}</>;
 }
 
