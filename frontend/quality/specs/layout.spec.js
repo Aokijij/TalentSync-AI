@@ -26,7 +26,14 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     for (const card of await vacancyCards.all()) {
       await expect(card.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "75");
       const cardBox = await card.boundingBox();
-      for (const action of await card.locator(".vacancy-actions button").all()) {
+      const matchBox = await card.locator(".vacancy-match").boundingBox();
+      expect(matchBox.height, "Compatibility must stay compact").toBeLessThanOrEqual(55);
+      const footer = card.locator(".vacancy-card-bottom > footer");
+      const compareBox = await footer.getByRole("button").boundingBox();
+      const linkBox = await footer.getByRole("link").boundingBox();
+      expect(Math.abs(compareBox.y - linkBox.y), "Comparison and the primary action share one row").toBeLessThanOrEqual(2);
+      await expect(footer.getByRole("link")).toHaveCount(1);
+      for (const action of await card.locator("button").all()) {
         const box = await action.boundingBox();
         expect(box.x).toBeGreaterThanOrEqual(cardBox.x);
         expect(box.x + box.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);

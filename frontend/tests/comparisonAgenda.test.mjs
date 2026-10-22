@@ -59,6 +59,11 @@ test("applied vacancy cards expose the existing process and highlight its status
   assert.match(html, /Entrevista/);
   assert.match(html, /href="\/procesos\/45"/);
   assert.match(html, /Ver mi proceso/);
+  const released = render(createElement(VacancyCard, { job: jobs[0], application: { id: 45, status: "reviewing", released_at: "2026-10-22T12:00:00Z" } }));
+  assert.match(released, /is-closed-application/);
+  assert.match(released, /Postulación finalizada/);
+  assert.match(released, /Proceso cerrado/);
+  assert.doesNotMatch(released, /Postulación enviada/);
 });
 
 test("answer review shows one question and preserves pending board adjustments without process fields", () => {

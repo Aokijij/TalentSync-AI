@@ -35,11 +35,11 @@ const comparisonJobs = [
 const agendaRows = [{ id: 101, job_title: comparisonJobs[0].title, company_name: comparisonJobs[0].company_name, status: "technical_interview", interview_at: "2026-10-26T14:00:00" }];
 const practiceExample = { id: "example-attempt", assessment_id: "example-python", status: "active", title: "Fundamentos de Python", skill: "python", questions: [{ id: "example-default", prompt: "¿Qué firma evita compartir una lista mutable entre llamadas?", choices: ["def f(items=[])", "def f(items=None) y crear la lista dentro", "def f(items=list())"] }, { id: "example-errors", prompt: "¿Cómo tratarías un dato inesperado?", choices: ["Validarlo y comunicar el error", "Ignorarlo y continuar"] }] };
 
-const exampleApplications = { 101: { id: 901, status: "technical_interview", created_at: "2026-10-20T12:00:00" } };
+const exampleApplications = { 101: { id: 901, status: "technical_interview", created_at: "2026-10-20T12:00:00", ...(params.get("closed") === "1" ? { released_at: "2026-10-22T12:00:00" } : {}) } };
 
 function QualityPage() {
   const [interestStates, setInterestStates] = useState(new Map());
-  const interests = { enabled: true, byId: interestStates, save: (id, value) => setInterestStates((current) => new Map(current).set(id, value)), remove: (id) => setInterestStates((current) => { const next = new Map(current); next.delete(id); return next; }) };
+  const interests = { enabled: params.get("interests") !== "off", byId: interestStates, save: (id, value) => setInterestStates((current) => new Map(current).set(id, value)), remove: (id) => setInterestStates((current) => { const next = new Map(current); next.delete(id); return next; }) };
   const [practiceMode, setPracticeMode] = useState(null), [practiceAnswers, setPracticeAnswers] = useState({}), [practiceStep, setPracticeStep] = useState(0);
   const [recruiterDialog, setRecruiterDialog] = useState(null), [reviewed, setReviewed] = useState(false);
   const [selected, setSelected] = useState([101, 102]);

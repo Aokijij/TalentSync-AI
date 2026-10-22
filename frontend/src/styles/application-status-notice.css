@@ -4,7 +4,10 @@
 .application-status-notice strong { display:block; font-size:.95rem; line-height:1.5; font-weight:750; }
 .application-status-notice p { margin-top:.25rem; color:var(--muted); font-size:.76rem; line-height:1.6; }
 .application-status-notice p span { display:block; margin-top:.25rem; }
-.application-status-notice.is-compact { align-items:center; padding:.8rem; border:1px solid color-mix(in srgb,var(--success) 30%,var(--line)); border-radius:.75rem; background:color-mix(in srgb,var(--success) 5%,var(--surface)); }
-.application-status-notice.is-compact .application-status-icon { width:32px; height:32px; }
-.application-status-notice.is-compact strong { font-size:.8rem; }
-.application-status-notice.is-compact p { margin-top:.05rem; font-size:.72rem; }
+.application-status-notice.is-closed { color:var(--muted); }
+.application-status-notice.is-closed .application-status-icon { background:var(--surface-subtle); }
+.application-status-notice.is-compact { align-items:center; gap:7px; margin-bottom:12px; }
+.application-status-notice.is-compact .application-status-icon { width:20px; height:20px; background:transparent; }
+.application-status-notice.is-compact > div { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px 10px; flex:1; }
+.application-status-notice.is-compact strong { font-size:11px; font-weight:650; }
+.application-status-notice.is-compact p { margin:0; padding:3px 7px; border-radius:5px; background:var(--surface-subtle); color:var(--muted); font-size:10px; line-height:1.4; }
