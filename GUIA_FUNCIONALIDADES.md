@@ -10,7 +10,7 @@ TalentSync conecta tres recorridos: el candidato organiza su trayectoria y búsq
 
 **Dónde:** candidato → Explorar vacantes (`/vacantes`).
 
-1. Usa el icono **Comparar** de la esquina de dos o tres tarjetas. Puedes cambiar de filtro, colección o página sin perder la selección. El bloque de comparación aparece únicamente después de seleccionar una oferta.
+1. Pulsa **Comparar** en las acciones de dos o tres tarjetas. Puedes cambiar de filtro, colección o página sin perder la selección. La barra inferior muestra las vacantes seleccionadas y permite retirarlas o abrir la comparación; aparece después de elegir una oferta.
 2. Pulsa **Comparar** en el bloque que reúne las ofertas elegidas.
 3. Revisa salario, modalidad, ubicación o alcance remoto, contrato, horario, experiencia, formación, idiomas, beneficios y plazos.
 4. Consulta la compatibilidad y las habilidades cumplidas o por reforzar/confirmar, cuando el cálculo dispone de ese detalle.
@@ -19,6 +19,8 @@ TalentSync conecta tres recorridos: el candidato organiza su trayectoria y búsq
 **Ejemplo:** una oferta puede publicar 3 millones, contrato indefinido y modalidad híbrida; otra, 3,5 millones y trabajo remoto, pero sin contrato informado. La comparación permite ver el intercambio entre condiciones y qué falta preguntar.
 
 La selección se conserva por cuenta en la misma pestaña durante la sesión; no es una colección sincronizada entre dispositivos. Guardar una vacante y seleccionarla para comparar son decisiones independientes. Si una oferta deja de estar disponible, puedes retirarla de la selección. Los datos desconocidos se presentan como tales: un salario ausente no se convierte en cero ni una compatibilidad sin calcular en 0 %. La herramienta no elige una ganadora.
+
+En **Mercado laboral**, la compatibilidad mínima parte de **Cualquiera**: incluye las ofertas con un porcentaje bajo o todavía sin calcular. Las recomendaciones mantienen su mínimo del 40 %. Cada tarjeta presenta la compatibilidad con una barra y destaca las postulaciones enviadas, su estado y el acceso a **Ver mi proceso**. El detalle de la oferta conserva el mismo aviso; desde el seguimiento, **Ver vacante completa** abre sus condiciones y requisitos.
 
 ## Novedad: agenda de entrevistas y calendario
 

@@ -5,6 +5,7 @@ import { AdminVacancyActions } from "../components/AdminVacancyActions.jsx";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  ArrowRight,
   PencilLine,
   BookOpen,
   Globe2,
@@ -30,6 +31,7 @@ import { loadVacancyData } from "../utils/vacancyRequests.js";
 import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
 import { CompanyScore } from "../components/CompanyScore.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { ApplicationStatusNotice } from "../components/ApplicationStatusNotice.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { languageLevelLabel } from "../constants/languages.js";
 import "../styles/job-detail.css";
@@ -51,7 +53,8 @@ function JobDetailContent({ jobId }) {
   const [matchError, setMatchError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [alreadyApplied, setAlreadyApplied] = useState(false);
+  const [application, setApplication] = useState(null);
+  const alreadyApplied = Boolean(application);
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [applying, setApplying] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
@@ -68,7 +71,7 @@ function JobDetailContent({ jobId }) {
       catalog: (data) => setAvailableJobs(data.map((item) => ({ ...item, location: item.source_kind === "external" ? cleanExternalLocation(item.location) : item.location }))),
       match: setMatch,
       matchError: (failure) => setMatchError(getApiErrorMessage(failure, "No pudimos calcular la compatibilidad de esta oferta.")),
-      applications: (data) => setAlreadyApplied(data.some((item) => Number(item.job_id) === Number(jobId))),
+      applications: (data) => setApplication(data.find((item) => Number(item.job_id) === Number(jobId)) || null),
       company: (data) => { setCompanyId(data?.id ?? null); setCompanyRole(data?.active === false ? null : data?.role); },
       error: () => setErrorMessage("No pudimos cargar esta vacante. Vuelve a intentarlo."),
     });
@@ -111,7 +114,7 @@ function JobDetailContent({ jobId }) {
           .filter(([, answer]) => String(answer).trim())
           .map(([question_id, answer]) => ({ question_id, answer: String(answer).trim() })),
       });
-      setAlreadyApplied(true);
+      setApplication(submitted);
       setSuccessMessage((submitted.resume_version_id || null) !== (selectedVersion?.id || null)
         ? "Tu postulación ya estaba registrada. Conservamos la versión enviada inicialmente; puedes consultarla en Postulaciones."
         : "Postulación enviada correctamente");
@@ -281,7 +284,7 @@ function JobDetailContent({ jobId }) {
           </section>
           {user?.role === "candidate" && <VacancyCvAdvice key={jobId} jobId={jobId} />}
           {user?.role === "candidate" && !alreadyApplied && <ApplicationPreparation jobId={jobId} selectedVersion={selectedVersion} onVersionSelected={job.source_kind !== "external" ? setSelectedVersion : undefined} />}
-          {user?.role === "candidate" && <section className="job-apply-card"><h2>{alreadyApplied ? "Tu postulación" : "¿Te interesa esta oportunidad?"}</h2><p>{alreadyApplied ? "Puedes consultar su avance desde Postulaciones." : "Revisa los requisitos y envía tu perfil cuando estés listo."}</p>
+          {user?.role === "candidate" && (alreadyApplied ? <section className="job-apply-card is-applied"><ApplicationStatusNotice application={application} /><Link className="button-primary" to={application.id ? `/procesos/${application.id}` : "/postulaciones"}>{application.id ? "Ver mi proceso" : "Ver mis postulaciones"}<ArrowRight size={16} /></Link></section> : <section className="job-apply-card"><h2>¿Te interesa esta oportunidad?</h2><p>Revisa los requisitos y envía tu perfil cuando estés listo.</p>
           {job.source_kind !== "external" && !alreadyApplied && <p className="mt-3 text-xs leading-5 text-[var(--muted)]">Tu identidad permanece protegida hasta que te postules. Al enviar tu postulación, compartes tu identidad y perfil con esta empresa.</p>}
           {selectedVersion && !alreadyApplied && job.source_kind !== "external" && <div className="selected-resume-note"><strong>Se enviará tu CV guardado para esta vacante</strong>Conservaremos el PDF exacto de esta versión.<button type="button" onClick={() => setSelectedVersion(null)}>Usar mi perfil habitual</button></div>}
           {user?.role === "candidate" ? (
@@ -301,10 +304,6 @@ function JobDetailContent({ jobId }) {
                     Postularme en el sitio original
                   </button>
                 </div>
-              ) : alreadyApplied ? (
-                <div className="mt-8 rounded-[var(--radius-lg)] bg-[var(--accent)]/10 px-4 py-3 text-center text-sm font-semibold text-[var(--accent)]">
-                  Ya estás postulado a esta vacante
-                </div>
               ) : (
                 <button id="job-apply-action" disabled={applying} onClick={() => job.application_questions?.length ? setShowQuestions(true) : apply()} className="button-primary mt-8 w-full">
                   <Send size={16} />
@@ -323,7 +322,7 @@ function JobDetailContent({ jobId }) {
               ) : null}
             </>
           ) : null}
-          </section>}
+          </section>)}
         </aside>
       </section>
       {!isOwnCompanyJob && similarJobs.length ? (

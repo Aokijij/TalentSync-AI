@@ -21,6 +21,17 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     await expect(page.getByText("Todavía no hay versiones guardadas")).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, "The document must not scroll horizontally").toBeLessThanOrEqual(1);
+    const vacancyCards = page.locator('[data-quality="comparison"] .vacancy-card');
+    await expect(vacancyCards.first().getByRole("link", { name: "Ver mi proceso", exact: true })).toHaveAttribute("href", "/procesos/901");
+    for (const card of await vacancyCards.all()) {
+      await expect(card.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "75");
+      const cardBox = await card.boundingBox();
+      for (const action of await card.locator(".vacancy-actions button").all()) {
+        const box = await action.boundingBox();
+        expect(box.x).toBeGreaterThanOrEqual(cardBox.x);
+        expect(box.x + box.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
+      }
+    }
     for (const card of await page.locator('[data-quality="course"] article.learning-course-card').all()) {
       const cardBox = await card.boundingBox();
       const footer = await card.locator("footer").boundingBox();
@@ -54,6 +65,8 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     await expect(tracking.getByRole("tabpanel", { name: "Resumen", exact: true })).toBeVisible();
     await tracking.getByRole("tab", { name: role === "company" ? "Preparar entrevista" : "La vacante", exact: true }).click();
     await expect(tracking.getByText("Revisar los registros de inventario.", { exact: true })).toBeVisible();
+    await expect(tracking.getByRole("link", { name: /Ver vacante completa/ })).toHaveAttribute("href", "/vacantes/101");
+    await expect(tracking.getByText("Condiciones actuales de la oferta", { exact: true })).toHaveCount(0);
     if (role === "company") {
       await tracking.getByRole("tab", { name: "Evaluación interna", exact: true }).click();
       await tracking.getByLabel("Evaluación de ejemplo").fill("Borrador que debe conservarse");

@@ -1,26 +1,39 @@
-.vacancy-card { display:flex; flex-direction:column; min-width:0; gap:14px; padding:20px; border:1px solid var(--line); border-radius:var(--panel-radius); background:var(--surface); }
-.vacancy-card.is-compared { border-color:var(--accent); }
-.vacancy-card > header { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:40px; }
-.vacancy-company { min-width:0; color:var(--accent); font-size:12px; font-weight:650; overflow-wrap:anywhere; }
-.vacancy-compare { display:grid; place-items:center; flex-shrink:0; width:44px; height:44px; border:1px solid var(--line); border-radius:9px; color:var(--muted); }
-.vacancy-compare[aria-pressed="true"] { background:var(--surface-subtle); color:var(--accent); border-color:var(--accent); }
-.vacancy-compare:disabled { opacity:.4; }
-.vacancy-card h2 { margin:0; color:var(--ink-strong); font-size:17px; font-weight:700; line-height:1.5; overflow-wrap:anywhere; }
+.vacancy-card { display:flex; flex-direction:column; min-width:0; gap:14px; padding:20px; border:1px solid var(--line); border-radius:var(--panel-radius); background:var(--surface); transition:border-color .15s,box-shadow .15s; }
+.vacancy-card:hover { border-color:color-mix(in srgb,var(--accent) 45%,var(--line)); box-shadow:0 5px 20px #00000008; }
+.vacancy-card.is-applied { border-top:3px solid var(--success); }
+.vacancy-card.is-compared { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.vacancy-card > header { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:30px; }
+.vacancy-company { min-width:0; color:var(--accent); font-size:12px; font-weight:750; overflow-wrap:anywhere; }
+.vacancy-modality { flex-shrink:0; white-space:nowrap; padding:4px 9px; color:var(--muted); background:var(--surface-subtle); border:1px solid var(--line); border-radius:7px; font-size:11px; }
+.vacancy-card h2 { margin:0; color:var(--ink-strong); font-size:17px; font-weight:750; line-height:1.5; overflow-wrap:anywhere; }
 .vacancy-card h2 a:hover { text-decoration:underline; }
-.vacancy-meta { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; color:var(--muted); font-size:12px; line-height:1.5; }
+.vacancy-meta { display:flex; align-items:center; flex-wrap:wrap; gap:7px 12px; color:var(--muted); font-size:11px; line-height:1.6; }
 .vacancy-meta > span { display:inline-flex; align-items:center; gap:4px; min-width:0; }
 .vacancy-meta svg { flex-shrink:0; }
-.vacancy-modality { white-space:nowrap; padding:3px 8px; background:var(--surface-subtle); border:1px solid var(--line); border-radius:6px; }
-.vacancy-applied { color:var(--success); }
-.vacancy-description { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:var(--muted); font-size:14px; line-height:1.7; }
+.vacancy-match { padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface-subtle); }
+.vacancy-match .recommendation-match { padding:0; max-width:none; }
+.vacancy-match .recommendation-match > div > span { font-size:12px; font-weight:600; }
+.vacancy-match .recommendation-match strong { font-size:1.65rem; color:var(--accent); }
+.vacancy-match .recommendation-match strong small { font-size:1rem; color:var(--accent); }
+.vacancy-match .recommendation-match-track { height:7px; margin:.6rem 0 .45rem; }
+.vacancy-match .recommendation-match > p { font-size:11px; }
+.vacancy-description { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:var(--muted); font-size:13px; line-height:1.7; }
 .vacancy-skills { display:flex; flex-wrap:wrap; gap:6px; }
-.vacancy-skills li { max-width:100%; overflow-wrap:anywhere; padding:3px 8px; border:1px solid var(--line); border-radius:6px; font-size:12px; color:var(--muted); }
-.vacancy-salary { margin-top:auto; padding-top:4px; color:var(--ink-strong); font-size:15px; line-height:1.6; overflow-wrap:anywhere; }
-.vacancy-bottom-meta { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:12px; color:var(--muted); }
-.vacancy-bottom-meta > span,.vacancy-source { display:inline-flex; align-items:center; gap:5px; }
-.vacancy-bottom-meta .vacancy-score { color:var(--accent); font-weight:650; }
-.vacancy-source { color:var(--muted); font-size:12px; }
-.vacancy-card > footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding-top:14px; border-top:1px solid var(--line); }
-.vacancy-card > footer > a { margin-left:auto; }
+.vacancy-skills li { max-width:100%; overflow-wrap:anywhere; padding:3px 8px; border:1px solid var(--line); border-radius:6px; font-size:11px; color:var(--muted); }
+.vacancy-salary { margin-top:auto; padding:4px 0; color:var(--ink-strong); font-size:15px; line-height:1.6; overflow-wrap:anywhere; }
+.vacancy-source { display:inline-flex; align-items:center; gap:5px; color:var(--muted); font-size:12px; }
+.vacancy-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding-top:12px; border-top:1px solid var(--line); }
+.vacancy-actions .job-interest-actions { display:contents; }
+.vacancy-actions :is(.job-interest-actions button,.vacancy-compare) { display:flex; align-items:center; justify-content:center; gap:4px; min-width:0; min-height:40px; margin:0; padding:6px 3px; border:1px solid var(--line); border-radius:8px; color:var(--muted); font-size:11px; font-weight:600; white-space:nowrap; background:var(--surface); }
+.vacancy-actions button svg { width:14px; height:14px; flex-shrink:0; }
+.vacancy-actions button:hover { color:var(--accent); border-color:var(--accent); background:var(--surface-subtle); }
+.vacancy-actions :is(.saved,[aria-pressed="true"]) { color:var(--accent); border-color:var(--accent); background:color-mix(in srgb,var(--accent) 10%,var(--surface)); }
+.vacancy-actions button:disabled { opacity:.45; cursor:not-allowed; }
+.vacancy-actions.without-interests { display:flex; justify-content:flex-end; }
+.vacancy-actions.without-interests button { padding-inline:12px; }
+.vacancy-card > footer { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:12px; }
+.vacancy-card > footer .button-primary { flex:1; min-height:42px; }
+.vacancy-card > footer .vacancy-detail-link { color:var(--accent); font-size:12px; font-weight:650; }
 .vacancy-card :is(a,button):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.jobs-market.has-comparison { padding-bottom:190px; }
 @media(max-width:600px) { .vacancy-card { padding:16px; } }

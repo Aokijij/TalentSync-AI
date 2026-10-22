@@ -19,14 +19,6 @@
 .recommendation-card h3 { flex-basis:100%; font-size:1rem; line-height:1.5; }
 .recommendation-card .recommendation-quality { font-size:.62rem; }
 .recommendation-card-copy > p { font-size:.78rem; line-height:1.6; }
-.recommendation-match { min-width:0; padding:.6rem 0; }
-.recommendation-match > div:first-child { display:flex; align-items:baseline; justify-content:space-between; gap:.4rem; }
-.recommendation-match > div > span { color:var(--muted); font-size:.69rem; }
-.recommendation-match strong { font-size:1.55rem; font-weight:750; font-variant-numeric:tabular-nums; letter-spacing:-.04em; }
-.recommendation-match strong small { margin-left:.1rem; font-size:.8rem; color:var(--muted); font-weight:550; }
-.recommendation-match-track { height:5px; overflow:hidden; border-radius:99px; background:var(--line); margin:.5rem 0 .4rem; }
-.recommendation-match-track > span { display:block; height:100%; border-radius:inherit; }
-.recommendation-match > p { font-size:.68rem; color:var(--muted); }
 .recommendation-card-apply { display:flex; justify-content:flex-end; }
 .recommendation-card-apply button { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; white-space:nowrap; width:100%; min-height:40px; font-size:.77rem; border-radius:.65rem; padding:.55rem .6rem; }
 .recommendation-card>.surface-card { padding:16px; border-radius:24px; background:var(--surface); box-shadow:none; }

@@ -10,3 +10,4 @@ body { margin:0; background:var(--canvas); color:var(--ink); }
 .quality-recruiter-actions { display:flex; flex-wrap:wrap; gap:12px; }
 @media(max-width:900px) { .quality-vacancy-grid { grid-template-columns:1fr; } }
 @media(max-width:600px) { .quality-shell { padding:16px; gap:20px; } .quality-course-grid { grid-template-columns:1fr; } }
+.quality-shell { padding-bottom:240px; }

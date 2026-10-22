@@ -27,7 +27,7 @@ for (const [name, role] of cases) test(`${name} renders its initial state withou
   assert.doesNotMatch(html, /\bNaN\b|Invalid Date/);
   if (name === "AdminManagementPage") assert.match(html, /Cargando registros…/);
   if (name === "JobsPage") {
-    assert.match(html, /<option value="40" selected="">40%<\/option>/);
-    assert.doesNotMatch(html, /<option value="0">0%<\/option>/);
+    assert.match(html, /<option value="0" selected="">Cualquiera<\/option>/);
+    assert.match(html, /<option value="40">40%<\/option>/);
   }
 });

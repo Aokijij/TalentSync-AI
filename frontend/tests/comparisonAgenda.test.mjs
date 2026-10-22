@@ -35,7 +35,8 @@ test("comparison has no empty banner and vacancy actions do not repeat a checkbo
   assert.match(html, /vacancy-modality">Híbrido/);
   assert.match(html, /Quitar de comparación: Analista de inventarios/);
   assert.match(html, /aria-pressed="true"/);
-  assert.match(html, /75% compatible/);
+  assert.match(html, /aria-label="Compatibilidad 75 por ciento"/);
+  assert.match(html, /role="progressbar"[^>]*aria-valuenow="75"/);
   assert.match(html, />\+1</);
   assert.doesNotMatch(html, /type="checkbox"|Compara tus opciones/);
 });
@@ -45,10 +46,19 @@ test("vacancy cards preserve unknown location and compatibility instead of inven
   for (const match of [null, undefined, "", NaN, Infinity]) {
     const html = render(createElement(VacancyCard, { job, match, showMatch: true }));
     assert.match(html, /Ubicación por confirmar/);
-    assert.doesNotMatch(html, /Ubicación flexible|0% compatible|100% compatible/);
+    assert.doesNotMatch(html, /Ubicación flexible|role="progressbar"/);
   }
   const zero = render(createElement(VacancyCard, { job, match: 0, showMatch: true }));
-  assert.match(zero, /0% compatible/);
+  assert.match(zero, /aria-label="Compatibilidad 0 por ciento"/);
+});
+
+test("applied vacancy cards expose the existing process and highlight its status", () => {
+  const html = render(createElement(VacancyCard, { job: jobs[0], application: { id: 45, status: "technical_interview" } }));
+  assert.match(html, /is-applied/);
+  assert.match(html, /Postulación enviada/);
+  assert.match(html, /Entrevista/);
+  assert.match(html, /href="\/procesos\/45"/);
+  assert.match(html, /Ver mi proceso/);
 });
 
 test("answer review shows one question and preserves pending board adjustments without process fields", () => {

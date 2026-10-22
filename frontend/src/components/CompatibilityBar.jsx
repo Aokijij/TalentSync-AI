@@ -1,3 +1,5 @@
+import "../styles/compatibility-bar.css";
+
 export function CompatibilityBar({ value, estimated = false, confidence, compact = false }) {
   const percentage = Number(value ?? 0);
   const safe = Number.isFinite(percentage)

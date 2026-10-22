@@ -6,8 +6,8 @@ export function JobInterestButtons({ job, interests }) {
   if (!interests.enabled) return null;
   const state = interests.byId.get(job.id);
   return <div className="job-interest-actions">
-    <button disabled={interests.busy} aria-pressed={state === true} className={state === true ? "saved" : ""} onClick={() => state === true ? interests.remove(job.id) : interests.save(job.id, true)}>{state === true ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}{state === true ? "Guardada" : "Guardar"}</button>
-    <button disabled={interests.busy} onClick={async () => { if (state === false) { interests.remove(job.id); return; } if (await confirm({ title: "Ocultar esta vacante", description: "Dejarás de verla en tus sugerencias. Puedes recuperarla desde la pestaña Ocultas cuando quieras.", confirmLabel: "Ocultar vacante" })) interests.save(job.id, false); }}>{state === false ? <RotateCcw size={16} /> : <EyeOff size={16} />}{state === false ? "Restaurar" : "Ocultar"}</button>
+    <button type="button" disabled={interests.busy} aria-pressed={state === true} className={state === true ? "saved" : ""} onClick={() => state === true ? interests.remove(job.id) : interests.save(job.id, true)}>{state === true ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}{state === true ? "Guardada" : "Guardar"}</button>
+    <button type="button" disabled={interests.busy} onClick={async () => { if (state === false) { interests.remove(job.id); return; } if (await confirm({ title: "Ocultar esta vacante", description: "Dejarás de verla en tus sugerencias. Puedes recuperarla desde la pestaña Ocultas cuando quieras.", confirmLabel: "Ocultar vacante" })) interests.save(job.id, false); }}>{state === false ? <RotateCcw size={16} /> : <EyeOff size={16} />}{state === false ? "Restaurar" : "Ocultar"}</button>
   </div>;
 }
 

@@ -4,7 +4,7 @@
 
 ## Cambios revisados
 
-- **Vacantes:** mínimo seleccionable desde 40%, normalización de enlaces antiguos y de números de página inválidos. El filtro conserva la página solicitada durante la carga y ajusta el rango cuando llegan los resultados. Si falla la compatibilidad, explorar ofertas sin aplicar ese filtro requiere una acción explícita y muestra un aviso.
+- **Vacantes:** Mercado laboral parte de **Cualquiera** y permite incluir porcentajes bajos o pendientes de cálculo. Las recomendaciones conservan su mínimo de 40%. Se normalizan enlaces antiguos y números de página inválidos. El filtro conserva la página solicitada durante la carga y ajusta el rango cuando llegan los resultados. Si se elige un umbral concreto y falla el cálculo, se ofrece continuar sin aplicarlo mediante una acción explícita.
 - **Postulaciones:** páginas de ocho registros, navegación a la página de una postulación enlazada y conteos que excluyen procesos liberados o cerrados. Una retirada no se presenta como un rechazo de la empresa. El estado de carga se mantiene separado de un listado vacío.
 - **Administración:** las respuestas anteriores de búsquedas y páginas se cancelan o descartan. La tabla y sus totales corresponden a la misma consulta; una respuesta tardía no sobrescribe otra pestaña. Las eliminaciones que vacían la última página permiten volver a un rango válido.
 - **Notificaciones:** cambios de categoría con cancelación de consultas, prevención de cargas simultáneas, deduplicación por identificador y cursor basado en filas consumidas del servidor. Tras borrar o marcar como leído se actualiza la consulta para evitar omisiones. Una carga fallida no se presenta como «Estás al día».
@@ -65,6 +65,12 @@ Se corrigieron los desbordamientos de seguridad con correos largos, la paginaci�
 También se retiraron unas 440 líneas del formulario y la previsualización antiguos de vacantes: sus controles de apertura ya conducían al editor guiado actual. Se comprobó que este editor guarda cambios, los conserva al recargar y permite crear un borrador que permanece oculto para los candidatos. El panel administrativo distingue ahora las contrataciones totales de las postulaciones asociadas a recomendaciones; no las presenta como una atribución causal o un mismo embudo.
 
 El resumen privado, el inventario de vistas y las capturas están en `.local/verification/authenticated-ui.json` y `.local/authenticated-review/`. Las 213 pruebas frontend, ESLint y la compilación se ejecutaron sobre los cambios finales. No hubo cambios de backend en esta revisión.
+
+## Ajustes de Mercado laboral y seguimiento
+
+Mercado laboral incorpora **Cualquiera** como mínimo inicial, sin cambiar el umbral de las recomendaciones. Las tarjetas muestran porcentaje y barra de compatibilidad, acciones alineadas para guardar, ocultar y comparar, y el estado de postulación con acceso al proceso. La selección para comparar permanece en una barra inferior compacta. En seguimiento, un botón abre la vacante completa en lugar de repetir sus condiciones en un desplegable.
+
+Se comprobaron 215 pruebas frontend y 24 recorridos visuales de componentes. Además, el frontend completo y la API local se probaron en móvil y escritorio, con ambos temas: filtros, guardar y desguardar, ocultar y restaurar, comparación y navegación entre postulación, proceso y vacante. Estos recorridos utilizan una copia desechable de los datos. El informe privado está en `.local/verification/market-vacancies.json` y las capturas en `.local/market-review/`.
 
 ## Límites de la revisión
 

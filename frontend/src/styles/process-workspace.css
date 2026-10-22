@@ -36,3 +36,9 @@
 .process-communicate footer p { font-size:.75rem; color:var(--muted); }
 @media(max-width:800px) { .process-summary-grid, .process-vacancy-grid { grid-template-columns:minmax(0,1fr); } }
 @media(max-width:480px) { .process-identity { align-items:flex-start; flex-direction:column; } .process-quick-actions > button { width:100%; } }
+.process-vacancy-link { display:flex; align-items:center; gap:.8rem; padding:1.15rem; color:var(--accent); }
+.process-vacancy-link > svg { flex-shrink:0; }
+.process-vacancy-link > span { flex:1; min-width:0; }
+.process-vacancy-link strong { display:block; font-size:.9rem; }
+.process-vacancy-link small { display:block; margin-top:.3rem; color:var(--muted); font-size:.76rem; line-height:1.6; }
+.process-vacancy-link:hover { border-color:var(--accent); background:var(--surface-subtle); }

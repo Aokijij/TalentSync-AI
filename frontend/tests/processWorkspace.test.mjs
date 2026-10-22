@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
 import { answerAdjustment, applicationBaseMatch, mergeApplicationMatch, projectedMatch } from "../src/utils/applicationMatch.js";
 
 const require = createRequire(import.meta.url);
@@ -22,7 +23,7 @@ const Answers = await component("ApplicationAnswersModal", "ApplicationAnswersMo
 const StructuredJobText = await component("StructuredJobText", "StructuredJobText");
 const processTime = await component("ProcessWorkspace", "processTime");
 const process = { application_id: 5, job_id: 12, company_name: "Empresa ejemplo", candidate_name: "Persona ejemplo", status: "technical_interview", stage_title: "Entrevista técnica", response_days: 3, created_at: "2026-10-18T18:00:00", response_due_at: "2026-10-25T15:00:00", can_evaluate: true, events: [{ id: 1, type: "application.feedback_shared", source: "company", at: "2026-10-22T14:00:00" }], job_description: "Trabajarás con el equipo. Responsabilidades: • Implementar integraciones. • Documentar decisiones.", job_requirements: "Experiencia con Python y SQL." };
-const render = (Component, props) => renderToStaticMarkup(createElement(Component, props));
+const render = (Component, props) => renderToStaticMarkup(createElement(MemoryRouter, {}, createElement(Component, props)));
 
 test("process opens a concise overview and keeps other tab panels mounted but hidden", () => {
   const html = render(Workspace, { process, role: "company", evaluation: createElement("textarea", { name: "private-draft", defaultValue: "Evidencia aún sin guardar" }), communication: createElement("form", {}, "Comunicación pendiente") });
@@ -33,6 +34,9 @@ test("process opens a concise overview and keeps other tab panels mounted but hi
   const overview = html.split('id="process-panel-overview"')[1].split('id="process-panel-vacancy"')[0];
   assert.match(overview, /Próxima respuesta|Registrar evaluación/);
   assert.doesNotMatch(overview, /<textarea|Feedback compartido|Implementar integraciones/);
+  assert.match(html, /href="\/vacantes\/12"/);
+  assert.match(html, /Ver vacante completa/);
+  assert.doesNotMatch(html, /Condiciones actuales de la oferta/);
 });
 
 test("candidate view omits private evaluation and employer communication sections", () => {

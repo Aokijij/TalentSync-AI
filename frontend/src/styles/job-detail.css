@@ -17,6 +17,8 @@
 .job-language-list strong { text-transform:capitalize; color:var(--ink-strong); font-size:.82rem; }
 .job-language-list span { font-size:.73rem; }
 .job-apply-card > p { margin:.5rem 0 1rem; color:var(--muted); font-size:.78rem; line-height:1.6; }
+.job-apply-card.is-applied { border-color:color-mix(in srgb,var(--success) 45%,var(--line)); border-top:3px solid var(--success); background:color-mix(in srgb,var(--success) 4%,var(--surface)); }
+.job-apply-card.is-applied > .button-primary { display:flex; width:100%; margin-top:1.2rem; }
 .job-apply-card .mt-8 { margin-top:1rem; }
 .job-apply-card > .button-primary, .job-apply-card #job-apply-action { min-height:46px; border-radius:.7rem; }
 .job-advice-launch { display:flex; align-items:center; width:100%; gap:.75rem; text-align:left; border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line)); border-radius:1rem; padding:1rem; background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 10%,var(--surface)),var(--surface)); transition:border-color .15s,box-shadow .15s; }
