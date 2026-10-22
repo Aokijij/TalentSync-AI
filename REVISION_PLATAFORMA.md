@@ -54,9 +54,21 @@ npm run quality:ui
 
 El informe interactivo se genera en `frontend/playwright-report/index.html`. Los resultados locales y las capturas representativas se describen en `.local/verification/visual-chromium.json`. Los datos de esta página de prueba son ficticios y se bloquean las consultas externas y a la API.
 
+## Recorrido de pantallas autenticadas
+
+Se revisaron 35 rutas de la aplicación con sesiones de candidato, empresa y administración: 140 vistas entre escritorio de 1440 píxeles y móvil de 360 píxeles, en los temas claro y oscuro. Este recorrido utiliza el frontend completo y la API local real, sin simular sus respuestas. La base y los archivos se copiaron a un entorno desechable; las escrituras se realizaron con cuentas de demostración, fuera de la base de trabajo. Las cuentas personales 20 y 72 se conservaron.
+
+La cobertura incluye perfil, vacantes y sus detalles, empresas, recomendaciones, postulaciones y seguimiento, desarrollo profesional, notificaciones, confianza, seguridad, selección de candidatos, tablero empresarial, editor de ofertas, organización, administración, catálogo educativo, ecosistema, verificaciones y estado de integraciones. Las capturas se complementaron con 18 recorridos funcionales: filtros y plan de formación; inicio, conservación y entrega de retos; preparación de entrevista; comparación y PDF del CV; conteos y notas del tablero; edición y creación de borradores; comunicación y privacidad entre roles; fuentes educativas; seguridad y cierre de sesión; paginación y búsqueda en los tres roles.
+
+Se corrigieron los desbordamientos de seguridad con correos largos, la paginación móvil de vacantes empresariales y las tarjetas de gráficos de administración. Se eliminó la duplicación de la región principal de los paneles de inicio. Al iniciar o entregar un reto ya no aparece el aviso genérico de cambios guardados sobre las preguntas; los errores y el resultado se muestran en el propio espacio de práctica.
+
+También se retiraron unas 440 líneas del formulario y la previsualización antiguos de vacantes: sus controles de apertura ya conducían al editor guiado actual. Se comprobó que este editor guarda cambios, los conserva al recargar y permite crear un borrador que permanece oculto para los candidatos. El panel administrativo distingue ahora las contrataciones totales de las postulaciones asociadas a recomendaciones; no las presenta como una atribución causal o un mismo embudo.
+
+El resumen privado, el inventario de vistas y las capturas están en `.local/verification/authenticated-ui.json` y `.local/authenticated-review/`. Las 213 pruebas frontend, ESLint y la compilación se ejecutaron sobre los cambios finales. No hubo cambios de backend en esta revisión.
+
 ## Límites de la revisión
 
-- La ejecución visual cubre componentes y sus interacciones con datos de prueba. No equivale a una revisión completa de cada pantalla autenticada ni establece comparaciones automáticas contra capturas de referencia aprobadas. La inspección manual se realizó sobre una selección representativa de las capturas.
+- Se comprobaron las rutas principales con cuentas de demostración y una selección representativa de capturas. No hay comparaciones automáticas contra imágenes aprobadas. Los recorridos no cubren todas las combinaciones posibles de datos, permisos de miembros de equipo, dispositivos o navegadores.
 - Correo externo, OAuth/SSO, calendarios sincronizados y otros proveedores requieren cuentas y configuración autorizadas. Las pruebas de adaptadores o transportes locales no equivalen a comprobar una entrega o conexión externa real.
 - Las pruebas de concurrencia usan datos sintéticos. No representan una certificación de capacidad o una auditoría de producción.
 - No se publicaron cambios ni se alteraron cuentas personales para realizar esta revisión.

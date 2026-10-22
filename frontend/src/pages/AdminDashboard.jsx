@@ -24,7 +24,7 @@ const metricConfig = [
   { key: "active_jobs", label: "Vacantes activas", icon: BriefcaseBusiness },
   {
     key: "conversion_rate",
-    label: "Recomendaciones utilizadas",
+    label: "Con postulación asociada",
     icon: ChartNoAxesCombined,
     suffix: "%",
   },
@@ -145,12 +145,12 @@ export function AdminDashboard() {
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.45fr_0.75fr]">
-        <div className="surface-card p-5 sm:p-6">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.45fr_0.75fr]">
+        <div className="surface-card min-w-0 p-5 sm:p-6">
           <ActivityTrendChart data={analytics.timeline} />
         </div>
-        <div className="surface-card p-5 sm:p-6">
-          <ConversionBars
+        <div className="surface-card min-w-0 p-5 sm:p-6">
+          <ActivityCounts
             recommendations={stats.recommendations ?? 0}
             applications={analytics.recommended_applications ?? 0}
             hires={analytics.hires ?? 0}
@@ -158,11 +158,11 @@ export function AdminDashboard() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-        <div className="surface-card p-5 sm:p-6">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+        <div className="surface-card min-w-0 p-5 sm:p-6">
           <SemanticSkillGraph graph={analytics.skill_graph} />
         </div>
-        <div className="surface-card p-5 sm:p-6">
+        <div className="surface-card min-w-0 p-5 sm:p-6">
           <InfrastructurePanel services={analytics.infrastructure} />
         </div>
       </section>
@@ -170,20 +170,20 @@ export function AdminDashboard() {
   );
 }
 
-function ConversionBars({ recommendations, applications, hires }) {
-  const max = Math.max(1, recommendations);
+function ActivityCounts({ recommendations, applications, hires }) {
+  const max = Math.max(1, recommendations, applications, hires);
   const stages = [
     {
-      label: "Recomendaciones generadas",
+      label: "Recomendaciones registradas",
       value: recommendations,
       color: "bg-[var(--accent)]",
     },
     {
-      label: "Terminaron en postulación",
+      label: "Con postulación asociada",
       value: applications,
       color: "bg-violet-600",
     },
-    { label: "Contrataciones", value: hires, color: "bg-[var(--success)]" },
+    { label: "Contrataciones totales", value: hires, color: "bg-[var(--success)]" },
   ];
   return (
     <div>
@@ -193,10 +193,10 @@ function ConversionBars({ recommendations, applications, hires }) {
         </div>
         <div>
           <h3 className="font-bold text-[var(--ink-strong)]">
-            Embudo de éxito
+            Recomendaciones y contrataciones
           </h3>
           <p className="text-sm text-[var(--muted)]">
-            Impacto de las recomendaciones
+            Actividad registrada en la plataforma
           </p>
         </div>
       </div>
@@ -215,13 +215,14 @@ function ConversionBars({ recommendations, applications, hires }) {
               <div
                 className={`h-full rounded-full ${stage.color}`}
                 style={{
-                  width: `${Math.max(stage.value ? 5 : 0, (stage.value / max) * 100)}%`,
+                  width: `${(stage.value / max) * 100}%`,
                 }}
               />
             </div>
           </div>
         ))}
       </div>
+      <p className="mt-5 text-xs text-[var(--muted)]">Las contrataciones incluyen todos los procesos. Una postulación asociada no demuestra que la recomendación haya causado esa postulación.</p>
     </div>
   );
 }

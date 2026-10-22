@@ -60,7 +60,7 @@ export function LearningPage() {
   const draftKey = (id) => `talentsync-assessment-${user.id}-${id}`;
   const draftStorage = { getItem: (key) => window.sessionStorage.getItem(key), setItem: (key, value) => window.sessionStorage.setItem(key, value) };
   async function start(id) {
-    const { data } = await api.post(`/learning/assessments/${id}/start`);
+    const { data } = await api.post(`/learning/assessments/${id}/start`, null, { __quiet: true });
     if (!Array.isArray(data.questions) || !data.questions.length) throw new Error("La práctica no tiene preguntas disponibles.");
     const restored = restorePractice(draftStorage, draftKey(data.id), data.questions);
     const memory = practiceDraft(practiceMemory.current[data.id], data.questions);
@@ -83,7 +83,7 @@ export function LearningPage() {
     if (busy || seconds === 0) return;
     if (!await confirm({ title: "Entregar la práctica", description: "Se evaluarán tus respuestas y verás las correcciones. La entrega finaliza este intento.", confirmLabel: "Entregar respuestas" })) return;
     await act(async () => {
-      const { data } = await api.post(`/learning/attempts/${attempt.id}/submit`, { answers });
+      const { data } = await api.post(`/learning/attempts/${attempt.id}/submit`, { answers }, { __quiet: true });
       setAttempt(data); setDraftWarning("");
       delete practiceMemory.current[attempt.id];
       try { window.sessionStorage.removeItem(draftKey(attempt.id)); } catch { /* The submitted result takes precedence over local cleanup. */ }

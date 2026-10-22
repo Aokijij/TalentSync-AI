@@ -93,6 +93,7 @@
 .security-status-bar > span { display:inline-flex; align-items:center; gap:.4rem; color:var(--muted); font-size:.75rem; }
 .security-status-bar svg { color:var(--accent); }
 .security-workspace { display:grid; grid-template-columns:245px minmax(0,1fr); gap:1.25rem; align-items:start; }
+.security-workspace > * { min-width:0; }
 .security-section-nav { border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-lg); padding:.5rem; display:grid; gap:.25rem; }
 .security-section-nav > a { display:flex; gap:.7rem; align-items:center; padding:.9rem .75rem; border-radius:.7rem; color:var(--muted); }
 .security-section-nav > a svg { flex-shrink:0; }
@@ -100,7 +101,7 @@
 .security-section-nav small { display:block; font-size:.65rem; margin-top:.2rem; color:var(--muted); }
 .security-section-nav > a[aria-current=page] { background:var(--surface-subtle); color:var(--accent); box-shadow:inset 3px 0 var(--accent); }
 .security-content { min-width:0; display:grid; gap:1rem; }
-.security-panel { padding:1.5rem; border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--surface); }
+.security-panel { padding:1.5rem; border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--surface); overflow-wrap:anywhere; }
 .security-panel > header { display:flex; gap:.8rem; align-items:start; margin-bottom:1.25rem; }
 .security-panel > header h2 { font-size:1.05rem; font-weight:750; }
 .security-panel > header p { color:var(--muted); font-size:.8rem; line-height:1.6; margin-top:.35rem; }
