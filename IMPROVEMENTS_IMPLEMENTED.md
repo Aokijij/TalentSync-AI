@@ -1,5 +1,14 @@
 # Mejoras de preparación y consistencia
 
+## Comparador y agenda · 22 de octubre de 2026
+
+- Candidato → Explorar vacantes: selección de dos o tres ofertas, comparación de condiciones y habilidades del cálculo existente; filtro de condiciones diferentes. Selección por cuenta en la pestaña, sin nuevas solicitudes de compatibilidad al abrir el comparador.
+- Candidato → Postulaciones: agenda ordenada de entrevistas futuras de procesos abiertos; tres citas inicialmente y expansión de las restantes. La carga de procesos ya no espera al catálogo de vacantes y un error no se presenta como una lista vacía.
+- Proceso → entrevista: descarga privada de un archivo iCalendar con inicio en UTC, enlace al proceso, identificador estable y recordatorio de 30 minutos. Verifica acceso y estado actual, no incluye notas internas ni inventa duración. La importación es manual; no hay sincronización con cuentas externas.
+- La edición de entrevistas convierte de UTC a hora de Colombia y vuelve a UTC sin desplazar la cita. La API normaliza los offsets antes de persistir. Los avisos diferencian programación, reprogramación y cancelación.
+- `frontend/tests/comparisonAgenda.test.mjs` y `backend/tests/test_interview_calendar.py` cubren selección, datos desconocidos, horarios, permisos, estados y formato de calendario. Se amplió la página de revisión visual con comparador y agenda, conservando 24 combinaciones de tamaño/rol/tema. Su ejecución en navegador sigue pendiente.
+- No requiere una migración ni nuevas dependencias. Consultar `GUIA_FUNCIONALIDADES.md` para los recorridos y límites de las funciones recientes y existentes.
+
 ## Recorridos disponibles
 
 1. **Vacante → Prepara tu postulación → CV por vacante.** El candidato selecciona experiencias y habilidades que ya tiene guardadas, revisa el resumen y elige un diseño. Se conserva una versión independiente de su perfil, con el PDF exacto, su fecha y una huella SHA-256.

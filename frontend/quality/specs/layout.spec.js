@@ -27,6 +27,22 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
         expect(box.x + box.width).toBeLessThanOrEqual(footer.x + footer.width + 1);
       }
     }
+    await page.getByRole("button", { name: "Comparar (2)", exact: true }).click();
+    const comparison = page.getByRole("dialog", { name: "Compara las vacantes", exact: true });
+    await expect(comparison).toBeVisible();
+    await expect(comparison.getByRole("columnheader")).toHaveCount(3);
+    await expect(comparison.getByRole("cell", { name: "Sin cálculo disponible", exact: true })).toBeVisible();
+    await comparison.getByLabel("Mostrar solo condiciones diferentes").check();
+    await expect(comparison.getByRole("rowheader", { name: "Idiomas", exact: true })).toHaveCount(0);
+    const comparisonRegion = comparison.getByRole("region", { name: "Tabla de comparación de vacantes" });
+    const bounds = await comparisonRegion.boundingBox();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+    await testInfo.attach("comparador", { body: await page.screenshot({ animations: "disabled" }), contentType: "image/png" });
+    await comparison.getByRole("button", { name: "Cerrar ventana" }).click();
+    await expect(page.getByRole("button", { name: "Comparar (2)", exact: true })).toBeFocused();
+    await expect(page.getByRole("heading", { name: "Tu agenda de entrevistas" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Añadir al calendario", exact: true })).toBeVisible();
     await page.getByRole("tab", { name: "CV por vacante" }).focus();
     await page.keyboard.press("ArrowRight");
     await expect(page.getByRole("tab", { name: "Practicar entrevista" })).toHaveAttribute("aria-selected", "true");

@@ -52,3 +52,11 @@ npm run quality:ui:list
 La suite `npm run quality:ui` requiere Chromium de Playwright y un entorno autorizado para ejecutar un navegador. Define 24 combinaciones: 360, 768, 1280 y 1440 px, tres roles, dos temas. Comprueba desbordamiento, pies de tarjetas y el recorrido de teclado/respuestas; adjunta capturas al informe HTML. El CI guarda ese informe durante siete días.
 
 Las capturas sirven para revisión. Todavía no hay imágenes de referencia aprobadas para comparación píxel a píxel. Listar los casos y compilar la página de revisión no equivale a ejecutarlos.
+
+## Comparación y agenda
+
+- Seleccionar una oferta para comparar es independiente de guardarla. Indicar el límite de tres y permitir retirar una oferta que dejó de estar disponible.
+- Las comparaciones conservan encabezados alineados. En móvil, solo la tabla permite desplazamiento horizontal; la página y el diálogo deben seguir dentro de la pantalla. El bloque de selección deja de ser fijo en móvil para conservar espacio de lectura.
+- Salario, habilidades o compatibilidad desconocidos necesitan texto explícito. No usar cero como sustituto de un dato ausente.
+- Las citas muestran hora de Colombia y el estado real del proceso. No presentar una cita pasada o de un proceso finalizado como próxima.
+- La descarga del calendario explica su importación manual y cómo actuar ante cambios; duración y ubicación pendientes no se completan con suposiciones.

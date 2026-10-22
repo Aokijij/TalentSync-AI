@@ -1,9 +1,10 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.domain.entities.enums import ApplicationStatus
+from app.domain.services.interview_calendar import utc
 
 
 class ScreeningAnswer(BaseModel):
@@ -37,6 +38,12 @@ class ApplicationStatusUpdate(BaseModel):
     recruiter_notes: str | None = None
     interview_at: datetime | None = None
     screening_answer_adjustments: dict[str, float] | None = None
+
+    @field_validator("interview_at")
+    @classmethod
+    def interview_in_utc(cls, value):
+        # The database stores naive UTC; normalize offsets before persistence.
+        return utc(value).replace(tzinfo=None) if value is not None else None
 
 
 class CandidateFeedback(BaseModel):

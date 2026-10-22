@@ -1,0 +1,108 @@
+# TalentSync: funciones principales y cómo utilizarlas
+
+Actualizado el 22 de octubre de 2026. Describe la versión local del proyecto. Una integración implementada puede requerir configuración y autorización antes de funcionar con cuentas externas.
+
+TalentSync conecta tres recorridos: el candidato organiza su trayectoria y búsqueda; la empresa publica ofertas y gestiona la selección; administración revisa la calidad, las fuentes educativas y la salud del ecosistema.
+
+## Novedad: comparar vacantes antes de postularse
+
+**Dónde:** candidato → Explorar vacantes (`/vacantes`).
+
+1. Marca **Comparar** en dos o tres tarjetas. Puedes cambiar de filtro, colección o página sin perder la selección.
+2. Pulsa **Comparar** en el bloque que reúne las ofertas elegidas.
+3. Revisa salario, modalidad, ubicación o alcance remoto, contrato, horario, experiencia, formación, idiomas, beneficios y plazos.
+4. Consulta la compatibilidad y las habilidades cumplidas o por reforzar/confirmar, cuando el cálculo dispone de ese detalle.
+5. Activa **Mostrar solo condiciones diferentes** para concentrarte en las diferencias. Abre la oferta que quieras revisar antes de postularte.
+
+**Ejemplo:** una oferta puede publicar 3 millones, contrato indefinido y modalidad híbrida; otra, 3,5 millones y trabajo remoto, pero sin contrato informado. La comparación permite ver el intercambio entre condiciones y qué falta preguntar.
+
+La selección se conserva por cuenta en la misma pestaña durante la sesión; no es una colección sincronizada entre dispositivos. Guardar una vacante y seleccionarla para comparar son decisiones independientes. Si una oferta deja de estar disponible, puedes retirarla de la selección. Los datos desconocidos se presentan como tales: un salario ausente no se convierte en cero ni una compatibilidad sin calcular en 0 %. La herramienta no elige una ganadora.
+
+## Novedad: agenda de entrevistas y calendario
+
+**Dónde:** candidato → Postulaciones (`/postulaciones`) → **Tu agenda de entrevistas**. También dentro de un proceso (`/procesos/{id}`), accesible a sus participantes autorizados.
+
+- Reúne las entrevistas futuras de procesos abiertos y las ordena por fecha. Muestra primero tres; se pueden desplegar las restantes.
+- Presenta la hora de Colombia. La empresa programa y modifica esa hora desde **Gestionar proceso** en su tablero.
+- **Añadir al calendario** descarga un archivo `.ics`. Ábrelo e impórtalo en una aplicación que admita iCalendar, por ejemplo Google Calendar, Outlook o Calendario de Apple.
+- El archivo incluye título de la oferta, empresa, hora de inicio, enlace al proceso y un recordatorio de 30 minutos. El calendario receptor decide cómo mostrar las alertas.
+- No inventa la duración, dirección o enlace de videollamada: deben confirmarse en el proceso o con la empresa.
+- Cada descarga consulta la cita actual y verifica acceso. No permite exportar una cita pasada, sin fecha o de un proceso finalizado.
+
+**Importante:** es una copia manual. No conecta tu cuenta de Google/Microsoft, no envía invitaciones y no actualiza ni elimina automáticamente un evento ya importado. Si se reprograma o cancela, TalentSync publica un aviso y tendrás que actualizar tu calendario. El archivo conserva el mismo identificador al reprogramar; el comportamiento de actualización depende de la aplicación receptora.
+
+También se corrigió la conversión de fechas: abrir una entrevista ya guardada y volver a guardar su hora no debe desplazarla cinco horas. Los avisos indican expresamente la hora de Colombia.
+
+## Reciente: CV independiente para cada vacante
+
+**Dónde:** detalle de una vacante → **Prepara tu postulación** → **CV por vacante**.
+
+Esta función permite adaptar la presentación de una trayectoria real al cargo, conservando el perfil principal.
+
+1. Elige las experiencias y habilidades que ya tienes registradas y que deseas destacar.
+2. Revisa o ajusta el resumen para esa oferta.
+3. Elige diseño moderno, clásico o minimalista y si quieres incluir la foto.
+4. Guarda la versión y abre el PDF para revisarlo.
+5. Pulsa **Usar al postularme** para seleccionarla. Después debes enviar la postulación desde su botón habitual.
+
+**Ejemplo:** puedes destacar experiencia de pruebas y calidad para una vacante de QA, y experiencia de interfaces para una de frontend, sin borrar ninguna del perfil principal.
+
+Guardar el documento no envía una postulación ni lo selecciona automáticamente. Si lo eliges al enviar, se conserva ese PDF exacto: editar después tu perfil no cambia el archivo recibido por la empresa. Candidato y empresa autorizada pueden consultarlo desde el proceso, respetando la visibilidad de identidad. Sin elegir una versión, una nueva postulación conserva los datos enviados del perfil, sin generar un PDF adicional.
+
+En ofertas externas puedes preparar y descargar el CV; lo que envíes después en otro portal depende de la acción que realices allí. TalentSync no confirma una entrega externa.
+
+## Reciente: preparación privada de entrevistas
+
+**Dónde:** detalle de vacante → **Prepara tu postulación** → **Practicar entrevista**. Tras postularte: proceso → **Prepara tu entrevista**.
+
+La preparación reúne preguntas relacionadas con la oferta y ejemplos de experiencias registradas. Puedes trabajar cada respuesta mediante cuatro apartados:
+
+| Apartado | Qué escribir |
+| --- | --- |
+| Contexto | Qué estaba ocurriendo y cuál era el problema. |
+| Responsabilidad | Qué te correspondía resolver a ti. |
+| Acción | Qué hiciste concretamente y cómo lo hiciste. |
+| Resultado | Qué cambió, qué entregaste o qué aprendiste. Puede ser cualitativo. |
+
+Guarda tus notas para continuar después o descárgalas como texto. En una postulación nueva, la preparación puede consultar los datos conservados del envío, incluso si la oferta dejó de estar activa. Si cambió la información utilizada, se señala que las notas necesitan revisión. Un conflicto entre dos ventanas no debe sobrescribir silenciosamente lo guardado.
+
+Las respuestas son privadas: no se muestran a la empresa ni alteran tu compatibilidad. La revisión actual comprueba si los cuatro apartados están completos; no califica tu capacidad ni verifica el contenido de tu respuesta. **Todavía no es un simulador conversacional con repreguntas automáticas.** Ese desarrollo sigue siendo una siguiente etapa.
+
+## Funciones principales del candidato
+
+| Función | Para qué sirve |
+| --- | --- |
+| Perfil y hoja de vida | Organizar experiencia, formación, habilidades y niveles, idiomas, cursos, enlaces, foto y documentos profesionales. Exportar el CV con diferentes diseños. |
+| Visibilidad de datos personales | Decidir qué datos personales se comparten según los controles del perfil. En la vista de empresa, cuando se comparte el dato correspondiente, se presenta la edad en lugar de la fecha de nacimiento. |
+| Asesor de redacción | Revisar propuestas de descripción basadas en las experiencias registradas, editarlas y decidir si se aplican al perfil. Conserva versiones y permite deshacer mientras exista su registro. La generación depende de la disponibilidad del modelo configurado. |
+| Recomendaciones y compatibilidad | Encontrar ofertas y consultar razones y requisitos relacionados con el perfil. Una afinidad académica compara datos declarados; no autentica un diploma. |
+| Guardar y ocultar ofertas | Organizar oportunidades y, cuando se autoriza, utilizar esas decisiones explícitas para personalizar sugerencias. |
+| Seguimiento de postulaciones | Consultar estado, etapas, plazos, historial y feedback comunicado por la empresa; retirar una postulación cuando el proceso lo permite. |
+| Cursos y prácticas | Filtrar recursos, ver las habilidades que refuerzan y añadir actividades al plan personal. Completar un curso no acredita automáticamente dominio de una habilidad. |
+| Mi plan y resultados | Continuar actividades iniciadas y consultar sus entregas o resultados, distinguiendo práctica, información declarada y evaluación disponible. |
+| Radar laboral | Explorar habilidades solicitadas por las ofertas de la plataforma y referencias agregadas disponibles. La muestra no representa todo el mercado laboral colombiano. |
+
+## Funciones principales de la empresa
+
+- **Vacantes y calidad de ofertas:** publicar y revisar condiciones, responsabilidades, habilidades, formación, documentos requeridos, preguntas y etapas de selección.
+- **Búsqueda de talento:** consultar candidatos compatibles, revisar el detalle del ajuste y comparar candidatos dentro del alcance autorizado.
+- **Tablero de postulaciones:** elegir una vacante, ver sus candidatos y moverlos entre etapas, conservando el historial del proceso.
+- **Gestión de entrevistas:** programar o cancelar la fecha, comunicar cambios y registrar evaluaciones internas según los permisos del equipo.
+- **Perfil del candidato y CV enviado:** consultar información compartida y, cuando corresponde, el documento conservado de esa postulación. Las notas privadas de preparación pertenecen al candidato.
+- **Organización y equipo:** gestionar miembros, roles y vacantes asignadas. Un entrevistador no recibe acceso general a todos los procesos.
+- **Feedback y confianza:** comunicar avances o resultados y consultar incidencias relacionadas con la organización.
+
+## Funciones principales de administración
+
+- Gestionar usuarios, organizaciones y verificaciones dentro del alcance administrativo.
+- Revisar comportamiento de empresas e incidencias del ecosistema.
+- Mantener el catálogo educativo: revisar fuentes, importar recursos y relacionarlos con habilidades demandadas.
+- Consultar disponibilidad del motor y las integraciones. Tener un adaptador implementado no demuestra que sus credenciales, cuota o servicio estén funcionando.
+
+## Qué sigue pendiente de las propuestas
+
+Las cartas de presentación, el simulador conversacional, el seguimiento de postulaciones externas con correo autorizado, la sincronización de calendarios y un panel unificado de estado de conectores siguen siendo propuestas. No están incluidas en esta entrega.
+
+Breken y Figma no están conectados. Las referencias de diseño se utilizan para mejorar los componentes existentes; no se incorporaron nuevas dependencias de animación o 3D.
+
+Las pruebas de lógica, permisos y compilación se complementan con una suite preparada para tamaños, roles y temas. **La ejecución de navegador y la aprobación visual de capturas siguen pendientes**; compilar esa página o listar sus casos no confirma su apariencia final.

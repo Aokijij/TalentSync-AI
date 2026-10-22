@@ -1,4 +1,5 @@
 import { DateTimePicker } from "../components/DateTimePicker.jsx";
+import { interviewInputUtc, interviewInputValue } from "../utils/interviewAgenda.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
@@ -849,7 +850,7 @@ function StageEditorModal({ stages: initialStages, counts, onSave, onClose }) {
 function RecruiterModal({ application, onClose, onDelete, onSave }) {
   const [notes, setNotes] = useState(application.recruiter_notes || "");
   const [interviewAt, setInterviewAt] = useState(
-    application.interview_at ? application.interview_at.slice(0, 16) : "",
+    interviewInputValue(application.interview_at),
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmSave, setConfirmSave] = useState(false);
@@ -872,7 +873,7 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
   const projectedAdjustment = configuredTotal + manualTotal;
   const changes = {
     recruiter_notes: notes || null,
-    interview_at: interviewAt ? new Date(interviewAt).toISOString() : null,
+    interview_at: interviewInputUtc(interviewAt),
     screening_answer_adjustments: answerAdjustments,
   };
   return (
@@ -912,7 +913,8 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
                 placeholder="Observaciones para el equipo de selección..."
               />
             </label>
-            <DateTimePicker label="Fecha y hora de entrevista" value={interviewAt} onChange={setInterviewAt} />
+            <DateTimePicker label="Fecha y hora de entrevista · hora de Colombia" value={interviewAt} onChange={setInterviewAt} />
+            {interviewAt && !changes.interview_at && <p role="alert" className="text-sm text-[var(--error)]">Completa una fecha y una hora válidas antes de guardar.</p>}
           </div>
           <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-[var(--line)] pt-5">
             <button
@@ -935,6 +937,7 @@ function RecruiterModal({ application, onClose, onDelete, onSave }) {
               <button
                 type="button"
                 className="button-primary"
+                disabled={!!interviewAt && !changes.interview_at}
                 onClick={() => setConfirmSave(true)}
               >
                 <Save size={16} />

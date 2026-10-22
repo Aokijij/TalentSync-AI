@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from app.application.errors import UseCaseError
@@ -6,6 +6,7 @@ from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import ensure_job_access
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.interview_calendar import interview_calendar, utc
 from app.domain.services.pipeline import stages_for
 
 FINAL = {ApplicationStatus.REJECTED, ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED}
@@ -56,6 +57,21 @@ def timeline(db, user, application_id):
             "candidate_name": (candidate_alias(row.job_id, row.user_id) if identity_hidden(row.job, row) else row.user.name) if user.role != UserRole.CANDIDATE else None,
             "can_evaluate": user.role == UserRole.COMPANY and not row.released_at and row.status not in FINAL,
             "interview_evaluations": list(reversed(row.interview_evaluations or [])) if user.role != UserRole.CANDIDATE else []}
+
+
+def export_interview_calendar(db, user, application_id, *, public_app_url):
+    row = accessible_application(db, user, application_id)
+    now = datetime.now(timezone.utc)
+    if row.released_at or row.status in FINAL:
+        raise UseCaseError(status_code=409, detail="El proceso finalizó; no hay una cita activa para añadir al calendario")
+    if not row.interview_at:
+        raise UseCaseError(status_code=409, detail="La empresa aún no ha programado una entrevista")
+    if utc(row.interview_at) <= now:
+        raise UseCaseError(status_code=409, detail="La fecha de esta entrevista ya pasó; consulta el proceso para confirmar una nueva cita")
+    return interview_calendar(application_id=row.id, created_at=row.created_at, interview_at=row.interview_at,
+                              job_title=row.job.title, company_name=row.job.company.name,
+                              process_url=f"{public_app_url.rstrip('/')}/procesos/{row.id}",
+                              version=row.version, now=now)
 
 
 def withdraw(db, user, application_id):

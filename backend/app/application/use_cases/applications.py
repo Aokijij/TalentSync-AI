@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.application.errors import UseCaseError
@@ -8,6 +8,7 @@ from app.application.use_cases.workflow import transition
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Application, User
 from app.domain.services.blind_hiring import identity_hidden
+from app.domain.services.interview_calendar import utc
 from app.domain.services.pipeline import stages_for
 
 
@@ -287,8 +288,13 @@ def update_status(
         )
         if interview_changed and application.interview_at:
             notification_type = "application_interview"
-            title = "Entrevista programada"
-            body = f"Tu entrevista para {application.job.title} será el {application.interview_at.strftime('%d/%m/%Y a las %H:%M')}."
+            title = "Entrevista reprogramada" if previous_interview else "Entrevista programada"
+            local_time = utc(application.interview_at).astimezone(timezone(timedelta(hours=-5)))
+            body = f"Tu entrevista para {application.job.title} será el {local_time.strftime('%d/%m/%Y a las %H:%M')} (hora de Colombia). Consulta el proceso y actualiza tu calendario si guardaste una copia."
+        elif interview_changed:
+            notification_type = "application_interview"
+            title = "Entrevista cancelada"
+            body = f"La empresa retiró la fecha de entrevista para {application.job.title}. Consulta el proceso y elimina la cita de tu calendario si habías guardado una copia."
         else:
             notification_type = "application_status"
             stage_title = application.pipeline_stage_title or STATUS_LABELS.get(

@@ -9,9 +9,11 @@ import {
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { api } from "../api/client.js";
+import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
+import { InterviewAgenda } from "../components/InterviewAgenda.jsx";
+import { activeInterview, interviewDateParts, processDate } from "../utils/interviewAgenda.js";
 
 const statusLabel = {
   submitted: "Postulación recibida",
@@ -49,30 +51,41 @@ const interviewStatuses = ["technical_interview", "psychometric_test"];
 export function ApplicationsPage() {
   const [searchParams] = useSearchParams();
   const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true), [loadError, setLoadError] = useState(""), [retry, setRetry] = useState(0);
   const [jobs, setJobs] = useState([]);
   const [filter, setFilter] = useState("all");
   const [pendingWithdrawal, setPendingWithdrawal] = useState(null);
   const focusedId = searchParams.get("focus");
 
   useEffect(() => {
-    Promise.all([
-      api.get("/applications/me").catch(() => ({ data: [] })),
-      api.get("/jobs").catch(() => ({ data: [] })),
-    ]).then(([applicationsResponse, jobsResponse]) => {
-      setApplications(applicationsResponse.data);
-      setJobs(jobsResponse.data);
-    });
+    const controller = new AbortController();
+    setLoading(true); setLoadError("");
+    api.get("/applications/me", { signal: controller.signal, __quiet: true }).then(({ data }) => {
+      if (!controller.signal.aborted) setApplications(data);
+    }).catch((failure) => { if (!controller.signal.aborted) setLoadError(getApiErrorMessage(failure, "No pudimos cargar tus postulaciones.")); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [retry]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    // Job metadata must not delay the candidate's processes or agenda.
+    api.get("/jobs", { signal: controller.signal, __quiet: true }).then(({ data }) => {
+      if (!controller.signal.aborted) setJobs(data);
+    }).catch(() => { /* Application records already include job and company titles. */ });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
     if (!focusedId || !applications.length) return;
-    window.setTimeout(
+    const timer = window.setTimeout(
       () =>
         document
           .getElementById(`application-${focusedId}`)
-          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+          ?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" }),
       80,
     );
+    return () => window.clearTimeout(timer);
   }, [applications, focusedId]);
 
   const jobsById = useMemo(
@@ -107,11 +120,13 @@ export function ApplicationsPage() {
         title="Seguimiento de postulaciones"
         description="Sigue cada proceso desde el envío hasta la decisión final en una línea de tiempo clara."
       />
+      <InterviewAgenda applications={applications} loading={loading} error={loadError} />
+      {loadError && <p role="alert" className="surface-card p-4">{loadError} <button type="button" className="button-secondary button-sm" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></p>}
       <section className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
         <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
           <div className="surface-card px-4 py-3">
             <p className="text-2xl font-bold text-[var(--ink-strong)]">
-              {applications.length}
+              {loading || loadError ? "—" : applications.length}
             </p>
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
               Procesos totales
@@ -119,7 +134,7 @@ export function ApplicationsPage() {
           </div>
           <div className="surface-card px-4 py-3">
             <p className="text-2xl font-bold text-[var(--accent)]">
-              {activeCount}
+              {loading || loadError ? "—" : activeCount}
             </p>
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
               En curso
@@ -168,7 +183,7 @@ export function ApplicationsPage() {
                   <p className="mt-1 text-sm text-[var(--muted)]">
                     {application.company_name ?? job?.company_name ?? "Empresa"}{" "}
                     · Aplicaste el{" "}
-                    {new Date(application.created_at).toLocaleDateString(
+                    {processDate(application.created_at)?.toLocaleDateString(
                       "es-CO",
                       { day: "numeric", month: "long", year: "numeric" },
                     )}
@@ -224,13 +239,11 @@ export function ApplicationsPage() {
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
                 <Link className="button-secondary" to={`/procesos/${application.id}`}>Historial, plazos y feedback</Link>
                 <div>
-                  {application.interview_at ? (
+                  {activeInterview(application) ? (
                     <p className="flex items-center gap-2 text-sm font-semibold text-[var(--accent)]">
                       <CalendarClock size={16} />
                       Próxima cita:{" "}
-                      {new Date(application.interview_at).toLocaleString(
-                        "es-CO",
-                      )}
+                      {interviewDateParts(application.interview_at).full} · {interviewDateParts(application.interview_at).time} (Colombia)
                     </p>
                   ) : (
                     <p className="text-sm text-[var(--muted)]">
@@ -255,7 +268,7 @@ export function ApplicationsPage() {
             </article>
           );
         })}
-        {visibleApplications.length === 0 ? (
+        {!loading && !loadError && visibleApplications.length === 0 ? (
           <div className="surface-card py-14 text-center">
             <FileCheck2 className="mx-auto text-[var(--muted)]" />
             <p className="mt-3 text-sm text-[var(--muted)]">

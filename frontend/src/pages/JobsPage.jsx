@@ -2,6 +2,9 @@ import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
 import { salaryLabel } from "../utils/offerQuality.js";
 import { JobInterestButtons, InterestsToggle } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
+import { useJobComparison } from "../hooks/useJobComparison.js";
+import { JobComparison } from "../components/JobComparison.jsx";
+import { COMPARISON_LIMIT } from "../utils/jobComparison.js";
 import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -60,7 +63,12 @@ const defaultFilters = {
 
 export function JobsPage() {
   const { user } = useAuth();
+  return <JobsWorkspace key={user?.id || "public"} user={user} />;
+}
+
+function JobsWorkspace({ user }) {
   const interests = useJobInterests(user?.role === "candidate");
+  const comparison = useJobComparison(user?.role === "candidate" ? user.id : null);
   const [interestMode, setInterestMode] = useState(() => ["saved", "hidden"].includes(new URLSearchParams(window.location.search).get("interes")) ? new URLSearchParams(window.location.search).get("interes") : "all");
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -70,10 +78,12 @@ export function JobsPage() {
   const [matchRetry, setMatchRetry] = useState(0), [catalogRetry, setCatalogRetry] = useState(0);
   const [applications, setApplications] = useState([]);
   const [matches, setMatches] = useState({});
+  const [matchDetails, setMatchDetails] = useState({});
   const [matchConfidence, setMatchConfidence] = useState({});
   const [profileSkills, setProfileSkills] = useState([]);
   const [onlyMySkills, setOnlyMySkills] = useState(() => searchParams.get("skills") === "1");
   const updateMatches = useCallback((items) => {
+    setMatchDetails(Object.fromEntries(items.map((item) => [item.job_id, item])));
     setMatches(Object.fromEntries(items.map((item) => [item.job_id, item.match_percentage])));
     setMatchConfidence(Object.fromEntries(items.map((item) => [item.job_id, item.data_confidence_percentage ?? 100])));
   }, []);
@@ -127,6 +137,7 @@ export function JobsPage() {
     getRecommendations(user.id).then(({ data }) => {
       if (!active) return;
       setMatches(Object.fromEntries(data.map((item) => [item.job_id, item.match_percentage])));
+      setMatchDetails(Object.fromEntries(data.map((item) => [item.job_id, item])));
       setMatchConfidence(Object.fromEntries(data.map((item) => [item.job_id, item.data_confidence_percentage ?? 100])));
     }).catch(() => { if (active) setMatchesError("Las vacantes están disponibles, pero no pudimos calcular tu compatibilidad."); })
       .finally(() => { if (active) setMatchesLoading(false); });
@@ -284,9 +295,11 @@ export function JobsPage() {
       {jobsError && <p role="alert" className="surface-card p-4 text-sm">{jobsError} <button type="button" className="underline" onClick={() => setCatalogRetry((value) => value + 1)}>Reintentar</button></p>}
       {matchesLoading && !jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Ya puedes explorar las ofertas. Estamos calculando tu compatibilidad…</p>}
       {matchesError && <p role="alert" className="surface-card p-4 text-sm">{matchesError} <button type="button" className="underline" onClick={() => setMatchRetry((value) => value + 1)}>Reintentar compatibilidad</button>{minCompatibility > 0 && <button type="button" className="ml-3 underline" onClick={() => { setMinCompatibility(0); setPage(1); }}>Ver ofertas sin filtrar por compatibilidad</button>}</p>}
+      {user?.role === "candidate" && <JobComparison selection={comparison} jobs={jobs} matches={matchDetails} loading={jobsLoading} returnTo={`${location.pathname}${location.search}`} />}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleJobs.map((job) => (
           <JobCard
+            comparison={user?.role === "candidate" ? comparison : null}
               interests={user?.role === "candidate" ? interests : null}
             key={job.id}
             job={job}
@@ -359,10 +372,10 @@ export function JobsPage() {
   );
 }
 
-function JobCard({ interests, job, match, confidence, applied, showMatch, returnTo }) {
+function JobCard({ interests, comparison, job, match, confidence, applied, showMatch, returnTo }) {
   const score = Number(match ?? 0);
   return (
-    <article className="surface-card flex flex-col p-5 transition-colors hover:border-[var(--accent)]">
+    <article className="job-opportunity-card surface-card flex min-w-0 flex-col p-5 transition-colors hover:border-[var(--accent)]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <Link
@@ -454,7 +467,7 @@ function JobCard({ interests, job, match, confidence, applied, showMatch, return
               ? "Ver postulación"
               : "Ver detalle"}
         </Link>
-        {interests && <div className="col-span-2"><JobInterestButtons job={job} interests={interests} /></div>}
+        {(interests || comparison) && <div className="col-span-2 flex flex-wrap items-center justify-between gap-2">{interests && <JobInterestButtons job={job} interests={interests} />}{comparison && <label className="comparison-card-toggle"><input type="checkbox" checked={comparison.ids.includes(job.id)} disabled={!comparison.ids.includes(job.id) && comparison.ids.length >= COMPARISON_LIMIT} onChange={() => comparison.toggle(job.id)} />Comparar<span className="sr-only"> {job.title}</span></label>}</div>}
       </div>
     </article>
   );
