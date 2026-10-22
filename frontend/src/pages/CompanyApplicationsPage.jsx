@@ -25,7 +25,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import { ReopenJobModal } from "../components/ReopenJobModal.jsx";
-import { applicationBaseMatch, mergeApplicationMatch } from "../utils/applicationMatch.js";
+import { answerAdjustment, applicationBaseMatch, mergeApplicationMatch, projectedMatch } from "../utils/applicationMatch.js";
 
 const stageAccents = [
   "var(--accent)",
@@ -523,6 +523,10 @@ export function CompanyApplicationsPage() {
 
 function CandidateCard({ item, score, columns, onDragStart, onOpen, onAnswers, onMove }) {
   const selectedStage = applicationStage(item, columns);
+  const pendingAnswers = item.screening_answer_adjustments != null;
+  const adjustment = pendingAnswers ? answerAdjustment(item.screening_answers, item.screening_answer_adjustments) : Number(item.screening_adjustment || 0);
+  const base = applicationBaseMatch(item);
+  const displayScore = base == null ? score : projectedMatch(base, adjustment);
   return (
     <article
       draggable
@@ -546,20 +550,20 @@ function CandidateCard({ item, score, columns, onDragStart, onOpen, onAnswers, o
           </p>
         </div>
       </div>
-      {score != null ? (
+      {displayScore != null ? (
         <div className="mt-3">
           <div className="flex items-center justify-between text-xs font-semibold">
             <span className="flex items-center gap-1 text-[var(--muted)]">
               <Sparkles size={13} />
-              {item.screening_adjustment ? "Compatibilidad ajustada" : "Compatibilidad"}
+              {pendingAnswers ? "Compatibilidad proyectada" : adjustment ? "Compatibilidad ajustada" : "Compatibilidad"}
             </span>
-            <span className="text-[var(--accent)]">{Math.round(score)}%</span>
+            <span className="text-[var(--accent)]">{Math.round(displayScore)}%</span>
           </div>
-          {item.screening_adjustment ? <p className="mt-1 text-[10px] text-[var(--muted)]">Base {Math.round(item.base_match_percentage ?? score)}% · preguntas {item.screening_adjustment > 0 ? "+" : ""}{item.screening_adjustment} pts</p> : null}
+          {adjustment || pendingAnswers ? <p className="mt-1 text-xs text-[var(--muted)]">{base == null ? "Base por calcular" : `Base ${Math.round(base)}%`} · preguntas {adjustment > 0 ? "+" : ""}{adjustment} pts{pendingAnswers ? " · Sin guardar" : ""}</p> : null}
           <div className="mt-1.5 h-1.5 rounded-full bg-[var(--line)]">
             <div
               className="h-full rounded-full bg-[var(--accent)]"
-              style={{ width: `${score}%` }}
+              style={{ width: `${displayScore}%` }}
             />
           </div>
         </div>

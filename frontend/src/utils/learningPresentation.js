@@ -2,6 +2,7 @@ export const learningLevels = { beginner: "Inicial", intermediate: "Intermedio",
 export const certificateCosts = { free: "Certificado sin coste adicional", paid: "Certificado o examen de pago", conditional: "Certificación sujeta a condiciones", none: "Sin certificación anunciada", unknown: "Certificado por confirmar" };
 export const enrollmentStatuses = { unknown: "Inscripción por confirmar", open: "Inscripción anunciada", closed: "Inscripciones cerradas", ongoing: "Acceso continuo anunciado" };
 export const courseModalities = { virtual: "Virtual", onsite: "Presencial", hybrid: "Híbrida", distance: "A distancia", unknown: "Consultar modalidad" };
+export const learningCostLabel = (value) => ({ free: "Gratuito", paid: "De pago" })[value] || "Coste por confirmar";
 
 export function courseAvailability(resource, today = new Date().toISOString().slice(0, 10)) {
   const value = resource.availability || resource.details?.enrollment || {};

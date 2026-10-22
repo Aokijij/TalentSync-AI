@@ -33,13 +33,13 @@ export function LearningPage() {
   const [practiceOpen, setPracticeOpen] = useState(false), [draftWarning, setDraftWarning] = useState("");
   const [area, setArea] = useState(new URLSearchParams(location.search).has("search") ? "all" : "recommended"), [tab, setTab] = useState(["#que-aprender", "#radar-laboral"].includes(location.hash) ? "demand" : location.hash === "#mi-plan" ? "plan" : location.hash === "#resultados" ? "passport" : location.hash === "#cursos" ? "courses" : ["#retos", "#retos-sql"].includes(location.hash) ? "challenges" : "courses");
   useEffect(() => { const search = new URLSearchParams(location.search).get("search"); if (search) { setFilters({ query: search }); setArea("all"); setTab("courses"); setCoursePage(1); } }, [location.search]);
-  const [catalog, setCatalog] = useState(null), [plans, setPlans] = useState([]), [passport, setPassport] = useState(null);
+  const [catalogResult, setCatalogResult] = useState(null), [plans, setPlans] = useState([]), [passport, setPassport] = useState(null);
   const [catalogError, setCatalogError] = useState(""), [catalogLoading, setCatalogLoading] = useState(true), [reload, setReload] = useState(0);
   const [attempt, setAttempt] = useState(null), [answers, setAnswers] = useState({}), [step, setStep] = useState(0);
   const [error, setError] = useState(""), [message, setMessage] = useState(""), [busy, setBusy] = useState(false), [now, setNow] = useState(Date.now());
   async function refresh() { const results = await Promise.allSettled([api.get("/learning/plans").then(({ data }) => setPlans(data)), api.get("/learning/passport").then(({ data }) => setPassport(data))]); const failed = results.find((row) => row.status === "rejected" && row.reason.code !== "ERR_CANCELED"); setError(failed ? getApiErrorMessage(failed.reason, "No pudimos actualizar tu plan o tus resultados. Vuelve a intentarlo.") : ""); }
   useEffect(() => { refresh(); }, []);
-  useEffect(() => { const controller = new AbortController(); setCatalogLoading(true); setCatalogError(""); api.get("/learning/catalog", { params: { area }, signal: controller.signal, __skipRetry: true }).then(({ data }) => { if (!controller.signal.aborted) setCatalog(data); }).catch((failure) => { if (!controller.signal.aborted) setCatalogError(getApiErrorMessage(failure, "No pudimos cargar los retos y cursos de esta área.")); }).finally(() => { if (!controller.signal.aborted) setCatalogLoading(false); }); return () => controller.abort(); }, [area, reload]);
+  useEffect(() => { const controller = new AbortController(); setCatalogLoading(true); setCatalogError(""); api.get("/learning/catalog", { params: { area }, signal: controller.signal, __skipRetry: true }).then(({ data }) => { if (!controller.signal.aborted) setCatalogResult({ area, data }); }).catch((failure) => { if (!controller.signal.aborted) setCatalogError(getApiErrorMessage(failure, "No pudimos cargar los retos y cursos de esta área.")); }).finally(() => { if (!controller.signal.aborted) setCatalogLoading(false); }); return () => controller.abort(); }, [area, reload]);
   useEffect(() => { if (attempt?.status !== "active") return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [attempt]);
   useEffect(() => {
     if (practiceOpen || tab !== "challenges" || !returnToChallenge.current) return;
@@ -90,6 +90,7 @@ export function LearningPage() {
       await refresh(); setReload((value) => value + 1);
     });
   }
+  const catalog = catalogResult?.area === area && !catalogLoading && !catalogError ? catalogResult.data : null;
   const visibleResources = catalog ? filterResources(catalog.resources.filter((resource) => !plans.some((plan) => plan.resource?.id === resource.id)), filters) : [];
   const coursePages = Math.max(1, Math.ceil(visibleResources.length / 12)), safeCoursePage = Math.min(coursePage, coursePages);
   if (practiceOpen && attempt?.status === "active") return <ChallengeWorkspace attempt={attempt} answers={answers} step={step} onStep={setStep} onAnswer={choose} seconds={seconds} busy={busy} error={error} warning={draftWarning} onExit={() => exitPractice()} onSubmit={submitPractice} />;
@@ -102,7 +103,7 @@ export function LearningPage() {
     {error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error} <button className="underline" onClick={refresh}>Reintentar</button></p>}{message && <div role="status" className="learning-published"><p>{message}</p><button className="button-secondary" onClick={() => { setTab("plan"); setMessage(""); }}>Abrir Mi plan →</button></div>}
     <nav aria-label="Secciones de desarrollo" className="learning-navigation">{[["challenges", "Retos", Target], ["courses", "Cursos y prácticas", BookOpen], ["demand", "Radar laboral", TrendingUp], ["plan", "Mi plan", Route], ["passport", "Mis resultados", BadgeCheck]].map(([key, label, Icon]) => <button aria-pressed={tab === key} key={key} onClick={() => { setTab(key); setMessage(""); }}><Icon size={19} /><span>{label}</span>{key === "plan" && <small>{plans.length}</small>}</button>)}</nav>
     {tab === "demand" && <section className="space-y-4"><MarketRadar /></section>}
-    {["challenges", "courses"].includes(tab) && <LearningAreaPicker areas={catalog?.areas} value={area} onChange={chooseArea} />}
+    {["challenges", "courses"].includes(tab) && <LearningAreaPicker areas={catalogResult?.data?.areas} value={area} onChange={chooseArea} />}
     {["challenges", "courses"].includes(tab) && catalogLoading && <p role="status" className="surface-card p-4">Cargando retos y cursos…</p>}
     {["challenges", "courses"].includes(tab) && catalogError && <p role="alert" className="surface-card p-4 text-[var(--error)]">{catalogError} <button className="underline" onClick={() => setReload((value) => value + 1)}>Reintentar</button></p>}
     {tab === "challenges" && catalog && <ChallengeCatalog assessments={catalog.assessments} areas={catalog.areas} busy={busy} attempt={attempt} onStart={(id) => act(() => start(id))} onReview={(id) => { const result = passport?.assessments.find((row) => row.id === id); if (result) { openResult(result); } else { setTab("passport"); } }} onExplore={(skill) => { setFilters({ query: skill }); setArea("all"); setCoursePage(1); setTab("courses"); }} />}

@@ -11,18 +11,19 @@ export function useDebouncedValue(value, delay = 300) {
 }
 
 export function usePagedList(endpoint, params, refresh = 0) {
-  const [data, setData] = useState(null), [loading, setLoading] = useState(true), [error, setError] = useState("");
+  const [result, setResult] = useState(null);
   const [retry, setRetry] = useState(0);
   const encoded = JSON.stringify(params);
+  const key = JSON.stringify([endpoint, encoded, refresh, retry]);
   useEffect(() => {
-    let active = true;
-    setLoading(true); setError("");
-    api.get(endpoint, { params: JSON.parse(encoded) }).then(({ data: result }) => {
-      if (active) setData(result);
+    const controller = new AbortController();
+    api.get(endpoint, { params: JSON.parse(encoded), signal: controller.signal }).then(({ data }) => {
+      if (!controller.signal.aborted) setResult({ key, data, error: "" });
     }).catch((failure) => {
-      if (active) setError(getApiErrorMessage(failure));
-    }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [endpoint, encoded, refresh, retry]);
-  return { data, loading, error, reload: () => setRetry((value) => value + 1) };
+      if (!controller.signal.aborted) setResult({ key, data: null, error: getApiErrorMessage(failure) });
+    });
+    return () => controller.abort();
+  }, [endpoint, encoded, key]);
+  const current = result?.key === key ? result : null;
+  return { data: current?.data ?? null, loading: !current, error: current?.error || "", reload: () => setRetry((value) => value + 1) };
 }

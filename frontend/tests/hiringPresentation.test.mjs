@@ -28,6 +28,7 @@ const ProcessStages = await component("ProcessStages", "ProcessStages");
 const EducationRequirementsEditor = await component("EducationRequirementsEditor", "EducationRequirementsEditor");
 const AcademicMatchDetails = await component("AcademicMatchDetails", "AcademicMatchDetails");
 const LearningResourceCard = await component("LearningResourceCard", "LearningResourceCard");
+const Pagination = await component("Pagination", "Pagination");
 const ExperienceFields = await component("ExperienceFields", "ExperienceFields");
 const TextItemsEditor = await component("TextItemsEditor", "TextItemsEditor");
 const ProfileCredentials = await component("ProfileCredentials", "ProfileCredentials");
@@ -37,6 +38,21 @@ const CredentialMatchDetails = await component("CredentialSummary", "CredentialM
 const CertificationFields = await component("CertificationFields", "CertificationFields");
 const ProfileIdentity = await component("ProfileIdentity", "ProfileIdentity");
 const DatePicker = await component("DatePicker", "DatePicker");
+
+test("unknown course costs are explicit in both card presentations and missing skills do not crash the list", () => {
+  for (const compact of [true, false]) {
+    const html = renderToStaticMarkup(createElement(LearningResourceCard, { resource: { id: "unknown", title: "Formación por consultar", provider: "Biblioteca" }, compact }));
+    assert.match(html, /Coste por confirmar/);
+    assert.doesNotMatch(html, /Gratuito/);
+  }
+});
+
+test("shared pagination derives a coherent range and pages from the total and cannot submit an enclosing form", () => {
+  const html = renderToStaticMarkup(createElement(Pagination, { page: 9, pages: 100, total: 13, pageSize: 12, label: "Páginas", onChange() {} }));
+  assert.match(html, /13–13 de 13/);
+  assert.match(html, /Página 2 de 2/);
+  assert.equal((html.match(/type="button"/g) || []).length, 2);
+});
 
 test("training records expose a selectable type and preserve older untyped entries", () => {
   const edit = renderToStaticMarkup(createElement(CertificationFields, { items: [{ name: "Gestión", kind: "diploma" }], editing: true, onChange() {} }));

@@ -37,7 +37,7 @@ El frontend se publica en Cloudflare Pages. La API, PostgreSQL y el almacenamien
 
 - Crear un perfil público con logo, portada, propósito, cultura y beneficios.
 - Publicar vacantes con modalidad, contrato, ubicación, habilidades, idiomas y preguntas opcionales de preselección. Las opciones se valoran individualmente y las respuestas abiertas se revisan de forma manual.
-- Buscar talento por vacante, nombre, profesión o habilidad; la lista de perfiles para invitar muestra compatibilidades desde 80%.
+- Buscar talento por vacante, nombre, profesión o habilidad; la lista de perfiles para invitar permite elegir compatibilidades desde 40%.
 - Revisar candidatos en una tabla paginada y comparar únicamente los cinco perfiles y habilidades más relevantes.
 - Invitar candidatos compatibles y revisar tanto el porcentaje base como el ajuste privado de preselección.
 - Preparar cambios de etapa y confirmarlos antes de enviar notificaciones.
@@ -328,7 +328,7 @@ npm run lint
 npm run build
 ```
 
-Las pruebas de integración usan SQLite aislado. `scripts/local.py rehearse` ejecuta la validación completa, conexiones SMTP TLS contra un sumidero local, concurrencia de ocho candidatos y un ensayo de migraciones, aceptación y restauración contra PostgreSQL 18 aislado en loopback. Los informes privados están en `.local/verification/` y `.local/staging/verification.json`. La concurrencia mide ASGI dentro del proceso con datos sintéticos; no representa una capacidad de producción. La revisión de navegador es manual asistida, sin suite persistente de Cypress/Playwright. No se conecta a producción ni se entrega correo externo.
+Las pruebas de integración usan SQLite aislado. `scripts/local.py rehearse` ejecuta la validación completa, conexiones SMTP TLS contra un sumidero local, concurrencia de ocho candidatos y un ensayo de migraciones, aceptación y restauración contra PostgreSQL 18 aislado en loopback. Los informes privados están en `.local/verification/` y `.local/staging/verification.json`. La concurrencia mide ASGI dentro del proceso con datos sintéticos; no representa una capacidad de producción. Existe una suite persistente de Playwright para roles, temas y tamaños de pantalla; compilar sus componentes o listar los casos no equivale a ejecutarla. La ejecución de navegador y la aprobación de capturas de los últimos cambios siguen pendientes. No se conecta a producción ni se entrega correo externo.
 
 El workflow `.github/workflows/ci.yml` ejecuta pruebas, lint, auditorías, migraciones y una construcción Docker. CI valida el commit, pero no despliega automáticamente.
 

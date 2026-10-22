@@ -118,6 +118,7 @@ def ranked_candidates(
                 has_applied=has_applied,
                 has_pending_invitation=user.id in invitations,
                 application_id=application.id if application else None,
+                version=application.version if application else None,
                 screening_answers=application.screening_answers if application and not hidden else [],
                 screening_adjustment=(application.screening_adjustment or 0)
                 if application

@@ -32,6 +32,8 @@ import {
 } from "../constants/colombianCities.js";
 import { isWithinDays } from "../utils/dates.js";
 import { cleanExternalLocation } from "../utils/externalPortal.js";
+import { TALENT_MINIMUM_OPTIONS, talentMinimum } from "../utils/talentMinimum.js";
+import { pageNumber, pageItems, paginationState } from "../utils/pagination.js";
 
 const defaultFilters = {
   modality: "",
@@ -73,12 +75,13 @@ function JobsWorkspace({ user }) {
     setMatchConfidence(Object.fromEntries(items.map((item) => [item.job_id, item.data_confidence_percentage ?? 100])));
   }, []);
   const { refreshing: refreshingMatches, error: matchLoadError, retry: retryMatches } = useRecommendationUpdates(user?.role === "candidate" ? user.id : null, updateMatches);
-  const [minCompatibility, setMinCompatibility] = useState(() => Number(searchParams.get("match") || 0));
+  const [minCompatibility, setMinCompatibility] = useState(() => talentMinimum(searchParams.get("match")));
+  const [ignoreMatchFilter, setIgnoreMatchFilter] = useState(false);
   const [query, setQuery] = useState(() => searchParams.get("q") || "");
   const [filters, setFilters] = useState(() => Object.fromEntries(
     Object.keys(defaultFilters).map((key) => [key, searchParams.get(key) ?? defaultFilters[key]]),
   ));
-  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get("page") || 1)));
+  const [page, setPage] = useState(() => pageNumber(searchParams.get("page")));
   const [pageSize, setPageSize] = useState(() => [9, 12, 24].includes(Number(searchParams.get("size"))) ? Number(searchParams.get("size")) : 9);
   const [showFilters, setShowFilters] = useState(() => searchParams.get("filters") === "1");
 
@@ -89,9 +92,8 @@ function JobsWorkspace({ user }) {
     Object.entries(filters).forEach(([key, value]) => {
       if (value && value !== defaultFilters[key]) next.set(key, value);
     });
-    if (filters.sort !== defaultFilters.sort) next.set("sort", filters.sort);
     if (onlyMySkills) next.set("skills", "1");
-    if (minCompatibility) next.set("match", String(minCompatibility));
+    if (user?.role === "candidate" && minCompatibility > 40) next.set("match", String(minCompatibility));
     if (page > 1) next.set("page", String(page));
     if (pageSize !== 9) next.set("size", String(pageSize));
     if (showFilters) next.set("filters", "1");
@@ -121,9 +123,7 @@ function JobsWorkspace({ user }) {
     setMatchesLoading(true); setMatchesError("");
     getRecommendations(user.id).then(({ data }) => {
       if (!active) return;
-      setMatches(Object.fromEntries(data.map((item) => [item.job_id, item.match_percentage])));
-      setMatchDetails(Object.fromEntries(data.map((item) => [item.job_id, item])));
-      setMatchConfidence(Object.fromEntries(data.map((item) => [item.job_id, item.data_confidence_percentage ?? 100])));
+      updateMatches(data); setIgnoreMatchFilter(false);
     }).catch(() => { if (active) setMatchesError("Las vacantes están disponibles, pero no pudimos calcular tu compatibilidad."); })
       .finally(() => { if (active) setMatchesLoading(false); });
     return () => { active = false; };
@@ -156,7 +156,7 @@ function JobsWorkspace({ user }) {
     filters.published_days,
     filters.source_kind,
     onlyMySkills,
-    minCompatibility > 0,
+    minCompatibility > 40,
   ].filter(Boolean).length;
 
   const filteredJobs = useMemo(() => {
@@ -183,7 +183,7 @@ function JobsWorkspace({ user }) {
           (!filters.max_salary || (job.salary != null && Number(job.salary) <= Number(filters.max_salary))) &&
           isWithinDays(job.created_at, Number(filters.published_days || 0)) &&
           (!onlyMySkills || hasCandidateSkill) &&
-          (matches[job.id] ?? 0) >= minCompatibility
+          (user?.role !== "candidate" || ignoreMatchFilter || Number.isFinite(matches[job.id]) && matches[job.id] >= minCompatibility)
         );
       })
       .sort((first, second) => {
@@ -202,13 +202,11 @@ function JobsWorkspace({ user }) {
     profileSkills,
     onlyMySkills,
     minCompatibility,
+    ignoreMatchFilter, user?.role,
   ]);
 
-  const pages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
-  const visibleJobs = filteredJobs.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
-  );
+  const { pages, page: safePage } = paginationState(filteredJobs.length, page, pageSize);
+  const visibleJobs = pageItems(filteredJobs, page, pageSize);
   const setFilter = (key, value) => {
     setFilters((current) => ({
       ...current,
@@ -219,8 +217,8 @@ function JobsWorkspace({ user }) {
   };
 
   useEffect(() => {
-    if (page > pages) setPage(pages);
-  }, [page, pages]);
+    if (!jobsLoading && !matchesLoading && !jobsError && !matchesError && page !== safePage) setPage(safePage);
+  }, [page, safePage, jobsLoading, matchesLoading, jobsError, matchesError]);
 
   return (
     <div className="space-y-6">
@@ -267,8 +265,8 @@ function JobsWorkspace({ user }) {
               <SalaryRange minimum={Number(filters.min_salary || 0)} maximum={Number(filters.max_salary || salaryCeiling)} ceiling={salaryCeiling} onMinimum={(value) => setFilter("min_salary", value ? String(value) : "")} onMaximum={(value) => setFilter("max_salary", value >= salaryCeiling ? "" : String(value))} />
             </div>
             <div className="vacancy-filter-footer">
-              {user?.role === "candidate" ? <div className="vacancy-match-filters"><label className="vacancy-skills-toggle"><input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={onlyMySkills} onChange={(event) => { setOnlyMySkills(event.target.checked); setPage(1); }} />Coincide con mis habilidades</label><Filter label="Compatibilidad mínima"><select className="field-control" value={minCompatibility} onChange={(event) => { setMinCompatibility(Number(event.target.value)); setPage(1); }}>{[0, 40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}</select></Filter></div> : null}
-              <div className="vacancy-sort-filters"><Filter label="Ordenar por"><select className="field-control" value={filters.sort} onChange={(event) => setFilter("sort", event.target.value)}>{user?.role === "candidate" ? <option value="match">Mayor compatibilidad</option> : null}<option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="salary_desc">Mayor sueldo</option><option value="salary_asc">Menor sueldo</option></select></Filter><button type="button" className="filter-reset-button" onClick={() => { setFilters({ ...defaultFilters, sort: user?.role === "candidate" ? "match" : "newest" }); setQuery(""); setOnlyMySkills(false); setMinCompatibility(0); setPage(1); }}><RotateCcw size={15} />Restablecer</button></div>
+              {user?.role === "candidate" ? <div className="vacancy-match-filters"><label className="vacancy-skills-toggle"><input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={onlyMySkills} onChange={(event) => { setOnlyMySkills(event.target.checked); setPage(1); }} />Coincide con mis habilidades</label><Filter label="Compatibilidad mínima"><select className="field-control" value={minCompatibility} onChange={(event) => { setMinCompatibility(talentMinimum(event.target.value)); setIgnoreMatchFilter(false); setPage(1); }}>{TALENT_MINIMUM_OPTIONS.map((value) => <option key={value} value={value}>{value}%</option>)}</select></Filter></div> : null}
+              <div className="vacancy-sort-filters"><Filter label="Ordenar por"><select className="field-control" value={filters.sort} onChange={(event) => setFilter("sort", event.target.value)}>{user?.role === "candidate" ? <option value="match">Mayor compatibilidad</option> : null}<option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="salary_desc">Mayor sueldo</option><option value="salary_asc">Menor sueldo</option></select></Filter><button type="button" className="filter-reset-button" onClick={() => { setFilters({ ...defaultFilters, sort: user?.role === "candidate" ? "match" : "newest" }); setQuery(""); setOnlyMySkills(false); setMinCompatibility(40); setIgnoreMatchFilter(false); setPage(1); }}><RotateCcw size={15} />Restablecer</button></div>
             </div>
           </div>
         ) : activeFilterCount ? <button type="button" className="mt-4 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setShowFilters(true)}>{activeFilterCount} filtro{activeFilterCount === 1 ? " activo" : "s activos"} · Ver o cambiar</button> : null}
@@ -278,9 +276,10 @@ function JobsWorkspace({ user }) {
 
       {jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Buscando vacantes disponibles…</p>}
       {jobsError && <p role="alert" className="surface-card p-4 text-sm">{jobsError} <button type="button" className="underline" onClick={() => setCatalogRetry((value) => value + 1)}>Reintentar</button></p>}
-      {matchesLoading && !jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Ya puedes explorar las ofertas. Estamos calculando tu compatibilidad…</p>}
-      {matchesError && <p role="alert" className="surface-card p-4 text-sm">{matchesError} <button type="button" className="underline" onClick={() => setMatchRetry((value) => value + 1)}>Reintentar compatibilidad</button>{minCompatibility > 0 && <button type="button" className="ml-3 underline" onClick={() => { setMinCompatibility(0); setPage(1); }}>Ver ofertas sin filtrar por compatibilidad</button>}</p>}
+      {matchesLoading && !jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Calculando tu compatibilidad para mostrar las vacantes que cumplen el mínimo…</p>}
+      {matchesError && <p role="alert" className="surface-card p-4 text-sm">{matchesError} <button type="button" className="underline" onClick={() => setMatchRetry((value) => value + 1)}>Reintentar compatibilidad</button>{minCompatibility > 0 && <button type="button" className="ml-3 underline" onClick={() => { setIgnoreMatchFilter(true); setPage(1); }}>Ver ofertas sin filtrar por compatibilidad</button>}</p>}
       {user?.role === "candidate" && <JobComparison selection={comparison} jobs={jobs} matches={matchDetails} loading={jobsLoading} returnTo={`${location.pathname}${location.search}`} />}
+      {ignoreMatchFilter && <p role="status" className="ui-inline-notice">Mostrando ofertas sin aplicar el mínimo mientras no esté disponible el cálculo. Pulsa Reintentar compatibilidad para recuperarlo.</p>}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleJobs.map((job) => (
           <VacancyCard
@@ -309,8 +308,8 @@ function JobsWorkspace({ user }) {
           aria-label="Paginación de vacantes"
         >
           <p className="text-sm text-[var(--muted)]">
-            Mostrando {(page - 1) * pageSize + 1}–
-            {Math.min(page * pageSize, filteredJobs.length)} de{" "}
+            Mostrando {(safePage - 1) * pageSize + 1}–
+            {Math.min(safePage * pageSize, filteredJobs.length)} de{" "}
             {filteredJobs.length}
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -332,20 +331,20 @@ function JobsWorkspace({ user }) {
             <button
               className="button-secondary button-sm"
               type="button"
-              disabled={page === 1}
-              onClick={() => setPage((current) => current - 1)}
+              disabled={safePage === 1}
+              onClick={() => setPage(safePage - 1)}
             >
               <ChevronLeft size={15} />
               Anterior
             </button>
             <span className="px-2 text-sm font-bold">
-              {page} / {pages}
+              {safePage} / {pages}
             </span>
             <button
               className="button-secondary button-sm"
               type="button"
-              disabled={page === pages}
-              onClick={() => setPage((current) => current + 1)}
+              disabled={safePage === pages}
+              onClick={() => setPage(safePage + 1)}
             >
               Siguiente
               <ChevronRight size={15} />

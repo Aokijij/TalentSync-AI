@@ -8,6 +8,12 @@ const resources = [
   { id: "external", title: "Diseño accesible", provider: "Academia", skills: ["contraste"], kind: "course", cost: "paid", url: "https://example.com/course" },
   { id: "unknown", title: "Comunicación", provider: "Biblioteca", skills: [], kind: "workshop", cost: "unknown", url: "https://example.com/workshop" },
 ];
+
+test("a course with an unknown price is never listed as free", () => {
+  const rows = [...resources, { id: "missing-cost", title: "Coste pendiente", skills: [] }];
+  assert.deepEqual(filterResources(rows, { cost: "free" }).map((row) => row.id), ["local"]);
+  assert.deepEqual(filterResources(rows, { cost: "unknown" }).map((row) => row.id), ["unknown", "missing-cost"]);
+});
 test("search ignores surrounding spaces and a whitespace-only search leaves the catalog visible", () => {
   assert.deepEqual(filterResources(resources, { query: "  conciliacion  " }).map((row) => row.id), ["local"]);
   assert.equal(filterResources(resources, { query: "   " }).length, resources.length);

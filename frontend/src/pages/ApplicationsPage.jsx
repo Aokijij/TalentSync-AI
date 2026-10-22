@@ -14,6 +14,9 @@ import { PageHeader } from "../components/PageHeader.jsx";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import { InterviewAgenda } from "../components/InterviewAgenda.jsx";
 import { activeInterview, interviewDateParts, processDate } from "../utils/interviewAgenda.js";
+import { isOpenProcess } from "../utils/dashboardData.js";
+import { pageItems, paginationState } from "../utils/pagination.js";
+import { Pagination } from "../components/Pagination.jsx";
 
 const statusLabel = {
   submitted: "Postulación recibida",
@@ -45,7 +48,6 @@ const steps = [
   { label: "Resultado", icon: Check },
 ];
 
-const finalStatuses = ["rejected", "accepted", "hired"];
 const interviewStatuses = ["technical_interview", "psychometric_test"];
 
 export function ApplicationsPage() {
@@ -54,6 +56,7 @@ export function ApplicationsPage() {
   const [loading, setLoading] = useState(true), [loadError, setLoadError] = useState(""), [retry, setRetry] = useState(0);
   const [jobs, setJobs] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [pendingWithdrawal, setPendingWithdrawal] = useState(null);
   const focusedId = searchParams.get("focus");
 
@@ -78,6 +81,13 @@ export function ApplicationsPage() {
 
   useEffect(() => {
     if (!focusedId || !applications.length) return;
+    setFilter("all");
+    const index = applications.findIndex((item) => String(item.id) === focusedId);
+    if (index >= 0) setPage(Math.floor(index / 8) + 1);
+  }, [applications, focusedId]);
+
+  useEffect(() => {
+    if (!focusedId || !applications.length) return;
     const timer = window.setTimeout(
       () =>
         document
@@ -86,26 +96,27 @@ export function ApplicationsPage() {
       80,
     );
     return () => window.clearTimeout(timer);
-  }, [applications, focusedId]);
+  }, [applications, focusedId, page]);
 
   const jobsById = useMemo(
     () => new Map(jobs.map((job) => [job.id, job])),
     [jobs],
   );
   const activeCount = applications.filter(
-    (item) => !finalStatuses.includes(item.status),
+    isOpenProcess,
   ).length;
   const visibleApplications = applications.filter(
     (item) =>
       filter === "all" ||
       (filter === "active"
-        ? !finalStatuses.includes(item.status)
+        ? isOpenProcess(item)
         : filter === "interview"
-          ? interviewStatuses.includes(item.status)
+          ? isOpenProcess(item) && interviewStatuses.includes(item.status)
           : filter === "finalized"
-            ? finalStatuses.includes(item.status)
+            ? !isOpenProcess(item)
             : true),
   );
+  const paging = paginationState(visibleApplications.length, page, 8);
 
   async function withdraw(applicationId) {
     await api.post(`/workflow/applications/${applicationId}/withdraw`);
@@ -146,7 +157,7 @@ export function ApplicationsPage() {
           <select
             className="field-control mt-1 sm:w-56"
             value={filter}
-            onChange={(event) => setFilter(event.target.value)}
+            onChange={(event) => { setFilter(event.target.value); setPage(1); }}
           >
             <option value="all">Todos</option>
             <option value="active">En curso</option>
@@ -157,10 +168,12 @@ export function ApplicationsPage() {
       </section>
 
       <section className="space-y-4">
-        {visibleApplications.map((application) => {
+        {pageItems(visibleApplications, page, 8).map((application) => {
           const job = jobsById.get(application.job_id);
-          const currentIndex = progressByStatus[application.status] ?? 0;
-          const rejected = application.status === "rejected";
+          const closed = !isOpenProcess(application);
+          const currentIndex = closed ? 3 : progressByStatus[application.status] ?? 0;
+          const rejected = application.status === "rejected" || !!application.released_at;
+          const withdrawn = application.resolution_reason === "candidate_withdrawn";
           const selected = ["accepted", "hired"].includes(application.status);
           const anotherSelected =
             application.resolution_reason === "another_candidate_selected";
@@ -194,7 +207,7 @@ export function ApplicationsPage() {
                 >
                   {rejected ? <XCircle size={16} /> : <Clock3 size={16} />}Etapa
                   actual:{" "}
-                  {anotherSelected
+                  {withdrawn ? "Retirada por ti" : application.released_at ? "Proceso cerrado" : anotherSelected
                     ? "Finalizada: se seleccionó a otra persona"
                     : statusLabel[application.status] || "En revisión"}
                 </span>
@@ -225,7 +238,7 @@ export function ApplicationsPage() {
                       <span
                         className={`mt-2 text-[11px] font-bold sm:text-xs ${reached ? "text-[var(--ink-strong)]" : "text-[var(--muted)]"}`}
                       >
-                        {rejected && index === 3
+                        {withdrawn && index === 3 ? "Retirada" : rejected && index === 3
                           ? "No seleccionado"
                           : selected && index === 3
                             ? "Seleccionado"
@@ -247,7 +260,7 @@ export function ApplicationsPage() {
                     </p>
                   ) : (
                     <p className="text-sm text-[var(--muted)]">
-                      {anotherSelected
+                      {withdrawn ? "Retiraste esta postulación. El historial se conserva." : application.released_at ? "Este proceso ya está cerrado. Consulta el motivo y los mensajes en el seguimiento." : anotherSelected
                         ? "La empresa cubrió esta vacante con otra persona. Esta postulación ya finalizó."
                         : selected
                           ? "Fuiste seleccionado. La empresa se pondrá en contacto contigo para continuar."
@@ -255,7 +268,7 @@ export function ApplicationsPage() {
                     </p>
                   )}
                 </div>
-                {["submitted", "seen"].includes(application.status) ? (
+                {isOpenProcess(application) && ["submitted", "seen"].includes(application.status) ? (
                   <button
                     className="text-sm font-semibold text-[var(--error)] hover:underline"
                     type="button"
@@ -277,6 +290,7 @@ export function ApplicationsPage() {
           </div>
         ) : null}
       </section>
+      {!!visibleApplications.length && <Pagination page={paging.page} total={visibleApplications.length} pageSize={8} onChange={setPage} label="Páginas de postulaciones" busy={loading} />}
       <ConfirmModal
         open={Boolean(pendingWithdrawal)}
         title="Retirar postulación"

@@ -13,7 +13,7 @@ import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
-import { matchingSkills } from "../utils/talentSearch.js";
+import { matchingSkills, talentInvitation } from "../utils/talentSearch.js";
 import { languageLevelLabel } from "../constants/languages.js";
 import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
 
@@ -149,7 +149,7 @@ export function CompanyTalentPage() {
             <>
               <p className="px-1 text-sm text-[var(--muted)]">{total} {total === 1 ? "persona" : "personas"} {audience === "new" ? "para invitar" : total === 1 ? "que ya se postuló" : "que ya se postularon"}</p>
               <div className="talent-results-grid">
-                {results.map((candidate) => <TalentCard key={candidate.user_id} candidate={candidate} job={selectedJob} sending={sending} returnTo={`${location.pathname}${location.search}`} onInvite={() => setInvitation(candidate)} onReview={() => setReviewApplication(candidate)} />)}
+                {results.map((candidate) => <TalentCard key={candidate.user_id} candidate={candidate} job={selectedJob} sending={sending} returnTo={`${location.pathname}${location.search}`} onInvite={() => setInvitation(candidate)} onReview={() => setReviewApplication({ ...candidate, job_id: selectedJob.id })} />)}
               </div>
               <Pagination page={page} pages={Math.max(1, Math.ceil(total / pageSize))} total={total} pageSize={pageSize} onChange={setPage} label="Páginas de candidatos" />
               {!results.length ? <div className="surface-card !py-10 text-center"><UsersRound className="mx-auto text-[var(--accent)]" size={30} /><h3 className="mt-3 font-bold">{audience === "new" ? "No hay personas para invitar con estos filtros" : "No hay postulaciones con estos filtros"}</h3><p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">{audience === "new" ? "Prueba otra búsqueda o revisa a las personas que ya se postularon. Puedes ampliar la búsqueda hasta un mínimo del 40% de compatibilidad." : "Limpia el texto de búsqueda para ver todas las postulaciones."}</p><button type="button" className="button-secondary mt-4" onClick={() => { setQuery(""); setMinMatch(40); setPage(1); }}>Limpiar filtros</button></div> : null}
@@ -167,6 +167,7 @@ export function CompanyTalentPage() {
 
 function TalentCard({ candidate, job, sending, returnTo, onInvite, onReview }) {
   const skills = matchingSkills(candidate.skills, job.skills);
+  const invitation = talentInvitation(candidate);
   const initials = candidate.name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("");
   return (
     <article className="surface-card talent-card">
@@ -191,8 +192,8 @@ function TalentCard({ candidate, job, sending, returnTo, onInvite, onReview }) {
         <div><p className="text-xs font-semibold text-[var(--muted)]">Habilidades que coinciden</p><div className="mt-2 flex flex-wrap gap-2">{skills.length ? skills.slice(0, 4).map((skill) => <span key={skill} className="inline-flex items-center gap-1 rounded-lg border border-[var(--line)] px-2 py-1 text-xs text-[var(--ink-strong)]"><Check size={12} className="text-[var(--success)]" />{skill}</span>) : <p className="text-xs text-[var(--muted)]">La coincidencia se basa en otros aspectos del perfil.</p>}{skills.length > 4 ? <span className="py-1 text-xs text-[var(--muted)]">+{skills.length - 4} más</span> : null}</div></div>
       </div>
       <div className="mt-auto border-t border-[var(--line)] pt-4">
-        {candidate.has_applied ? <div className="grid gap-2">{candidate.identity_hidden ? <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil anónimo</Link> : <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil del candidato <ArrowRight size={16} /></Link>}{candidate.screening_answers?.length ? <button type="button" className="button-outline w-full" onClick={onReview}>Ver respuestas y valorar</button> : null}</div> : <button type="button" className="button-primary w-full" disabled={candidate.has_pending_invitation || sending || candidate.match_percentage < 60 || candidate.location_fit?.invitation_allowed === false} onClick={onInvite}><Send size={16} />{candidate.has_pending_invitation ? "Invitación enviada" : "Invitar a postularse"}</button>}
-        <p className="mt-2 text-center text-xs text-[var(--muted)]">{candidate.identity_hidden && candidate.has_applied ? "La identidad se muestra cuando la persona se postula." : candidate.has_applied ? "Ya puedes consultar su perfil completo." : candidate.has_pending_invitation ? "Estamos esperando que decida si desea postularse." : "Le enviaremos la vacante. Tú decides después a quién contratar."}</p>
+        {candidate.has_applied ? <div className="grid gap-2">{candidate.identity_hidden ? <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil anónimo</Link> : <Link className="button-secondary w-full" state={{ returnTo }} to={`/empresa/candidatos/${candidate.user_id}?job=${job.id}`}>Ver perfil del candidato <ArrowRight size={16} /></Link>}{candidate.screening_answers?.length ? <button type="button" className="button-outline w-full" onClick={onReview}>Ver respuestas y valorar</button> : null}</div> : <button type="button" className="button-primary w-full" disabled={sending || !invitation.allowed} onClick={onInvite}><Send size={16} />{candidate.has_pending_invitation ? "Invitación enviada" : "Invitar a postularse"}</button>}
+        <p className="mt-2 text-center text-xs text-[var(--muted)]">{candidate.identity_hidden && candidate.has_applied ? "Perfil presentado sin identidad durante esta etapa del proceso." : candidate.has_applied ? "Ya puedes consultar su perfil completo." : invitation.reason}</p>
       </div>
     </article>
   );

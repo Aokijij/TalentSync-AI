@@ -294,16 +294,29 @@ def test_screening_questions_adjust_only_the_company_score(client):
         base + 5
     )
     assert company_view["screening_answers"][0]["question"].startswith("¿Has trabajado")
+    ranked = client.get(
+        f"/api/v1/recommendations/jobs/{job['id']}/candidates?audience=applied&minimum_match=0",
+        headers=owner,
+    )
+    assert ranked.status_code == 200, ranked.text
+    ranked_application = next(row for row in ranked.json() if row["application_id"] == company_view["id"])
+    assert ranked_application["version"] == company_view["version"]
     adjusted = client.put(
         f"/api/v1/applications/{company_view['id']}/status",
         headers=owner,
-        json={"screening_answer_adjustments": {"motivation": 3}},
+        json={"screening_answer_adjustments": {"motivation": 3}, "expected_version": ranked_application["version"]},
     )
     assert adjusted.status_code == 200, adjusted.text
     assert adjusted.json()["screening_adjustment"] == 8
     assert adjusted.json()["screening_answers"][0]["configured_adjustment"] == 5
     assert adjusted.json()["screening_answers"][0]["reviewer_adjustment"] == 0
     assert adjusted.json()["screening_answers"][1]["reviewer_adjustment"] == 3
+    stale = client.put(
+        f"/api/v1/applications/{company_view['id']}/status",
+        headers=owner,
+        json={"screening_answer_adjustments": {"motivation": 0}, "expected_version": ranked_application["version"]},
+    )
+    assert stale.status_code == 409
     invalid_choice = client.put(
         f"/api/v1/applications/{company_view['id']}/status",
         headers=owner,

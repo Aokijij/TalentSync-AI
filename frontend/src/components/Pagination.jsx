@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { paginationState } from "../utils/pagination.js";
 
-export function Pagination({ page, pages, total, pageSize, onChange, label }) {
-  const safePage = Math.max(1, Math.min(page, pages));
-  return <nav aria-label={label} className="directory-pagination"><p>{total ? (safePage - 1) * pageSize + 1 : 0}–{Math.min(safePage * pageSize, total)} de {total}</p><div><button className="button-secondary button-sm" disabled={safePage === 1} onClick={() => onChange(safePage - 1)}><ChevronLeft size={15} />Anterior</button><span aria-live="polite">Página {safePage} de {pages}</span><button className="button-secondary button-sm" disabled={safePage === pages} onClick={() => onChange(safePage + 1)}>Siguiente<ChevronRight size={15} /></button></div></nav>;
+export function Pagination({ page, total, pageSize, onChange, label, busy = false }) {
+  const state = paginationState(total, page, pageSize);
+  return <nav aria-label={label} className="directory-pagination"><p>{state.start}–{state.end} de {state.total}</p><div><button type="button" className="button-secondary button-sm" disabled={busy || state.page === 1} onClick={() => onChange(state.page - 1)}><ChevronLeft size={15} />Anterior</button><span aria-live="polite">Página {state.page} de {state.pages}</span><button type="button" className="button-secondary button-sm" disabled={busy || state.page === state.pages} onClick={() => onChange(state.page + 1)}>Siguiente<ChevronRight size={15} /></button></div></nav>;
 }
