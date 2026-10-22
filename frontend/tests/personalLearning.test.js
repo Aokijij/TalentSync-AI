@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { requiresAuthenticator } from "../src/utils/accountAccess.js";
-import { personalDetailLines } from "../src/utils/personalDetails.js";
+import { ageFromBirth, personalDetailLines } from "../src/utils/personalDetails.js";
 import { resumeExportPayload } from "../src/utils/resumeExport.js";
 import { challengeState } from "../src/utils/learningChallenges.js";
 
@@ -34,4 +34,14 @@ test("challenge continuation and retry cooldown use server UTC times without blo
   assert.equal(completed.retryAt, Date.parse("2026-10-22T11:55:00Z"));
   assert.equal(challengeState(row, now + 86400000).waiting, false);
   assert.equal(challengeState({}, now).label, "Empezar práctica");
+});
+
+test("age changes on the local birthday and the CV still uses the shared birth date", () => {
+  assert.equal(ageFromBirth("1999-12-13", new Date(2026, 11, 12, 23, 59)), 26);
+  assert.equal(ageFromBirth("1999-12-13", new Date(2026, 11, 13)), 27);
+  assert.equal(ageFromBirth("2000-02-29", new Date(2026, 1, 28)), 25);
+  assert.equal(ageFromBirth("2000-02-29", new Date(2026, 2, 1)), 26);
+  const profile = { birth_date: "1999-12-13", personal_visibility: { birth_date: true } };
+  assert.deepEqual(personalDetailLines(profile), [["Nacimiento", "13/12/1999"]]);
+  assert.equal(personalDetailLines(profile, true, true)[0][0], "Edad");
 });

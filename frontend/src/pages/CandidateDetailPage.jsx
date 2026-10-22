@@ -1,4 +1,4 @@
-import { SharedPersonalDetails } from "../components/SharedPersonalDetails.jsx";
+import { CandidateHero } from "../components/CandidateHero.jsx";
 import { TRAINING_TYPES } from "../constants/trainingTypes.js";
 import { ProfileCredentials } from "../components/ProfileCredentials.jsx";
 import { CandidateMatchExplanation } from "../components/CandidateMatchExplanation.jsx";
@@ -10,33 +10,19 @@ import { experiencePeriod, recentExperiences } from "../utils/experienceDates.js
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
-  Award,
   BookOpen,
   BriefcaseBusiness,
   CheckCircle2,
-  Mail,
-  MapPin,
-  Phone,
   Sparkles,
   ShieldCheck,
-  UserRound,
 } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { api, getApiErrorMessage } from "../api/client.js";
-import { AuthenticatedImage } from "../components/AuthenticatedImage.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
 
-const availabilityLabels = {
-  immediate: "Inmediata",
-  Immediate: "Inmediata",
-  Inmediata: "Inmediata",
-  two_weeks: "En 15 días",
-  one_month: "En 30 días",
-  negotiable: "Fecha acordada",
-};
 const modalityLabels = {
   remote: "Remoto",
   hybrid: "Híbrido",
@@ -88,7 +74,7 @@ export function CandidateDetailPage() {
       <div className="space-y-4">
         <button
           type="button"
-          onClick={() => navigate(location.state?.returnTo || (jobId ? `/empresa/talento?job=${jobId}&audience=applied&min=0` : "/empresa/talento"))}
+          onClick={() => navigate(location.state?.returnTo || (jobId ? `/empresa/talento?job=${jobId}&audience=applied&min=40` : "/empresa/talento"))}
           className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
         >
           <ArrowLeft size={16} />
@@ -107,52 +93,14 @@ export function CandidateDetailPage() {
       {candidate.submitted_version && <p className="surface-card p-4 text-sm text-[var(--muted)]">Estás viendo la versión del perfil enviada para esta vacante. Los cambios posteriores del perfil principal se mantienen separados. La compatibilidad base se calcula con el perfil actual registrado.</p>}
       <button
         type="button"
-        onClick={() => navigate(location.state?.returnTo || (jobId ? `/empresa/talento?job=${jobId}&audience=applied&min=0` : "/empresa/talento"))}
+        onClick={() => navigate(location.state?.returnTo || (jobId ? `/empresa/talento?job=${jobId}&audience=applied&min=40` : "/empresa/talento"))}
         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
       >
         <ArrowLeft size={16} />
         Volver a candidatos recomendados
       </button>
       {candidate.identity_hidden && <aside className="identity-note"><ShieldCheck size={22} /><div><h2 className="font-bold">Perfil profesional en selección ciega</h2><p>La vacante oculta nombre, contacto y organizaciones de origen. La identidad se comparte cuando la persona se postula a esta vacante.</p><Link to={`/procesos/${application?.id || ""}`} className="text-[var(--accent)]">Consultar el proceso →</Link></div></aside>}
-      <section className="candidate-overview surface-card overflow-hidden !p-0">
-        <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] via-cyan-300 to-[var(--success)]" />
-        <div className="p-6 sm:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-start gap-5">
-            <CandidatePhoto key={`${userId}:${candidate.photo_url}`} candidate={candidate} />
-            <div className="min-w-0">
-              <p className="section-kicker">Perfil de candidato</p>
-              <h1 className="mt-2 font-display text-3xl font-semibold text-[var(--ink-strong)]">
-                {candidate.name}
-              </h1>
-              <p className="mt-2 text-[var(--muted)]">
-                {candidate.profession || "Perfil profesional"}
-              </p>
-              {candidate.experience ? <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">{candidate.experience}</p> : null}
-              <div className="candidate-contact mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
-                {candidate.email && <span className="inline-flex items-center gap-1.5"><Mail size={15} />{candidate.email}</span>}
-                <SharedPersonalDetails profile={candidate} />
-                {candidate.phone && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Phone size={15} />
-                    {candidate.phone}
-                  </span>
-                )}
-                {candidate.location && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <MapPin size={15} />
-                    {candidate.location}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1.5">
-                  <Award size={15} />
-                  {availabilityLabels[candidate.availability] ||
-                    candidate.availability ||
-                    "Disponibilidad por definir"}
-                </span>
-              </div>
-            </div>
-          </div>
+      <CandidateHero candidate={candidate}>
           {match ? (
             <div className="w-full rounded-[var(--radius-xl)] border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-4 lg:w-72">
               <p className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--ink-strong)]">
@@ -164,8 +112,8 @@ export function CandidateDetailPage() {
               {application?.screening_answers?.length ? <button type="button" className="button-outline mt-3 w-full" onClick={() => setShowAnswers(true)}>Ver respuestas y valorar</button> : null}
             </div>
           ) : null}
-        </div></div>
-      </section>
+      </CandidateHero>
+      {candidate.experience && <section className="profile-section candidate-profile-summary"><h2>Resumen profesional</h2><p>{candidate.experience}</p></section>}
       {jobId && !match && !matchError && <section className="surface-card p-4 text-sm text-[var(--muted)]" role="status">Preparando la explicación de compatibilidad… Puedes revisar el perfil mientras termina.</section>}
       {match?.match_details && <CandidateMatchExplanation match={match} />}
       {matchError && <section className="surface-card p-4" role="alert"><p className="text-sm text-[var(--error)]">{matchError}</p><button type="button" className="button-secondary mt-3" onClick={() => setRetry((value) => value + 1)}>Reintentar explicación</button></section>}
@@ -208,7 +156,7 @@ export function CandidateDetailPage() {
               </>
             )}
           />
-          {!candidate.identity_hidden && [["drivingLicenses", "Licencias de conducción"], ["professionalCards", "Tarjetas profesionales"]].map(([kind, title]) => <section key={kind} className="surface-card p-5"><h2 className="font-bold mb-3">{title}</h2><ProfileCredentials kind={kind} drivingLicenses={candidate.driving_licenses || []} professionalCards={candidate.professional_cards || []} /></section>)}
+          {!candidate.identity_hidden && [["drivingLicenses", "Licencias de conducción", candidate.driving_licenses], ["professionalCards", "Tarjetas profesionales", candidate.professional_cards]].filter(([, , rows]) => rows?.length).map(([kind, title]) => <section key={kind} className="surface-card p-5"><h2 className="font-bold mb-3">{title}</h2><ProfileCredentials kind={kind} drivingLicenses={candidate.driving_licenses || []} professionalCards={candidate.professional_cards || []} /></section>)}
           {!candidate.identity_hidden && <Timeline
             title="Cursos y certificaciones"
             icon={CheckCircle2}
@@ -222,15 +170,15 @@ export function CandidateDetailPage() {
                 <p className="mt-1 text-sm text-[var(--muted)]">
                   {item.issuer}
                   {item.year ? ` · ${item.year}` : ""}
-                </p><div className="candidate-certificate-details"><span>{TRAINING_TYPES[item.kind] || "Tipo sin indicar"} · Aportado por el candidato</span>{item.url?.startsWith("https://") && <a className="button-secondary button-sm" href={item.url} target="_blank" rel="noopener noreferrer">Ver documento aportado ↗</a>}</div>
+                </p><div className="candidate-certificate-details">{TRAINING_TYPES[item.kind] && <span>{TRAINING_TYPES[item.kind]}</span>}{item.url?.startsWith("https://") && <a className="button-secondary button-sm" href={item.url} target="_blank" rel="noopener noreferrer">Ver documento ↗</a>}</div>
               </>
             )}
           />}
         </div>
         <aside className="space-y-5">
           {!candidate.identity_hidden && candidate.links?.length > 0 && <section className="surface-card p-5"><h2 className="mb-3 font-bold text-[var(--ink-strong)]">Enlaces profesionales</h2><ProfileLinks value={candidate.links} /></section>}
-          <section className="surface-card p-5"><h2 className="mb-3 font-bold">Idiomas</h2><LanguagesEditor value={candidate.languages || []} editing={false} /></section>
-          <section className="surface-card p-5">
+          {candidate.languages?.length > 0 && <section className="surface-card p-5"><h2 className="mb-3 font-bold">Idiomas</h2><LanguagesEditor value={candidate.languages} editing={false} /></section>}
+          {candidate.skills?.length > 0 && <section className="surface-card p-5">
             <h2 className="font-bold text-[var(--ink-strong)]">
               Habilidades declaradas
             </h2>
@@ -249,41 +197,36 @@ export function CandidateDetailPage() {
                 </p>
               )}
             </div>
-          </section>
-          <section className="surface-card p-5">
+          </section>}
+          {(candidate.preferred_modality || candidate.desired_salary) && <section className="surface-card p-5">
             <h2 className="font-bold text-[var(--ink-strong)]">Preferencias</h2>
             <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4">
+              {candidate.preferred_modality && <div className="flex justify-between gap-4">
                 <dt className="text-[var(--muted)]">Modalidad</dt>
                 <dd className="font-semibold text-[var(--ink-strong)]">
                   {modalityLabels[candidate.preferred_modality] ||
                     candidate.preferred_modality ||
                     "Sin preferencia"}
                 </dd>
-              </div>
-              <div className="flex justify-between gap-4">
+              </div>}
+              {candidate.desired_salary > 0 && <div className="flex justify-between gap-4">
                 <dt className="text-[var(--muted)]">Aspiración</dt>
                 <dd className="font-semibold text-[var(--ink-strong)]">
                   {candidate.desired_salary
                     ? `$${Number(candidate.desired_salary).toLocaleString("es-CO")}`
                     : "No definida"}
                 </dd>
-              </div>
+              </div>}
             </dl>
-          </section>
+          </section>}
         </aside>
       </section>
     </div>
   );
 }
 
-function CandidatePhoto({ candidate }) {
-  return <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--accent)]/10 text-[var(--accent)]">
-    <AuthenticatedImage src={candidate.photo_url} alt={`Foto de ${candidate.name}`} className="h-full w-full object-cover" fallback={<UserRound size={36} />} />
-  </div>;
-}
-
-function Timeline({ title, icon: Icon, items = [], empty, render }) {
+function Timeline({ title, icon: Icon, items = [], render }) {
+  if (!items?.length) return null;
   return (
     <section className="surface-card p-6">
       <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--ink-strong)]">
@@ -301,7 +244,7 @@ function Timeline({ title, icon: Icon, items = [], empty, render }) {
             </article>
           ))
         ) : (
-          <p className="text-sm text-[var(--muted)]">{empty}</p>
+          <p className="text-sm text-[var(--muted)]">Sin información</p>
         )}
       </div>
     </section>

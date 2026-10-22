@@ -1,3 +1,4 @@
+import { OfficialOpportunitySources } from "./OfficialOpportunitySources.jsx";
 import { formatLearningHours } from "../utils/learningPresentation.js";
 import { useEffect, useState } from "react";
 import { ExternalLink, RefreshCw, Search, GraduationCap } from "lucide-react";
@@ -13,7 +14,7 @@ export function LearningOpportunities({ admin = false, value = null }) {
   const items = (current?.items || []).map((item) => ({ ...item, ...courseAvailability({ availability: item }) }));
   const filtered = items.filter((item) => status === "all" || item.status === status);
   const pages = Math.max(1, Math.ceil(filtered.length / 4)), safePage = Math.min(page, pages);
-  return <details open={admin || undefined} className={admin ? "admin-opportunities" : "surface-card p-5"}><summary className="cursor-pointer font-bold">Convocatorias y formación local · Sapiencia</summary>
+  return <><details open={admin || undefined} className={admin ? "admin-opportunities" : "surface-card p-5"}><summary className="cursor-pointer font-bold">Convocatorias y formación local · Sapiencia</summary>
     <div className="mt-4 space-y-4"><p className="text-sm text-[var(--muted)]">{admin ? "Revisa vigencia, cobertura y requisitos publicados antes de recomendar estas convocatorias. La inscripción se realiza con la entidad." : "Oportunidades para Medellín. Cada programa tiene sus propios requisitos; consulta si puedes participar. La inscripción se realiza con la entidad."}</p>
       {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}{current?.warning && <p role="status" className="text-sm text-[var(--muted)]">{current.warning}</p>}
       <label className="block max-w-sm text-sm">Estado de las convocatorias<select className="field-control mt-1" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="open">Inscripción anunciada</option><option value="all">Todas, incluidas las cerradas</option><option value="closed">Cerradas</option><option value="unknown">Por confirmar</option></select></label>
@@ -21,11 +22,11 @@ export function LearningOpportunities({ admin = false, value = null }) {
       {!filtered.length && <p className="learning-empty">No hay convocatorias guardadas con este estado. Puedes consultar las demás o visitar la fuente oficial.</p>}
       <Pagination page={safePage} pages={pages} total={filtered.length} pageSize={4} onChange={setPage} label="Páginas de convocatorias locales" />
       <a className="inline-flex items-center gap-2 text-sm text-[var(--accent)]" href="https://sapiencia.gov.co/convocatorias/" target="_blank" rel="noopener noreferrer">Ver todas en Sapiencia<ExternalLink size={14} /></a>
-    </div></details>;
+    </div></details>{!admin && <OfficialOpportunitySources />}</>;
 }
 
-export function PublicLearningSources({ onImported, provider = "sena" }) {
-  const [query, setQuery] = useState("excel"), [preview, setPreview] = useState(null), [selected, setSelected] = useState([]);
+export function PublicLearningSources({ onImported, provider = "sena", initialQuery = "" }) {
+  const [query, setQuery] = useState(initialQuery || "excel"), [preview, setPreview] = useState(null), [selected, setSelected] = useState([]);
   const [publish, setPublish] = useState(false), [busy, setBusy] = useState(false), [calls, setCalls] = useState(null);
   const [error, setError] = useState(""), [message, setMessage] = useState("");
   useEffect(() => { api.get("/admin/learning/sources/public").then(({ data }) => setCalls(data)).catch((failure) => setError(getApiErrorMessage(failure))); }, []);

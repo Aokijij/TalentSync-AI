@@ -371,6 +371,14 @@ El lanzador local fuerza la revisión de MFA en SQLite de desarrollo y mantiene 
 
 La extracción conserva niveles académicos explícitos como pregrado, tecnólogo, técnico y bachillerato. Reimportar completa niveles faltantes y respeta las correcciones manuales. La formación complementaria admite curso, certificación, diplomado, taller, seminario y otra formación; los registros antiguos sin tipo siguen siendo editables. Las propuestas separan acciones concatenadas y su editor continúa las viñetas con Enter (Shift+Enter permite un salto libre). El calendario de entrevistas y fechas del catálogo comparte el tema visual de la aplicación.
 
+El tablero de postulaciones consulta únicamente las vacantes de la empresa y muestra las tarjetas sin esperar el ranking de toda la base. Reutiliza la compatibilidad guardada y calcula las faltantes por candidato en segundo plano. Durante la carga muestra un estado explícito. Los selectores de compatibilidad parten del 40 %; las postulaciones existentes siguen visibles aunque estén por debajo.
+
+La ficha que consulta una empresa reutiliza la cabecera del perfil, oculta apartados vacíos y muestra edad en lugar de fecha de nacimiento cuando se comparte ese dato. El PDF conserva nacimiento e identificación en la cabecera, según las opciones de visibilidad. Administración Logística y sus variantes se reconocen automáticamente como un área distinta de Ingeniería de Sistemas; los nombres ajenos al catálogo conservan la revisión pendiente sin inventar equivalencias.
+
+La formación recomendada para una vacante identifica las habilidades por reforzar y permite filtrarlas, ordenar recursos y avanzar por páginas. El catálogo administrativo muestra la demanda de habilidades de las vacantes activas de TalentSync y permite buscar formación para cubrirla. Salud del ecosistema separa empresas, incidencias, oferta y demanda, y revisión del motor en cuatro accesos superiores. Los conectores configurados ocultan la ayuda de activación.
+
+El directorio educativo incorpora fuentes oficiales de Medellín (Sapiencia), Bogotá (ATENEA), Barranquilla y alcance nacional (SNIBCE de ICETEX). Se filtra por ciudad e incluye las fuentes nacionales. Es un directorio de consulta: no supone inscripción abierta ni importa convocatorias sin revisión.
+
 El administrador puede pausar, reactivar o cerrar una publicación desde su ficha. Pausar mantiene abiertos los procesos; cerrar finaliza los pendientes y notifica a los candidatos. La eliminación definitiva se confirma por separado. Los cambios de estado quedan en el registro de eventos.
 
 El catálogo educativo permite descargar un ejemplo JSON, cargar un archivo y revisar los recursos antes de importarlos como borradores. Para un recurso se recomienda el formulario. La revisión del motor explica qué comprueba, cuándo utilizarla y cómo interpretar el informe; los identificadores técnicos quedan en una sección para soporte.

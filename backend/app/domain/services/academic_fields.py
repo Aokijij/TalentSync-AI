@@ -14,7 +14,7 @@ def academic_name(value):
     text = " ".join(re.findall(r"[a-z0-9]+", text))
     # Remove qualification prefixes only; the level is evaluated independently.
     return re.sub(
-        r"^(?:tecnico(?: profesional)?|tecnologo|tecnologia|profesional universitario|profesional|licenciatura|maestria|especializacion|doctorado) (?:en |de )?",
+        r"^(?:tecnic[oa](?: profesional)?|tecnolog[oa]|tecnologia|profesional universitari[oa]|profesional|licenciad[oa]|licenciatura|maestria|especializacion|doctorado) (?:en |de )?",
         "",
         text,
     ).strip()

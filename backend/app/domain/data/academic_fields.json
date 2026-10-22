@@ -1,6 +1,6 @@
 {
-  "version": "academic-fields-v2",
-  "reviewed_at": "2026-10-16",
+  "version": "academic-fields-v3",
+  "reviewed_at": "2026-10-21",
   "classification": {
     "name": "CINE-F 2013 A.C.",
     "source_url": "https://www.dane.gov.co/files/noticias/CINE/cine-2013/Documento-CINE-F-2013-AC.pdf",
@@ -43,6 +43,10 @@
     [
       "electronics",
       "telecom"
+    ],
+    [
+      "logistics_administration",
+      "logistics"
     ]
   ],
   "programs": [
@@ -332,6 +336,19 @@
         "direccion de proyectos",
         "administracion de proyectos"
       ]
+    },
+    {
+      "id": "logistics_administration",
+      "label": "Administración Logística",
+      "reference_field": "0413",
+      "aliases": [
+        "administracion logistica",
+        "administrador logistico",
+        "administradora logistica",
+        "profesional en administracion logistica"
+      ],
+      "source_url": "https://www.unilibre.edu.co/normativas/resolucion-n-o-42-de-2025/",
+      "reviewed_at": "2026-10-21"
     }
   ]
 }

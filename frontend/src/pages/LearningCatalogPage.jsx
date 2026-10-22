@@ -1,3 +1,4 @@
+import { LearningDemand } from "../components/LearningDemand.jsx";
 import { DatePicker } from "../components/DatePicker.jsx";
 import { CourseBatchImport } from "../components/CourseBatchImport.jsx";
 import { AdminLearningLibrary } from "../components/AdminLearningLibrary.jsx";
@@ -13,6 +14,7 @@ export function LearningCatalogPage() {
   const { confirm } = useFeedback();
   const [step, setStep] = useState(0), [preview, setPreview] = useState({});
   function advance(event) { event.preventDefault(); const form = event.currentTarget.closest("form"); const fields = [...form.querySelectorAll(`fieldset[data-step="${step}"] input, fieldset[data-step="${step}"] textarea, fieldset[data-step="${step}"] select`)]; if (fields.some((field) => !field.reportValidity())) return; setPreview(Object.fromEntries(new FormData(form))); setStep(step + 1); }
+  const [demandSkill, setDemandSkill] = useState("");
   const [view, setView] = useState("library");
   const [formOpen, setFormOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -58,8 +60,8 @@ export function LearningCatalogPage() {
   return <div className="space-y-5"><PageHeader kicker="Administración" title="Catálogo educativo" description="Gestiona recursos, revisa borradores y controla qué formación se publica para los candidatos." />
     {error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}{message && <p role="status" className="surface-card p-4">{message}</p>}
     <nav className="workspace-tabs" aria-label="Secciones del catálogo"><button className={view === "library" ? "active" : ""} aria-pressed={view === "library"} onClick={() => setView("library")}>Biblioteca <span>{listedRows.length}</span></button><button className={view === "sources" ? "active" : ""} aria-pressed={view === "sources"} onClick={() => setView("sources")}>Fuentes y conectores</button></nav>
-    {view === "sources" && <LearningConnectors onImported={setRows} />}
-    {view === "library" && <>
+    {view === "sources" && <LearningConnectors onImported={setRows} initialQuery={demandSkill} />}
+    {view === "library" && <><LearningDemand selected={demandSkill} onSelect={setDemandSkill} onSearchSource={(skill) => { setDemandSkill(skill); setView("sources"); }} />
     <div className="surface-card flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">Gestión de la biblioteca</h2><p className="mt-1 text-sm text-[var(--muted)]">{rows.filter((row) => !row.url).length} prácticas de TalentSync · {listedRows.filter((row) => row.url).length} recursos externos</p></div><button className="button-primary" onClick={() => { setEditing(null); setStep(0); setFormOpen(!formOpen); }}>{formOpen ? "Cerrar formulario" : "Añadir formación +"}</button></div>
     {(formOpen || editing) && <form id="catalog-editor" key={editing?.id || "new"} onSubmit={save} className="surface-card grid gap-4 p-5 sm:grid-cols-2">
       <div className="sm:col-span-2"><p className="section-kicker">Paso {step + 1} de 3</p><h2 className="mt-2 text-xl font-bold">{["Identifica la formación", "Conecta con las habilidades", "Revisa antes de publicar"][step]}</h2><progress className="mt-4 w-full" value={step + 1} max={3} aria-label="Progreso del recurso" /></div>
@@ -80,7 +82,7 @@ export function LearningCatalogPage() {
       </fieldset><div className="flex flex-wrap gap-3 sm:col-span-2">{step > 0 && <button className="button-secondary" type="button" onClick={() => setStep(step - 1)}><ArrowLeft size={16} />Anterior</button>}{step < 2 ? <button className="button-primary" type="button" onClick={advance}>Continuar<ArrowRight size={16} /></button> : <button className="button-primary" disabled={busy}>Publicar recurso</button>}<button className="button-secondary" type="button" disabled={busy} onClick={() => { setEditing(null); setFormOpen(false); }}>Cancelar</button></div>
     </form>}
 
-    <AdminLearningLibrary rows={listedRows} busy={busy} onEdit={(row) => { setEditing(row); setStep(0); setFormOpen(true); }} />
+    <AdminLearningLibrary focusSkill={demandSkill} rows={listedRows} busy={busy} onEdit={(row) => { setEditing(row); setStep(0); setFormOpen(true); }} />
     <CourseBatchImport onImported={setRows} />
   </>} </div>;
 }

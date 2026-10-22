@@ -30,7 +30,7 @@ export function CompanyTalentPage() {
   const pageSize = 9;
   const [query, setQuery] = useState(searchParams.get("query") || "");
   const [audience, setAudience] = useState(searchParams.get("audience") || "new");
-  const [minMatch, setMinMatch] = useState(() => { let saved = 60; try { saved = localStorage.getItem(minimumKey) ?? 60; } catch { /* Optional storage. */ } return talentMinimum(searchParams.get("min") ?? saved); });
+  const [minMatch, setMinMatch] = useState(() => { let saved = 40; try { saved = localStorage.getItem(minimumKey) ?? 40; } catch { /* Optional storage. */ } return talentMinimum(searchParams.get("min") ?? saved); });
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [loading, setLoading] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -152,7 +152,7 @@ export function CompanyTalentPage() {
                 {results.map((candidate) => <TalentCard key={candidate.user_id} candidate={candidate} job={selectedJob} sending={sending} returnTo={`${location.pathname}${location.search}`} onInvite={() => setInvitation(candidate)} onReview={() => setReviewApplication(candidate)} />)}
               </div>
               <Pagination page={page} pages={Math.max(1, Math.ceil(total / pageSize))} total={total} pageSize={pageSize} onChange={setPage} label="Páginas de candidatos" />
-              {!results.length ? <div className="surface-card !py-10 text-center"><UsersRound className="mx-auto text-[var(--accent)]" size={30} /><h3 className="mt-3 font-bold">{audience === "new" ? "No hay personas para invitar con estos filtros" : "No hay postulaciones con estos filtros"}</h3><p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">{audience === "new" ? "Prueba otra búsqueda o revisa a las personas que ya se postularon. El mínimo para esta búsqueda es 60% de compatibilidad." : "Limpia el texto de búsqueda para ver todas las postulaciones."}</p><button type="button" className="button-secondary mt-4" onClick={() => { setQuery(""); setMinMatch(60); setPage(1); }}>Limpiar filtros</button></div> : null}
+              {!results.length ? <div className="surface-card !py-10 text-center"><UsersRound className="mx-auto text-[var(--accent)]" size={30} /><h3 className="mt-3 font-bold">{audience === "new" ? "No hay personas para invitar con estos filtros" : "No hay postulaciones con estos filtros"}</h3><p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">{audience === "new" ? "Prueba otra búsqueda o revisa a las personas que ya se postularon. Puedes ampliar la búsqueda hasta un mínimo del 40% de compatibilidad." : "Limpia el texto de búsqueda para ver todas las postulaciones."}</p><button type="button" className="button-secondary mt-4" onClick={() => { setQuery(""); setMinMatch(40); setPage(1); }}>Limpiar filtros</button></div> : null}
               {audience === "new" && results.length ? <p className="px-1 text-xs leading-5 text-[var(--muted)]">El perfil completo estará disponible si la persona se postula. La invitación no inicia una contratación.</p> : null}
             </>
           )}

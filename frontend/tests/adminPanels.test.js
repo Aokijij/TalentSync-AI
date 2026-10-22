@@ -22,6 +22,32 @@ async function component(name, exportName = name) {
   return module.exports[exportName];
 }
 
+test("vacancy course cards name the missing skills they reinforce instead of listing unrelated course tags", async () => {
+  const Card = await component("LearningResourceCard");
+  const html = renderToStaticMarkup(createElement(Card, { compact: true, resource: { id: "excel", title: "Cruza datos de inventario", category: "administration", hours: 8, cost: "free", skills: ["excel", "power query"], targeted_skills: ["excel"] } }));
+  assert.match(html, /Refuerza/);
+  assert.match(html, /excel/);
+  assert.doesNotMatch(html, /power query/);
+});
+
+test("demand filters preserve canonical aliases when finding resources in the educational library", async () => {
+  const Library = await component("AdminLearningLibrary");
+  const html = renderToStaticMarkup(createElement(Library, { focusSkill: "javascript", rows: [{ id: "js", title: "Fundamentos de programación", provider: "Ejemplo", skills: ["JS"], kind: "course", cost: "free", hours: 8 }, { id: "sql", title: "Consultas en bases de datos", provider: "Ejemplo", skills: ["sql"], kind: "course", cost: "free", hours: 8 }] }));
+  assert.match(html, /Fundamentos de programación/);
+  assert.doesNotMatch(html, /Consultas en bases de datos/);
+});
+
+test("company profile header uses age and identification only when returned by the sharing endpoint", async () => {
+  const Hero = await component("CandidateHero");
+  const html = renderToStaticMarkup(createElement(Hero, { candidate: { name: "Perfil de ejemplo", profession: "Ingeniera", availability: "immediate", birth_date: "1999-12-13", identification: { type: "CC", number: "EXAMPLE-1234" } } }));
+  assert.match(html, /Edad/);
+  assert.match(html, /Disponibilidad inmediata/);
+  assert.match(html, /EXAMPLE-1234/);
+  assert.doesNotMatch(html, /13\/12\/1999|Nacimiento/);
+  const hidden = renderToStaticMarkup(createElement(Hero, { candidate: { name: "Perfil sin datos compartidos" } }));
+  assert.doesNotMatch(hidden, /Edad|Nacimiento|Identificación|EXAMPLE-1234/);
+});
+
 test("company explanation shows factors, levels, years and months and private response adjustment", async () => {
   const Panel = await component("CandidateMatchExplanation");
   const html = renderToStaticMarkup(createElement(Panel, { match: {

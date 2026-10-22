@@ -120,6 +120,8 @@ class ContactLine(Flowable):
         c.saveState(); c.setStrokeColor(self.style.textColor); c.setLineWidth(.6)
         if self.kind == "email":
             c.rect(0, y, 8, 6, fill=0, stroke=1); c.lines([(0, y + 6, 4, y + 2.5), (4, y + 2.5, 8, y + 6)])
+        elif self.kind == "personal":
+            c.roundRect(0, y, 8, 6, 1, fill=0, stroke=1); c.circle(2.5, y + 3.5, 1, fill=0, stroke=1); c.line(5, y + 3, 7, y + 3)
         elif self.kind == "location":
             c.circle(4, y + 4, 3, fill=0, stroke=1); c.circle(4, y + 4, 1, fill=0, stroke=1)
             c.lines([(1.5, y + 2, 4, y - 2), (4, y - 2, 6.5, y + 2)])
@@ -230,10 +232,13 @@ def build_resume(user, included, include_photo, photo):
     long_profession = len(profile.profession or "") > 250
     if profile.profession and not long_profession:
         identity.append(p(profile.profession, ParagraphStyle("Profession", parent=body, fontSize=10, leading=14, textColor=colors.HexColor("#d5e2ef") if classic else ink if minimal else accent, spaceAfter=0)))
-    contacts = [str(value) for value in [user.email, getattr(profile, "phone", None), ", ".join(filter(None, [profile.location, profile.department]))] if value] if "contact" in included else []
+    contact_values = [(user.email, "email"), (getattr(profile, "phone", None), "phone"), (", ".join(filter(None, [profile.location, profile.department])), "location")]
+    contact_values.extend((f"{label}: {value}", "personal") for label, value in personal_detail_lines(profile))
+    contacts = [str(value) for value, _ in contact_values if value] if "contact" in included else []
     long_contact = len(" ".join(contacts)) > 450
     contact_style = ParagraphStyle("Contact", parent=meta, textColor=header_color, fontSize=6.9, leading=11, spaceAfter=7)
-    contact = [ContactLine(value, contact_style, kind) for value, kind in [(user.email, "email"), (getattr(profile, "phone", None), "phone"), (", ".join(filter(None, [profile.location, profile.department])), "location")] if value] if "contact" in included and not long_contact else []
+    header_values = [(value, kind) for value, kind in contact_values if value and (not long_contact or kind == "personal")] if "contact" in included else []
+    contact = [ContactLine(value, contact_style, kind) for value, kind in header_values]
     size = 62 if minimal else 80
     avatar_frame = colors.Color(*[value * .7 + .3 for value in (dark.red, dark.green, dark.blue)]) if classic else line
     avatar = portrait(photo, size, circular=not classic) if photo and include_photo else Monogram(user.name, accent, not classic, size, gradient=[accent, dark] if not minimal else None, frame=avatar_frame, shadow=modern) if include_photo else None
@@ -243,7 +248,7 @@ def build_resume(user, included, include_photo, photo):
     if p(user.name, name_style).wrap(widths[-2] - 14, 500)[1] > 60:
         if contact:
             identity.append(Spacer(1, 8))
-            identity.append(p(" · ".join(contacts), ParagraphStyle("WideContact", parent=contact_style, fontSize=7.2, leading=12, spaceAfter=0)))
+            identity.append(p(" · ".join(str(value) for value, _ in header_values), ParagraphStyle("WideContact", parent=contact_style, fontSize=7.2, leading=12, spaceAfter=0)))
         header = Table([[avatar, identity]] if avatar else [[identity]], colWidths=[104, 415] if avatar else [519])
     else:
         header = Table([cells], colWidths=widths)
@@ -261,13 +266,10 @@ def build_resume(user, included, include_photo, photo):
         story.extend([p(title.upper(), heading), rule])
 
     main, side = [], []
-    if "contact" in included and personal_detail_lines(profile):
-        section(main, "Datos personales")
-        main.extend(p(f"{label}: {value}", meta) for label, value in personal_detail_lines(profile))
     if long_profession:
         main.append(p(profile.profession))
     if long_contact:
-        main.extend(p(value, meta) for value in contacts)
+        main.extend(p(value, meta) for value, kind in contact_values if value and kind != "personal")
     if "summary" in included and profile.experience:
         section(main, "Perfil profesional"); main.append(p(profile.experience))
     for title, key, primary, secondary in [("Experiencia", "experiences", "role", "company"), ("Formación", "educations", "degree", "institution"), ("Proyectos y logros", "evidence", "title", "")]:

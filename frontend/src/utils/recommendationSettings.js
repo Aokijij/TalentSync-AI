@@ -1,5 +1,5 @@
 const defaults = { minimum: 40, source: "all" };
-const allowed = { minimum: [0, 40, 50, 60, 70, 80, 90], source: ["all", "internal", "external"] };
+const allowed = { minimum: [40, 50, 60, 70, 80, 90, 100], source: ["all", "internal", "external"] };
 const key = (userId, setting) => `talentsync_recommendations:${userId}:${setting}`;
 
 export function readRecommendationSettings(storage, userId) {

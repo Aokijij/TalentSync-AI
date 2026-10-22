@@ -72,6 +72,7 @@ export function CompanyApplicationsPage() {
   const [jobId, setJobId] = useState(searchParams.get("job") || "");
   const [applications, setApplications] = useState([]);
   const [scores, setScores] = useState({});
+  const [loadingApplications, setLoadingApplications] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
   const [draggedId, setDraggedId] = useState(null);
@@ -88,27 +89,22 @@ export function CompanyApplicationsPage() {
   activeJob.current = jobId;
 
   useEffect(() => {
-    api
-      .get("/companies/me")
-      .then(async ({ data: company }) => {
-        const { data: allJobs } = await api.get("/jobs", {
-          params: { status: "" },
-        });
-        const ownJobs = allJobs.filter((job) => job.company_id === company.id);
-        setJobs(ownJobs);
-        const requested = searchParams.get("job");
-        const initial =
-          ownJobs.find((job) => String(job.id) === requested) || ownJobs[0];
-        if (initial) setJobId(String(initial.id));
-      })
-      .catch((requestError) =>
+    api.get("/jobs/mine/board").then(({ data: ownJobs }) => {
+      setJobs(ownJobs);
+      const requested = searchParams.get("job");
+      const initial = ownJobs.find((job) => String(job.id) === requested) || ownJobs[0];
+      if (initial) setJobId(String(initial.id));
+      else setLoadingApplications(false);
+    })
+      .catch((requestError) => {
+        setLoadingApplications(false);
         setError(
           getApiErrorMessage(
             requestError,
             "No fue posible cargar las vacantes",
           ),
-        ),
-      );
+        );
+      });
   }, []);
 
   const selectedJob = jobs.find((job) => String(job.id) === jobId);
@@ -117,13 +113,9 @@ export function CompanyApplicationsPage() {
   async function loadApplications() {
     if (!jobId) return;
     const requestId = ++loadId.current;
+    setLoadingApplications(true);
     try {
-      const [applicationsResponse, candidatesResponse] = await Promise.all([
-        api.get(`/applications/jobs/${jobId}`),
-        api
-          .get(`/recommendations/jobs/${jobId}/candidates`)
-          .catch(() => ({ data: [] })),
-      ]);
+      const applicationsResponse = await api.get(`/applications/jobs/${jobId}`);
       if (requestId !== loadId.current || activeJob.current !== jobId) return;
       const hasUnseen = applicationsResponse.data.some(
         (item) => item.status === "submitted",
@@ -139,21 +131,10 @@ export function CompanyApplicationsPage() {
       if (hasUnseen) api.put(`/applications/jobs/${jobId}/mark-seen`, null, { __quiet: true }).then(() => {
         if (requestId === loadId.current && activeJob.current === jobId) setApplications((current) => current.map((item) => item.status === "submitted" ? { ...item, status: "seen" } : item));
       }).catch(() => {});
-      setScores(
-        {
-          ...Object.fromEntries(
-            candidatesResponse.data.map((candidate) => [
-              candidate.user_id,
-              candidate.match_percentage,
-            ]),
-          ),
-          ...Object.fromEntries(
-            applicationsResponse.data
-              .filter((application) => application.adjusted_match_percentage != null)
-              .map((application) => [application.user_id, application.adjusted_match_percentage]),
-          ),
-        },
-      );
+      setScores(Object.fromEntries(applicationsResponse.data.filter((item) => item.adjusted_match_percentage != null).map((item) => [item.user_id, item.adjusted_match_percentage])));
+      const pending = applicationsResponse.data.filter((item) => item.adjusted_match_percentage == null);
+      const loadScore = async () => { while (pending.length && requestId === loadId.current && activeJob.current === jobId) { const item = pending.shift(); try { const { data } = await api.get(`/recommendations/jobs/${jobId}/candidates/${item.user_id}/explanation`, { __skipRetry: true }); if (requestId === loadId.current && activeJob.current === jobId) setScores((current) => ({ ...current, [item.user_id]: data.match_percentage })); } catch { /* The profile still opens when a score is unavailable. */ } } };
+      void loadScore(); void loadScore();
     } catch (requestError) {
       if (requestId !== loadId.current || activeJob.current !== jobId) return;
       setError(
@@ -162,7 +143,7 @@ export function CompanyApplicationsPage() {
           "No fue posible cargar las postulaciones",
         ),
       );
-    }
+    } finally { if (requestId === loadId.current && activeJob.current === jobId) setLoadingApplications(false); }
   }
 
   useEffect(() => {
@@ -173,7 +154,7 @@ export function CompanyApplicationsPage() {
     if (saving) return;
     loadId.current += 1;
     activeJob.current = String(job.id);
-    setApplications([]); setScores({}); setSelected(null); setError("");
+    setLoadingApplications(true); setApplications([]); setScores({}); setSelected(null); setError("");
     setJobId(String(job.id));
     setSearchParams({ job: String(job.id) });
     setShowJobPicker(false);
@@ -341,8 +322,7 @@ export function CompanyApplicationsPage() {
               {selectedJob?.title || "Selecciona una vacante"}
             </h2>
             <p className="mt-1 text-xs text-[var(--muted)]">
-              {applications.length} postulante
-              {applications.length === 1 ? "" : "s"} en este proceso
+              {loadingApplications ? "Cargando postulaciones…" : `${applications.length} postulante${applications.length === 1 ? "" : "s"} en este proceso`}
             </p>
           </div>
         </div>
@@ -406,6 +386,7 @@ export function CompanyApplicationsPage() {
         <section
           className="overflow-x-auto pb-3"
           aria-label="Tablero de candidatos por etapas"
+          aria-busy={loadingApplications}
         >
           <div
             className="grid gap-4"
@@ -456,7 +437,7 @@ export function CompanyApplicationsPage() {
                 </div>
                 {!grouped[column.id]?.length ? (
                   <div className="grid min-h-28 place-items-center rounded-[var(--radius-lg)] border border-dashed border-[var(--line)] px-4 text-center text-xs text-[var(--muted)]">
-                    Suelta aquí una tarjeta
+                    {loadingApplications ? "Cargando candidatos…" : "Sin postulantes en esta etapa"}
                   </div>
                 ) : null}
               </div>
@@ -465,7 +446,7 @@ export function CompanyApplicationsPage() {
         </section>
       ) : (
         <div className="surface-card py-14 text-center text-sm text-[var(--muted)]">
-          Publica o selecciona una vacante para iniciar un proceso.
+          {loadingApplications ? "Preparando tus vacantes…" : "Publica o selecciona una vacante para iniciar un proceso."}
         </div>
       )}
 

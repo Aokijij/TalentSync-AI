@@ -28,6 +28,19 @@ candidate = require_roles(UserRole.CANDIDATE)
 admin = require_roles(UserRole.ADMIN)
 
 
+@router.get("/admin/learning/demand")
+def learning_demand_report(user=Depends(admin), db=Depends(get_unit_of_work)):
+    from app.application.use_cases.learning_demand import report
+    return report(db)
+
+
+@router.get("/learning/opportunity-sources")
+def official_opportunity_sources(user=Depends(require_roles(UserRole.CANDIDATE, UserRole.ADMIN))):
+    import json
+    from pathlib import Path
+    return json.loads((Path(__file__).parents[3] / "domain/data/opportunity_sources.json").read_text(encoding="utf-8"))
+
+
 class LearnPreview(BaseModel):
     kind: Literal["modules", "learning-paths"] = "modules"
     products: str = Field(default="", max_length=120, pattern=r"^[a-z0-9,-]*$")

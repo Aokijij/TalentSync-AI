@@ -91,6 +91,6 @@ def test_company_can_search_catalog_variants_without_restricting_free_text(clien
     _, company = company_account(client, "academic-catalog-owner")
     response = client.get("/api/v1/hiring/education/catalog", headers=company, params={"query": "contabilidad"})
     assert response.status_code == 200
-    assert response.json()["version"] == "academic-fields-v2"
+    assert response.json()["version"] == "academic-fields-v3"
     assert any(row["label"] == "Contaduría Pública" for row in response.json()["items"])
     assert client.get("/api/v1/hiring/education/catalog", params={"query": "Contaduría"}).status_code == 401

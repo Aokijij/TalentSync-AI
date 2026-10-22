@@ -1,0 +1,10 @@
+{
+  "reviewed_on": "2026-10-21",
+  "notice": "Directorio de fuentes oficiales. Consulta fechas, residencia, cupos y requisitos en cada entidad; aparecer aquí no confirma que una inscripción esté abierta.",
+  "sources": [
+    {"id": "sapiencia", "name": "Sapiencia", "city": "Medellín", "scope": "local", "url": "https://sapiencia.gov.co/convocatorias/", "description": "Convocatorias de acceso y permanencia en educación superior. Revisa la cobertura de cada programa."},
+    {"id": "atenea", "name": "ATENEA · Jóvenes a la E", "city": "Bogotá", "scope": "local", "url": "https://www.agenciaatenea.gov.co/convocatorias", "description": "Convocatorias de educación superior y formación para el trabajo del Distrito. Cada línea define sus condiciones."},
+    {"id": "barranquilla", "name": "Educación superior · Barranquilla", "city": "Barranquilla", "scope": "local", "url": "https://barranquilla.gov.co/educacion/educacion-superior-es", "description": "Información oficial sobre acceso a educación superior y los programas de formación en los barrios."},
+    {"id": "icetex", "name": "ICETEX · SNIBCE", "city": "Toda Colombia", "scope": "national", "url": "https://snibce.icetex.gov.co/index.html", "description": "Buscador nacional de becas y créditos educativos por área, modalidad y nivel. Revisa el tipo de apoyo y sus condiciones."}
+  ]
+}

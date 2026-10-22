@@ -2,17 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readRecommendationSettings, saveRecommendationSetting } from "./recommendationSettings.js";
 
-test("recommendation filters belong to each account and retain zero in both views", () => {
+test("recommendation filters belong to each account and migrate zero to the minimum of forty", () => {
   const values = new Map([["talentsync_recommendation_min", "90"]]);
   const storage = { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
   assert.deepEqual(readRecommendationSettings(storage, 1), { minimum: 40, source: "all" });
   saveRecommendationSetting(storage, 1, "minimum", 0);
   saveRecommendationSetting(storage, 1, "source", "external");
-  assert.deepEqual(readRecommendationSettings(storage, 1), { minimum: 0, source: "external" });
+  assert.deepEqual(readRecommendationSettings(storage, 1), { minimum: 40, source: "external" });
   assert.deepEqual(readRecommendationSettings(storage, 2), { minimum: 40, source: "all" });
   saveRecommendationSetting(storage, 2, "minimum", 70);
   assert.equal(readRecommendationSettings(storage, 2).minimum, 70);
-  assert.equal(readRecommendationSettings(storage, 1).minimum, 0);
+  assert.equal(readRecommendationSettings(storage, 1).minimum, 40);
 });
 
 test("invalid, missing and unavailable browser settings use usable defaults", () => {

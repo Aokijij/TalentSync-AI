@@ -46,6 +46,14 @@ def ensure_job_access(db: UnitOfWork, job: Job, user: User) -> None:
         raise UseCaseError(status_code=403, detail="No puedes gestionar esta vacante")
 
 
+def company_board_jobs(current_user, db):
+    company = owned_company(db, current_user)
+    if company is None:
+        raise UseCaseError(status_code=403, detail="No tienes una empresa asociada")
+    fields = ("id", "company_id", "title", "status", "skills", "location", "modality", "pipeline_stages", "created_at")
+    return [{key: getattr(job, key) for key in fields} for job in sorted(company.jobs, key=lambda job: job.created_at, reverse=True)]
+
+
 def company_job_choices(current_user, db, *, search, offset, limit):
     company = owned_company(db, current_user)
     if company is None:

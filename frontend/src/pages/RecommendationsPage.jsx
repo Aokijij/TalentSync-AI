@@ -222,7 +222,7 @@ export function RecommendationsPage() {
               <label className="filter-field">
                 Compatibilidad mínima
                 <select className="field-control" value={minCompatibility} onChange={(event) => changeMinimum(event.target.value)}>
-                  {[0, 40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}
+                  {[40, 50, 60, 70, 80, 90, 100].map((value) => <option key={value} value={value}>{value}%</option>)}
                 </select>
               </label>
             </div>

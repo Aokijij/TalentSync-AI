@@ -80,6 +80,14 @@ def test_private_birth_date_is_never_exported_in_cv(client, style):
     assert response.status_code == 200, response.text
     text = " ".join(page.extract_text() for page in PdfReader(BytesIO(response.content)).pages)
     assert "17/06/1994" in text and "SHARE-EXAMPLE-7788" in text
+    header = []
+    def collect_header(value, cm, tm, font, size):
+        # Header contacts are translated by their containing ReportLab table.
+        if "17/06/1994" in value or "SHARE-EXAMPLE-7788" in value:
+            header.append(cm[5] + tm[5])
+    PdfReader(BytesIO(response.content)).pages[0].extract_text(visitor_text=collect_header)
+    assert len(header) == 2 and min(header) > 680
+    assert "DATOS PERSONALES" not in text
     # A private draft can hide one field without saving a change to the profile.
     response = client.post("/api/v1/profiles/me/export", headers=candidate, json={"include_photo": False, "profile": {"resume_style": style, "personal_visibility": {"birth_date": False, "identification": True}}})
     text = " ".join(page.extract_text() for page in PdfReader(BytesIO(response.content)).pages)
