@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -85,6 +86,7 @@ class User(Base):
     interview_participants: Mapped[list["InterviewParticipant"]] = relationship(cascade="all, delete-orphan")
     social_identities: Mapped[list["SocialIdentity"]] = relationship(cascade="all, delete-orphan")
     oauth_link_attempts: Mapped[list["OAuthAttempt"]] = relationship(cascade="all, delete-orphan", foreign_keys="OAuthAttempt.link_user_id")
+    resume_versions: Mapped[list["ResumeVersion"]] = relationship(cascade="all, delete-orphan")
 
 
 class SocialIdentity(Base):
@@ -264,6 +266,22 @@ class Profile(Base):
     def cv_guidance(self):
         from app.domain.services.career_guidance import career_guidance
         return career_guidance(self)
+
+
+class ResumeVersion(Base):
+    __tablename__ = "resume_versions"
+    __table_args__ = (UniqueConstraint("user_id", "request_key", name="uq_resume_version_request"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    job_id: Mapped[int | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"), index=True)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    snapshot: Mapped[dict] = mapped_column(JSON, nullable=False)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    pdf_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    pdf: Mapped[bytes] = mapped_column(LargeBinary, deferred=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class CareerCoachState(Base):
@@ -526,6 +544,10 @@ class Application(Base):
     @property
     def coach_draft_id(self):
         return (self.coach_snapshot or {}).get("draft_id")
+
+    @property
+    def resume_version_id(self):
+        return (self.coach_snapshot or {}).get("resume_version_id")
 
     @property
     def company_name(self) -> str | None:

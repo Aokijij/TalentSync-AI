@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./design-system.css";
 @config "../../tailwind.config.js";
 
 button:not(:disabled), a[href], summary, select:not(:disabled),

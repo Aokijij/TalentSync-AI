@@ -13,6 +13,8 @@ from app.api.deps import (
     require_roles,
 )
 from app.api.schemas.career_coach import (
+    InterviewPreparationUpdate,
+    ResumeVersionCreate,
     WritingDecision,
     WritingGeneration,
     WritingProposal,
@@ -28,6 +30,7 @@ from app.api.schemas.resume_export import CvMentionDecision, ResumeDesign, Resum
 from app.application.errors import UseCaseError
 from app.application.ports.services import ImageStorage, ResumeReader, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
+from app.application.use_cases import application_preparation as preparation
 from app.application.use_cases import career_coach as coach
 from app.application.use_cases import market_radar, professional_summary
 from app.application.use_cases import profiles as use_cases
@@ -87,6 +90,37 @@ def coach_delete_writing(proposal_id: str, user=Depends(require_roles(UserRole.C
 @router.get("/me/coach/jobs/{job_id}/advice")
 def coach_vacancy_advice(job_id: int, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
     return coach.vacancy_advice(db, user, job_id)
+
+
+@router.get("/me/coach/jobs/{job_id}/preparation")
+def coach_preparation(job_id: int, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return preparation.preparation(db, user, job_id)
+
+
+@router.post("/me/coach/jobs/{job_id}/cv-versions", status_code=201)
+def coach_create_cv_version(job_id: int, payload: ResumeVersionCreate, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work), exporter=Depends(get_resume_exporter)):
+    return preparation.create_version(db, user, job_id, payload.model_dump(mode="json"), exporter)
+
+
+@router.get("/me/coach/cv-versions/{version_id}/pdf", response_class=Response)
+def coach_version_pdf(version_id: str, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    row = preparation.owned_version(db, user, version_id)
+    return Response(row.pdf, media_type="application/pdf", headers={"Content-Disposition": resume_disposition(row.snapshot["name"]), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@router.put("/me/coach/jobs/{job_id}/interview")
+def coach_save_interview(job_id: int, payload: InterviewPreparationUpdate, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return preparation.save_interview(db, user, job_id, payload.model_dump())
+
+
+@router.get("/me/coach/applications/{application_id}/preparation")
+def coach_application_preparation(application_id: int, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return preparation.for_application(db, user, application_id)
+
+
+@router.put("/me/coach/applications/{application_id}/interview")
+def coach_save_application_interview(application_id: int, payload: InterviewPreparationUpdate, user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
+    return preparation.save_application_interview(db, user, application_id, payload.model_dump())
 
 
 @router.post("/me/coach/drafts")

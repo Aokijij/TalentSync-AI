@@ -15,10 +15,13 @@ import {
   CheckCircle2,
   Sparkles,
   ShieldCheck,
+  Download,
 } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
-import { api, getApiErrorMessage } from "../api/client.js";
+import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
+import { saveBlob } from "../utils/preparation.js";
+import { resumeFilename } from "../utils/resumeFilename.js";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
@@ -42,6 +45,7 @@ export function CandidateDetailPage() {
   const [error, setError] = useState("");
   const [matchError, setMatchError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [downloadingResume, setDownloadingResume] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -91,6 +95,12 @@ export function CandidateDetailPage() {
   return (
     <div className="company-candidate-profile space-y-6">
       {candidate.submitted_version && <p className="surface-card p-4 text-sm text-[var(--muted)]">Estás viendo la versión del perfil enviada para esta vacante. Los cambios posteriores del perfil principal se mantienen separados. La compatibilidad base se calcula con el perfil actual registrado.</p>}
+      {candidate.submitted_resume_url && !candidate.identity_hidden && <button type="button" className="button-secondary" disabled={downloadingResume} onClick={async () => {
+        setDownloadingResume(true); setError("");
+        try { const { data } = await api.get(apiFileUrl(candidate.submitted_resume_url), { responseType: "blob" }); saveBlob(data, resumeFilename(candidate.name)); }
+        catch (failure) { setError(getApiErrorMessage(failure, "No pudimos descargar el CV enviado.")); }
+        finally { setDownloadingResume(false); }
+      }}><Download size={16} />{downloadingResume ? "Descargando…" : "Descargar CV enviado"}</button>}
       <button
         type="button"
         onClick={() => navigate(location.state?.returnTo || (jobId ? `/empresa/talento?job=${jobId}&audience=applied&min=40` : "/empresa/talento"))}

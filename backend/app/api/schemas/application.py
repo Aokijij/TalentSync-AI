@@ -17,6 +17,7 @@ class ScreeningAnswer(BaseModel):
 
 class ApplicationCreate(BaseModel):
     job_id: int
+    resume_version_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{32}$")
 
     @model_validator(mode="before")
     @classmethod
@@ -47,6 +48,7 @@ ApplicationStatusUpdate.model_rebuild()
 
 
 class ApplicationResponse(BaseModel):
+    resume_version_id: str | None = None
     coach_draft_id: str | None = None
     version: int = 1
     response_due_at: datetime | None = None

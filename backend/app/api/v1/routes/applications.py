@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import Response
 
 from app.api.deps import get_current_user, get_unit_of_work, require_roles
 from app.api.schemas.application import (
@@ -8,11 +9,19 @@ from app.api.schemas.application import (
     CompanyApplicationResponse,
 )
 from app.application.ports.unit_of_work import UnitOfWork
+from app.application.use_cases import application_preparation
 from app.application.use_cases import applications as use_cases
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Application, User
+from app.domain.services.resume_filename import resume_disposition
 
 router = APIRouter()
+
+
+@router.get("/{application_id}/resume", response_class=Response)
+def application_resume(application_id: int, user=Depends(get_current_user), db=Depends(get_unit_of_work)):
+    row = application_preparation.submitted_resume(db, user, application_id)
+    return Response(row.pdf, media_type="application/pdf", headers={"Content-Disposition": resume_disposition(row.snapshot["name"]), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @router.post(

@@ -154,13 +154,14 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
             detail="Solo puedes ver el perfil completo de candidatos que se postularon a tus vacantes",
         )
     profile = _submitted_profile(candidate.profile, application)
+    saved = (application.coach_snapshot or {}) if application else {}
     from app.domain.services.personal_details import shared_personal_details
     return {
         **shared_personal_details(candidate.profile),
         "id": profile.id,
         "user_id": profile.user_id,
-        "name": candidate.name,
-        "email": candidate.email,
+        "name": saved.get("name", candidate.name),
+        "email": saved.get("email", candidate.email),
         "profession": profile.profession,
         "skills": profile.skills or [],
         "skill_levels": declared_skill_levels(profile),
@@ -187,7 +188,8 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
         "photo_url": profile.photo_url,
         "resume_style": profile.resume_style,
         "resume_color": profile.resume_color,
-        "submitted_version": (getattr(application, "coach_snapshot", None) or {}).get("draft_id") if application else None,
+        "submitted_version": saved.get("resume_version_id") or saved.get("draft_id") or (f"profile-{application.id}" if saved.get("schema") == 2 else None),
+        "submitted_resume_url": f"/api/v1/applications/{application.id}/resume" if saved.get("resume_version_id") else None,
     }
 
 
@@ -196,6 +198,9 @@ def _submitted_profile(profile, application):
     saved = (getattr(application, "coach_snapshot", None) or {}) if application else {}
     if not saved.get("profile"):
         return profile
+    if saved.get("schema") == 2:
+        return SimpleNamespace(**{**saved["profile"], "id": profile.id, "user_id": profile.user_id,
+            "cv_text": None, "cv_filename": None, "cv_uploaded_at": None, "photo_url": profile.photo_url})
     return SimpleNamespace(**{**saved["profile"], "experience": saved["intro"], "id": profile.id, "user_id": profile.user_id,
                               "cv_text": None, "cv_filename": None, "cv_uploaded_at": None, "photo_url": None,
                               "resume_style": "minimal", "resume_color": "default", "preferences": {}})

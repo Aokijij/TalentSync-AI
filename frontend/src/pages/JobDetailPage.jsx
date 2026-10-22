@@ -22,6 +22,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 
 import { OfferConditions } from "../components/OfferConditions.jsx";
 import { VacancyCvAdvice } from "../components/VacancyCvAdvice.jsx";
+import { ApplicationPreparation } from "../components/ApplicationPreparation.jsx";
 import { OfferFeedback } from "../components/OfferFeedback.jsx";
 import { salaryLabel } from "../utils/offerQuality.js";
 import { loadVacancyData } from "../utils/vacancyRequests.js";
@@ -51,6 +52,8 @@ function JobDetailContent({ jobId }) {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [alreadyApplied, setAlreadyApplied] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState(null);
+  const [applying, setApplying] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
   const [showExternalWarning, setShowExternalWarning] = useState(false);
   const [answers, setAnswers] = useState({});
@@ -91,6 +94,7 @@ function JobDetailContent({ jobId }) {
   }, [availableJobs, job]);
 
   async function apply() {
+    if (applying) return;
     const missing = (job.application_questions || []).find(
       (question) => question.required && !String(answers[question.id] || "").trim(),
     );
@@ -99,19 +103,25 @@ function JobDetailContent({ jobId }) {
       return;
     }
     try {
-      await api.post("/applications", {
+      setApplying(true);
+      const { data: submitted } = await api.post("/applications", {
         job_id: Number(jobId),
+        resume_version_id: selectedVersion?.id || null,
         screening_answers: Object.entries(answers)
           .filter(([, answer]) => String(answer).trim())
           .map(([question_id, answer]) => ({ question_id, answer: String(answer).trim() })),
       });
       setAlreadyApplied(true);
-      setSuccessMessage("Postulación enviada correctamente");
+      setSuccessMessage((submitted.resume_version_id || null) !== (selectedVersion?.id || null)
+        ? "Tu postulación ya estaba registrada. Conservamos la versión enviada inicialmente; puedes consultarla en Postulaciones."
+        : "Postulación enviada correctamente");
       setShowQuestions(false);
     } catch (error) {
       setErrorMessage(
         error.response?.data?.detail || "No fue posible enviar la postulación",
       );
+    } finally {
+      setApplying(false);
     }
   }
 
@@ -270,8 +280,10 @@ function JobDetailContent({ jobId }) {
             <div className="job-requirement-group"><h3><Globe2 size={16} />Idiomas</h3>{job.languages?.length ? <div className="job-language-list">{job.languages.map((language) => <p key={language.name}><strong>{language.name}</strong><span>{languageLevelLabel(language.level)}</span></p>)}</div> : <p>No se especifica un requisito de idioma.</p>}</div>
           </section>
           {user?.role === "candidate" && <VacancyCvAdvice key={jobId} jobId={jobId} />}
+          {user?.role === "candidate" && !alreadyApplied && <ApplicationPreparation jobId={jobId} selectedVersion={selectedVersion} onVersionSelected={job.source_kind !== "external" ? setSelectedVersion : undefined} />}
           {user?.role === "candidate" && <section className="job-apply-card"><h2>{alreadyApplied ? "Tu postulación" : "¿Te interesa esta oportunidad?"}</h2><p>{alreadyApplied ? "Puedes consultar su avance desde Postulaciones." : "Revisa los requisitos y envía tu perfil cuando estés listo."}</p>
           {job.source_kind !== "external" && !alreadyApplied && <p className="mt-3 text-xs leading-5 text-[var(--muted)]">Tu identidad permanece protegida hasta que te postules. Al enviar tu postulación, compartes tu identidad y perfil con esta empresa.</p>}
+          {selectedVersion && !alreadyApplied && job.source_kind !== "external" && <div className="selected-resume-note"><strong>Se enviará tu CV guardado para esta vacante</strong>Conservaremos el PDF exacto de esta versión.<button type="button" onClick={() => setSelectedVersion(null)}>Usar mi perfil habitual</button></div>}
           {user?.role === "candidate" ? (
             <>
               {job.source_kind === "external" && job.external_url ? (
@@ -294,7 +306,7 @@ function JobDetailContent({ jobId }) {
                   Ya estás postulado a esta vacante
                 </div>
               ) : (
-                <button id="job-apply-action" onClick={() => job.application_questions?.length ? setShowQuestions(true) : apply()} className="button-primary mt-8 w-full">
+                <button id="job-apply-action" disabled={applying} onClick={() => job.application_questions?.length ? setShowQuestions(true) : apply()} className="button-primary mt-8 w-full">
                   <Send size={16} />
                   Postularme
                 </button>
@@ -344,7 +356,7 @@ function JobDetailContent({ jobId }) {
               ))}
             </div>
             {errorMessage ? <p className="mt-4 rounded-xl bg-[var(--error)]/10 p-3 text-sm text-[var(--error)]">{errorMessage}</p> : null}
-            <footer className="mt-6 flex justify-end gap-2 border-t border-[var(--line)] pt-5"><button type="button" className="button-secondary" onClick={() => setShowQuestions(false)}>Cancelar</button><button type="button" className="button-primary" onClick={apply}><Send size={16} />Enviar postulación</button></footer>
+            <footer className="mt-6 flex justify-end gap-2 border-t border-[var(--line)] pt-5"><button type="button" className="button-secondary" disabled={applying} onClick={() => setShowQuestions(false)}>Cancelar</button><button type="button" className="button-primary" disabled={applying} onClick={apply}><Send size={16} />{applying ? "Enviando…" : "Enviar postulación"}</button></footer>
           </section>
         </div>
       ) : null}

@@ -25,6 +25,9 @@ dist/
 .dev.vars
 .dev.vars.*
 coverage/
+.quality-dist/
+playwright-report/
+test-results/
 *.log
 logs/
 .azure/

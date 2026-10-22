@@ -181,6 +181,7 @@ class CandidateProfileResponse(ProfileResponse):
                 result.pop(key, None)
         return result
     submitted_version: str | None = None
+    submitted_resume_url: str | None = None
     name: str
     email: str | None = None
     identity_hidden: bool = False

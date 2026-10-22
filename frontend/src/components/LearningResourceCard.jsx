@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { AreaIcon } from "./LearningVisuals.jsx";
 import { certificateCosts, learningLanguages, learningLevels } from "../utils/learningPresentation.js";
 import { CourseEnrollment } from "./CourseEnrollment.jsx";
+import { PanelActions } from "./ui/Panel.jsx";
 
 export function LearningResourceCard({ resource, busy, onPlan, inPlan = false, compact = false }) {
   const [details, setDetails] = useState(false);
@@ -16,7 +17,7 @@ export function LearningResourceCard({ resource, busy, onPlan, inPlan = false, c
     <header><span className="learning-area-icon"><AreaIcon area={resource.category} /></span><div><p className="course-card-provider">{resource.provider || (resource.url ? "Formación externa" : "TalentSync")}</p><h4><button className="resource-title-button" onClick={() => setDetails(true)}>{resource.title}</button></h4></div></header>
     <div className="course-card-body"><div className="course-card-meta"><span><Clock3 size={13} />{formatLearningHours(resource.hours)} h</span><span className={`course-card-cost${resource.cost === "free" ? " is-free" : ""}`}>{resource.cost === "paid" ? "De pago" : resource.cost === "free" ? "Gratuito" : "Coste por confirmar"}</span><span>{resource.url ? "Curso externo" : "Práctica en TalentSync"}</span></div>
     <div className="course-target-skills"><strong>Refuerza</strong><div>{(resource.targeted_skills || resource.skills || []).map((skill) => <span key={skill}>{skill}</span>)}</div></div></div>
-    <footer><button type="button" className="button-secondary button-sm" onClick={() => setDetails(true)}>Ver contenido<ArrowRight size={14} /></button>{onPlan && (inPlan ? <Link className="button-secondary button-sm" to="/aprendizaje#mi-plan"><Check size={14} />En mi plan</Link> : <button type="button" className="button-primary button-sm" disabled={busy || resource.active === false} onClick={() => onPlan(resource.id)}>Añadir a mi plan<ArrowRight size={14} /></button>)}</footer>
+    <PanelActions><button type="button" className="button-secondary button-sm" onClick={() => setDetails(true)}>Ver contenido<ArrowRight size={14} /></button>{onPlan && (inPlan ? <Link className="button-secondary button-sm" to="/aprendizaje#mi-plan"><Check size={14} />En mi plan</Link> : <button type="button" className="button-primary button-sm" disabled={busy || resource.active === false} onClick={() => onPlan(resource.id)}>Añadir a mi plan<ArrowRight size={14} /></button>)}</PanelActions>
   </article>{dialog}</>;
   return <><article className="learning-resource">
     <div className="flex items-center justify-between gap-3"><span className="learning-area-icon"><AreaIcon area={resource.category} /></span><span className="learning-tag">{resource.url ? "Formación externa" : "Práctica guiada"}</span></div>

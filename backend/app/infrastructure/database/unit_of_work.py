@@ -27,6 +27,7 @@ from app.infrastructure.repositories.organizations import OrganizationRepository
 from app.infrastructure.repositories.personalization import PersonalizationRepository
 from app.infrastructure.repositories.profiles import ProfileRepository
 from app.infrastructure.repositories.recommendations import RecommendationRepository
+from app.infrastructure.repositories.resume_versions import ResumeVersionRepository
 from app.infrastructure.repositories.users import UserRepository
 
 
@@ -42,6 +43,7 @@ class SqlAlchemyUnitOfWork:
         self.events = EventRepository(session, EventLog)
         self.users = UserRepository(session, User)
         self.profiles = ProfileRepository(session, Profile)
+        self.resume_versions = ResumeVersionRepository(session)
         self.companies = CompanyRepository(session, Company)
         self.jobs = JobRepository(session, Job)
         self.applications = ApplicationRepository(session, Application)

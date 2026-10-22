@@ -31,7 +31,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
             "trust_incidents", "model_audit_runs",
             "interview_rooms", "interview_participants", "interview_signals",
             "recommendation_feedback", "model_experiments", "offer_feedback",
-            "social_identities", "oauth_attempts", "career_coach_states",
+            "social_identities", "oauth_attempts", "career_coach_states", "resume_versions",
         }
         profile_columns = {column["name"] for column in schema.get_columns("profiles")}
         assert "authentication_authority" in {column["name"] for column in schema.get_columns("user_sessions")}
@@ -54,13 +54,14 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         company_columns = {column["name"] for column in schema.get_columns("companies")}
         assert {"website", "sector", "size", "location", "mission", "values", "benefits", "logo_filename", "cover_filename"} <= company_columns
         application_columns = {column["name"] for column in schema.get_columns("applications")}
+        assert {"id", "user_id", "job_id", "snapshot", "pdf", "pdf_sha256", "request_key"} <= {column["name"] for column in schema.get_columns("resume_versions")}
         for table, expected in [("jobs", "ix_jobs_company_status_created"), ("applications", "ix_applications_job_status"), ("recommendations", "ix_recommendations_job_user"), ("notifications", "ix_notifications_action_type_read_user"), ("assessment_attempts", "ix_attempts_user_passed_valid")]:
             assert expected in {index["name"] for index in schema.get_indexes(table)}
         assert {"purpose", "link_user_id", "link_session_id"} <= {column["name"] for column in schema.get_columns("oauth_attempts")}
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment", "interview_evaluations"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0042_loading_indexes"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0043_resume_versions"
     finally:
         engine.dispose()
 
@@ -75,6 +76,7 @@ def test_postgresql_migration_sql_creates_enum_types_once(monkeypatch):
     assert "CAST(status AS TEXT)" in sql
     assert "0017_languages" in sql
     assert "fk_oauth_link_session" in sql
+    assert "CREATE TABLE resume_versions" in sql and "pdf BYTEA" in sql
 
 
 def test_existing_language_requirements_are_preserved_on_upgrade(monkeypatch, tmp_path):

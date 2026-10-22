@@ -13,6 +13,7 @@ from app.domain.repositories.organizations import OrganizationRepository
 from app.domain.repositories.personalization import PersonalizationRepository
 from app.domain.repositories.profiles import ProfileRepository
 from app.domain.repositories.recommendations import RecommendationRepository
+from app.domain.repositories.resume_versions import ResumeVersionRepository
 from app.domain.repositories.users import UserRepository
 
 
@@ -26,6 +27,7 @@ class UnitOfWork(Protocol):
     events: EventRepository
     users: UserRepository
     profiles: ProfileRepository
+    resume_versions: ResumeVersionRepository
     companies: CompanyRepository
     jobs: JobRepository
     applications: ApplicationRepository

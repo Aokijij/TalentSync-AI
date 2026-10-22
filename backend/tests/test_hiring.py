@@ -115,7 +115,6 @@ def test_submitted_profile_is_visible_only_to_the_authorized_company(client):
     _, other_company = company_account(client, "anonymous-outsider")
     job = client.post("/api/v1/jobs", headers=company, json={"title": "Analista de inventarios", "description": "Revisa inventarios y controla movimientos", "requirements": "Excel y control de inventarios", "sector": "Logistica y transporte"}).json()
     candidate, headers = register(client, "PRIVATE-PERSON", profession="Analista de inventarios", skills=["excel", "inventarios"])
-    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"]}).json()
     with client.session_factory() as db:
         profile = db.get(User, candidate["id"]).profile
         profile.phone = "PRIVATE-PHONE"
@@ -126,6 +125,8 @@ def test_submitted_profile_is_visible_only_to_the_authorized_company(client):
         profile.experiences = [{"role": "Analista", "company": "PRIVATE-EMPLOYER", "description": "PRIVATE-DESCRIPTION", "start_year": "2022", "end_year": "2026"}]
         profile.educations = [{"degree": "Tecnología logística", "institution": "PRIVATE-SCHOOL", "start_year": "2018", "end_year": "2021"}]
         db.commit()
+    # The submitted profile is now frozen; populate the facts before submitting.
+    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"]}).json()
     endpoint = f"/api/v1/profiles/candidates/{candidate['id']}?job_id={job['id']}"
     response = client.get(endpoint, headers=company)
     assert response.status_code == 200, response.text

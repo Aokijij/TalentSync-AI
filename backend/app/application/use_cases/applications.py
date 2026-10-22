@@ -73,7 +73,13 @@ def apply_to_job(
     payload: dict[str, Any], current_user: User, db: UnitOfWork
 ) -> Application:
     job = db.jobs.get(payload["job_id"])
-    if job is None or job.status != "active":
+    if job is None:
+        raise UseCaseError(status_code=404, detail="La vacante no esta disponible")
+    db.profiles.lock_owner(current_user.id)
+    existing = db.applications.find_for_user_job(current_user.id, payload["job_id"])
+    if existing:
+        return existing
+    if job.status != "active":
         raise UseCaseError(status_code=404, detail="La vacante no esta disponible")
     if job.expires_at and job.expires_at < datetime.utcnow():
         raise UseCaseError(status_code=404, detail="La vacante ya venció")
@@ -82,9 +88,21 @@ def apply_to_job(
             status_code=422,
             detail="Esta vacante recibe postulaciones en el sitio de la fuente original",
         )
-    existing = db.applications.find_for_user_job(current_user.id, payload["job_id"])
-    if existing:
-        return existing
+    from copy import deepcopy
+
+    from app.application.use_cases.application_preparation import owned_version
+    from app.domain.services.application_preparation import job_snapshot, resume_profile
+    saved = {}
+    version_id = payload.get("resume_version_id")
+    if version_id:
+        version = owned_version(db, current_user, version_id)
+        if version.job_id != job.id:
+            raise UseCaseError(status_code=422, detail="El CV guardado pertenece a otra vacante")
+        saved = {**deepcopy(version.snapshot), "resume_version_id": version.id, "pdf_sha256": version.pdf_sha256}
+    elif current_user.profile:
+        db.refresh(current_user.profile)
+        saved = {"schema": 2, "name": current_user.name, "email": current_user.email,
+                 "profile": resume_profile(current_user.profile), "job": job_snapshot(job)}
     answers, screening_adjustment = _screening_result(
         job, payload.get("screening_answers", [])
     )
@@ -95,7 +113,7 @@ def apply_to_job(
         pipeline_stage=first_stage,
         screening_answers=answers,
         screening_adjustment=screening_adjustment,
-        coach_snapshot={},
+        coach_snapshot=saved,
     )
     db.add(application)
     db.flush()
