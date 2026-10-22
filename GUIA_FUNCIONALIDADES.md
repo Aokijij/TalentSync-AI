@@ -116,4 +116,4 @@ Las cartas de presentación, el simulador conversacional, el seguimiento de post
 
 Breken y Figma no están conectados. Las referencias de diseño se utilizan para mejorar los componentes existentes; no se incorporaron nuevas dependencias de animación o 3D.
 
-Las pruebas de lógica, permisos y compilación se complementan con una suite preparada para tamaños, roles y temas. **La ejecución de navegador y la aprobación visual de capturas siguen pendientes**; compilar esa página o listar sus casos no confirma su apariencia final.
+Las pruebas de lógica, permisos y compilación se complementan con una suite visual de componentes: **24 casos ejecutados con Chromium**, en tres roles, dos temas y cuatro tamaños. Se inspeccionaron capturas representativas y se corrigieron detalles de espaciado y datos ausentes. Esta comprobación con datos ficticios no sustituye una revisión completa de todas las pantallas con cuentas autenticadas ni una comparación automática con capturas de referencia.

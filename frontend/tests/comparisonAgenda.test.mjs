@@ -40,6 +40,17 @@ test("comparison has no empty banner and vacancy actions do not repeat a checkbo
   assert.doesNotMatch(html, /type="checkbox"|Compara tus opciones/);
 });
 
+test("vacancy cards preserve unknown location and compatibility instead of inventing flexibility or a zero score", () => {
+  const job = { ...jobs[0], modality: "onsite", location: null, department: null };
+  for (const match of [null, undefined, "", NaN, Infinity]) {
+    const html = render(createElement(VacancyCard, { job, match, showMatch: true }));
+    assert.match(html, /Ubicación por confirmar/);
+    assert.doesNotMatch(html, /Ubicación flexible|0% compatible|100% compatible/);
+  }
+  const zero = render(createElement(VacancyCard, { job, match: 0, showMatch: true }));
+  assert.match(zero, /0% compatible/);
+});
+
 test("answer review shows one question and preserves pending board adjustments without process fields", () => {
   const html = render(createElement(ApplicationAnswersModal, { application: { id: 5, candidate_name: "Ejemplo", base_match_percentage: 59, screening_answer_adjustments: { first: 2 }, screening_answers: [{ question_id: "first", question: "Primera pregunta específica", answer: "Mi evidencia", type: "open" }, { question_id: "second", question: "Segunda pregunta específica", answer: "Otra evidencia", type: "open" }] }, onPrepare() {}, onClose() {} }));
   assert.match(html, /Primera pregunta específica/);

@@ -24,6 +24,10 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     for (const card of await page.locator('[data-quality="course"] article.learning-course-card').all()) {
       const cardBox = await card.boundingBox();
       const footer = await card.locator("footer").boundingBox();
+      const metadata = await card.locator(".course-card-meta").boundingBox();
+      const skills = await card.locator(".course-target-skills").boundingBox();
+      expect(metadata.x, "Course metadata must keep the card's inner spacing").toBeGreaterThanOrEqual(cardBox.x + 12);
+      expect(skills.x, "Reinforced skills must keep the card's inner spacing").toBeGreaterThanOrEqual(cardBox.x + 12);
       expect(footer.width, "The course footer must span the card").toBeGreaterThanOrEqual(cardBox.width - 3);
       for (const button of await card.locator("footer button").all()) {
         const box = await button.boundingBox();

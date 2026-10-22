@@ -28,7 +28,7 @@ ESLint detecta ahora tanto variables sin usar como referencias inexistentes. REA
 | Backend y recorridos API | `backend/.venv/Scripts/python.exe scripts/local.py test` |
 | Lógica y renderizado frontend | `cd frontend` → `npm test` |
 | Análisis y compilación | `npm run lint`, `npm run build`, Ruff y `pip check` |
-| Componentes de revisión visual | `npm run quality:ui:build` y `npm run quality:ui:list` |
+| Componentes de revisión visual | `npm run quality:ui:build`, `npm run quality:ui:list` y `npm run quality:ui` |
 | Modelo de compatibilidad | `backend/.venv/Scripts/python.exe scripts/local.py model-check` |
 | Extracción local de entidades del CV | `backend/.venv/Scripts/python.exe scripts/local.py cv-model-check` |
 | PostgreSQL y recuperación | `backend/.venv/Scripts/python.exe scripts/staging_postgres.py check` |
@@ -36,9 +36,27 @@ ESLint detecta ahora tanto variables sin usar como referencias inexistentes. REA
 
 El ensayo de PostgreSQL usa bases nuevas en el clúster local reservado para pruebas, comprueba el rol sin permisos administrativos y compara todas las filas tras restaurar. No ejecuta migraciones ni restauraciones sobre la base de trabajo o producción. La prueba PostgreSQL se omite en la suite SQLite y se ejecuta por este recorrido separado.
 
+## Comprobación visual con Chromium
+
+La suite de componentes se ejecutó con Chromium 158.0.8119.0: 24 combinaciones de candidato, empresa y administración; temas claro y oscuro; anchos de 360, 768, 1280 y 1440 píxeles. Comprueba desbordamiento de página, dimensiones de tarjetas y modales, comparación de vacantes, navegación por teclado, conservación de borradores, valoración de respuestas y el recorrido de los retos.
+
+La inspección de capturas detectó que el espaciado del contenido de cursos solo se aplicaba dentro de una vacante. Se extendió a todas las tarjetas compactas y se añadieron comprobaciones de sus márgenes. También se corrigió la etiqueta de ubicación ausente y se evita mostrar un porcentaje de compatibilidad inventado cuando falta el dato.
+
+La configuración admite `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` o una preferencia local en `.local/playwright-browser.json` con la propiedad `executablePath`. La variable de entorno tiene prioridad. Ese archivo queda fuera de Git; cada equipo puede usar su navegador sin modificar el código compartido. Si no se especifica ninguno, Playwright utiliza su navegador habitual. Las pruebas usan dos procesos para limitar la carga del equipo. Antes de ejecutarse, se compila la página de prueba y se sirve esa compilación fija: las recargas del servidor de desarrollo no pueden reiniciar un recorrido a mitad.
+
+Para repetir desde PowerShell, dentro de `frontend`:
+
+```powershell
+# Solo si no existe la preferencia local:
+$env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = 'C:\ruta\al\navegador\chrome.exe'
+npm run quality:ui
+```
+
+El informe interactivo se genera en `frontend/playwright-report/index.html`. Los resultados locales y las capturas representativas se describen en `.local/verification/visual-chromium.json`. Los datos de esta página de prueba son ficticios y se bloquean las consultas externas y a la API.
+
 ## Límites de la revisión
 
-- La suite Playwright está preparada para 24 combinaciones de rol, tema y tamaño. Su ejecución y la aprobación visual de capturas siguen pendientes por la restricción de automatización de navegador de esta sesión. Las pruebas de renderizado sin navegador verifican el montaje y el contenido inicial; no verifican dimensiones, interacción de teclado ni apariencia final.
+- La ejecución visual cubre componentes y sus interacciones con datos de prueba. No equivale a una revisión completa de cada pantalla autenticada ni establece comparaciones automáticas contra capturas de referencia aprobadas. La inspección manual se realizó sobre una selección representativa de las capturas.
 - Correo externo, OAuth/SSO, calendarios sincronizados y otros proveedores requieren cuentas y configuración autorizadas. Las pruebas de adaptadores o transportes locales no equivalen a comprobar una entrega o conexión externa real.
 - Las pruebas de concurrencia usan datos sintéticos. No representan una certificación de capacidad o una auditoría de producción.
 - No se publicaron cambios ni se alteraron cuentas personales para realizar esta revisión.
