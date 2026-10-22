@@ -13,6 +13,11 @@
 .recommendation-card { display:grid; grid-template-columns:minmax(0,1fr) 235px 140px; align-items:center; gap:1.5rem; padding:1.6rem 1.45rem; border-bottom:1px solid var(--line); transition:background .15s; }
 .recommendation-card:last-child { border-bottom:0; }
 .recommendation-card:hover { background:color-mix(in srgb,var(--accent) 2%,var(--surface)); }
+.recommendation-card.is-applied { box-shadow:inset 3px 0 var(--success); background:color-mix(in srgb,var(--success) 3%,var(--surface)); }
+.recommendation-card.is-closed-application { box-shadow:inset 3px 0 var(--muted); background:var(--surface-subtle); }
+.recommendation-card-copy > .application-status-notice.is-compact { margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line); }
+.recommendation-card-copy > .application-status-notice.is-compact strong { font-size:12px; }
+.recommendation-card-copy > .application-status-notice.is-compact p { font-size:11px; }
 .recommendation-card-copy { min-width:0; }
 .recommendation-card-company { display:flex; align-items:center; flex-wrap:wrap; gap:.4rem; font-size:.71rem; color:var(--muted); margin-bottom:.45rem; }
 .recommendation-card-company > span { display:inline-flex; align-items:center; gap:.25rem; margin-left:.4rem; }
@@ -20,10 +25,20 @@
 .recommendation-card .recommendation-quality { font-size:.62rem; }
 .recommendation-card-copy > p { font-size:.78rem; line-height:1.6; }
 .recommendation-card-apply { display:flex; justify-content:flex-end; }
-.recommendation-card-apply button { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; white-space:nowrap; width:100%; min-height:40px; font-size:.77rem; border-radius:.65rem; padding:.55rem .6rem; }
+.recommendation-card-apply :is(button,a) { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; white-space:nowrap; width:100%; min-height:40px; font-size:.77rem; border-radius:.65rem; padding:.55rem .6rem; }
 .recommendation-card>.surface-card { padding:16px; border-radius:24px; background:var(--surface); box-shadow:none; }
 .recommendation-card-details { grid-column:1/-1; }
 .recommendation-insight-button { display:inline-flex; align-items:center; gap:.4rem; min-height:30px; color:var(--accent); font-size:.71rem; font-weight:650; }
 .recommendation-insight-button:hover { text-decoration:underline; }
 @media(max-width:900px) { .recommendation-card { grid-template-columns:minmax(0,1fr) 210px; padding:1.15rem; gap:.7rem 1.3rem; } .recommendation-card-copy { grid-row:1/3; } .recommendation-card-apply { grid-column:2; } }
-@media(max-width:600px) { .recommendation-card { grid-template-columns:minmax(0,1fr) 125px; gap:.7rem 1.2rem; } .recommendation-card-copy { grid-column:1/-1; grid-row:1; } .recommendation-match { grid-column:1; grid-row:2; max-width:235px; } .recommendation-card-apply { grid-column:2; grid-row:2; } .recommendation-card-details { grid-template-columns:1fr; } .recommendation-match strong { font-size:1.35rem; } }
+@media(max-width:600px) {
+  .recommendation-card { grid-template-columns:minmax(0,1fr); gap:.8rem; }
+  .recommendation-card-copy { grid-column:1; grid-row:auto; }
+  .recommendation-card > .surface-card { grid-column:1; padding:12px; border-radius:12px; }
+  .recommendation-card > .surface-card .mt-4 { margin-top:8px; }
+  .recommendation-card > .surface-card .mt-3 { margin-top:6px; }
+  .recommendation-match { max-width:235px; }
+  .recommendation-card-apply { grid-column:1; grid-row:auto; }
+  .recommendation-card-details { grid-template-columns:1fr; }
+  .recommendation-match strong { font-size:1.35rem; }
+}

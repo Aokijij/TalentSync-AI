@@ -26,6 +26,7 @@ import { getRecommendations } from "../api/recommendations.js";
 import "../styles/recommendations.css";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
+import { ApplicationStatusNotice } from "../components/ApplicationStatusNotice.jsx";
 import { VacancyLearningPanel } from "../components/VacancyLearningPanel.jsx";
 import { JobInterestButtons } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
@@ -123,8 +124,8 @@ export function RecommendationsPage() {
     saveRecommendationSetting(localStorage, user.id, "source", value);
   }
 
-  const appliedJobIds = useMemo(
-    () => new Set(applications.map((application) => application.job_id)),
+  const applicationsByJob = useMemo(
+    () => new Map(applications.map((application) => [application.job_id, application])),
     [applications],
   );
 
@@ -231,7 +232,9 @@ export function RecommendationsPage() {
           <div className="recommendation-cards">
             {visibleRecommendations.map((item) => {
               const job = jobsById.get(item.job_id);
-              const applied = appliedJobIds.has(item.job_id);
+              const application = applicationsByJob.get(item.job_id);
+              const applied = Boolean(application);
+              const closedApplication = application?.released_at || application?.status === "rejected";
               const isExpanded = expandedReasons[item.id] ?? false;
 
               const reasonsShort = (item.reasons ?? []).slice(0, 2);
@@ -253,9 +256,10 @@ export function RecommendationsPage() {
               return (
                 <article
                   key={item.id}
-                  className="recommendation-card"
+                  className={`recommendation-card${applied ? " is-applied" : ""}${closedApplication ? " is-closed-application" : ""}`}
                 >
                   <div className="recommendation-card-copy">
+                    {applied && <ApplicationStatusNotice application={application} compact />}
                     <p className="recommendation-card-company"><Building2 size={14} />{job?.company_name || "Empresa"}{job?.location && <span><MapPin size={13} />{job.location}</span>}</p>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold text-[var(--ink)]"><Link className="recommendation-title-link" to={`/vacantes/${item.job_id}`} state={{ returnTo: "/recomendaciones" }}>
@@ -272,11 +276,6 @@ export function RecommendationsPage() {
                         </span>
                       ) : null}
                       {item.discovery?.quality_score != null && <span className="recommendation-quality" title={item.discovery.notice}>Claridad de oferta {item.discovery.quality_score}%</span>}
-                      {applied ? (
-                        <span className="rounded-[var(--radius-md)] bg-[var(--success)]/10 px-2 py-1 text-xs font-semibold text-[var(--ink)]">
-                          Postulado
-                        </span>
-                      ) : null}
                     </div>
 
                     <p className="mt-1 line-clamp-2 text-sm text-[var(--muted)]">
@@ -333,15 +332,14 @@ export function RecommendationsPage() {
                   />
 
                   <div className="recommendation-card-apply">
-                    <button
+                    {applied ? <Link className="button-primary" to={application.id ? `/procesos/${application.id}` : "/postulaciones"}>{application.id ? "Ver mi proceso" : "Mis postulaciones"}<ArrowRight size={16} /></Link> : <button
                       type="button"
-                      disabled={applied}
                       onClick={() => apply(job)}
                       className="button-primary"
                     >
                       <Send size={16}  />
-                      {applied ? "Enviada" : "Postularme"}
-                    </button>
+                      Postularme
+                    </button>}
                   </div>
                   {isExpanded ? (
                     <div className="recommendation-card-details grid gap-6 border-t border-[var(--line)] pt-5 lg:grid-cols-2">
