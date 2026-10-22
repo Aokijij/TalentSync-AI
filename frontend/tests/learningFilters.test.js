@@ -8,6 +8,10 @@ const resources = [
   { id: "external", title: "Diseño accesible", provider: "Academia", skills: ["contraste"], kind: "course", cost: "paid", url: "https://example.com/course" },
   { id: "unknown", title: "Comunicación", provider: "Biblioteca", skills: [], kind: "workshop", cost: "unknown", url: "https://example.com/workshop" },
 ];
+test("search ignores surrounding spaces and a whitespace-only search leaves the catalog visible", () => {
+  assert.deepEqual(filterResources(resources, { query: "  conciliacion  " }).map((row) => row.id), ["local"]);
+  assert.equal(filterResources(resources, { query: "   " }).length, resources.length);
+});
 test("combines provider, cost, format and accent-insensitive search", () => {
   assert.deepEqual(filterResources(resources, { origin: "external", cost: "paid", kind: "course", query: "diseno" }).map((row) => row.id), ["external"]);
   assert.deepEqual(filterResources(resources, { origin: "local", cost: "free", query: "FINANZAS" }).map((row) => row.id), ["local"]);

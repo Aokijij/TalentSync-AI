@@ -22,6 +22,19 @@ async function component(name, exportName = name, folder = "components") {
   return module.exports[exportName];
 }
 
+test("course filters expose removable labels for active hidden options and accessible cost shortcuts", async () => {
+  const Panel = await component("LearningFilters");
+  const html = renderToStaticMarkup(createElement(Panel, { value: { query: "excel", provider: "SENA", cost: "free", language: "es", level: "beginner" }, resources: [{ provider: "SENA", details: { languages: ["es"] } }], resultCount: 1, onChange: () => {} }));
+  for (const label of ["Quitar filtro Búsqueda: excel", "Quitar filtro Proveedor: SENA", "Quitar filtro Idioma: Español", "Quitar filtro Nivel: Inicial"]) assert.ok(html.includes(label), label);
+  assert.match(html, /aria-pressed="true">Gratuitos/);
+  assert.match(html, /2 activos/);
+  assert.match(html, /role="status"/);
+  const details = html.match(/<details[^>]*>/)?.[0];
+  assert.ok(details && !/\bopen(?:=|\s|>)/.test(details));
+  const empty = renderToStaticMarkup(createElement(Panel, { value: {}, resources: [], onChange: () => {} }));
+  assert.doesNotMatch(empty, /Quitar filtro|Limpiar filtros/);
+});
+
 test("vacancy training starts as a native closed disclosure with an accessible summary", async () => {
   const Panel = await component("VacancyLearningPanel");
   const html = renderToStaticMarkup(createElement(Panel, { jobId: 1 }));

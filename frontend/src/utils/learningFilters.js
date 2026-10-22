@@ -9,5 +9,5 @@ export function filterResources(resources, { query = "", origin = "all", cost = 
     (enrollment === "all" || courseAvailability(row).status === enrollment) &&
     (modality === "all" || courseAvailability(row).modality === modality) &&
     (certificate === "all" || row.details?.certificate_cost === certificate) &&
-    fold([row.title, row.provider, ...(row.skills || [])].join(" ")).includes(fold(query)));
+    fold([row.title, row.provider, ...(row.skills || [])].join(" ")).includes(fold(String(query ?? "").trim())));
 }
