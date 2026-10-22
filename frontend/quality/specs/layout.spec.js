@@ -76,5 +76,22 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     expect(failures).toEqual([]);
     await testInfo.attach("componentes", { body: await page.screenshot({ fullPage: true, animations: "disabled" }), contentType: "image/png" });
+    await page.getByRole("button", { name: "Empezar práctica", exact: true }).click();
+    const practice = page.getByRole("region", { name: "Espacio de práctica", exact: true });
+    await expect(practice).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Practica una habilidad concreta" })).toHaveCount(0);
+    await expect(practice.getByRole("button", { name: "Continuar", exact: true })).toBeDisabled();
+    await practice.getByText("def f(items=None) y crear la lista dentro", { exact: true }).click();
+    await expect(practice.getByRole("radio", { name: "def f(items=None) y crear la lista dentro", exact: true })).toBeChecked();
+    await practice.getByRole("button", { name: "Continuar", exact: true }).click();
+    await practice.getByText("Validarlo y comunicar el error", { exact: true }).click();
+    await practice.getByRole("button", { name: "Revisar respuestas", exact: true }).click();
+    await expect(practice.getByRole("heading", { name: "Revisa tus respuestas", exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await testInfo.attach("practica", { body: await page.screenshot({ fullPage: true, animations: "disabled" }), contentType: "image/png" });
+    await practice.getByRole("button", { name: "Entregar respuestas", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Fundamentos aprobados" })).toBeVisible();
+    await page.getByRole("button", { name: "Ver mis resultados", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Empezar práctica", exact: true })).toBeVisible();
   });
 }

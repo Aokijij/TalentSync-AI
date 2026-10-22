@@ -1,17 +1,19 @@
+import { ChallengeWorkspace, ChallengeResult } from "../components/ChallengeWorkspace.jsx";
+import { practiceSeconds, practiceDraft, restorePractice, savePractice } from "../utils/practiceSession.js";
 import { ChallengeCatalog } from "../components/ChallengeCatalog.jsx";
 import { LearningAreaPicker } from "../components/LearningAreaPicker.jsx";
 import { LearningResults } from "../components/LearningResults.jsx";
 import { Target, BookOpen, Route, BadgeCheck, TrendingUp } from "lucide-react";
 import { MarketRadar } from "../components/MarketRadar.jsx";
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { LearningResourceCard } from "../components/LearningResourceCard.jsx";
 import { LearningOverview } from "../components/LearningVisuals.jsx";
 import { LearningPlanBoard } from "../components/LearningPlanBoard.jsx";
-import { ActivityInput, activityComplete, describeAnswer } from "../components/ActivityInput.jsx";
+import { activityComplete } from "../components/ActivityInput.jsx";
 import { LearningFilters } from "../components/LearningFilters.jsx";
 import { LearningOpportunities } from "../components/PublicLearningSources.jsx";
 import { filterResources } from "../utils/learningFilters.js";
@@ -26,7 +28,9 @@ export function LearningPage() {
   const [planSelection, setPlanSelection] = useState(new URLSearchParams(location.search).get("resource") || null);
   const [coursePage, setCoursePage] = useState(1);
   function chooseArea(next) { setArea(next); setFilters({}); setCoursePage(1); }
-  const challenge = useRef(null);
+  const returnToChallenge = useRef(null);
+  const practiceMemory = useRef({});
+  const [practiceOpen, setPracticeOpen] = useState(false), [draftWarning, setDraftWarning] = useState("");
   const [area, setArea] = useState(new URLSearchParams(location.search).has("search") ? "all" : "recommended"), [tab, setTab] = useState(["#que-aprender", "#radar-laboral"].includes(location.hash) ? "demand" : location.hash === "#mi-plan" ? "plan" : location.hash === "#resultados" ? "passport" : location.hash === "#cursos" ? "courses" : ["#retos", "#retos-sql"].includes(location.hash) ? "challenges" : "courses");
   useEffect(() => { const search = new URLSearchParams(location.search).get("search"); if (search) { setFilters({ query: search }); setArea("all"); setTab("courses"); setCoursePage(1); } }, [location.search]);
   const [catalog, setCatalog] = useState(null), [plans, setPlans] = useState([]), [passport, setPassport] = useState(null);
@@ -37,19 +41,61 @@ export function LearningPage() {
   useEffect(() => { refresh(); }, []);
   useEffect(() => { const controller = new AbortController(); setCatalogLoading(true); setCatalogError(""); api.get("/learning/catalog", { params: { area }, signal: controller.signal, __skipRetry: true }).then(({ data }) => { if (!controller.signal.aborted) setCatalog(data); }).catch((failure) => { if (!controller.signal.aborted) setCatalogError(getApiErrorMessage(failure, "No pudimos cargar los retos y cursos de esta área.")); }).finally(() => { if (!controller.signal.aborted) setCatalogLoading(false); }); return () => controller.abort(); }, [area, reload]);
   useEffect(() => { if (attempt?.status !== "active") return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [attempt]);
-  useEffect(() => { if (attempt?.id) challenge.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [attempt?.id]);
+  useEffect(() => {
+    if (practiceOpen || tab !== "challenges" || !returnToChallenge.current) return;
+    const assessmentId = returnToChallenge.current;
+    const frame = requestAnimationFrame(() => { document.getElementById(`challenge-start-${assessmentId}`)?.focus(); returnToChallenge.current = null; });
+    return () => cancelAnimationFrame(frame);
+  }, [practiceOpen, tab]);
+  useEffect(() => {
+    if (!draftWarning || attempt?.status !== "active") return;
+    const warn = (event) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [draftWarning, attempt?.status]);
   useEffect(() => { if (["#que-aprender", "#radar-laboral", "#mi-plan", "#resultados", "#cursos", "#retos", "#retos-sql"].includes(location.hash)) { setTab({ "#radar-laboral": "demand", "#que-aprender": "demand", "#mi-plan": "plan", "#resultados": "passport", "#cursos": "courses", "#retos": "challenges", "#retos-sql": "challenges" }[location.hash]); setMessage(""); } }, [location.hash]);
   useEffect(() => { if (!message) return; const timer = setTimeout(() => setMessage(""), 6000); return () => clearTimeout(timer); }, [message]);
   async function addPlan(id) { setPlans((await api.put(`/learning/plans/${id}`, { status: "in_progress" })).data); setMessage("Añadido a Mi plan. Ya puedes comenzar el laboratorio."); }
   async function act(action) { setBusy(true); setError(""); setMessage(""); try { await action(); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }
   const draftKey = (id) => `talentsync-assessment-${user.id}-${id}`;
-  async function start(id) { const { data } = await api.post(`/learning/assessments/${id}/start`); let draft = {}; try { draft = JSON.parse(sessionStorage.getItem(draftKey(data.id)) || "{}"); } catch { /* Ignore a damaged draft. */ } setAttempt(data); setAnswers(draft); setStep(0); setNow(Date.now()); }
-  function choose(id, value) { const next = { ...answers, [id]: value }; setAnswers(next); sessionStorage.setItem(draftKey(attempt.id), JSON.stringify(next)); }
-  const seconds = attempt ? Math.max(0, Math.floor((new Date(attempt.expires_at + "Z").getTime() - now) / 1000)) : 0;
-  const question = attempt?.questions?.[step], reviewing = attempt?.status === "active" && step === attempt.questions.length;
-  const answered = attempt?.questions?.filter((row) => activityComplete(row, answers[row.id])).length || 0;
+  const draftStorage = { getItem: (key) => window.sessionStorage.getItem(key), setItem: (key, value) => window.sessionStorage.setItem(key, value) };
+  async function start(id) {
+    const { data } = await api.post(`/learning/assessments/${id}/start`);
+    if (!Array.isArray(data.questions) || !data.questions.length) throw new Error("La práctica no tiene preguntas disponibles.");
+    const restored = restorePractice(draftStorage, draftKey(data.id), data.questions);
+    const memory = practiceDraft(practiceMemory.current[data.id], data.questions);
+    const recovered = { ...restored.answers, ...memory };
+    const next = data.questions.findIndex((item) => !activityComplete(item, recovered[item.id]));
+    practiceMemory.current[data.id] = recovered;
+    returnToChallenge.current = id;
+    setAttempt(data); setAnswers(recovered); setStep(next < 0 ? data.questions.length : next);
+    setDraftWarning(restored.warning); setPracticeOpen(true); setNow(Date.now());
+  }
+  function choose(id, value) {
+    const next = { ...answers, [id]: value };
+    practiceMemory.current[attempt.id] = next;
+    setAnswers(next); setDraftWarning(savePractice(draftStorage, draftKey(attempt.id), next));
+  }
+  const seconds = attempt ? practiceSeconds(attempt.expires_at, now) : 0;
+  function openResult(row) { returnToChallenge.current = row.assessment_id; setAttempt(row); setError(""); setPracticeOpen(true); }
+  function exitPractice(destination = "challenges") { setPracticeOpen(false); setTab(destination); setError(""); setReload((value) => value + 1); }
+  async function submitPractice() {
+    if (busy || seconds === 0) return;
+    if (!await confirm({ title: "Entregar la práctica", description: "Se evaluarán tus respuestas y verás las correcciones. La entrega finaliza este intento.", confirmLabel: "Entregar respuestas" })) return;
+    await act(async () => {
+      const { data } = await api.post(`/learning/attempts/${attempt.id}/submit`, { answers });
+      setAttempt(data); setDraftWarning("");
+      delete practiceMemory.current[attempt.id];
+      try { window.sessionStorage.removeItem(draftKey(attempt.id)); } catch { /* The submitted result takes precedence over local cleanup. */ }
+      await refresh(); setReload((value) => value + 1);
+    });
+  }
   const visibleResources = catalog ? filterResources(catalog.resources.filter((resource) => !plans.some((plan) => plan.resource?.id === resource.id)), filters) : [];
   const coursePages = Math.max(1, Math.ceil(visibleResources.length / 12)), safeCoursePage = Math.min(coursePage, coursePages);
+  if (practiceOpen && attempt?.status === "active") return <ChallengeWorkspace attempt={attempt} answers={answers} step={step} onStep={setStep} onAnswer={choose} seconds={seconds} busy={busy} error={error} warning={draftWarning} onExit={() => exitPractice()} onSubmit={submitPractice} />;
+  if (practiceOpen && attempt?.status === "completed") return <ChallengeResult attempt={attempt} error={error} onExit={() => exitPractice()} onResults={() => exitPractice("passport")}>
+    {!!attempt.improvement_resources?.length && <section className="space-y-3"><h2 className="text-lg font-bold">Formación para reforzar esta habilidad</h2><div className="grid gap-3 md:grid-cols-2">{attempt.improvement_resources.map((resource) => <LearningResourceCard key={resource.id} resource={resource} busy={busy || plans.filter((row) => row.status !== "completed").length >= 3} inPlan={plans.some((row) => row.resource?.id === resource.id)} onPlan={(id) => act(() => addPlan(id))} />)}</div>{message && <p role="status">{message}</p>}</section>}
+  </ChallengeResult>;
   return <div className="space-y-5">
     <PageHeader kicker="Mi desarrollo" title="Aprende y demuestra lo que sabes" description="Continúa tu formación desde Mi plan, explora cursos o practica una habilidad para encontrar qué necesitas reforzar." />
     <LearningOverview plans={plans} passport={passport} />
@@ -59,17 +105,10 @@ export function LearningPage() {
     {["challenges", "courses"].includes(tab) && <LearningAreaPicker areas={catalog?.areas} value={area} onChange={chooseArea} />}
     {["challenges", "courses"].includes(tab) && catalogLoading && <p role="status" className="surface-card p-4">Cargando retos y cursos…</p>}
     {["challenges", "courses"].includes(tab) && catalogError && <p role="alert" className="surface-card p-4 text-[var(--error)]">{catalogError} <button className="underline" onClick={() => setReload((value) => value + 1)}>Reintentar</button></p>}
-    {tab === "challenges" && catalog && <ChallengeCatalog assessments={catalog.assessments} areas={catalog.areas} busy={busy} attempt={attempt} onStart={(id) => act(() => start(id))} onReview={(id) => { const result = passport?.assessments.find((row) => row.id === id); if (result) { setAttempt(result); requestAnimationFrame(() => challenge.current?.scrollIntoView({ behavior: "smooth", block: "start" })); } else { setTab("passport"); } }} onExplore={(skill) => { setFilters({ query: skill }); setArea("all"); setCoursePage(1); setTab("courses"); }} />}
-    {tab === "challenges" && attempt?.status === "active" && <section ref={challenge} className="surface-card scroll-mt-24 space-y-5 p-5" aria-label="Reto en curso"><div className="flex flex-wrap justify-between gap-3"><h2 className="font-bold">{reviewing ? "Revisar entrega" : `Decisión ${step + 1} de ${attempt.questions.length}`}</h2><button className="button-secondary" disabled={busy} onClick={() => { setAttempt(null); setAnswers({}); }}>Guardar y salir del reto</button><p role="timer">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} restantes</p></div><p className="text-xs text-[var(--muted)]">Las respuestas se conservan en este navegador al salir. El tiempo sigue corriendo; vuelve a la tarjeta del reto para continuar.</p><progress aria-label="Respuestas completadas" className="w-full" max={attempt.questions.length} value={answered} />
-      {question && <div className="space-y-4"><h3 className="text-lg font-semibold">{question.prompt}</h3><ActivityInput item={question} value={answers[question.id]} disabled={busy || seconds === 0} onChange={(value) => choose(question.id, value)} /></div>}
-      {reviewing && <div className="space-y-3">{attempt.questions.map((row, index) => <article className="border-b border-[var(--line)] pb-3" key={row.id}><p className="font-semibold">{index + 1}. {row.prompt}</p><p className="text-sm">{describeAnswer(row, answers[row.id])}</p><button className="text-sm text-[var(--accent)]" onClick={() => setStep(index)}>Editar respuesta</button></article>)}</div>}
-      <div className="flex flex-wrap gap-3"><button className="button-secondary" disabled={step === 0 || busy} onClick={() => setStep(step - 1)}>Anterior</button>{!reviewing ? <button className="button-primary" disabled={busy || seconds === 0 || !activityComplete(question, answers[question.id])} onClick={() => setStep(step + 1)}>{step === attempt.questions.length - 1 ? "Revisar respuestas" : "Siguiente decisión"}</button> : <button className="button-primary" disabled={busy || seconds === 0 || answered !== attempt.questions.length} onClick={async () => { if (!await confirm({ title: "Entregar el reto", description: "Se evaluarán tus respuestas y verás las correcciones. Podrás realizar otro intento después del periodo de espera.", confirmLabel: "Entregar respuestas" })) return; act(async () => { const { data } = await api.post(`/learning/attempts/${attempt.id}/submit`, { answers }); sessionStorage.removeItem(draftKey(attempt.id)); setAttempt(data); await refresh(); setReload((value) => value + 1); }); }}>Entregar evaluación</button>}</div>{seconds === 0 && <p role="status">El intento venció. Inicia otro después del periodo de espera.</p>}
-    </section>}
-    {["challenges", "passport"].includes(tab) && attempt?.status === "completed" && <section ref={challenge} className="surface-card scroll-mt-24 space-y-3 p-5" role="status"><h2 className="font-bold">{attempt.passed ? "Fundamentos aprobados" : "Continúa practicando"} · {attempt.score}%</h2>{attempt.feedback.map((row) => <article key={row.question_id} className={`activity-feedback ${row.correct ? "correct" : ""}`}><h3 className="font-bold">{row.correct ? "✓ Bien resuelto" : "Por reforzar"}</h3>{row.prompt && <p className="mt-2 text-sm font-semibold">{row.prompt}</p>}<p className="mt-2 text-sm">{row.message}</p></article>)}{attempt.improvement_resources?.length > 0 && <div className="space-y-3"><h3 className="text-lg font-bold">Practica lo que necesitas reforzar</h3><div className="grid gap-3 md:grid-cols-2">{attempt.improvement_resources.map((resource) => <LearningResourceCard key={resource.id} resource={resource} busy={busy || plans.filter((row) => row.status !== "completed").length >= 3} inPlan={plans.some((row) => row.resource?.id === resource.id)} onPlan={(id) => act(() => addPlan(id))} />)}</div></div>}<Link to="/recomendaciones" className="text-[var(--accent)]">Ver recomendaciones actualizadas</Link></section>}
-
+    {tab === "challenges" && catalog && <ChallengeCatalog assessments={catalog.assessments} areas={catalog.areas} busy={busy} attempt={attempt} onStart={(id) => act(() => start(id))} onReview={(id) => { const result = passport?.assessments.find((row) => row.id === id); if (result) { openResult(result); } else { setTab("passport"); } }} onExplore={(skill) => { setFilters({ query: skill }); setArea("all"); setCoursePage(1); setTab("courses"); }} />}
     {tab === "courses" && catalog && <section className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Prácticas y formación para avanzar</h2></div><LearningFilters value={filters} resultCount={visibleResources.length} resources={catalog.resources} onChange={(next) => { setFilters(next); setCoursePage(1); }} /><p className="text-xs text-[var(--muted)]">El acceso gratuito al curso puede tener condiciones distintas al certificado. Consulta los detalles y la página oficial antes de inscribirte.</p><p className="text-sm text-[var(--muted)]">{plans.filter((row) => row.status !== "completed").length}/3 recursos activos{plans.filter((row) => row.status !== "completed").length >= 3 ? " · Finaliza o abandona uno para añadir otro." : " · Puedes añadir formación a Mi plan."}</p><div className="learning-catalog-grid">{visibleResources.slice((safeCoursePage - 1) * 12, safeCoursePage * 12).map((resource) => <LearningResourceCard key={resource.id} resource={resource} busy={busy || plans.filter((row) => row.status !== "completed").length >= 3} onPlan={(id) => act(() => addPlan(id))} />)}</div><Pagination page={safeCoursePage} pages={coursePages} total={visibleResources.length} pageSize={12} onChange={setCoursePage} label="Páginas de cursos y prácticas" />{visibleResources.length === 0 && <p role="status" className="learning-empty">No hay recursos con estos filtros. Cambia el origen, el coste o el área para explorar otras opciones.</p>}{catalog.resources.length > 0 && catalog.resources.every((resource) => plans.some((plan) => plan.resource?.id === resource.id)) && <div className="learning-empty"><h3 className="font-bold">Ya tienes estas prácticas en tu plan</h3><button className="button-primary" onClick={() => setTab("plan")}>Continuar en Mi plan →</button></div>}</section>}
     {tab === "courses" && <LearningOpportunities />}
     {tab === "plan" && <LearningPlanBoard key={planSelection || "plan"} initialResourceId={planSelection} onReturn={() => setPlanSelection(null)} plans={plans} onSaved={async (data, published) => { setPlans(data); setMessage(""); if (published) await refresh(); }} onReload={refresh} onExplore={() => setTab("courses")} />}
-    {tab === "passport" && passport && <LearningResults plans={plans} onOpenPractice={(resourceId) => { setPlanSelection(resourceId); setTab("plan"); }} onReload={refresh} passport={passport} onReview={(row) => { setAttempt(row); requestAnimationFrame(() => challenge.current?.scrollIntoView({ behavior: "smooth", block: "start" })); }} />}
+    {tab === "passport" && passport && <LearningResults plans={plans} onOpenPractice={(resourceId) => { setPlanSelection(resourceId); setTab("plan"); }} onReload={refresh} passport={passport} onReview={openResult} />}
   </div>;
 }

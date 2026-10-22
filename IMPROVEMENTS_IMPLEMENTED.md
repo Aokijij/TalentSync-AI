@@ -1,5 +1,13 @@
 # Mejoras de preparación y consistencia
 
+## Espacio independiente para retos
+
+- Empezar o continuar una evaluación abre un espacio dedicado en lugar de insertar el formulario debajo del catálogo. La salida regresa al catálogo y conserva el borrador sin reiniciar el tiempo.
+- Navegación por preguntas con estado respondida/pendiente, opciones identificadas y selección visible, contador de tiempo y revisión de toda la entrega antes de enviarla.
+- Pantalla de resultados con correcciones por pregunta y recursos de refuerzo; los errores de entrega mantienen las respuestas accesibles.
+- Recuperación del borrador por cuenta e intento, primera pregunta pendiente al continuar, fechas UTC con/sin sufijo y avisos cuando el almacenamiento está bloqueado. El servidor mantiene las reglas de vencimiento, calificación y repetición.
+- Pruebas de estados y recuperación en `frontend/tests/practiceWorkspace.test.mjs`; recorrido preparado en la página de revisión visual. La ejecución en navegador sigue pendiente.
+
 ## Revisión de vacantes, modales y preguntas
 
 - Tarjetas compactas con modalidad sin cortes, tres habilidades iniciales, compatibilidad resumida y una acción principal. El icono de comparación reemplaza la fila de checkbox; el bloque de selección no aparece vacío y sus títulos se consultan desplegando la selección.

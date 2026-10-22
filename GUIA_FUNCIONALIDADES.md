@@ -70,6 +70,12 @@ Las respuestas son privadas: no se muestran a la empresa ni alteran tu compatibi
 
 ## Funciones principales del candidato
 
+**Cómo se realiza un reto:** al pulsar **Empezar práctica** o **Continuar práctica**, el catálogo se sustituye por un espacio de trabajo dedicado, situado al principio de la página. Incluye la pregunta actual, opciones con selección visible, tiempo restante y navegación entre preguntas. Al continuar un intento se recupera el borrador y se abre la primera pregunta pendiente; si todas están respondidas, se abre la revisión.
+
+Antes de entregar puedes consultar todas las respuestas y editar cualquiera. La entrega requiere completar todas las preguntas y disponer de tiempo; la evaluación y el vencimiento siguen controlados por el servidor. Después se muestran el resultado y las explicaciones, con los puntos por reforzar desplegados y recursos relacionados cuando están disponibles.
+
+**Salir y conservar respuestas** vuelve al catálogo; no pausa ni reinicia el tiempo. El borrador se conserva en esa pestaña del navegador. Si el navegador impide guardarlo, aparece un aviso y la página mantiene las respuestas en memoria mientras siga abierta. No se garantiza recuperarlas después de cerrar o recargar cuando el almacenamiento está bloqueado.
+
 | Función | Para qué sirve |
 | --- | --- |
 | Perfil y hoja de vida | Organizar experiencia, formación, habilidades y niveles, idiomas, cursos, enlaces, foto y documentos profesionales. Exportar el CV con diferentes diseños. |

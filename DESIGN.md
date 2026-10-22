@@ -67,3 +67,4 @@ Las capturas sirven para revisión. Todavía no hay imágenes de referencia apro
 - La preparación del CV separa contenido, diseño y versiones. Las listas extensas comienzan plegadas con un contador de selección.
 - Gestionar un proceso y valorar respuestas son tareas distintas. No mezclar notas y calendario con todas las respuestas en una sola ventana. La revisión de respuestas presenta una pregunta cada vez y conserva su valoración al navegar.
 - Las preguntas de práctica deben mostrar el requisito que las origina y orientar una decisión o comprobación concreta, conservando las notas existentes.
+- Una evaluación en curso sustituye el catálogo por un espacio dedicado. Pregunta y opciones con ancho de lectura, navegación por preguntas, tiempo visible y revisión previa a la entrega. Salir conserva el borrador y comunica que el tiempo sigue corriendo; el resultado utiliza una pantalla propia con correcciones desplegables.
