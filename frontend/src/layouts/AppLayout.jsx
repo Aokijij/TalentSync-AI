@@ -179,22 +179,28 @@ export function AppLayout() {
 
   useEffect(() => {
     if (user.role !== "candidate" && user.role !== "company") return;
-    const refreshCount = () =>
-      api
-        .get("/notifications/unread-count")
-        .then(({ data }) => setUnreadNotifications(data.count || 0))
-        .catch(() => setUnreadNotifications(0));
+    let active = true;
+    const refreshCount = () => {
+      if (document.hidden) return;
+      api.get("/notifications/unread-count", { __quiet: true })
+        .then(({ data }) => { if (active) setUnreadNotifications(data.count || 0); })
+        .catch(() => {});
+    };
     const handleChange = (event) =>
       event.detail?.count != null
         ? setUnreadNotifications(event.detail.count)
         : refreshCount();
     refreshCount();
     window.addEventListener("talentsync:notifications-changed", handleChange);
-    return () =>
-      window.removeEventListener(
-        "talentsync:notifications-changed",
-        handleChange,
-      );
+    window.addEventListener("focus", refreshCount);
+    document.addEventListener("visibilitychange", refreshCount);
+    const timer = setInterval(refreshCount, 30000);
+    return () => {
+      active = false; clearInterval(timer);
+      window.removeEventListener("talentsync:notifications-changed", handleChange);
+      window.removeEventListener("focus", refreshCount);
+      document.removeEventListener("visibilitychange", refreshCount);
+    };
   }, [user.role]);
 
   useEffect(() => {

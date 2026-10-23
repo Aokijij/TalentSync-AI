@@ -27,13 +27,12 @@ En **Mercado laboral**, la compatibilidad mínima parte de **Cualquiera**: inclu
 **Dónde:** candidato → Postulaciones (`/postulaciones`) → **Tu agenda de entrevistas**. También dentro de un proceso (`/procesos/{id}`), accesible a sus participantes autorizados.
 
 - Reúne las entrevistas futuras de procesos abiertos y las ordena por fecha. Muestra primero tres; se pueden desplegar las restantes.
-- Presenta la hora de Colombia. La empresa programa y modifica esa hora desde **Gestionar proceso** en su tablero.
-- **Descargar cita** descarga un archivo `.ics`. Ábrelo e impórtalo en una aplicación que admita iCalendar, por ejemplo Google Calendar, Outlook o Calendario de Apple.
-- El archivo incluye título de la oferta, empresa, hora de inicio, enlace al proceso y un recordatorio de 30 minutos. El calendario receptor decide cómo mostrar las alertas.
-- No inventa la duración, dirección o enlace de videollamada: deben confirmarse en el proceso o con la empresa.
-- Cada descarga consulta la cita actual y verifica acceso. No permite exportar una cita pasada, sin fecha o de un proceso finalizado.
-
-**Importante:** el archivo descargado es una copia manual: no conecta tu cuenta de Google/Microsoft ni actualiza automáticamente el evento importado. El botón independiente **Google Calendar** permite sincronizar la entrevista elegida tras autorizar la conexión en Seguridad. En la copia descargada, si se reprograma o cancela, TalentSync publica un aviso y tendrás que actualizar tu calendario. El archivo conserva el mismo identificador al reprogramar; el comportamiento de actualización depende de la aplicación receptora.
+- La empresa programa, reprograma o cancela desde **Gestionar proceso**, la agenda de la vacante o el propio proceso. **Guardar y notificar** aplica la entrevista directamente, sin otro guardado en el tablero.
+- Se definen fecha y hora de Colombia, modalidad virtual o presencial, duración, enlace HTTPS o dirección e indicaciones para el candidato. Los datos antiguos sin modalidad se identifican como pendientes de confirmar.
+- **Añadir a Google Calendar** guarda el evento con esos detalles y un recordatorio 30 minutos antes. Una vez añadido, los cambios y cancelaciones se actualizan automáticamente. La conexión se autoriza una vez desde Seguridad; solo se pide renovarla cuando Google revoca o vence el permiso.
+- Se retiró **Descargar cita** de la interfaz. El endpoint histórico de iCalendar permanece por compatibilidad.
+- Cambiar fecha, modalidad, lugar o indicaciones genera una notificación y una entrada del historial. El contador de avisos se actualiza periódicamente mientras la aplicación está visible.
+- El plazo de respuesta tiene en cuenta una entrevista futura para no cerrar el proceso antes de celebrarla. El guardado conserva las comprobaciones de versión para evitar sobrescribir cambios de otro miembro del equipo.
 
 También se corrigió la conversión de fechas: abrir una entrevista ya guardada y volver a guardar su hora no debe desplazarla cinco horas. Los avisos indican expresamente la hora de Colombia.
 
@@ -99,7 +98,7 @@ Antes de entregar puedes consultar todas las respuestas y editar cualquiera. La 
 - **Vacantes y calidad de ofertas:** publicar y revisar condiciones, responsabilidades, habilidades, formación, documentos requeridos, preguntas y etapas de selección.
 - **Búsqueda de talento:** consultar candidatos compatibles, revisar el detalle del ajuste y comparar candidatos dentro del alcance autorizado.
 - **Tablero de postulaciones:** elegir una vacante, ver sus candidatos y moverlos entre etapas, conservando el historial del proceso.
-- **Gestión de entrevistas:** programar o cancelar la fecha, comunicar cambios y registrar evaluaciones internas según los permisos del equipo. **Gestionar proceso** contiene notas y fecha; **Respuestas de postulación** se abre por separado y presenta una pregunta cada vez. En el tablero, ambas ediciones se aplican con **Guardar y notificar**.
+- **Gestión de entrevistas:** programar o cancelar la fecha, comunicar cambios y registrar evaluaciones internas según los permisos del equipo. **Gestionar proceso** contiene la entrevista y las notas internas, con guardado directo. **Respuestas de postulación** se abre por separado y presenta una pregunta cada vez; sus valoraciones y los movimientos de etapas siguen usando el guardado del tablero.
 - **Seguimiento transparente por secciones:** abre un resumen con la etapa actual, entrevista, último mensaje y plazo de respuesta. El contexto y las responsabilidades de la vacante, la evaluación interna, el historial y la comunicación se consultan en pestañas separadas. Cambiar de pestaña conserva los borradores mientras la página siga abierta; recargar o salir no guarda formularios pendientes. El candidato no recibe las evaluaciones privadas del equipo.
 - **Responsabilidades legibles:** el contexto se presenta en párrafos y las tareas con viñetas se convierten en listas, sin generar funciones nuevas. Los requisitos se muestran aparte y las condiciones de la oferta se pueden desplegar.
 - **Compatibilidad al valorar respuestas:** el diálogo utiliza la misma base calculada para el tablero y muestra base del perfil actual, ajuste de respuestas y compatibilidad proyectada. No vuelve a sumar los puntos sobre un porcentaje ya ajustado. Si el dato todavía no llegó, lo consulta; si falla, permite reintentarlo conservando la valoración. La proyección es privada y se aplica únicamente al guardar.

@@ -81,8 +81,12 @@ def test_inactive_or_missing_appointments_cannot_be_exported(client, state):
     application, company, candidate, _ = _appointment(client)
     if state in {"missing", "past"}:
         when = None if state == "missing" else (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
-        assert client.put(f"/api/v1/applications/{application['id']}/status", headers=company,
-                          json={"interview_at": when}).status_code == 200
+        if state == "past":
+            with client.session_factory() as db:
+                db.get(Application, application["id"]).interview_at = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1)
+                db.commit()
+        else:
+            assert client.put(f"/api/v1/applications/{application['id']}/status", headers=company, json={"interview_at": when}).status_code == 200
     elif state == "withdrawn":
         assert client.post(f"/api/v1/workflow/applications/{application['id']}/withdraw", headers=candidate).status_code == 200
     else:
@@ -129,8 +133,53 @@ def test_interview_notifications_use_colombia_time_and_explain_calendar_updates(
     items = client.get(notifications, headers=candidate).json()
     rescheduled = next(row for row in items if row["title"] == "Entrevista reprogramada")
     assert "09:00 (hora de Colombia)" in rescheduled["body"]
-    assert "actualiza tu calendario" in rescheduled["body"]
+    assert "actualizará automáticamente" in rescheduled["body"]
     assert client.put(endpoint, headers=company, json={"interview_at": None}).status_code == 200
     items = client.get(notifications, headers=candidate).json()
     canceled = next(row for row in items if row["title"] == "Entrevista cancelada")
-    assert "elimina la cita de tu calendario" in canceled["body"]
+    assert "retirará automáticamente" in canceled["body"]
+
+
+def test_interview_details_notify_enter_history_and_keep_deadline_after_interview(client):
+    application, company, candidate, when = _appointment(client)
+    endpoint = f"/api/v1/applications/{application['id']}/status"
+    details = {"mode": "virtual", "location": "https://meet.google.com/example", "minutes": 60, "instructions": "Prepara un ejemplo de tu trabajo."}
+    result = client.put(endpoint, headers=company, json={"interview_details": details, "expected_version": application["version"]})
+    assert result.status_code == 200, result.text
+    assert result.json()["interview_details"] == details
+    assert datetime.fromisoformat(result.json()["response_due_at"]) >= when.replace(tzinfo=None) + timedelta(minutes=60)
+    process = client.get(f"/api/v1/workflow/applications/{application['id']}", headers=candidate).json()
+    assert process["interview_details"] == details
+    events = [row for row in process["events"] if row["type"] == "application.interview_updated"]
+    assert events[-1]["action"] == "updated" and events[-1]["interview_mode"] == "virtual"
+    assert details["location"] not in str(events) and details["instructions"] not in str(events)
+    assert "PRIVATE-RECRUITER-NOTE" not in str(process)
+    messages = client.get("/api/v1/notifications?unread_only=false", headers=candidate).json()
+    assert any(row["title"] == "Detalles de entrevista actualizados" and "virtual" in row["body"] for row in messages)
+    stale = client.put(endpoint, headers=company, json={"interview_at": (when + timedelta(days=1)).isoformat(), "expected_version": application["version"]})
+    assert stale.status_code == 409
+    count = len(messages)
+    assert client.put(endpoint, headers=company, json={"interview_details": details}).status_code == 200
+    assert len(client.get("/api/v1/notifications?unread_only=false", headers=candidate).json()) == count
+    cancelled = client.put(endpoint, headers=company, json={"interview_at": None})
+    assert cancelled.status_code == 200 and cancelled.json()["interview_details"] == {}
+
+
+@pytest.mark.parametrize("details", [
+    {"mode": "virtual", "location": "javascript:alert(1)"},
+    {"mode": "virtual", "location": "https://user:password@example.com"},
+    {"mode": "in_person", "location": "   "},
+    {"mode": "in_person", "location": "Medellín", "minutes": 200},
+])
+def test_invalid_interview_access_details_are_rejected(client, details):
+    application, company, _, _ = _appointment(client)
+    response = client.put(f"/api/v1/applications/{application['id']}/status", headers=company, json={"interview_details": details})
+    assert response.status_code == 422
+
+
+def test_scheduling_in_the_past_and_on_closed_process_is_rejected(client):
+    application, company, _, when = _appointment(client)
+    endpoint = f"/api/v1/applications/{application['id']}/status"
+    assert client.put(endpoint, headers=company, json={"interview_at": (when - timedelta(days=20)).isoformat()}).status_code == 422
+    assert client.put(endpoint, headers=company, json={"status": "rejected"}).status_code == 200
+    assert client.put(endpoint, headers=company, json={"interview_at": (when + timedelta(days=1)).isoformat()}).status_code == 409

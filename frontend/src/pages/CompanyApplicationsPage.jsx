@@ -1,3 +1,4 @@
+import { CompanyInterviewAgenda } from "../components/CompanyInterviewAgenda.jsx";
 import { RecruiterProcessDialog } from "../components/RecruiterProcessDialog.jsx";
 import { ApplicationAnswersModal } from "../components/ApplicationAnswersModal.jsx";
 import "../styles/recruiter-dialog.css";
@@ -202,6 +203,19 @@ export function CompanyApplicationsPage() {
     return true;
   }
 
+  async function saveProcess(application, changes) {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const pending = pendingChanges[application.id] || {};
+      const { data } = await api.put(`/applications/${application.id}/status`, { expected_version: application.version, ...pending, ...changes }, { __quiet: true });
+      setApplications((current) => current.map((item) => item.id === data.id ? data : item));
+      setPendingChanges((current) => { const next = { ...current }; delete next[application.id]; return next; });
+      setSelected(null);
+      setMessage("Cambios guardados. El candidato recibirá los cambios de su entrevista y proceso en Notificaciones.");
+    } finally { setSaving(false); }
+  }
+
   async function savePendingChanges() {
     const entries = Object.entries(pendingChanges);
     if (!entries.length) return;
@@ -262,21 +276,13 @@ export function CompanyApplicationsPage() {
   }
 
   async function remove(applicationId) {
-    try {
-      const process = applications.find((item) => item.id === applicationId);
-      await api.put(`/applications/${applicationId}/status`, { status: "rejected", expected_version: process?.version,
-        candidate_feedback: { reason_code: "other", message: "La empresa finalizó tu participación en este proceso de selección." } });
-      await loadApplications();
-      setMessage("Proceso finalizado y comunicado al candidato; el historial se conserva.");
-      setSelected(null);
-    } catch (requestError) {
-      setError(
-        getApiErrorMessage(
-          requestError,
-          "No fue posible finalizar el proceso",
-        ),
-      );
-    }
+    const process = applications.find((item) => item.id === applicationId);
+    const { data } = await api.put(`/applications/${applicationId}/status`, { status: "rejected", expected_version: process?.version,
+      candidate_feedback: { reason_code: "other", message: "La empresa finalizó tu participación en este proceso de selección." } }, { __quiet: true });
+    setApplications((current) => current.map((item) => item.id === applicationId ? data : item));
+    setPendingChanges((current) => { const next = { ...current }; delete next[applicationId]; return next; });
+    setMessage("Proceso finalizado y comunicado al candidato; el historial se conserva.");
+    setSelected(null);
   }
 
   async function saveStages(stages) {
@@ -406,6 +412,7 @@ export function CompanyApplicationsPage() {
         </div>
       </section>
 
+      {jobId && <CompanyInterviewAgenda applications={applications} loading={loadingApplications} onManage={setSelected} />}
       {jobId ? (
         <section
           className="overflow-x-auto pb-3"
@@ -499,13 +506,11 @@ export function CompanyApplicationsPage() {
       {answersApplication && <ApplicationAnswersModal key={answersApplication.id} application={answersApplication} loadCompatibility={() => loadCompatibility(answersApplication)} onClose={() => setAnswersFor(null)} onPrepare={(changes) => { if (queueUpdate(answersApplication.id, changes)) setAnswersFor(null); }} />}
       {selected ? (
         <RecruiterProcessDialog
+          key={selected.id}
           application={selected}
           onClose={() => setSelected(null)}
           onDelete={() => remove(selected.id)}
-          onSave={(changes) => {
-            queueUpdate(selected.id, changes);
-            setSelected(null);
-          }}
+          onSave={(changes) => saveProcess(selected, changes)}
         />
       ) : null}
       <ConfirmModal

@@ -209,6 +209,19 @@ def update_status(
     previous_status = application.status
     previous_stage = application.pipeline_stage
     previous_interview = application.interview_at
+    previous_details = dict(application.interview_details or {})
+    if "interview_details" in changes:
+        changes["interview_details"] = changes["interview_details"] or {}
+    requested_interview = changes.get("interview_at", previous_interview)
+    if requested_interview and requested_interview != previous_interview:
+        if requested_interview <= datetime.utcnow():
+            raise UseCaseError(status_code=422, detail="Elige una fecha y hora futuras para la entrevista")
+        if application.status in {ApplicationStatus.REJECTED, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED}:
+            raise UseCaseError(status_code=409, detail="Este proceso ya finalizó; no puedes programar una entrevista")
+    if "interview_at" in changes and changes["interview_at"] is None:
+        changes["interview_details"] = {}
+    elif changes.get("interview_details") and not requested_interview:
+        raise UseCaseError(status_code=422, detail="Indica la fecha y hora de la entrevista")
     answer_adjustments = changes.pop("screening_answer_adjustments", None)
     if answer_adjustments is not None:
         if identity_hidden(application.job, application):
@@ -259,12 +272,36 @@ def update_status(
         setattr(application, key, value)
     status_changed = application.status != previous_status
     stage_changed = application.pipeline_stage != previous_stage
-    interview_changed = application.interview_at != previous_interview
+    interview_changed = application.interview_at != previous_interview or (application.interview_details or {}) != previous_details
+    final_statuses = {ApplicationStatus.REJECTED, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED}
+    if interview_changed and application.interview_at and application.status in final_statuses:
+        raise UseCaseError(status_code=409, detail="Un proceso finalizado no admite entrevistas nuevas o modificadas")
+    if interview_changed:
+        action = "cancelled" if not application.interview_at else "scheduled" if not previous_interview else "rescheduled" if application.interview_at != previous_interview else "updated"
+        record_event(db, "application.interview_updated", "application", application.id, actor_user_id=current_user.id, details={
+            "action": action, "source": "company", "job_id": application.job_id,
+            "interview_at": application.interview_at.isoformat() if application.interview_at else None,
+            "previous_interview_at": previous_interview.isoformat() if previous_interview else None,
+            "interview_mode": (application.interview_details or {}).get("mode"),
+            "interview_minutes": (application.interview_details or {}).get("minutes")})
     if application.status in {ApplicationStatus.TECHNICAL_INTERVIEW, ApplicationStatus.PSYCHOMETRIC_TEST, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED} and application.identity_revealed_at is None:
         application.identity_revealed_at = datetime.utcnow()
         record_event(db, "application.identity_revealed", "application", application.id, actor_user_id=current_user.id, details={"stage": application.pipeline_stage, "job_id": application.job_id})
-    if status_changed or stage_changed or interview_changed:
+    if status_changed or stage_changed:
         transition(db, application, current_user.id, previous_status=previous_status, previous_stage=previous_stage)
+    if application.status not in final_statuses and (interview_changed or status_changed or stage_changed):
+        now = datetime.utcnow()
+        if application.interview_at and application.interview_at > now:
+            interview_deadline = application.interview_at + timedelta(minutes=(application.interview_details or {}).get("minutes", 45), days=application.job.response_days)
+            # Do not close a process for silence before its scheduled interview.
+            if application.response_due_at is None or application.response_due_at < interview_deadline:
+                application.response_due_at = interview_deadline
+                application.reminder_sent_at = None
+            if application.first_response_at is None:
+                application.first_response_at = now
+        elif previous_interview and not application.interview_at:
+            application.response_due_at = now + timedelta(days=application.job.response_days)
+            application.reminder_sent_at = None
     if (status_changed or stage_changed) and application.status != ApplicationStatus.REJECTED:
         application.resolution_reason = None
     if application.status == ApplicationStatus.HIRED and (
@@ -297,13 +334,15 @@ def update_status(
         )
         if interview_changed and application.interview_at:
             notification_type = "application_interview"
-            title = "Entrevista reprogramada" if previous_interview else "Entrevista programada"
+            title = "Entrevista programada" if not previous_interview else "Entrevista reprogramada" if application.interview_at != previous_interview else "Detalles de entrevista actualizados"
             local_time = utc(application.interview_at).astimezone(timezone(timedelta(hours=-5)))
-            body = f"Tu entrevista para {application.job.title} será el {local_time.strftime('%d/%m/%Y a las %H:%M')} (hora de Colombia). Consulta el proceso y actualiza tu calendario si guardaste una copia."
+            details = application.interview_details or {}
+            modality = "virtual" if details.get("mode") == "virtual" else "presencial" if details.get("mode") == "in_person" else "con modalidad por confirmar"
+            body = f"Tu entrevista {modality} para {application.job.title} será el {local_time.strftime('%d/%m/%Y a las %H:%M')} (hora de Colombia). Revisa el lugar o enlace en el proceso. Si la añadiste a Google Calendar, se actualizará automáticamente."
         elif interview_changed:
             notification_type = "application_interview"
             title = "Entrevista cancelada"
-            body = f"La empresa retiró la fecha de entrevista para {application.job.title}. Consulta el proceso y elimina la cita de tu calendario si habías guardado una copia."
+            body = f"La empresa canceló la entrevista para {application.job.title}. Quedó registrado en el historial; si la añadiste a Google Calendar, se retirará automáticamente."
         else:
             notification_type = "application_status"
             stage_title = application.pipeline_stage_title or STATUS_LABELS.get(
@@ -327,7 +366,7 @@ def update_status(
                 type=notification_type,
                 title=title,
                 body=body,
-                action_url=f"/postulaciones?focus={application.id}",
+                action_url=f"/procesos/{application.id}",
             )
         )
     db.commit()
@@ -363,6 +402,7 @@ def company_application_view(row, user):
     hidden = user.role != UserRole.ADMIN and identity_hidden(row.job, row)
     fields = ["id", "user_id", "job_id", "status", "created_at", "job_title", "company_name", "candidate_name", "interview_at", "pipeline_stage", "pipeline_stage_title", "resolution_reason", "recruiter_notes", "screening_adjustment", "base_match_percentage", "adjusted_match_percentage", "version", "response_due_at", "released_at", "candidate_feedback"]
     result = {key: getattr(row, key) for key in fields}
+    result["interview_details"] = row.interview_details or {}
     result["identity_hidden"] = hidden
     result["screening_answers"] = [] if hidden else row.screening_answers or []
     return result

@@ -1,27 +1,14 @@
 import { CalendarSync } from "./CalendarSync.jsx";
 import "../styles/account-controls.css";
 import { useState } from "react";
-import { ArrowUpRight, CalendarClock, Download, RefreshCw } from "lucide-react";
+import { ArrowUpRight, CalendarClock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { api, getApiErrorMessage } from "../api/client.js";
-import { saveBlob } from "../utils/preparation.js";
+import { InterviewDetails } from "./InterviewDetails.jsx";
 import { activeInterview, interviewDateParts, upcomingInterviews } from "../utils/interviewAgenda.js";
 import "../styles/interview-agenda.css";
 
 export function InterviewCalendarButton({ applicationId }) {
-  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [saved, setSaved] = useState(false);
-  async function download() {
-    if (busy) return;
-    setBusy(true); setError(""); setSaved(false);
-    try {
-      const { data } = await api.get(`/workflow/applications/${applicationId}/interview.ics`, { responseType: "blob", __quiet: true });
-      saveBlob(data, `Entrevista TalentSync ${applicationId}.ics`); setSaved(true);
-    } catch (failure) {
-      try { if (failure.response?.data instanceof Blob) failure.response.data = JSON.parse(await failure.response.data.text()); } catch { /* Non-JSON errors use the fallback. */ }
-      setError(getApiErrorMessage(failure, "No pudimos descargar la cita. Vuelve a intentarlo."));
-    } finally { setBusy(false); }
-  }
-  return <div className="interview-calendar-actions" role="group" aria-label="Calendario de la entrevista"><CalendarSync applicationId={applicationId} /><button type="button" className="button-secondary button-sm interview-calendar-download" disabled={busy} onClick={download}>{busy ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}{busy ? "Preparando…" : "Descargar cita"}</button>{error && <p role="alert">{error}</p>}{saved && <p role="status">Archivo descargado. Ábrelo en tu calendario para guardar la cita.</p>}</div>;
+  return <div className="interview-calendar-actions"><CalendarSync applicationId={applicationId} /></div>;
 }
 
 export function InterviewAgenda({ applications, loading = false, error = "", now = new Date() }) {
@@ -38,14 +25,14 @@ export function ProcessInterview({ process, now = new Date() }) {
   const parts = interviewDateParts(process.interview_at);
   if (!parts) return null;
   const upcoming = activeInterview(process, now);
-  return <section className="interview-process ui-panel"><div className="interview-process-content"><div className="interview-date-tile" aria-hidden="true"><strong>{parts.day}</strong><span>{parts.month}</span></div><div><h2>{upcoming ? "Tu próxima entrevista" : "Última entrevista programada"}</h2><p>{parts.full} · <strong>{parts.time}</strong></p><small>Hora de Colombia (UTC−5) · Duración por confirmar</small></div>{upcoming && <InterviewCalendarButton applicationId={process.application_id} />}</div>{upcoming ? <CalendarNote /> : <p className="interview-agenda-note">{process.released_at || ["rejected", "accepted", "hired"].includes(process.status) ? "El proceso finalizó. Esta fecha se conserva como referencia." : "La fecha ya pasó. Consulta con la empresa si hay una nueva cita."}</p>}</section>;
+  return <section className="interview-process ui-panel"><div className="interview-process-content"><div className="interview-date-tile" aria-hidden="true"><strong>{parts.day}</strong><span>{parts.month}</span></div><div><h2>{upcoming ? "Tu próxima entrevista" : "Última entrevista programada"}</h2><p>{parts.full} · <strong>{parts.time}</strong></p><small>Hora de Colombia (UTC−5)</small><InterviewDetails details={process.interview_details} /></div>{upcoming && <InterviewCalendarButton key={process.version} applicationId={process.application_id} />}</div>{upcoming ? <CalendarNote /> : <p className="interview-agenda-note">{process.released_at || ["rejected", "accepted", "hired"].includes(process.status) ? "El proceso finalizó. Esta fecha se conserva como referencia." : "La fecha ya pasó. Consulta con la empresa si hay una nueva cita."}</p>}</section>;
 }
 
 function InterviewRow({ row }) {
   const parts = interviewDateParts(row.interview_at);
-  return <li><div className="interview-date-tile" aria-hidden="true"><strong>{parts.day}</strong><span>{parts.month}</span></div><div className="interview-agenda-info"><span>{row.company_name || "Empresa"}</span><h3>{row.job_title || "Proceso de selección"}</h3><p>{parts.full} · <strong>{parts.time}</strong></p><Link to={`/procesos/${row.id}`}>Ver proceso<ArrowUpRight size={14} /></Link></div><InterviewCalendarButton applicationId={row.id} /></li>;
+  return <li><div className="interview-date-tile" aria-hidden="true"><strong>{parts.day}</strong><span>{parts.month}</span></div><div className="interview-agenda-info"><span>{row.company_name || "Empresa"}</span><h3>{row.job_title || "Proceso de selección"}</h3><p>{parts.full} · <strong>{parts.time}</strong></p><InterviewDetails details={row.interview_details} /><Link to={`/procesos/${row.id}`}>Ver proceso<ArrowUpRight size={14} /></Link></div><InterviewCalendarButton key={row.version} applicationId={row.id} /></li>;
 }
 
 function CalendarNote() {
-  return <p className="interview-agenda-note">El archivo descargado es una copia sin actualizaciones. Con Google Calendar puedes sincronizar los cambios de la entrevista. Ambas opciones incluyen un recordatorio de 30 minutos. Confirma la duración y el acceso con la empresa.</p>;
+  return <p className="interview-agenda-note">Añade la entrevista a Google Calendar para ver su fecha, duración, modalidad y acceso, con un recordatorio 30 minutos antes. Los cambios y cancelaciones se actualizarán automáticamente después de sincronizar.</p>;
 }

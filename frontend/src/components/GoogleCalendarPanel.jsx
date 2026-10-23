@@ -25,17 +25,24 @@ export function GoogleCalendarPanel() {
     } catch (failure) { setError(getApiErrorMessage(failure)); setBusy(false); }
   }
   async function disconnect() {
-    if (!await confirm({ title: "Desconectar Google Calendar", description: "Se detendrán las actualizaciones de entrevistas. Los eventos ya copiados en Google se conservan y podrás eliminarlos allí.", confirmLabel: "Desconectar" })) return;
+    if (!await confirm({ title: "Desconectar Google Calendar", description: "Se detendrán las actualizaciones de entrevistas. Los eventos ya añadidos a Google se conservan y podrás eliminarlos allí.", confirmLabel: "Desconectar" })) return;
     setBusy(true); setError("");
     try { await api.delete("/account/calendar", { __quiet: true }); await load(); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); }
   }
   return <section id="security-calendar" className="security-panel account-controls"><header><CalendarDays size={24} /><div><h2>Google Calendar</h2><p>Tus entrevistas, con sus cambios de fecha y cancelaciones.</p></div></header>
     {error && <InlineNotice error>{error}</InlineNotice>}{callback === "not_connected" && <InlineNotice tone="warning">{callbackMessage}</InlineNotice>}
     {!status && !error && <p role="status">Consultando la conexión…</p>}
-    {status && <><span className="status-chip">{status.connected ? <CheckCircle2 size={16} /> : <Unplug size={16} />}{status.connected ? "Calendario conectado" : "Sin conectar"}</span>{status.error && <InlineNotice tone="warning">{status.error}</InlineNotice>}
-    <p>{status.note}</p><ol className="calendar-steps"><li>Autoriza el acceso a los eventos de tu propio calendario.</li><li>Abre un proceso y elige la entrevista que quieras sincronizar.</li><li>Se actualizará cuando cambie la fecha o finalice el proceso.</li></ol>
-    {!status.configured && <InlineNotice>La conexión con Google Calendar todavía no está habilitada en este entorno. Puedes descargar cada cita desde tu proceso.</InlineNotice>}
-    {!status.connected && <details className="calendar-access-help"><summary>¿Google muestra «Acceso bloqueado»?</summary><p>Si la aplicación está en pruebas, el administrador debe añadir tu cuenta a los usuarios de prueba de Google. Después puedes conectar de nuevo. Entrar con Google y autorizar Calendar son permisos distintos.</p><p>Mientras se resuelve, puedes descargar la cita desde tu proceso.</p></details>}
-    <footer><small>La autorización del calendario es independiente del inicio de sesión con Google. Puedes revocarla en cualquier momento.</small><div className="account-button-row"><button className="button-primary" disabled={busy || !status.configured} onClick={connect}><Link2 size={17} />{busy ? "Procesando…" : status.connected ? "Volver a autorizar" : "Conectar Google Calendar"}</button>{status.connected && <button className="button-secondary" disabled={busy} onClick={disconnect}>Desconectar</button>}</div></footer></>}
+    {status && <>
+      <div className={`calendar-connection-card ${status.connected && !status.needs_reconnect ? "is-connected" : ""}`}>
+        <span className="calendar-connection-icon">{status.connected && !status.needs_reconnect ? <CheckCircle2 size={25} /> : <CalendarDays size={25} />}</span>
+        <div><strong>{status.needs_reconnect ? "Tu conexión necesita renovarse" : status.connected ? "Calendario conectado" : "Conecta tus entrevistas"}</strong><p>{status.needs_reconnect ? "Google ya no permite actualizar tus entrevistas. Vuelve a conectar para recuperarlo." : status.connected ? "Todo listo para añadir entrevistas y mantener sus cambios al día." : "Guarda las entrevistas que elijas en tu calendario de Google."}</p>{status.connected_at && <small>Conectado el {new Date(`${status.connected_at.replace(/Z$/, "")}Z`).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}</small>}</div>
+      </div>
+      {status.error && <InlineNotice tone="warning">{status.error}</InlineNotice>}
+      <div className="calendar-benefits"><div><strong>Detalles completos</strong><p>Fecha, duración, modalidad y enlace o dirección definidos por la empresa.</p></div><div><strong>Cambios al día</strong><p>Las entrevistas añadidas se actualizan cuando cambian o se cancelan, con un recordatorio 30 minutos antes.</p></div></div>
+      {!status.configured && <InlineNotice>La conexión todavía no está habilitada en este entorno.</InlineNotice>}
+      {!status.connected && <details className="calendar-access-help"><summary>¿Google muestra «Acceso bloqueado»?</summary><p>Si la aplicación está en pruebas, el administrador debe añadir tu cuenta a los usuarios de prueba de Google. Después puedes conectar de nuevo.</p></details>}
+      <footer><small>Elige las entrevistas desde tu agenda o desde cada proceso. No se añaden invitados ni se comparten notas internas.</small><div className="account-button-row">{(!status.connected || status.needs_reconnect) && <button className="button-primary" disabled={busy || !status.configured} onClick={connect}><Link2 size={17} />{busy ? "Conectando…" : status.needs_reconnect ? "Renovar conexión" : "Conectar Google Calendar"}</button>}{status.connected && <button className="button-secondary calendar-disconnect" disabled={busy} onClick={disconnect}><Unplug size={16} />Desconectar</button>}</div></footer>
+    </>}
+
   </section>;
 }

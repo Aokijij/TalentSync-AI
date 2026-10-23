@@ -83,10 +83,12 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
       await expect(tracking.getByLabel("Evaluación de ejemplo")).toHaveValue("Borrador que debe conservarse");
     } else await expect(tracking.getByRole("tab", { name: "Evaluación interna", exact: true })).toHaveCount(0);
     await tracking.getByRole("tab", { name: "Resumen", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Descargar cita", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Descargar cita", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Añadir a Google Calendar", exact: true }).first()).toBeVisible();
     await page.getByRole("button", { name: "Gestionar proceso de ejemplo" }).click();
     const process = page.getByRole("dialog", { name: "Candidata de ejemplo", exact: true });
-    await expect(process.getByLabel("Notas internas")).toBeVisible();
+    await process.getByText("Notas internas del proceso", { exact: true }).click();
+    await expect(process.getByLabel("Notas internas", { exact: true })).toBeVisible();
     await expect(process.getByText("Respuestas de postulación")).toHaveCount(0);
     const processBox = await process.boundingBox();
     expect(processBox.height).toBeLessThanOrEqual(950 * .85 + 1);

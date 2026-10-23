@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
+from html import escape
 from uuid import uuid4
 
 from app.application.calendar_errors import CalendarProviderError
@@ -10,13 +11,13 @@ from app.application.errors import UseCaseError
 from app.application.use_cases.workflow import FINAL, accessible_application
 from app.domain.services.authentication import token_digest
 
-ERRORS = {"missing": "El evento ya no existe en Google. Sincroniza de nuevo para crear otra copia.", "authorization": "La autorización venció o fue revocada. Vuelve a conectar Google Calendar.", "temporary": "Google Calendar no respondió. Se volverá a intentar.", "configuration": "La conexión de Google Calendar no está configurada.", "access": "Ya no tienes acceso a este proceso; la sincronización se ha detenido."}
+ERRORS = {"missing": "El evento ya no existe en Google. Añade de nuevo la entrevista.", "authorization": "La autorización venció o fue revocada. Vuelve a conectar Google Calendar.", "temporary": "Google Calendar no respondió. Se volverá a intentar.", "configuration": "La conexión de Google Calendar no está configurada.", "access": "Ya no tienes acceso a este proceso; la sincronización se ha detenido."}
 
 
 def status(db, user, gateway):
     connection = db.calendars.connection(user.id)
     return {"provider": "google", "configured": gateway.configured, "connected": connection is not None,
-            "connected_at": connection.connected_at if connection else None, "error": ERRORS.get(connection.last_error, "") if connection else "",
+            "needs_reconnect": bool(connection and connection.last_error == "authorization"), "connected_at": connection.connected_at if connection else None, "error": ERRORS.get(connection.last_error, "") if connection else "",
             "note": "Solo se sincronizan entrevistas que elijas. No se añaden invitados ni se envían notas internas."}
 
 
@@ -56,7 +57,7 @@ def callback(db, user, session, state, browser, code, gateway, security):
 def event_status(db, user, application_id):
     application = accessible_application(db, user, application_id)
     row = db.calendars.event(user.id, application_id)
-    return {"enabled": row is not None, "state": "needs_sync" if row and row.state in {"synced", "cancelled"} and row.application_version != application.version else row.state if row else "none", "minutes": row.minutes if row else 45,
+    return {"enabled": row is not None, "state": "needs_sync" if row and row.state in {"synced", "cancelled"} and row.application_version != application.version else row.state if row else "none", "minutes": (application.interview_details or {}).get("minutes", row.minutes if row else 45),
             "last_synced_at": row.last_synced_at if row else None, "error": ERRORS.get(row.error_code, "") if row else ""}
 
 
@@ -68,6 +69,7 @@ def enqueue(db, user, application_id, minutes, gateway):
         raise UseCaseError(status_code=409, detail="No hay una entrevista activa para sincronizar")
     if application.interview_at <= datetime.utcnow():
         raise UseCaseError(status_code=409, detail="La fecha de la entrevista ya pasó")
+    minutes = (application.interview_details or {}).get("minutes", minutes)
     row = db.calendars.event(user.id, application_id)
     if row is None:
         row = db.calendars.new_event(id=uuid4().hex, user_id=user.id, application_id=application_id, remote_id="ts" + uuid4().hex, minutes=minutes)
@@ -102,8 +104,12 @@ def process_event(db, row, user, gateway, security, *, public_app_url):
         event = None
         if active:
             start = application.interview_at.replace(tzinfo=timezone.utc)
+            details = application.interview_details or {}
+            row.minutes = details.get("minutes", row.minutes)
             end = start + timedelta(minutes=row.minutes)
-            event = {"summary": f"Entrevista · {application.job.title}"[:200], "description": f"Consulta los detalles en TalentSync: {public_app_url.rstrip('/')}/procesos/{application.id}",
+            modality = "Virtual" if details.get("mode") == "virtual" else "Presencial" if details.get("mode") == "in_person" else "Modalidad por confirmar"
+            description = "\n".join(escape(text) for text in [f"Empresa: {application.job.company.name}", f"Modalidad: {modality}", f"Duración: {row.minutes} minutos", details.get("location", "Lugar o enlace por confirmar"), details.get("instructions", ""), f"Consulta el proceso: {public_app_url.rstrip('/')}/procesos/{application.id}"] if text)
+            event = {"summary": f"Entrevista · {application.job.title}"[:200], "description": description, "location": details.get("location", ""),
                      "visibility": "private", "start": {"dateTime": start.isoformat(), "timeZone": "America/Bogota"}, "end": {"dateTime": end.isoformat(), "timeZone": "America/Bogota"},
                      "reminders": {"useDefault": False, "overrides": [{"method": "popup", "minutes": 30}]}}
         if active and row.state == "cancelled":
@@ -135,7 +141,7 @@ def process_event(db, row, user, gateway, security, *, public_app_url):
 def disconnect(db, user):
     db.calendars.disconnect(user.id)
     db.commit()
-    return {"message": "Calendario desconectado. Se detuvo la sincronización; las copias existentes en Google Calendar se conservan."}
+    return {"message": "Calendario desconectado. Se detuvo la sincronización; los eventos existentes en Google Calendar se conservan y dejan de actualizarse."}
 
 
 def synchronize(db, user, application_id, minutes, gateway, security, public_app_url):

@@ -1,24 +1,35 @@
-import { useId, useState } from "react";
-import { CalendarDays, ChevronDown, RefreshCw } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import { CalendarDays, CheckCircle2, ChevronDown, ExternalLink, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 
-const labels = { none: "Sin sincronizar", pending: "Sincronización pendiente", synced: "Entrevista sincronizada", needs_sync: "Actualización pendiente", retry: "Se volverá a intentar", failed: "Necesita revisión", cancelled: "Evento cancelado" };
+const labels = { none: "Aún no está en tu calendario", pending: "Guardando en Google Calendar…", synced: "Entrevista sincronizada", needs_sync: "Actualizando los cambios…", retry: "Google no respondió. Volveremos a intentarlo", failed: "La sincronización necesita atención", cancelled: "Evento cancelado" };
 
 export function CalendarSync({ applicationId }) {
   const panelId = useId();
   const [open, setOpen] = useState(false), [connection, setConnection] = useState(null), [event, setEvent] = useState(null);
-  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [minutes, setMinutes] = useState(45);
+  const [busy, setBusy] = useState(false), [error, setError] = useState("");
+  useEffect(() => {
+    const controller = new AbortController();
+    api.get(`/workflow/applications/${applicationId}/calendar`, { signal: controller.signal, __quiet: true }).then(({ data }) => { if (!controller.signal.aborted) setEvent(data); }).catch(() => {});
+    return () => controller.abort();
+  }, [applicationId]);
+  useEffect(() => {
+    if (!open || !["pending", "needs_sync", "retry"].includes(event?.state)) return;
+    const timer = setTimeout(() => { api.get(`/workflow/applications/${applicationId}/calendar`, { __quiet: true }).then(({ data }) => setEvent(data)).catch((failure) => setError(getApiErrorMessage(failure))); }, 5000);
+    return () => clearTimeout(timer);
+  }, [open, event, applicationId]);
   async function show() {
     if (open) { setOpen(false); return; }
     setOpen(true); setBusy(true); setError("");
-    try { const [a, b] = await Promise.all([api.get("/account/calendar"), api.get(`/workflow/applications/${applicationId}/calendar`)]); setConnection(a.data); setEvent(b.data); setMinutes(b.data.minutes); }
+    try { const [a, b] = await Promise.all([api.get("/account/calendar", { __quiet: true }), api.get(`/workflow/applications/${applicationId}/calendar`, { __quiet: true })]); setConnection(a.data); setEvent(b.data); }
     catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); }
   }
   async function sync() {
     setBusy(true); setError("");
-    try { const { data } = await api.post(`/workflow/applications/${applicationId}/calendar`, { minutes: Number(minutes) }, { __quiet: true }); setEvent(data); }
+    try { const { data } = await api.post(`/workflow/applications/${applicationId}/calendar`, { minutes: event?.minutes || 45 }, { __quiet: true }); setEvent(data); }
     catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); }
   }
-  return <div className="calendar-sync"><button type="button" className="button-secondary button-sm calendar-sync-trigger" aria-expanded={open} aria-controls={panelId} onClick={show}><CalendarDays size={16} /><span>Google Calendar</span><ChevronDown size={14} className="calendar-sync-caret" aria-hidden="true" /></button>{open && <div id={panelId} className="calendar-sync-options">{busy && <p role="status">Actualizando calendario…</p>}{error && <p role="alert">{error}</p>}{connection && (!connection.connected || !connection.configured ? <p>Conecta tu calendario desde <Link to="/seguridad#security-calendar">Seguridad de cuenta</Link>.</p> : <><p role="status">{labels[event?.state] || "Consulta la sincronización"}</p>{event?.error && <p role="alert">{event.error}</p>}<label>Duración de la copia<select className="field-control" value={minutes} disabled={busy} onChange={(e) => setMinutes(e.target.value)}>{[15, 30, 45, 60, 90, 120, 180].map((value) => <option key={value} value={value}>{value} minutos</option>)}</select></label><small>Confirma la duración con la empresa. Se copia en tu calendario sin añadir invitados.</small><button type="button" className="button-primary button-sm" disabled={busy} onClick={sync}><RefreshCw size={15} />{event?.enabled ? "Actualizar entrevista" : "Sincronizar entrevista"}</button></>)}</div>}</div>;
+  const synced = event?.state === "synced";
+  return <div className={`calendar-sync ${synced ? "is-synced" : ""}`}><button type="button" className="button-secondary button-sm calendar-sync-trigger" aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={show}>{synced ? <CheckCircle2 size={16} /> : <CalendarDays size={16} />}<span>{synced ? "En Google Calendar" : "Añadir a Google Calendar"}</span><ChevronDown size={14} className="calendar-sync-caret" aria-hidden="true" /></button>{open && <div id={panelId} className="calendar-sync-options">{busy && <p role="status">Consultando Google Calendar…</p>}{error && <p role="alert">{error}</p>}{connection && (!connection.connected || !connection.configured || connection.needs_reconnect ? <><strong>{connection.needs_reconnect ? "Renueva la conexión con Google" : "Conecta tu calendario"}</strong><p>Conecta Google Calendar una vez. Después podrás añadir las entrevistas que elijas.</p><Link className="button-primary button-sm" to="/seguridad#security-calendar">{connection.needs_reconnect ? "Revisar conexión" : "Conectar Google Calendar"}</Link></> : <><strong role="status">{labels[event?.state] || "Consulta la sincronización"}</strong>{event?.error && <p role="alert">{event.error}</p>}<p>Incluye fecha, duración, modalidad y enlace o dirección. Si la empresa cambia o cancela la entrevista, el evento se actualizará automáticamente.</p><small>Recordatorio: 30 minutos antes. No se envían invitaciones a otras personas.</small><div className="calendar-sync-buttons">{!synced && <button type="button" className="button-primary button-sm" disabled={busy} onClick={sync}><RefreshCw size={15} />{event?.enabled ? "Reintentar sincronización" : "Añadir entrevista"}</button>}{synced && <a href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noopener noreferrer" className="button-secondary button-sm">Abrir Google Calendar<ExternalLink size={14} /></a>}</div></>)}</div>}</div>;
 }

@@ -411,7 +411,7 @@ def test_application_pipeline_notifications_and_candidate_access(client):
     )
     notifications = client.get("/api/v1/notifications", headers=headers).json()
     assert len(notifications) == 1
-    assert notifications[0]["action_url"] == f"/postulaciones?focus={application['id']}"
+    assert notifications[0]["action_url"] == f"/procesos/{application['id']}"
     assert client.get("/api/v1/notifications/unread-count", headers=headers).json() == {
         "count": 1
     }

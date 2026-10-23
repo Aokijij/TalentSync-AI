@@ -6,6 +6,7 @@ ALLOWED_DETAILS = {
     "status", "previous_status", "stage", "previous_stage", "job_id",
     "company_id", "reason_code", "version", "position", "source", "role",
     "deadline", "assessment_id", "skill_id", "result", "session_id",
+    "action", "interview_at", "previous_interview_at", "interview_mode", "interview_minutes",
 }
 
 

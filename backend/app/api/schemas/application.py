@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -31,6 +32,32 @@ class ApplicationCreate(BaseModel):
     screening_answers: list[ScreeningAnswer] = Field(default_factory=list, max_length=10)
 
 
+class InterviewDetails(BaseModel):
+    mode: Literal["virtual", "in_person"]
+    location: str = Field(min_length=3, max_length=1000)
+    minutes: int = Field(default=45, ge=15, le=180)
+    instructions: str = Field(default="", max_length=2000)
+
+    @field_validator("location", "instructions")
+    @classmethod
+    def trim_text(cls, value):
+        return value.strip()
+
+    @model_validator(mode="after")
+    def valid_location(self):
+        if len(self.location) < 3:
+            raise ValueError("Indica la dirección o el enlace de la entrevista")
+        if self.mode == "virtual":
+            try:
+                url = urlsplit(self.location)
+                valid = url.scheme == "https" and url.hostname and not url.username and not url.password and not any(c.isspace() for c in self.location)
+            except ValueError:
+                valid = False
+            if not valid:
+                raise ValueError("Indica un enlace HTTPS válido para la entrevista virtual")
+        return self
+
+
 class ApplicationStatusUpdate(BaseModel):
     expected_version: int | None = Field(default=None, ge=1)
     candidate_feedback: "CandidateFeedback | None" = None
@@ -38,6 +65,7 @@ class ApplicationStatusUpdate(BaseModel):
     pipeline_stage: str | None = None
     recruiter_notes: str | None = None
     interview_at: datetime | None = None
+    interview_details: InterviewDetails | None = None
     screening_answer_adjustments: dict[str, float] | None = None
 
     @field_validator("interview_at")
@@ -71,6 +99,7 @@ class ApplicationResponse(BaseModel):
     company_name: str | None = None
     candidate_name: str | None = None
     interview_at: datetime | None = None
+    interview_details: dict = Field(default_factory=dict)
     pipeline_stage: str | None = None
     pipeline_stage_title: str | None = None
     resolution_reason: str | None = None

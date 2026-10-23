@@ -80,8 +80,8 @@ test("process management keeps notes and scheduling separate from answer scoring
   const html = render(createElement(RecruiterProcessDialog, { application: { id: 5, candidate_name: "Ejemplo", recruiter_notes: "Revisar disponibilidad", screening_answers: [{ question_id: "first", question: "Pregunta fuera del proceso", answer: "Respuesta privada" }] }, onClose() {}, onDelete() {}, onSave() {} }));
   assert.match(html, /Notas internas/);
   assert.match(html, /Revisar disponibilidad/);
-  assert.match(html, /Fecha y hora de entrevista/);
-  assert.match(html, /Preparar cambios/);
+  assert.match(html, /Fecha y hora · Colombia/);
+  assert.match(html, /Guardar y notificar/);
   assert.doesNotMatch(html, /Pregunta fuera del proceso|Respuesta privada|Valoración manual/);
 });
 
@@ -146,12 +146,12 @@ test("editing a saved interview preserves the instant across offsets and incompl
   assert.equal(interviewDateParts("2026-10-26T04:30:00").day, "25");
 });
 
-test("agenda distinguishes loading and failure from an empty calendar and explains manual import", () => {
+test("agenda distinguishes loading and failure from an empty calendar and explains automatic Google Calendar updates", () => {
   const html = render(createElement(InterviewAgenda, { applications: [appointment], now }));
   assert.match(html, /1 cita próxima/);
-  assert.match(html, /Descargar cita/);
-  assert.match(html, /recordatorio de 30 minutos/);
-  assert.match(html, /copia sin actualizaciones/);
+  assert.doesNotMatch(html, /Descargar cita/);
+  assert.match(html, /recordatorio 30 minutos antes/);
+  assert.match(html, /actualizarán automáticamente/);
   assert.match(html, /Google Calendar/);
   assert.match(html, /Duración|duración/);
   const error = render(createElement(InterviewAgenda, { applications: [], now, error: "No pudimos consultar tus procesos" }));

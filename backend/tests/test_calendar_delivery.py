@@ -138,12 +138,21 @@ def test_event_sync_updates_cancels_and_excludes_private_notes(client):
         assert "PRIVATE COMPANY NOTES" not in json.dumps(payload) and "attendees" not in payload
         assert payload["visibility"] == "private"
         app = session.get(Application, application_id)
+        app.interview_details = {"mode": "virtual", "location": "https://meet.google.com/example", "minutes": 90, "instructions": "Revisa <tu proyecto>"}
         app.interview_at += timedelta(hours=2)
         db.commit()
         assert calendars.event_status(db, user, application_id)["state"] == "needs_sync"
         assert len(db.calendars.due(datetime.utcnow())) == 1
         calendars.process_event(db, row, user, gateway, security, public_app_url="https://example.test")
         assert sent[-1][1]["create"] is False
+        updated = sent[-1][0][2]
+        assert updated["location"] == "https://meet.google.com/example"
+        assert "Virtual" in updated["description"] and "Revisa &lt;tu proyecto&gt;" in updated["description"]
+        assert datetime.fromisoformat(updated["end"]["dateTime"]) - datetime.fromisoformat(updated["start"]["dateTime"]) == timedelta(minutes=90)
+        app.interview_details = {"mode": "in_person", "location": "Calle 10, Medellín", "minutes": 60}
+        db.commit()
+        calendars.process_event(db, row, user, gateway, security, public_app_url="https://example.test")
+        assert sent[-1][0][2]["location"] == "Calle 10, Medellín" and "Presencial" in sent[-1][0][2]["description"]
         app.status = ApplicationStatus.REJECTED
         db.commit()
         calendars.process_event(db, row, user, gateway, security, public_app_url="https://example.test")

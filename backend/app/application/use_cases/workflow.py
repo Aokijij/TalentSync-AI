@@ -44,10 +44,10 @@ def timeline(db, user, application_id):
     member = db.organizations.member_for_user(user.id) if user.role == UserRole.COMPANY else None
     history = [{"id": item.id, "at": item.created_at, "type": item.event_type, **item.details}
                for item in reversed(db.events.for_entity("application", row.id, 500))
-               if item.event_type in {"application.transition", "application.deadline_released", "application.withdrawn", "application.feedback_shared"}]
+               if item.event_type in {"application.transition", "application.deadline_released", "application.withdrawn", "application.feedback_shared", "application.interview_updated"}]
     return {"job_title": row.job.title, "company_name": row.job.company.name, "job_id": row.job_id, "application_id": row.id, "can_manage": user.role != UserRole.CANDIDATE and (member is None or member.role != "interviewer"), "version": row.version, "status": row.status.value, "stage": row.pipeline_stage,
             "stage_title": next((stage["title"] for stage in stages_for(row.job) if stage["id"] == row.pipeline_stage), "En seguimiento"),
-            "interview_at": row.interview_at, "job_description": row.job.description, "job_requirements": row.job.requirements,
+            "interview_at": row.interview_at, "interview_details": row.interview_details or {}, "job_description": row.job.description, "job_requirements": row.job.requirements,
             "job_conditions": {"salary": row.job.salary, "quality_details": row.job.quality_details,
                                "quality_revision": row.job.quality_revision, "response_days": row.job.response_days,
                                "pipeline_stages": row.job.pipeline_stages},

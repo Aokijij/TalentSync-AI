@@ -136,6 +136,7 @@ class Application(Protocol):
     created_at: datetime
     recruiter_notes: str | None
     interview_at: datetime | None
+    interview_details: dict
     pipeline_stage: str | None
     resolution_reason: str | None
     screening_answers: list[dict]

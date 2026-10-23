@@ -1,3 +1,4 @@
+import { RecruiterProcessDialog } from "../components/RecruiterProcessDialog.jsx";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
@@ -19,6 +20,7 @@ function ProcessController({ applicationId }) {
   const { confirm } = useFeedback();
   const { user } = useAuth();
   const [process, setProcess] = useState(null), [error, setError] = useState("");
+  const [manageInterview, setManageInterview] = useState(false);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState("");
   useEffect(() => {
     const controller = new AbortController();
@@ -27,6 +29,15 @@ function ProcessController({ applicationId }) {
       .catch((failure) => { if (!controller.signal.aborted) setError(getApiErrorMessage(failure)); });
     return () => controller.abort();
   }, [applicationId]);
+
+  async function saveProcess(changes, notice) {
+    const { data } = await api.put(`/applications/${applicationId}/status`, { ...changes, expected_version: process.version }, { __quiet: true });
+    setManageInterview(false);
+    setProcess((current) => ({ ...current, ...data }));
+    setMessage(notice); setError("");
+    try { setProcess((await api.get(`/workflow/applications/${applicationId}`, { __quiet: true })).data); }
+    catch { setError("El cambio quedó guardado. Actualiza la página para consultar el historial más reciente."); }
+  }
 
   async function communicate(values) {
     if (busy) return false;
@@ -49,11 +60,12 @@ function ProcessController({ applicationId }) {
     {message && <InlineNotice tone="success" title="Proceso actualizado">{message}</InlineNotice>}
     {!process && !error && <p role="status" className="text-sm text-[var(--muted)]">Cargando el proceso…</p>}
     {process && <>
-      <ProcessWorkspace process={process} role={user.role}
+      <ProcessWorkspace process={process} role={user.role} onManageInterview={process.can_manage ? () => setManageInterview(true) : undefined}
         evaluation={user.role === "company" ? <InterviewEvaluationPanel process={process} onSaved={setProcess} /> : null}
         communication={process.can_manage && !process.released_at ? <CommunicationForm process={process} busy={busy} onCommunicate={communicate} /> : null}
         preparation={user.role === "candidate" ? <ApplicationPreparation applicationId={applicationId} jobId={process.job_id} /> : null}
       />
+      {manageInterview && <RecruiterProcessDialog application={{ ...process, id: process.application_id }} onClose={() => setManageInterview(false)} onDelete={() => saveProcess({ status: "rejected", candidate_feedback: { reason_code: "other", message: "La empresa finalizó tu participación en este proceso de selección." } }, "Proceso finalizado y comunicado al candidato.")} onSave={(changes) => saveProcess(changes, "Entrevista actualizada. El cambio quedó en el historial y se notificó al candidato.")} />}
       <Link className="button-secondary inline-flex" to={user.role === "candidate" ? "/postulaciones" : user.role === "company" ? process.can_manage ? `/empresa/postulaciones?job=${process.job_id}` : "/empresa/equipo" : "/admin"}>Volver a mi espacio</Link>
     </>}
   </div>;

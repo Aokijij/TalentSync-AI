@@ -527,6 +527,7 @@ class Application(Base):
     recruiter_notes: Mapped[str | None] = mapped_column(Text)
     interview_evaluations: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     interview_at: Mapped[datetime | None] = mapped_column(DateTime)
+    interview_details: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
     pipeline_stage: Mapped[str | None] = mapped_column(String(80), nullable=True)
     resolution_reason: Mapped[str | None] = mapped_column(String(80), nullable=True)
     screening_answers: Mapped[list[dict]] = mapped_column(
