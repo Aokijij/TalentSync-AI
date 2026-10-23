@@ -17,6 +17,11 @@
 .account-button-row { display:flex; flex-wrap:wrap; gap:.5rem; }
 .calendar-steps { display:grid; gap:.7rem; list-style:decimal inside; font-size:.85rem; }
 .calendar-sync { position:relative; }
+.calendar-sync-trigger { gap:.45rem; color:var(--accent); border-color:color-mix(in srgb,var(--accent) 45%,var(--line)); background:color-mix(in srgb,var(--accent) 9%,var(--surface)); }
+.calendar-sync-trigger:hover { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 15%,var(--surface)); }
+.calendar-sync-trigger[aria-expanded=true] { border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 12%,transparent); }
+.calendar-sync-caret { flex:none; transition:transform .15s; }
+.calendar-sync-trigger[aria-expanded=true] .calendar-sync-caret { transform:rotate(180deg); }
 .calendar-sync-options { display:grid; gap:.6rem; margin-top:.65rem; padding:1rem; border:1px solid var(--line); background:var(--surface); border-radius:12px; max-width:300px; font-size:.8rem; }
 .calendar-sync-options label { display:grid; gap:.4rem; }
 .calendar-sync-options small { color:var(--muted); line-height:1.6; }

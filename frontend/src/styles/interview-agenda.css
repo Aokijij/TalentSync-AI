@@ -11,18 +11,31 @@
 .interview-agenda-info h3, .interview-process h2 { color:var(--ink-strong); font-weight:700; }
 .interview-agenda-info p, .interview-process p { font-size:var(--text-body); }
 .interview-agenda-info a { display:inline-flex; align-items:center; gap:4px; margin-top:6px; min-height:44px; color:var(--accent); font-size:var(--text-meta); font-weight:600; }
-.interview-download { max-width:280px; }
-.interview-download p { margin-top:8px; color:var(--muted); font-size:var(--text-meta); line-height:1.7; }
-.interview-download [role="alert"] { color:var(--error); }
+.interview-agenda,.interview-process { container-type:inline-size; }
+.interview-calendar-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; flex:0 0 336px; width:336px; max-width:100%; align-items:start; margin-left:auto; }
+.interview-calendar-actions>.calendar-sync { display:contents; }
+.interview-calendar-actions :is(.calendar-sync-trigger,.interview-calendar-download) { width:100%; min-width:0; min-height:42px; padding:.625rem .7rem; gap:.4rem; border-radius:10px; font-size:.75rem; white-space:nowrap; justify-content:center; }
+.interview-calendar-actions>.calendar-sync>.calendar-sync-trigger { grid-column:1; grid-row:1; }
+.interview-calendar-actions>.interview-calendar-download { grid-column:2; grid-row:1; background:var(--surface); }
+.interview-calendar-actions:has(.calendar-sync-trigger[aria-expanded=true]) { flex-basis:100%; width:100%; grid-template-columns:164px 164px minmax(0,1fr); }
+.interview-calendar-actions>.calendar-sync>.calendar-sync-options { grid-column:1/-1; grid-row:2; width:100%; max-width:none; margin:0; padding:1rem; border-color:color-mix(in srgb,var(--accent) 35%,var(--line)); }
+.interview-calendar-actions:has(.calendar-sync-trigger[aria-expanded=true])>.calendar-sync>.calendar-sync-options { max-width:600px; }
+.interview-calendar-actions>p { grid-column:1/-1; margin:0; color:var(--muted); font-size:var(--text-meta); line-height:1.7; }
+.interview-calendar-actions [role="alert"] { color:var(--error); }
 .interview-agenda-note { margin:0; padding:var(--space-4) var(--panel-padding); color:var(--muted); font-size:var(--text-meta); line-height:1.7; border-top:1px solid var(--line); background:var(--surface-subtle); }
 .interview-agenda-more { padding:0 var(--panel-padding) var(--space-4); }
 .interview-process-content > div:nth-child(2) { flex:1 1 220px; min-width:0; overflow-wrap:anywhere; }
 .interview-process small { color:var(--muted); font-size:var(--text-meta); }
 .interview-process .interview-agenda-note { font-size:var(--text-meta); }
 @media(max-width:600px) {
-  .interview-download { width:100%; max-width:none; }
-  .interview-download button { width:100%; }
+  .interview-calendar-actions { width:100%; flex-basis:100%; }
   .interview-agenda-list > li { align-items:flex-start; }
   .interview-agenda-info { flex-basis:calc(100% - 80px); }
   .interview-process-content > div:nth-child(2) { flex-basis:calc(100% - 80px); }
 }
+@container(max-width:760px) {
+  .interview-calendar-actions { flex-basis:100%; width:100%; }
+  .interview-calendar-actions:has(.calendar-sync-trigger[aria-expanded=true]) { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .interview-calendar-actions:has(.calendar-sync-trigger[aria-expanded=true])>.calendar-sync>.calendar-sync-options { max-width:none; }
+}
+@container(max-width:360px) { .interview-calendar-actions .calendar-sync-caret { display:none; } }

@@ -28,12 +28,12 @@ En **Mercado laboral**, la compatibilidad mínima parte de **Cualquiera**: inclu
 
 - Reúne las entrevistas futuras de procesos abiertos y las ordena por fecha. Muestra primero tres; se pueden desplegar las restantes.
 - Presenta la hora de Colombia. La empresa programa y modifica esa hora desde **Gestionar proceso** en su tablero.
-- **Añadir al calendario** descarga un archivo `.ics`. Ábrelo e impórtalo en una aplicación que admita iCalendar, por ejemplo Google Calendar, Outlook o Calendario de Apple.
+- **Descargar cita** descarga un archivo `.ics`. Ábrelo e impórtalo en una aplicación que admita iCalendar, por ejemplo Google Calendar, Outlook o Calendario de Apple.
 - El archivo incluye título de la oferta, empresa, hora de inicio, enlace al proceso y un recordatorio de 30 minutos. El calendario receptor decide cómo mostrar las alertas.
 - No inventa la duración, dirección o enlace de videollamada: deben confirmarse en el proceso o con la empresa.
 - Cada descarga consulta la cita actual y verifica acceso. No permite exportar una cita pasada, sin fecha o de un proceso finalizado.
 
-**Importante:** es una copia manual. No conecta tu cuenta de Google/Microsoft, no envía invitaciones y no actualiza ni elimina automáticamente un evento ya importado. Si se reprograma o cancela, TalentSync publica un aviso y tendrás que actualizar tu calendario. El archivo conserva el mismo identificador al reprogramar; el comportamiento de actualización depende de la aplicación receptora.
+**Importante:** el archivo descargado es una copia manual: no conecta tu cuenta de Google/Microsoft ni actualiza automáticamente el evento importado. El botón independiente **Google Calendar** permite sincronizar la entrevista elegida tras autorizar la conexión en Seguridad. En la copia descargada, si se reprograma o cancela, TalentSync publica un aviso y tendrás que actualizar tu calendario. El archivo conserva el mismo identificador al reprogramar; el comportamiento de actualización depende de la aplicación receptora.
 
 También se corrigió la conversión de fechas: abrir una entrevista ya guardada y volver a guardar su hora no debe desplazarla cinco horas. Los avisos indican expresamente la hora de Colombia.
 
@@ -116,7 +116,7 @@ Antes de entregar puedes consultar todas las respuestas y editar cualquiera. La 
 
 ## Qué sigue pendiente de las propuestas
 
-Las cartas de presentación, el simulador conversacional, el seguimiento de postulaciones externas con correo autorizado, la sincronización de calendarios y un panel unificado de estado de conectores siguen siendo propuestas. No están incluidas en esta entrega.
+Las cartas de presentación, el simulador conversacional y el seguimiento de postulaciones externas mediante correo autorizado siguen siendo propuestas. La sincronización con Google Calendar y el panel unificado de integraciones ya están implementados; requieren configuración y comprobación externa donde corresponda. Los pendientes actuales son alinear las diferencias históricas de esquema, verificar proveedores con cuentas autorizadas, ejecutar el piloto y completar las pruebas de carga y la operación en staging.
 
 Breken y Figma no están conectados. Las referencias de diseño se utilizan para mejorar los componentes existentes; no se incorporaron nuevas dependencias de animación o 3D.
 

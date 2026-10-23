@@ -21,7 +21,7 @@ export function InterviewCalendarButton({ applicationId }) {
       setError(getApiErrorMessage(failure, "No pudimos descargar la cita. Vuelve a intentarlo."));
     } finally { setBusy(false); }
   }
-  return <div className="interview-download"><button type="button" className="button-secondary button-sm" disabled={busy} onClick={download}>{busy ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}{busy ? "Preparando cita…" : "Descargar cita"}</button><CalendarSync applicationId={applicationId} />{error && <p role="alert">{error}</p>}{saved && <p role="status">Archivo descargado. Ábrelo en tu calendario para guardar la cita.</p>}</div>;
+  return <div className="interview-calendar-actions" role="group" aria-label="Calendario de la entrevista"><CalendarSync applicationId={applicationId} /><button type="button" className="button-secondary button-sm interview-calendar-download" disabled={busy} onClick={download}>{busy ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}{busy ? "Preparando…" : "Descargar cita"}</button>{error && <p role="alert">{error}</p>}{saved && <p role="status">Archivo descargado. Ábrelo en tu calendario para guardar la cita.</p>}</div>;
 }
 
 export function InterviewAgenda({ applications, loading = false, error = "", now = new Date() }) {
