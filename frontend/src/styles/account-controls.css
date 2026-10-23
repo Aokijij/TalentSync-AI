@@ -29,3 +29,6 @@
 @media(max-width:600px) { .account-action-options { grid-template-columns:1fr; } .account-controls footer>button { width:100%; } }
 
 .security-panel.account-controls>header { margin:0; }
+.calendar-access-help { border:1px solid var(--line); border-radius:.75rem; padding:.85rem 1rem; font-size:.8rem; color:var(--muted); line-height:1.6; }
+.calendar-access-help summary { cursor:pointer; font-weight:600; color:var(--ink); }
+.calendar-access-help p { margin-top:.6rem; }

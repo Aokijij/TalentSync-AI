@@ -40,10 +40,12 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
     if not gateway.configured(provider):
         raise UseCaseError(status_code=503, detail="El acceso social no está configurado")
     row = db.accounts.oauth_attempt(token_digest(state))
-    if (not browser or row is None or row.provider != provider or row.used_at
-            or row.expires_at <= datetime.utcnow()
-            or not hmac.compare_digest(row.browser_hash, token_digest(browser))):
-        raise UseCaseError(status_code=400, detail="El acceso venció o corresponde a otro navegador")
+    if row is None or row.provider != provider:
+        raise UseCaseError(status_code=400, detail="Vuelve a iniciar el acceso social", code="invalid_state")
+    if row.used_at or row.expires_at <= datetime.utcnow():
+        raise UseCaseError(status_code=400, detail="Vuelve a iniciar el acceso social", code="expired")
+    if not browser or not hmac.compare_digest(row.browser_hash, token_digest(browser)):
+        raise UseCaseError(status_code=400, detail="El acceso corresponde a otro navegador", code="browser_mismatch")
     verifier = security.decrypt_secret(row.verifier_cipher)
     purpose, link_user_id, link_session_id, nonce = row.purpose, row.link_user_id, row.link_session_id, row.state_hash
     if purpose not in {"login", "link"}:
@@ -51,10 +53,10 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
     if purpose == "link":
         _link_context(db, session_token, link_user_id, link_session_id, mfa_review=mfa_review)
     if not db.accounts.claim_oauth_attempt(row.id):
-        raise UseCaseError(status_code=400, detail="El acceso ya fue utilizado")
+        raise UseCaseError(status_code=400, detail="El acceso ya fue utilizado", code="expired")
     db.commit()  # Consume before network I/O; provider failure must not make state reusable.
     if not code:
-        raise UseCaseError(status_code=400, detail="No se autorizó el acceso social")
+        raise UseCaseError(status_code=400, detail="No se autorizó el acceso social", code="cancelled")
     identity_data = gateway.exchange(provider, code, verifier, nonce)
     if purpose == "link":
         user = _link_context(db, session_token, link_user_id, link_session_id, mfa_review=mfa_review)
@@ -90,7 +92,7 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
             expires_at=datetime.utcnow() + timedelta(minutes=5)))
         db.commit()
         return {"pending": pending, "mfa_required": True}
-    return {**issue_session(db, user, user_agent=user_agent, mfa_review=mfa_review), "created": created}
+    return {**issue_session(db, user, user_agent=user_agent, authentication_method=provider, mfa_review=mfa_review), "created": created}
 
 
 def _reauthenticate(db, user, session, credentials, security, *, mfa_review=False):

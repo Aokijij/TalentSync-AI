@@ -94,3 +94,24 @@ def test_provider_failure_is_sanitized():
     with pytest.raises(UseCaseError) as error:
         adapter.exchange("github", "code-secret", "verifier-secret", "nonce")
     assert "secret" not in error.value.detail
+
+
+@pytest.mark.parametrize("kind,expected", [("invalid_client", "provider_configuration"), ("invalid_grant", "code_rejected"), ("access_denied", "cancelled")])
+def test_provider_oauth_errors_are_classified_without_exposing_response(kind, expected):
+    adapter = SocialIdentityProvider(configuration(), httpx.MockTransport(lambda request: httpx.Response(400, json={"error": kind, "error_description": "PRIVATE provider diagnostics"})))
+    with pytest.raises(UseCaseError) as failure:
+        adapter.exchange("github", "private-code", "private-verifier", "nonce")
+    assert failure.value.code == expected
+    assert "PRIVATE" not in failure.value.detail and "private-code" not in str(failure.value)
+
+
+def test_provider_connection_failures_are_retryable_without_replaying_a_code():
+    calls = []
+    def fail(request):
+        calls.append(request)
+        raise httpx.ReadTimeout("PRIVATE upstream information")
+    adapter = SocialIdentityProvider(configuration(), httpx.MockTransport(fail))
+    with pytest.raises(UseCaseError) as failure:
+        adapter.exchange("google", "private-code", "private-verifier", "nonce")
+    assert failure.value.code == "provider_unavailable" and len(calls) == 1
+    assert "PRIVATE" not in failure.value.detail

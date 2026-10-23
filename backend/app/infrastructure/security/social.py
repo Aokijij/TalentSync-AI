@@ -96,7 +96,9 @@ class SocialIdentityProvider:
                   "client_secret": getattr(self.settings, f"oauth_{provider}_client_secret"),
                   "grant_type": "authorization_code"}
         try:
-            with httpx.Client(timeout=10, follow_redirects=False, trust_env=False, transport=self.transport) as client:
+            # Retry connection establishment only. Never replay a code after a read timeout.
+            with httpx.Client(timeout=15, follow_redirects=False, trust_env=False,
+                              transport=self.transport or httpx.HTTPTransport(retries=1)) as client:
                 if provider == "github":
                     tokens = self._json(client.post("https://github.com/login/oauth/access_token", data=params,
                                                    headers={"Accept": "application/json"}))
@@ -161,6 +163,21 @@ class SocialIdentityProvider:
                 if len(email) > 255:
                     raise ValueError("Invalid email")
                 return {"subject": subject, "email": email, "name": str(name or "Candidato")[:120]}
-        except (httpx.HTTPError, ValueError, KeyError, TypeError, AttributeError, StopIteration, jwt.PyJWTError, EmailNotValidError):
+        except httpx.HTTPStatusError as error:
+            reason = "provider_unavailable"
+            try:
+                payload = error.response.json() if len(error.response.content) <= 65536 else {}
+                kind = payload.get("error") if isinstance(payload, dict) else None
+                reason = {"invalid_client": "provider_configuration", "unauthorized_client": "provider_configuration",
+                          "invalid_grant": "code_rejected", "access_denied": "cancelled",
+                          "insufficient_scope": "permissions"}.get(kind, reason) if isinstance(kind, str) else reason
+            except ValueError:
+                pass
+            raise UseCaseError(status_code=502, detail="No pudimos completar la autorización con el proveedor", code=reason) from None
+        except httpx.HTTPError:
+            raise UseCaseError(status_code=502, detail="No pudimos conectar con el proveedor. Inténtalo de nuevo.", code="provider_unavailable") from None
+        except jwt.ImmatureSignatureError:
+            raise UseCaseError(status_code=502, detail="La hora del servidor no coincide con la del proveedor", code="clock_skew") from None
+        except (ValueError, KeyError, TypeError, AttributeError, StopIteration, jwt.PyJWTError, EmailNotValidError):
             # Do not include response bodies, authorization codes or tokens in logs/errors.
-            raise UseCaseError(status_code=502, detail="No pudimos verificar tu identidad con el proveedor") from None
+            raise UseCaseError(status_code=502, detail="No pudimos verificar tu identidad con el proveedor", code="identity_not_verified") from None

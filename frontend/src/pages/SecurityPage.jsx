@@ -11,6 +11,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { SocialAccounts } from "../components/SocialAccounts.jsx";
+import { SecurityEmailPanel } from "../components/SecurityEmailPanel.jsx";
 
 export function SecurityPage() {
   const [params] = useSearchParams();
@@ -47,15 +48,7 @@ export function SecurityPage() {
     {error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}
     {message && <p role="status" className="surface-card p-4">{message}</p>}
     {requiresAuthenticator(user, accessOptions) && <p className="surface-card p-4">Para operar como empresa o administrador, configura primero una aplicación autenticadora.</p>}
-    {panel === "email" && <><section id="security-email" className="security-panel"><h2 className="flex items-center gap-3 text-lg font-bold"><Mail size={21} className="text-[var(--accent)]" />Correo electrónico</h2><p className="mt-2">{user.email} · {user.email_verified ? "Confirmado" : "Pendiente de confirmar"}</p>
-      {!user.email_verified && <button disabled={busy} className="button-secondary mt-3" onClick={() => act(async () => { const { data } = await api.post("/account/verify-email"); setMessage(data.message); })}>Enviar confirmación</button>}
-      {accessOptions.local_mail && <Link className="ml-3 text-sm text-[var(--accent)]" to="/desarrollo/correos">Bandeja local</Link>}
-      <form className="security-email-form" onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); act(async () => { const result = await api.post("/account/change-email", { email: data.get("email"), password: data.get("password") }); setMessage(result.data.message); }); }}>
-        <label className="text-sm">Nuevo correo<input className="field-control mt-1" name="email" required type="email" autoComplete="off" /></label>
-        <label className="text-sm">Contraseña actual<input className="field-control mt-1" name="password" required type="password" autoComplete="current-password" /></label>
-        <footer><p>Confirma el cambio con tu contraseña actual.</p><button disabled={busy} className="button-primary">Solicitar cambio</button></footer>
-      </form>
-    </section>
+    {panel === "email" && <><SecurityEmailPanel user={user} localMail={accessOptions.local_mail} />
     {user.role === "candidate" && accessOptions.mode === "session" && <SocialAccounts user={user} providers={accessOptions.providers} onSessionsChanged={load} mfaReview={accessOptions.mfa_review} />}
     </>}
     {panel === "mfa" && (accessOptions.mfa_review ? <section id="security-mfa" className="security-panel"><h2 className="font-bold">Verificación en dos pasos pausada</h2><p className="mt-2 text-sm text-[var(--muted)]">Durante la revisión local, todos los roles pueden entrar con su contraseña sin código adicional. Tu autenticador y códigos de recuperación se conservan para reactivarlos después.</p></section> : <section id="security-mfa" className="security-panel"><h2 className="flex items-center gap-3 text-lg font-bold"><LockKeyhole size={21} className="text-[var(--accent)]" />Autenticación de dos factores</h2><p className="mt-2 text-sm text-[var(--muted)]">{user.mfa_enabled ? "Activada. Puedes usar tu aplicación o un código de recuperación al ingresar." : "Añade la clave a una aplicación autenticadora y confirma con su código de seis dígitos."}</p>

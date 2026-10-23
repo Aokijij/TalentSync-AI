@@ -37,17 +37,17 @@ def callback(db, user, session, state, browser, code, gateway, security):
     row = db.accounts.oauth_attempt(token_digest(state))
     if (not row or row.provider != "calendar_google" or row.purpose != "calendar" or row.used_at or row.expires_at <= datetime.utcnow()
             or row.link_user_id != user.id or row.link_session_id != session.id or not browser or not hmac.compare_digest(row.browser_hash, token_digest(browser))):
-        raise UseCaseError(status_code=400, detail="La autorización venció o corresponde a otra sesión")
+        raise UseCaseError(status_code=400, detail="La autorización venció o corresponde a otra sesión", code="expired")
     verifier = security.decrypt_secret(row.verifier_cipher)
     if not db.accounts.claim_oauth_attempt(row.id):
         raise UseCaseError(status_code=400, detail="La autorización ya se utilizó")
     db.commit()
     if not code:
-        raise UseCaseError(status_code=400, detail="No se autorizó el calendario")
+        raise UseCaseError(status_code=400, detail="No se autorizó el calendario", code="cancelled")
     try:
         refresh = gateway.exchange(code, verifier)
     except CalendarProviderError as failure:
-        raise UseCaseError(status_code=503, detail=ERRORS.get(failure.code, ERRORS["temporary"])) from None
+        raise UseCaseError(status_code=503, detail=ERRORS.get(failure.code, ERRORS["temporary"]), code=failure.code) from None
     db.calendars.connect(user.id, security.encrypt_secret(refresh))
     db.commit()
     return {"connected": True}

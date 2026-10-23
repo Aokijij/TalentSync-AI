@@ -37,7 +37,7 @@ def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog
     add("calendar", "Google Calendar", "configured" if calendar else "provider_required", "Sincronización de entrevistas elegidas; cambios y cancelaciones con reintentos." if calendar else "Sincronización implementada; falta habilitar la aplicación de Google Calendar.", "Autorizar desde Seguridad y sincronizar una entrevista de prueba. La descarga de citas sigue disponible.", configured=calendar, action_url="/seguridad#security-calendar", action_label="Revisar calendario")
     if resend:
         add("mail_events", "Confirmación de entrega de correo", "configured" if mail_events else "provider_required", "Eventos firmados de Resend: entrega, retrasos y rebotes." if mail_events else "El transporte puede aceptar mensajes, pero falta configurar el webhook firmado de entrega.", "Revisar los estados desde Operación y correos.", configured=mail_events)
-    for key, title, names in [("social", "Acceso social", ("google", "github", "linkedin")), ("sso", "SSO administrativo", ("workspace", "entra"))]:
+    for key, title, names in [("social", "Acceso social", ("google", "github")), ("sso", "SSO administrativo", ("workspace", "entra"))]:
         active = [name for name in names if providers.get(name)]
         add(key, title, "configured" if active else "provider_required", "Proveedores configurados: " + (", ".join(active) or "ninguno") + ".", "Comprobar acceso, vinculación y recuperación con una cuenta autorizada.", configured=bool(active))
     sources = catalog_providers if catalog_providers is not None else {"jsearch": bool(catalog)}

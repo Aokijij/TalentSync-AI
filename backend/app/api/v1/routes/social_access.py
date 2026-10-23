@@ -1,3 +1,6 @@
+import logging
+from urllib.parse import urlencode
+
 from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.responses import RedirectResponse
 
@@ -17,6 +20,9 @@ from app.domain.entities.enums import UserRole
 
 router = APIRouter()
 candidate = require_roles(UserRole.CANDIDATE)
+logger = logging.getLogger(__name__)
+FAILURE_REASONS = {"invalid_state", "expired", "browser_mismatch", "cancelled", "provider_unavailable",
+                   "provider_configuration", "code_rejected", "permissions", "clock_skew", "identity_not_verified"}
 
 
 def _temporary_cookie(response, name, value, seconds):
@@ -41,6 +47,7 @@ def callback(request: Request, provider: str, state: str = Query(default="", max
              code: str = Query(default="", max_length=4096),
              db=Depends(get_unit_of_work), gateway=Depends(get_social_identity_provider), security=Depends(get_account_security)):
     result = None
+    reason = "failed"
     try:
         result = cases.callback(db, provider, state, request.cookies.get("talentsync_oauth_browser"), code,
                                 gateway, security, user_agent=request.headers.get("user-agent", ""),
@@ -48,7 +55,12 @@ def callback(request: Request, provider: str, state: str = Query(default="", max
         status = "linked" if result.get("linked") else "mfa" if result.get("mfa_required") else "new" if result["created"] else "ok"
     except UseCaseError as error:
         status = "existing" if error.status_code == 409 else "unavailable" if error.status_code == 503 else "failed"
-    destination = "/seguridad?social=linked" if status == "linked" else "/bienvenida" if status == "new" else "/candidato" if status == "ok" else f"/acceso-social?status={status}"
+        reason = error.code if error.code in FAILURE_REASONS else "failed"
+        # No codes, state, cookies, URLs, email addresses or provider response bodies.
+        logger.warning("Social callback failed: provider=%s reason=%s status=%s",
+                       provider if provider in {"google", "github", "linkedin"} else "unknown", reason, error.status_code)
+    failure = urlencode({"status": status, "provider": provider if provider in {"google", "github"} else "unknown", "reason": reason})
+    destination = "/seguridad?social=linked" if status == "linked" else "/bienvenida" if status == "new" else "/candidato" if status == "ok" else f"/acceso-social?{failure}"
     response = RedirectResponse(f"{settings.public_app_url.rstrip('/')}{destination}", status_code=303)
     response.delete_cookie("talentsync_oauth_browser", path="/")
     response.headers["Cache-Control"] = "no-store"

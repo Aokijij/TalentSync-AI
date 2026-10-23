@@ -2,17 +2,20 @@
 
 ## Estado actual
 
-El servidor admite registro e inicio de sesión de candidatos con Google, GitHub y
-LinkedIn, además de vincular y desvincular proveedores desde Seguridad. El registro
-ahora muestra las mismas opciones habilitadas que el inicio de sesión. Las cuentas
-de empresa conservan su registro y sus permisos propios.
+El acceso de candidatos muestra Google y GitHub para registro, inicio de sesión y
+vinculación. LinkedIn se retiró de estas pantallas y de las opciones públicas; los
+enlaces profesionales de LinkedIn del perfil se conservan.
 
-Google y GitHub están configurados y habilitados para el registro e inicio de
-sesión local. Google Calendar está habilitado con su cliente independiente.
-LinkedIn sigue pendiente de credenciales y origen HTTPS. Se comprobaron los
-botones contra la API real y la generación de enlaces de autorización; todavía
-falta completar el consentimiento externo y comprobar los callbacks registrados
-en cada consola. Disponer de configuración no demuestra un acceso externo completo.
+Se comprobó un inicio de sesión real con Google hasta abrir el panel del candidato.
+La comprobación real de GitHub queda para el propietario, que prefirió probarla
+posteriormente en su navegador. Sus flujos de vinculación y acceso tienen pruebas
+automatizadas, y ahora muestran referencias de error específicas sin exponer datos
+ni respuestas privadas del proveedor.
+
+Google Calendar quedó conectado después de añadir la cuenta del propietario como
+usuario de prueba en Google Auth Platform y completar el consentimiento autorizado.
+Se verificaron la renovación del token y una respuesta 200 de Calendar API con una
+consulta que no solicitó contenido de eventos. No se crearon eventos de prueba.
 
 Las credenciales están únicamente en `.local/integrations.env`, excluido de Git.
 No copies ese archivo a documentación o repositorios. El correo externo sigue
@@ -78,30 +81,11 @@ un cliente de escritorio ni una clave de API en lugar del cliente OAuth web.
 
 [Crear una OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app).
 
-## LinkedIn: registro e inicio de sesión
+## LinkedIn: retirado del acceso
 
-1. Crea tu aplicación en [LinkedIn Developers](https://www.linkedin.com/developers/apps).
-   Completa los datos y verificaciones que solicite la consola para tu aplicación.
-2. En **Products**, solicita **Sign In with LinkedIn using OpenID Connect**.
-   Comprueba que se concedieron `openid`, `profile` y `email`.
-3. En **Auth**, registra `https://TU-DOMINIO/api/v1/auth/social/linkedin/callback`.
-   LinkedIn requiere callback HTTPS. El origen HTTP local actual no lo habilita.
-4. Configura `OAUTH_LINKEDIN_CLIENT_ID` y `OAUTH_LINKEDIN_CLIENT_SECRET` en el
-   entorno que sirve ese dominio. No pegues literalmente `TU-DOMINIO`.
-5. Para probar en local necesitas un origen HTTPS loopback con certificado
-   confiable y frontend/API juntos; cambiar solamente la URL del archivo no
-   instala HTTPS. No publiques la base local personal mediante un túnel.
-
-El arranque aislado `scripts/local.py` solo acepta orígenes loopback. En un
-despliegue se configuran directamente las variables del backend y su origen
-público HTTPS, con cookies seguras, hosts y CORS explícitos. No se creó un
-despliegue ni un dominio como parte de esta preparación.
-
-LinkedIn puede omitir el correo verificado; en ese caso TalentSync rechaza el
-acceso y se puede usar el registro por correo. La conexión no acredita experiencia
-ni valida la identidad profesional.
-[Producto OpenID Connect](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2)
-y [configuración del callback](https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow).
+No aparece en registro, login, cuentas conectadas ni en las opciones públicas de
+acceso. El adaptador previo permanece sin anunciar para una posible reactivación
+futura; no se borran datos de proveedores ni enlaces profesionales de los perfiles.
 
 ## Google Calendar: consentimiento independiente
 
@@ -167,6 +151,6 @@ No uses direcciones ajenas para las pruebas.
 | Registro empresarial | Conserva el flujo y permisos de empresa; los proveedores sociales son para candidatos. |
 
 Las pruebas automatizadas verifican estos contratos con identidades sintéticas y
-respuestas controladas. Los consentimientos reales siguen pendientes de comprobar
-con cuentas autorizadas. La entrega de correo externo requiere todavía configurar
-el remitente y el transporte correspondiente.
+respuestas controladas. Google y la conexión de Calendar también tienen comprobación
+real; GitHub queda pendiente de la prueba del propietario. La entrega de correo
+externo requiere todavía configurar el remitente y el transporte correspondiente.

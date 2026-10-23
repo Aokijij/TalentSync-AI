@@ -5,7 +5,7 @@ import { CheckCircle2, Link2, ShieldCheck } from "lucide-react";
 import { ProviderIcon } from "./ProviderIcon.jsx";
 import "../styles/social-access.css";
 
-const labels = { google: "Google", github: "GitHub", linkedin: "LinkedIn" };
+const labels = { google: "Google", github: "GitHub" };
 
 export function SocialAccounts({ user, providers = [], onSessionsChanged, mfaReview = false }) {
   const [identities, setIdentities] = useState(null);
@@ -38,7 +38,7 @@ export function SocialAccounts({ user, providers = [], onSessionsChanged, mfaRev
   }
   return <section className="surface-card space-y-4 p-5">
     <div className="social-accounts-heading"><ShieldCheck size={22} aria-hidden="true" /><div><h2 className="font-bold">Cuentas conectadas</h2><p>Elige cómo entrar a TalentSync</p></div></div>
-    <p className="text-sm text-[var(--muted)]">Añade Google, GitHub o LinkedIn como otro método de acceso a esta cuenta. Autoriza únicamente una cuenta social que controles. Tu perfil, correo y habilidades se conservan.</p>
+    <p className="text-sm text-[var(--muted)]">Conecta Google o GitHub para entrar a tu misma cuenta. Tu perfil y tus postulaciones se conservan.</p>
     {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}
     {message && <p role="status" className="text-sm">{message}</p>}
     {!identities && !error && <p className="text-sm">Consultando tus conexiones…</p>}
@@ -58,6 +58,6 @@ export function SocialAccounts({ user, providers = [], onSessionsChanged, mfaRev
       {user.mfa_enabled && !mfaReview && <label className="block text-sm">Código de autenticación o recuperación<input name="code" className="field-control mt-1" required minLength={6} maxLength={128} autoComplete="one-time-code" /></label>}
       <div className="flex flex-wrap gap-3"><button disabled={busy} className="button-primary">{busy ? "Validando…" : selection.unlink ? "Confirmar desvinculación" : "Continuar al proveedor"}</button><button type="button" className="button-secondary" disabled={busy} onClick={() => setSelection(null)}>Cancelar</button></div>
     </form>}
-    <p className="text-xs text-[var(--muted)]">Si te registraste con una cuenta social y aún no tienes contraseña, define una mediante <Link className="text-[var(--accent)]" to="/recuperar-acceso">Recuperar acceso</Link>. {mfaReview ? "La verificación en dos pasos está pausada durante esta revisión local." : "Los proveedores vinculados siguen sujetos al MFA de TalentSync."}</p>
+    <details className="social-password-help"><summary>¿Necesitas una contraseña de TalentSync?</summary><p>Si creaste tu cuenta con Google o GitHub, puedes establecer una desde <Link className="text-[var(--accent)]" to="/recuperar-acceso">Recuperar acceso</Link>. La necesitarás para gestionar las vinculaciones.</p></details>
   </section>;
 }

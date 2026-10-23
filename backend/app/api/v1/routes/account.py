@@ -68,7 +68,7 @@ def options(gateway=Depends(get_social_identity_provider)):
             "local_mail": settings.local_mail_enabled and settings.environment == "development",
             "providers": [{"id": name, "enabled": gateway.configured(name),
                            "reason": "Solo para candidatos" if gateway.configured(name) else "Requiere credenciales y origen HTTPS" if name == "linkedin" else "Requiere configurar credenciales"}
-                          for name in ("google", "github", "linkedin")]}
+                          for name in ("google", "github")]}
 
 
 @router.post("/auth/session/login")

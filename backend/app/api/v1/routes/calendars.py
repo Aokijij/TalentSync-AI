@@ -36,11 +36,14 @@ def connect(request: Request, response: Response, user=Depends(get_current_user)
 @limiter.limit("20/hour")
 def callback(request: Request, state: str = Query(default="", max_length=200), code: str = Query(default="", max_length=4000), user=Depends(get_current_user), db=Depends(get_unit_of_work), gateway=Depends(get_calendar_gateway), security=Depends(get_account_security)):
     result = "connected"
+    reason = ""
     try:
         cases.callback(db, user, _session(request), state, request.cookies.get("talentsync_calendar_browser"), code, gateway, security)
-    except UseCaseError:
+    except UseCaseError as failure:
         result = "not_connected"
-    response = RedirectResponse(f"{settings.public_app_url.rstrip('/')}/seguridad?calendar={result}#security-calendar", status_code=303)
+        reason = failure.code if failure.code in {"expired", "cancelled", "authorization", "configuration", "temporary"} else "failed"
+    suffix = f"&reason={reason}" if reason else ""
+    response = RedirectResponse(f"{settings.public_app_url.rstrip('/')}/seguridad?calendar={result}{suffix}#security-calendar", status_code=303)
     response.delete_cookie("talentsync_calendar_browser", path="/")
     response.headers.update({"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
     return response

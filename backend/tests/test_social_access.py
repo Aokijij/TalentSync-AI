@@ -59,8 +59,20 @@ def callback(social, state, provider="github", code="valid"):
 def test_disabled_provider_origin_and_options(social):
     options = social.get("/api/v1/auth/options").json()
     assert [row["id"] for row in options["providers"] if row["enabled"]] == ["google", "github"]
+    assert "linkedin" not in [row["id"] for row in options["providers"]]
     assert social.post("/api/v1/auth/social/linkedin/start").status_code == 503
     assert social.post("/api/v1/auth/social/github/start", headers={"Origin": "https://attacker.invalid"}).status_code == 403
+
+
+def test_callback_failure_exposes_only_a_safe_reference(social, caplog):
+    def fail(*args):
+        raise UseCaseError(status_code=502, detail="PRIVATE PROVIDER BODY", code="provider_configuration")
+    social.social_provider.exchange = fail
+    response = callback(social, start(social))
+    query = parse_qs(urlsplit(response.headers["location"]).query)
+    assert query["reason"] == ["provider_configuration"] and query["provider"] == ["github"]
+    assert "PRIVATE" not in response.headers["location"] and "PRIVATE" not in caplog.text
+    assert "provider=github reason=provider_configuration status=502" in caplog.text
 
 
 def test_new_account_cookie_session_returning_identity_and_deletion(social):

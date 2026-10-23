@@ -40,17 +40,18 @@ def unlink(social, provider="github", **credentials):
                           json={"password": PASSWORD, **credentials})
 
 
-def test_link_proves_both_accounts_without_changing_profile_or_session(social):
+@pytest.mark.parametrize("provider", ["google", "github"])
+def test_link_proves_both_accounts_without_changing_profile_or_session(social, provider):
     local = prepare(social)
     session_cookie = social.cookies.get("talentsync_session")
     csrf_cookie = social.cookies.get("talentsync_csrf")
     assert social.get("/api/v1/account/social-identities").json() == []
-    state = begin_link(social)
+    state = begin_link(social, provider)
     with social.session_factory() as db:
         row = db.query(OAuthAttempt).one()
         assert row.purpose == "link" and row.link_user_id == local["id"]
         assert row.link_session_id == db.query(UserSession).one().id
-    response = callback(social, state)
+    response = callback(social, state, provider=provider)
     assert response.headers["location"].endswith("/seguridad?social=linked")
     assert social.cookies.get("talentsync_session") == session_cookie
     assert social.cookies.get("talentsync_csrf") == csrf_cookie
@@ -61,10 +62,12 @@ def test_link_proves_both_accounts_without_changing_profile_or_session(social):
     with social.session_factory() as db:
         assert db.query(User).count() == 1 and db.query(UserSession).count() == 1
         event = db.query(EventLog).filter_by(event_type="account.social_linked").one()
-        assert event.details == {"source": "github"}
+        assert event.details == {"source": provider}
     assert social.post("/api/v1/auth/session/logout", headers=csrf(social)).status_code == 200
-    assert callback(social, start(social)).headers["location"].endswith("/candidato")
+    assert callback(social, start(social, provider), provider=provider).headers["location"].endswith("/candidato")
     assert social.get("/api/v1/auth/me").json()["id"] == local["id"]
+    with social.session_factory() as db:
+        assert db.query(UserSession).order_by(UserSession.id.desc()).first().authentication_method == provider
 
 
 def test_link_requires_password_csrf_and_allowed_origin(social):
