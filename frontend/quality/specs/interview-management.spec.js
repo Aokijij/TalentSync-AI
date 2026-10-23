@@ -1,5 +1,22 @@
 import { test, expect } from "@playwright/test";
 
+for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Calendar connection affordance · ${width} · ${theme}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 950 });
+  await page.route("**/api/v1/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    return route.fulfill({ json: path.endsWith("/account/calendar") ? { configured: true, connected: false } : { state: "none", minutes: 60 } });
+  });
+  await page.goto(`/quality/?interviews=1&role=company&theme=${theme}`);
+  await page.getByRole("button", { name: "Añadir a Google Calendar", exact: true }).first().click();
+  const connect = page.getByRole("link", { name: "Conectar Google Calendar", exact: true });
+  await expect(connect).toBeVisible();
+  await expect(connect).toHaveAttribute("href", "/seguridad#security-calendar");
+  const styles = await connect.evaluate((element) => { const style = getComputedStyle(element); return { color: style.color, background: style.backgroundColor, width: element.clientWidth, parent: element.parentElement.clientWidth }; });
+  expect(styles.color).not.toBe(styles.background);
+  expect(styles.width).toBeLessThan(styles.parent);
+  await page.screenshot({ path: `../.local/interview-review/calendar-connect-${theme}-${width}.png`, fullPage: true });
+});
+
 for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Interview management · ${width} · ${theme}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 950 });
   const errors = [], saved = []; let reject = true;

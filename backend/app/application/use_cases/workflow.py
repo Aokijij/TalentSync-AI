@@ -7,7 +7,7 @@ from app.application.use_cases.jobs import ensure_job_access
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
 from app.domain.services.interview_calendar import interview_calendar, utc
-from app.domain.services.pipeline import stages_for
+from app.domain.services.pipeline import stage_id_for, stages_for
 
 FINAL = {ApplicationStatus.REJECTED, ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED}
 
@@ -20,7 +20,7 @@ def transition(db, row, actor_id, *, previous_status=None, previous_stage=None, 
     row.reminder_sent_at = None
     record_event(db, "application.transition", "application", row.id, actor_user_id=actor_id, details={
         "status": row.status.value, "previous_status": previous_status.value if previous_status else None,
-        "stage": row.pipeline_stage, "previous_stage": previous_stage, "job_id": row.job_id,
+        "stage": stage_id_for(row), "previous_stage": previous_stage, "job_id": row.job_id,
         "source": source, "deadline": row.response_due_at.isoformat() if row.response_due_at else None})
 
 
@@ -44,13 +44,13 @@ def timeline(db, user, application_id):
     member = db.organizations.member_for_user(user.id) if user.role == UserRole.COMPANY else None
     history = [{"id": item.id, "at": item.created_at, "type": item.event_type, **item.details}
                for item in reversed(db.events.for_entity("application", row.id, 500))
-               if item.event_type in {"application.transition", "application.deadline_released", "application.withdrawn", "application.feedback_shared", "application.interview_updated"}]
-    return {"job_title": row.job.title, "company_name": row.job.company.name, "job_id": row.job_id, "application_id": row.id, "can_manage": user.role != UserRole.CANDIDATE and (member is None or member.role != "interviewer"), "version": row.version, "status": row.status.value, "stage": row.pipeline_stage,
-            "stage_title": next((stage["title"] for stage in stages_for(row.job) if stage["id"] == row.pipeline_stage), "En seguimiento"),
-            "interview_at": row.interview_at, "interview_details": row.interview_details or {}, "job_description": row.job.description, "job_requirements": row.job.requirements,
+               if item.event_type in {"application.transition", "application.deadline_released", "application.withdrawn", "application.feedback_shared", "application.interview_updated", "application.interview_completed"}]
+    return {"job_title": row.job.title, "company_name": row.job.company.name, "job_id": row.job_id, "application_id": row.id, "can_manage": user.role != UserRole.CANDIDATE and (member is None or member.role != "interviewer"), "version": row.version, "status": row.status.value, "stage": stage_id_for(row),
+            "stage_title": row.pipeline_stage_title,
+            "interview_at": row.interview_at, "interview_details": row.interview_details or {}, "interview_completed_at": row.interview_completed_at, "job_description": row.job.description, "job_requirements": row.job.requirements,
             "job_conditions": {"salary": row.job.salary, "quality_details": row.job.quality_details,
                                "quality_revision": row.job.quality_revision, "response_days": row.job.response_days,
-                               "pipeline_stages": row.job.pipeline_stages},
+                               "pipeline_stages": stages_for(row.job)},
             "process_estimated_end": row.created_at + timedelta(days=row.job.quality_details["process_days"]) if row.job.quality_details and row.job.quality_details.get("process_days") else None,
             "response_due_at": row.response_due_at, "released_at": row.released_at, "feedback": row.candidate_feedback,
             "events": history, "created_at": row.created_at, "response_days": row.job.response_days,

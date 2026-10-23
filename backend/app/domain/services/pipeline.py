@@ -3,6 +3,18 @@ def stages_for(job):
     return job.pipeline_stages or default_stages()
 
 
+def stage_id_for(application):
+    status = str(application.status)
+    if status in {"accepted", "hired"}:
+        return "hired"
+    if status == "rejected":
+        return "rejected"
+    return application.pipeline_stage or {
+        "submitted": stages_for(application.job)[0]["id"], "seen": stages_for(application.job)[0]["id"],
+        "shortlisted": "reviewing", "technical_interview": "interview", "psychometric_test": "interview",
+    }.get(status, status)
+
+
 def default_stages():
     return [
         {"id": "submitted", "title": "Recibidas"},

@@ -30,9 +30,10 @@ router = APIRouter()
 def recruitment_workspace(job_id: int, bucket: Literal["inbox", "active", "closed", "interviews"] = "inbox",
     search: str = Query(default="", max_length=150), score_filter: Literal["all", "strong", "missing", "unreviewed"] = "all",
     order: Literal["score", "recent", "oldest"] = "score", stage: str | None = Query(default=None, max_length=80),
+    interview_state: Literal["all", "scheduled", "unconfirmed", "awaiting_response"] = "all",
     page: int = Query(default=1, ge=1), page_size: int = Query(default=25, ge=1, le=50),
     user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)), db=Depends(get_unit_of_work)):
-    return recruitment.workspace(db, user, job_id, bucket=bucket, search=search, score_filter=score_filter, order=order, stage=stage, page=page, page_size=page_size)
+    return recruitment.workspace(db, user, job_id, bucket=bucket, search=search, score_filter=score_filter, order=order, stage=stage, interview_state=interview_state, page=page, page_size=page_size)
 
 
 @router.get("/{application_id}/review")

@@ -15,6 +15,44 @@ from app.infrastructure.database.models import (
 from app.infrastructure.security.jwt import create_access_token
 
 
+def test_interview_lifecycle_requires_confirmation_and_keeps_decision_pending(client):
+    job, owner = seed(client, 10)
+    workspace = f"/api/v1/applications/jobs/{job['id']}/workspace"
+    row = client.get(workspace, headers=owner).json()["items"][0]
+    endpoint = f"/api/v1/applications/{row['id']}/status"
+    scheduled = client.put(endpoint, headers=owner, json={"interview_at": (datetime.utcnow() + timedelta(days=2)).isoformat(),
+        "interview_details": {"mode": "virtual", "location": "https://meet.google.com/example", "minutes": 45}, "expected_version": row["version"]})
+    assert scheduled.status_code == 200, scheduled.text
+    assert scheduled.json()["status"] == "technical_interview" and scheduled.json()["pipeline_stage"] == "interview"
+    assert client.put(endpoint, headers=owner, json={"interview_action": "complete"}).status_code == 422
+    with client.session_factory() as db:
+        stored = db.get(Application, row["id"])
+        stored.interview_at = datetime.utcnow() - timedelta(hours=2)
+        # Older appointments could retain the review stage. Completing them
+        # must align the stage and keep them in the pending response group.
+        stored.status, stored.pipeline_stage = ApplicationStatus.REVIEWING, "reviewing"
+        db.commit()
+    assert client.get(workspace, headers=owner, params={"bucket": "interviews", "interview_state": "unconfirmed"}).json()["total"] == 1
+    assert client.get(workspace, headers=owner, params={"bucket": "interviews", "interview_state": "awaiting_response"}).json()["total"] == 0
+    completed = client.put(endpoint, headers=owner, json={"interview_action": "complete"})
+    assert completed.status_code == 200, completed.text
+    assert completed.json()["interview_completed_at"] and completed.json()["response_due_at"]
+    assert completed.json()["status"] == "technical_interview" and completed.json()["pipeline_stage"] == "interview"
+    assert client.get(workspace, headers=owner, params={"bucket": "interviews", "interview_state": "awaiting_response"}).json()["total"] == 1
+    history = client.get(f"/api/v1/workflow/applications/{row['id']}", headers=owner).json()
+    assert any(event["type"] == "application.interview_completed" for event in history["events"])
+    repeat = client.put(endpoint, headers=owner, json={"interview_action": "complete", "expected_version": completed.json()["version"]})
+    assert repeat.status_code == 200 and repeat.json()["version"] == completed.json()["version"]
+    rescheduled = client.put(endpoint, headers=owner, json={"interview_at": (datetime.utcnow() + timedelta(days=3)).isoformat()})
+    assert rescheduled.status_code == 200 and rescheduled.json()["interview_completed_at"] is None
+    assert client.get(workspace, headers=owner, params={"bucket": "active", "stage": "interview"}).json()["total"] == 1
+    final = client.put(endpoint, headers=owner, json={"status": "rejected"})
+    assert final.status_code == 200 and final.json()["pipeline_stage"] == "rejected"
+    for payload in ({"screening_answer_adjustments": {}}, {"pipeline_stage": "reviewing"}, {"interview_action": "complete"}):
+        assert client.put(endpoint, headers=owner, json=payload).status_code == 409
+    assert client.get(workspace, headers=owner, params={"bucket": "interviews"}).json()["total"] == 0
+
+
 def seed(client, amount=400):
     _, owner = company_account(client, "workspace-owner")
     job = create_job(client, owner)
@@ -33,6 +71,8 @@ def seed(client, amount=400):
 
 def test_mass_inbox_is_paged_ranked_and_keeps_all_buckets(client):
     job, owner = seed(client)
+    reordered = [job["pipeline_stages"][1], job["pipeline_stages"][0], *job["pipeline_stages"][2:]]
+    assert client.patch(f"/api/v1/jobs/{job['id']}", headers=owner, json={"pipeline_stages": reordered}).status_code == 422
     url = f"/api/v1/applications/jobs/{job['id']}/workspace"
     statements = []
     engine = client.session_factory.kw["bind"]

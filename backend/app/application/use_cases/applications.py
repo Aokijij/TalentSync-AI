@@ -201,6 +201,26 @@ def update_status(
     expected = changes.pop("expected_version", None)
     if expected is not None and application.version != expected:
         raise UseCaseError(status_code=409, detail="El proceso cambió; actualiza antes de guardar")
+    if application.status in {ApplicationStatus.REJECTED, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED}:
+        raise UseCaseError(status_code=409, detail="Este proceso finalizó y es de solo lectura")
+    interview_action = changes.pop("interview_action", None)
+    if interview_action == "complete":
+        if not application.interview_at or application.interview_at > datetime.utcnow():
+            raise UseCaseError(status_code=422, detail="Solo puedes registrar una entrevista cuya hora de inicio ya pasó")
+        if any(key in changes for key in ("interview_at", "interview_details", "status", "pipeline_stage")):
+            raise UseCaseError(status_code=422, detail="Registra la entrevista realizada antes de cambiar su programación o etapa")
+        if application.interview_completed_at is None:
+            application.interview_completed_at = datetime.utcnow()
+            application.response_due_at = datetime.utcnow() + timedelta(days=application.job.response_days)
+            application.reminder_sent_at = None
+            record_event(db, "application.interview_completed", "application", application.id, actor_user_id=current_user.id,
+                         details={"source": "company", "job_id": application.job_id})
+            db.add(db.notifications.new(user_id=application.user_id, type="application_interview",
+                title="Entrevista realizada · Pendiente de respuesta", body=f"La empresa registró tu entrevista para {application.job.title}. Consulta el plazo de respuesta en tu proceso.", action_url=f"/procesos/{application.id}"))
+        if application.status not in {ApplicationStatus.TECHNICAL_INTERVIEW, ApplicationStatus.PSYCHOMETRIC_TEST}:
+            changes["status"] = ApplicationStatus.TECHNICAL_INTERVIEW
+            if "interview" in {stage["id"] for stage in stages_for(application.job)}:
+                changes["pipeline_stage"] = "interview"
     feedback = changes.pop("candidate_feedback", None)
     if feedback:
         application.candidate_feedback = {**feedback, "source": "company", "created_at": datetime.utcnow().isoformat()}
@@ -255,6 +275,20 @@ def update_status(
         application.screening_adjustment = max(-20.0, min(20.0, automatic + new_manual))
 
     requested_stage = changes.pop("pipeline_stage", None)
+    # Status-only actions must keep the displayed stage consistent. Custom
+    # active stages remain valid when their existing status is unchanged.
+    if requested_stage is None and changes.get("status") and changes["status"] != previous_status:
+        target = {ApplicationStatus.SUBMITTED: "submitted", ApplicationStatus.SEEN: "submitted",
+                  ApplicationStatus.REVIEWING: "reviewing", ApplicationStatus.SHORTLISTED: "reviewing",
+                  ApplicationStatus.TECHNICAL_INTERVIEW: "interview", ApplicationStatus.PSYCHOMETRIC_TEST: "interview",
+                  ApplicationStatus.HIRED: "hired", ApplicationStatus.ACCEPTED: "hired", ApplicationStatus.REJECTED: "rejected"}.get(changes["status"])
+        if target in {item["id"] for item in stages_for(application.job)}:
+            requested_stage = target
+    if requested_stage is None and requested_interview and requested_interview != previous_interview:
+        configured_ids = {item["id"] for item in stages_for(application.job)}
+        if "interview" in configured_ids:
+            requested_stage = "interview"
+        changes.setdefault("status", ApplicationStatus.TECHNICAL_INTERVIEW)
     if requested_stage is not None:
         configured = {
             stage["id"]: stage for stage in stages_for(application.job)
@@ -265,7 +299,7 @@ def update_status(
                 detail="La etapa no pertenece al proceso de esta vacante",
             )
         application.pipeline_stage = requested_stage
-        application.status = LEGACY_STAGE_STATUS.get(
+        application.status = ApplicationStatus.SUBMITTED if requested_stage == stages_for(application.job)[0]["id"] else LEGACY_STAGE_STATUS.get(
             requested_stage, ApplicationStatus.REVIEWING
         )
     for key, value in changes.items():
@@ -273,6 +307,8 @@ def update_status(
     status_changed = application.status != previous_status
     stage_changed = application.pipeline_stage != previous_stage
     interview_changed = application.interview_at != previous_interview or (application.interview_details or {}) != previous_details
+    if application.interview_at != previous_interview:
+        application.interview_completed_at = None
     final_statuses = {ApplicationStatus.REJECTED, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED}
     if interview_changed and application.interview_at and application.status in final_statuses:
         raise UseCaseError(status_code=409, detail="Un proceso finalizado no admite entrevistas nuevas o modificadas")
@@ -326,7 +362,7 @@ def update_status(
                 action_url=f"/postulaciones?focus={application.id}",
             )
         )
-    elif status_changed or stage_changed or interview_changed:
+    elif interview_action != "complete" and (status_changed or stage_changed or interview_changed):
         current_status = (
             application.status.value
             if hasattr(application.status, "value")
@@ -405,6 +441,7 @@ def company_application_view(row, user, *, scores=None):
     result["base_match_percentage"], result["adjusted_match_percentage"] = scores if scores is not None else (row.base_match_percentage, row.adjusted_match_percentage)
     result["reviewed_at"] = row.reviewed_at
     result["interview_details"] = row.interview_details or {}
+    result["interview_completed_at"] = row.interview_completed_at
     result["identity_hidden"] = hidden
     result["screening_answers"] = [] if hidden else row.screening_answers or []
     return result

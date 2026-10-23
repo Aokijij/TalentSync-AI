@@ -42,3 +42,13 @@
 .process-vacancy-link strong { display:block; font-size:.9rem; }
 .process-vacancy-link small { display:block; margin-top:.3rem; color:var(--muted); font-size:.76rem; line-height:1.6; }
 .process-vacancy-link:hover { border-color:var(--accent); background:var(--surface-subtle); }
+
+.process-stage-track { display:flex; flex-wrap:wrap; gap:.6rem; padding:.9rem; border:1px solid var(--line); background:var(--surface); border-radius:12px; }
+.process-stage-track li { display:flex; align-items:center; gap:.5rem; font-size:.75rem; color:var(--muted); padding:.4rem .65rem; border-radius:8px; }
+.process-stage-track li>span { display:grid; place-items:center; width:23px; height:23px; border:1px solid var(--line); border-radius:50%; font-size:.65rem; }
+.process-stage-track .is-current { color:var(--accent); background:var(--surface-subtle); font-weight:700; }
+.process-stage-track .is-current>span { border-color:var(--accent); background:var(--surface); color:var(--accent); }
+.process-quick-actions { padding:.85rem; border:1px solid var(--line); background:var(--surface); border-radius:12px; }
+.process-quick-actions>button { min-height:42px; border-radius:10px; padding:.65rem .9rem; font-size:.8rem; }
+.process-identity>button { min-height:40px; padding:.6rem .85rem; border-radius:10px; background:var(--surface-subtle); color:var(--accent); }
+.process-identity .process-interview-state { color:var(--accent); font-size:.78rem; margin:.5rem 0; }

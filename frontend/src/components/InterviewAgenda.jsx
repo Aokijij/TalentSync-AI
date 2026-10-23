@@ -1,3 +1,4 @@
+import { interviewState } from "../utils/recruitmentState.js";
 import { CalendarSync } from "./CalendarSync.jsx";
 import "../styles/account-controls.css";
 import { useState } from "react";
@@ -24,8 +25,9 @@ export function ProcessInterview({ process, now = new Date() }) {
   if (!process.interview_at) return null;
   const parts = interviewDateParts(process.interview_at);
   if (!parts) return null;
-  const upcoming = activeInterview(process, now);
-  return <section className="interview-process ui-panel"><div className="interview-process-content"><div className="interview-date-tile" aria-hidden="true"><strong>{parts.day}</strong><span>{parts.month}</span></div><div><h2>{upcoming ? "Tu próxima entrevista" : "Última entrevista programada"}</h2><p>{parts.full} · <strong>{parts.time}</strong></p><small>Hora de Colombia (UTC−5)</small><InterviewDetails details={process.interview_details} /></div>{upcoming && <InterviewCalendarButton key={process.version} applicationId={process.application_id} />}</div>{upcoming ? <CalendarNote /> : <p className="interview-agenda-note">{process.released_at || ["rejected", "accepted", "hired"].includes(process.status) ? "El proceso finalizó. Esta fecha se conserva como referencia." : "La fecha ya pasó. Consulta con la empresa si hay una nueva cita."}</p>}</section>;
+  const upcoming = activeInterview(process, now) && !process.interview_completed_at;
+  const state = interviewState(process, now);
+  return <section className="interview-process ui-panel"><div className="interview-process-content"><div className="interview-date-tile" aria-hidden="true"><strong>{parts.day}</strong><span>{parts.month}</span></div><div><h2>{upcoming ? "Tu próxima entrevista" : process.interview_completed_at ? "Entrevista realizada" : "Última entrevista programada"}</h2><p>{parts.full} · <strong>{parts.time}</strong></p><small>Hora de Colombia (UTC−5)</small><InterviewDetails details={process.interview_details} /></div>{upcoming && <InterviewCalendarButton key={process.version} applicationId={process.application_id} />}</div>{upcoming ? <CalendarNote /> : <p className="interview-agenda-note">{process.released_at || ["rejected", "accepted", "hired"].includes(process.status) ? "El proceso finalizó. Esta fecha se conserva como referencia." : state === "awaiting_response" ? "Entrevista realizada. La empresa está preparando su respuesta; consulta el plazo en el proceso." : "La fecha ya pasó. La empresa debe confirmar si la entrevista se realizó o si necesita reprogramarse."}</p>}</section>;
 }
 
 function InterviewRow({ row }) {

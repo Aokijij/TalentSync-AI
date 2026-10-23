@@ -66,6 +66,7 @@ class ApplicationStatusUpdate(BaseModel):
     recruiter_notes: str | None = None
     interview_at: datetime | None = None
     interview_details: InterviewDetails | None = None
+    interview_action: Literal["complete"] | None = None
     screening_answer_adjustments: dict[str, float] | None = None
 
     @field_validator("interview_at")
@@ -101,6 +102,7 @@ class ApplicationResponse(BaseModel):
     candidate_name: str | None = None
     interview_at: datetime | None = None
     interview_details: dict = Field(default_factory=dict)
+    interview_completed_at: datetime | None = None
     pipeline_stage: str | None = None
     pipeline_stage_title: str | None = None
     resolution_reason: str | None = None

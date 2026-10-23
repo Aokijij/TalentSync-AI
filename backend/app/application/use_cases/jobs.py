@@ -11,6 +11,7 @@ from app.domain.entities.records import Company, Job, User
 from app.domain.services.colombian_locations import canonical_commuting_city
 from app.domain.services.match_explanations import input_version, preference_alignment
 from app.domain.services.offer_review import review_offer
+from app.domain.services.pipeline import stages_for
 from app.domain.services.reputation import company_health
 
 REVIEW_FIELDS = {"title", "description", "requirements", "salary", "location", "department", "modality", "employment_type", "sector", "response_days", "quality_details", "skill_requirements", "pipeline_stages"}
@@ -219,6 +220,8 @@ def update_job(
             detail="Selecciona primero a la persona contratada en el proceso de la vacante",
         )
     if "pipeline_stages" in changes:
+        if changes["pipeline_stages"][0]["id"] != stages_for(job)[0]["id"]:
+            raise UseCaseError(status_code=422, detail="La etapa de entrada corresponde a la bandeja y debe conservarse en la primera posición")
         remaining_ids = {stage["id"] for stage in changes["pipeline_stages"]}
         occupied_ids = {
             application.pipeline_stage

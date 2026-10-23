@@ -521,9 +521,8 @@ def test_reopening_covered_vacancy_preserves_history_and_notifications(client, m
             headers=owner,
             json={"pipeline_stage": "reviewing"},
         )
-        assert moved.status_code == 200, moved.text
-        assert moved.json()["resolution_reason"] is None
-        assert moved.json()["status"] == "reviewing"
+        assert moved.status_code == 409, moved.text
+        # Reopening the vacancy preserves completed candidatures as read-only.
     else:
         assert reopened["id"] != job["id"]
         assert reopened["applications_count"] == 0

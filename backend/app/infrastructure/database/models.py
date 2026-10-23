@@ -529,6 +529,7 @@ class Application(Base):
     interview_evaluations: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     interview_at: Mapped[datetime | None] = mapped_column(DateTime)
     interview_details: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    interview_completed_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
     pipeline_stage: Mapped[str | None] = mapped_column(String(80), nullable=True)
     resolution_reason: Mapped[str | None] = mapped_column(String(80), nullable=True)
@@ -568,20 +569,9 @@ class Application(Base):
     def pipeline_stage_title(self) -> str | None:
         if not self.job:
             return None
-        stage_id = self.pipeline_stage
-        if stage_id is None:
-            value = (
-                self.status.value if hasattr(self.status, "value") else str(self.status)
-            )
-            stage_id = {
-                "seen": "submitted",
-                "reviewing": "reviewing",
-                "shortlisted": "reviewing",
-                "technical_interview": "interview",
-                "psychometric_test": "interview",
-                "accepted": "hired",
-            }.get(value, value)
-        from app.domain.services.pipeline import stages_for
+        from app.domain.services.pipeline import stage_id_for, stages_for
+
+        stage_id = stage_id_for(self)
 
         for stage in stages_for(self.job):
             if stage.get("id") == stage_id:

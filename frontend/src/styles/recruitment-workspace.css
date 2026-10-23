@@ -133,3 +133,34 @@
 .recruitment-candidate-list>header,.recruitment-candidate-list>.directory-pagination { flex:none; }
 .applicant-list-scroll { min-height:0; flex:1; overflow-y:auto; overscroll-behavior:contain; }
 .applicant-detail>header,.applicant-detail>.applicant-match,.applicant-detail>.applicant-detail-tools,.applicant-decision,.applicant-closed { flex:none; }
+
+/* Current stage and interview follow-up remain visible in every view. */
+.recruitment-stage-badge,.pipeline-stage-label { display:inline-flex; align-items:center; width:fit-content; max-width:100%; border-radius:6px; padding:.25rem .5rem; background:color-mix(in srgb,var(--accent) 9%,var(--surface)); color:var(--accent); font-size:.69rem; font-weight:700; line-height:1.5; }
+.applicant-detail>header .recruitment-stage-badge { margin-top:.7rem; }
+.applicant-interview-state { display:block; font-size:.69rem; color:var(--accent); line-height:1.6; margin-top:.3rem; }
+.recruitment-filters.has-stage-filter { grid-template-columns:repeat(4,minmax(0,1fr)) 44px; }
+.recruitment-filters.has-stage-filter .recruitment-search { grid-column:auto; }
+.recruitment-interview-filters { display:flex; flex-wrap:wrap; gap:.5rem; }
+.recruitment-interview-filters button { display:flex; align-items:center; gap:.5rem; min-height:40px; padding:.55rem .85rem; font-size:.78rem; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--muted); }
+.recruitment-interview-filters button[aria-pressed=true] { border-color:var(--accent); color:var(--accent); background:var(--surface-subtle); font-weight:700; }
+.recruitment-interview-filters span { border-radius:5px; background:var(--surface-subtle); padding:.1rem .4rem; }
+.recruitment-content.is-board { grid-template-columns:minmax(0,1fr); }
+.recruitment-content.is-board>.recruitment-candidate-list { height:auto; min-height:280px; max-height:70dvh; }
+.recruitment-content.is-board .recruitment-detail-wrap { position:static; height:auto; min-height:380px; max-height:85dvh; }
+.active-pipeline { min-height:280px; padding:1rem; align-items:stretch; }
+.active-pipeline-column { flex:1 0 250px; max-width:none; align-content:start; }
+.active-pipeline-column>header { border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--surface-subtle); z-index:1; }
+.pipeline-applicant { gap:.45rem; padding:.9rem; grid-template-columns:minmax(0,1fr) auto; }
+.pipeline-applicant>strong,.pipeline-applicant>small,.pipeline-applicant>.pipeline-stage-label { grid-column:1; }
+.pipeline-applicant>.applicant-score { grid-column:2; grid-row:1/4; align-self:start; }
+.pipeline-applicant>span:last-child { grid-column:1/-1; }
+.pipeline-applicant>.pipeline-stage-label { font-size:.64rem; }
+.applicant-detail-tools { gap:.5rem; padding:.8rem 1.1rem; }
+.applicant-detail-tools .button-secondary { background:var(--surface); border-color:var(--line); }
+.applicant-detail-tools .button-secondary:hover { background:var(--surface-subtle); border-color:var(--accent); }
+.interview-next-action { padding:.85rem; border-radius:10px; background:var(--surface-subtle); border:1px solid var(--line); }
+.interview-next-action button { margin-top:.75rem; }
+.recruitment-vacancy>.button-secondary { gap:.5rem; border-radius:10px; font-size:.8rem; }
+@media(min-width:1450px) { .recruitment-content.is-board.has-selection { grid-template-columns:minmax(560px,1fr) minmax(380px,460px); } .recruitment-content.is-board.has-selection .recruitment-detail-wrap { position:sticky; top:1rem; height:70dvh; } }
+@media(max-width:1050px) { .recruitment-filters.has-stage-filter { grid-template-columns:1fr 1fr 44px; } .recruitment-filters.has-stage-filter .recruitment-search { grid-column:1/-1; } }
+@media(max-width:760px) { .recruitment-content.is-board.has-selection>.recruitment-candidate-list { display:none; } .recruitment-content.is-board .recruitment-detail-wrap { max-height:none; } .recruitment-filters.has-stage-filter { grid-template-columns:minmax(0,1fr) 44px; } .recruitment-filters.has-stage-filter label { grid-column:1/-1; } .recruitment-filters.has-stage-filter>button { grid-column:2; } .recruitment-interview-filters { display:grid; grid-template-columns:1fr 1fr; } .recruitment-interview-filters button { font-size:.7rem; justify-content:space-between; padding:.5rem; } }
