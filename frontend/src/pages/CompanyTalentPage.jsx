@@ -134,7 +134,7 @@ export function CompanyTalentPage() {
             </div>
             <div className={`talent-search-filters ${audience === "applied" ? "applied" : ""}`}>
               <label className="block text-xs font-semibold text-[var(--muted)]">{audience === "new" ? "Profesión o habilidad" : "Nombre, profesión o habilidad"}
-                <span className="relative mt-2 block"><Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" /><input className="field-control !pl-10" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Ej. servicio al cliente o administración" /></span>
+                <span className="relative mt-2 block"><Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" /><input className="field-control !pl-10" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Busca por profesión, cargo o habilidad" /></span>
               </label>
               {audience === "new" && <label className="talent-minimum">Compatibilidad mínima
                 <select className="field-control" value={minMatch} onChange={(event) => { const value = talentMinimum(event.target.value); setMinMatch(value); setPage(1); try { localStorage.setItem(minimumKey, String(value)); } catch { /* Optional storage. */ } }}>{TALENT_MINIMUM_OPTIONS.map((value) => <option key={value} value={value}>{value}% o más</option>)}</select>

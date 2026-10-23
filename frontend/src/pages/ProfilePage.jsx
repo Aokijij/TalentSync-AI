@@ -360,7 +360,7 @@ export function ProfilePage() {
                     onKeyDown={(e) =>
                       e.key === "Enter" && (e.preventDefault(), addSkill())
                     }
-                    placeholder="Ej. comunicación"
+                    placeholder="Escribe una habilidad que ya tienes"
                   />
                   <button
                     className="button-secondary w-auto hover-lift pressed focus-ring"
@@ -433,7 +433,7 @@ export function ProfilePage() {
                       className="field-control mt-1"
                       value={profile.desired_salary || ""}
                       onChange={(value) => update("desired_salary", value)}
-                      placeholder="4.500.000"
+                      placeholder="Indica el importe mensual en COP"
                     />
                   </label>
                 </div>

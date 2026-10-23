@@ -1,5 +1,5 @@
 import { CompanyAccessNotice } from "../components/CompanyAccessNotice.jsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   BriefcaseBusiness,
@@ -172,6 +172,18 @@ export function AppLayout() {
   const [organizationName, setOrganizationName] = useState("");
   const [organization, setOrganization] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuDialog = useRef(null), menuTrigger = useRef(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const media = window.matchMedia("(min-width:1024px)");
+    if (media.matches) { setMenuOpen(false); return; }
+    const node = menuDialog.current, overflow = document.body.style.overflow;
+    node.showModal(); document.body.style.overflow = "hidden";
+    const focus = requestAnimationFrame(() => node.querySelector(".app-mobile-close")?.focus());
+    const resize = () => { if (media.matches) setMenuOpen(false); };
+    media.addEventListener("change", resize);
+    return () => { cancelAnimationFrame(focus); media.removeEventListener("change", resize); node.close(); document.body.style.overflow = overflow; if (menuTrigger.current?.isConnected) menuTrigger.current.focus(); };
+  }, [menuOpen]);
   const copy = roleCopy[user.role] ?? roleCopy.candidate;
   const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.active !== false || ["/empresa/equipo", "/seguridad"].includes(link.to)) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"))
     .map((link) => organization?.role === "interviewer" && link.to === "/empresa/equipo" ? { ...link, label: "Mis entrevistas" } : link)
@@ -217,13 +229,21 @@ export function AppLayout() {
   }, [user.id, user.role, location.pathname]);
 
   const closeMenu = () => setMenuOpen(false);
+  function keepMenuFocus(event) {
+    if (event.key !== "Tab") return;
+    const items = [...event.currentTarget.querySelectorAll('a[href],button:not(:disabled),[tabindex="0"]')].filter((node) => node.getClientRects().length);
+    const first = items[0], last = items.at(-1);
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+  }
   if (organization?.role === "interviewer" && !["/empresa/equipo", "/notificaciones", "/seguridad"].includes(location.pathname) && !location.pathname.startsWith("/procesos/")) return <Navigate to="/empresa/equipo" replace />;
 
   return (
     <div
       className={`role-${user.role} min-h-screen bg-[var(--canvas)] text-[var(--ink-strong)]`}
     >
-      <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-[var(--sidebar-border)] px-4 py-5 lg:flex">
+      <a className="app-skip-link" href="#main-content">Saltar al contenido</a>
+      <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-72 flex-col overflow-y-auto border-r border-[var(--sidebar-border)] px-4 py-5 lg:flex">
         <Brand copy={copy} user={user} displayName={organizationName} />
         <div className="mt-8">
           <Navigation
@@ -241,9 +261,12 @@ export function AppLayout() {
           <ThemeToggle compact />
           <button
             type="button"
+            ref={menuTrigger}
             className="button-secondary !min-h-11 !w-11 !p-0"
             aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={menuOpen}
+            aria-controls="app-mobile-navigation"
+            aria-haspopup="dialog"
             onClick={() => setMenuOpen((open) => !open)}
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -252,14 +275,9 @@ export function AppLayout() {
       </header>
 
       {menuOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 cursor-default bg-slate-950/35"
-            aria-label="Cerrar menú"
-            onClick={closeMenu}
-          />
-          <aside className="app-sidebar relative flex h-full w-[min(19rem,86vw)] flex-col p-4">
+        <dialog ref={menuDialog} id="app-mobile-navigation" aria-label="Navegación principal" className="app-mobile-navigation" onKeyDown={keepMenuFocus} onCancel={(event) => { event.preventDefault(); closeMenu(); }} onClick={(event) => { if (event.target === event.currentTarget) closeMenu(); }}>
+          <aside className="app-sidebar relative flex h-full w-[min(19rem,86vw)] flex-col overflow-y-auto p-4">
+            <button type="button" className="app-mobile-close" aria-label="Cerrar menú" onClick={closeMenu}><X size={19} /></button>
             <Brand copy={copy} user={user} displayName={organizationName} />
             <div className="mt-8">
               <Navigation
@@ -271,12 +289,12 @@ export function AppLayout() {
             </div>
             <SidebarFooter logout={logout} />
           </aside>
-        </div>
+        </dialog>
       ) : null}
 
-      <main className="lg:pl-72">
+      <main id="main-content" tabIndex={-1} className="lg:pl-72">
         {user.role === "company" && <header className="business-workspace-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface)] px-6 py-4"><div><p className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Centro de contratación</p><p className="mt-1 font-bold">{organizationName || "Mi organización"}</p></div><div className="flex items-center gap-3 text-xs"><span className="rounded-full border border-[var(--line)] px-3 py-2">{organization?.active === false ? "Acceso retirado" : organization?.verification_status === "suspended" ? "Empresa suspendida" : organization?.verification_status === "verified" ? "Empresa verificada" : "Verificación pendiente"}</span><span>{organization?.role === "owner" ? "Propietario" : organization?.role === "interviewer" ? "Entrevistador" : "Reclutador"}</span></div></header>}
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
+        <div className="app-content mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
           {organization?.active === false && location.pathname !== "/seguridad" ? <CompanyAccessNotice access={organization} /> : <>{organization?.verification_status === "suspended" && <div className="mb-5"><CompanyAccessNotice access={organization} /></div>}<Outlet /></>}
         </div>
       </main>

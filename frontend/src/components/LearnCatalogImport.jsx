@@ -40,7 +40,7 @@ export function LearnCatalogImport({ onImported }) {
     {configured ? <>
       <form className="mt-5 flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); consult(); }}>
         <label className="min-w-48 flex-1 text-sm">Formación<select className="field-control mt-1" value={kind} disabled={busy} onChange={(event) => { setKind(event.target.value); resetFilters(); }}><option value="modules">Módulos</option><option value="learning-paths">Rutas de aprendizaje</option></select></label>
-        <label className="min-w-48 flex-1 text-sm">Producto (opcional)<input className="field-control mt-1" placeholder="Ej. power-bi, azure" maxLength={120} pattern="[a-z0-9,-]*" value={products} disabled={busy} onChange={(event) => { setProducts(event.target.value); resetFilters(); }} /></label>
+        <label className="min-w-48 flex-1 text-sm">Producto (opcional)<input className="field-control mt-1" placeholder="Indica las habilidades que quieres buscar" maxLength={120} pattern="[a-z0-9,-]*" value={products} disabled={busy} onChange={(event) => { setProducts(event.target.value); resetFilters(); }} /></label>
         <button className="button-secondary" disabled={busy}>{busy ? "Consultando…" : "Consultar catálogo"}</button>
       </form>
       {preview && <div className="mt-5 border-t border-[var(--line)] pt-4"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-bold">{preview.resources.length} recursos para revisar</h3><span className="text-xs text-[var(--muted)]">Vista previa válida durante 10 minutos</span></div>

@@ -24,7 +24,7 @@
 .month-calendar header > button { padding:.25rem; border-radius:.4rem; color:var(--muted); }
 .month-year-control { display:grid; grid-template-columns:36px 1fr 36px; gap:.5rem; margin:1rem 0; align-items:center; }
 .month-year-control > button { display:grid; place-items:center; height:34px; border:1px solid var(--line); border-radius:.5rem; color:var(--accent); }
-.month-year-control input { width:100%; text-align:center; padding:.4rem; border:1px solid var(--line); border-radius:.5rem; background:var(--surface-subtle); color:var(--ink-strong); font-weight:750; appearance:textfield; -moz-appearance:textfield; }
+.month-year-control input { width:100%; text-align:center; padding:.4rem; border:1px solid var(--control-border); border-radius:.5rem; background:var(--surface-subtle); color:var(--ink-strong); font-weight:750; appearance:textfield; -moz-appearance:textfield; }
 .month-year-control input::-webkit-inner-spin-button { -webkit-appearance:none; }
 .month-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.4rem; }
 .month-grid > button { min-height:36px; padding:.4rem .2rem; font-size:.73rem; border:1px solid transparent; border-radius:.5rem; background:var(--surface-subtle); }

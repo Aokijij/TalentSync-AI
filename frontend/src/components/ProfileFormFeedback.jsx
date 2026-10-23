@@ -12,11 +12,12 @@ export function FormField({ label, path, children, className = "", help }) {
   const Tag = native ? "label" : "div";
   const control = cloneElement(children, {
     id: children.props.id || id,
+    "aria-labelledby": children.props["aria-labelledby"] || (native && label && !children.props["aria-label"] ? `${id}-label` : undefined),
     "aria-invalid": error ? true : undefined,
-    "aria-describedby": [children.props["aria-describedby"], error ? `${id}-error` : help ? `${id}-help` : ""].filter(Boolean).join(" ") || undefined,
+    "aria-describedby": [children.props["aria-describedby"], help ? `${id}-help` : "", error ? `${id}-error` : ""].filter(Boolean).join(" ") || undefined,
     onChange: (...args) => { clearError(path); children.props.onChange?.(...args); },
   });
-  return <Tag className={`form-field ${error ? "has-error" : ""} ${className}`} data-field-path={path}>{label && <span className="form-field-label">{label}</span>}{control}{error ? <span className="field-error" id={`${id}-error`} role="alert"><CircleAlert size={15} /><span>{error}</span></span> : help ? <small id={`${id}-help`} className="form-field-help">{help}</small> : null}</Tag>;
+  return <Tag className={`form-field ${error ? "has-error" : ""} ${className}`} data-field-path={path}>{label && <span id={`${id}-label`} className="form-field-label">{label}</span>}{control}{help && <small id={`${id}-help`} className="form-field-help">{help}</small>}{error && <span className="field-error" id={`${id}-error`} role="alert"><CircleAlert size={15} /><span>{error}</span></span>}</Tag>;
 }
 
 export function SectionFieldIssues({ prefix, exact = false }) {

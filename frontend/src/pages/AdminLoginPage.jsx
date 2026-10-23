@@ -1,5 +1,5 @@
 import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 
@@ -9,6 +9,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 import { MfaChallenge } from "../components/MfaChallenge.jsx";
 
 export function AdminLoginPage() {
+  const fieldPrefix = useId();
   const { user, login, accessOptions } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
@@ -62,10 +63,11 @@ export function AdminLoginPage() {
                     className="min-h-0 p-0"
                     type="email"
                     autoComplete="username"
+                    aria-label="Correo administrativo" aria-invalid={!!errors.email} aria-describedby={errors.email ? `${fieldPrefix}-email-error` : undefined}
                     {...register("email", { required: "El correo es obligatorio" })}
                   />
                 </div>
-                {errors.email ? <span className="mt-1 block text-sm text-[var(--error)]">{errors.email.message}</span> : null}
+                {errors.email ? <span id={`${fieldPrefix}-email-error`} className="form-field-error" role="alert">{errors.email.message}</span> : null}
               </label>
               <label className="block text-sm font-semibold">
                 Contraseña
@@ -75,10 +77,11 @@ export function AdminLoginPage() {
                     className="min-h-0 p-0"
                     type="password"
                     autoComplete="current-password"
+                    aria-label="Contraseña" aria-invalid={!!errors.password} aria-describedby={errors.password ? `${fieldPrefix}-password-error` : undefined}
                     {...register("password", { required: "La contraseña es obligatoria" })}
                   />
                 </div>
-                {errors.password ? <span className="mt-1 block text-sm text-[var(--error)]">{errors.password.message}</span> : null}
+                {errors.password ? <span id={`${fieldPrefix}-password-error`} className="form-field-error" role="alert">{errors.password.message}</span> : null}
               </label>
               <button className="button-primary w-full" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Validando…" : <>Entrar al panel <ArrowRight size={17} /></>}

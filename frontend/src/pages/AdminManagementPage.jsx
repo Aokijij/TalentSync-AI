@@ -467,7 +467,7 @@ function JobImportPanel({
               className="field-control mt-1.5"
               value={jsearchKeywords}
               onChange={(event) => onJsearchKeywords(event.target.value)}
-              placeholder="Ej. servicio al cliente, salud, tecnología"
+              placeholder="Indica las áreas profesionales que quieres consultar"
               required
             />
           </label>

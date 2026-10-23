@@ -1,15 +1,15 @@
 export const linkPlatforms = [
-  { value: "linkedin", label: "LinkedIn", domain: "linkedin.com", placeholder: "https://www.linkedin.com/in/tu-nombre" },
-  { value: "github", label: "GitHub", domain: "github.com", placeholder: "https://github.com/tu-usuario" },
-  { value: "portfolio", label: "Portafolio personal", placeholder: "https://tu-portafolio.com" },
-  { value: "gitlab", label: "GitLab", domain: "gitlab.com", placeholder: "https://gitlab.com/tu-usuario" },
-  { value: "behance", label: "Behance", domain: "behance.net", placeholder: "https://www.behance.net/tu-usuario" },
-  { value: "dribbble", label: "Dribbble", domain: "dribbble.com", placeholder: "https://dribbble.com/tu-usuario" },
-  { value: "kaggle", label: "Kaggle", domain: "kaggle.com", placeholder: "https://www.kaggle.com/tu-usuario" },
-  { value: "stackoverflow", label: "Stack Overflow", domain: "stackoverflow.com", placeholder: "https://stackoverflow.com/users/tu-id" },
-  { value: "medium", label: "Medium", domain: "medium.com", placeholder: "https://medium.com/@tu-usuario" },
-  { value: "youtube", label: "YouTube", domain: "youtube.com", placeholder: "https://www.youtube.com/@tu-canal" },
-  { value: "other", label: "Otro enlace", placeholder: "https://…" },
+  { value: "linkedin", label: "LinkedIn", domain: "linkedin.com", placeholder: "Pega el enlace de tu perfil en LinkedIn" },
+  { value: "github", label: "GitHub", domain: "github.com", placeholder: "Pega el enlace de tu perfil en GitHub" },
+  { value: "portfolio", label: "Portafolio personal", placeholder: "Pega el enlace de tu portafolio" },
+  { value: "gitlab", label: "GitLab", domain: "gitlab.com", placeholder: "Pega el enlace de tu perfil en GitLab" },
+  { value: "behance", label: "Behance", domain: "behance.net", placeholder: "Pega el enlace de tu perfil en Behance" },
+  { value: "dribbble", label: "Dribbble", domain: "dribbble.com", placeholder: "Pega el enlace de tu perfil en Dribbble" },
+  { value: "kaggle", label: "Kaggle", domain: "kaggle.com", placeholder: "Pega el enlace de tu perfil en Kaggle" },
+  { value: "stackoverflow", label: "Stack Overflow", domain: "stackoverflow.com", placeholder: "Pega el enlace de tu perfil en Stack Overflow" },
+  { value: "medium", label: "Medium", domain: "medium.com", placeholder: "Pega el enlace de tu perfil en Medium" },
+  { value: "youtube", label: "YouTube", domain: "youtube.com", placeholder: "Pega el enlace de tu canal de YouTube" },
+  { value: "other", label: "Otro enlace", placeholder: "Pega el enlace completo que quieres compartir" },
 ];
 
 export function normalizeProfessionalUrl(value) {

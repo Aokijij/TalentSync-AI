@@ -167,7 +167,7 @@ export function CompanySettingsPage() {
               <input className="field-control mt-1.5" {...register("nit", { required: true })} />
             </Field>
             <Field label="Sector">
-              <input className="field-control mt-1.5" placeholder="Ej. Servicios financieros" {...register("sector")} />
+              <input className="field-control mt-1.5" placeholder="Indica el sector económico de la empresa" {...register("sector")} />
             </Field>
             <Field label="Tamaño de la empresa">
               <select className="field-control mt-1.5" {...register("size")}>
@@ -183,14 +183,14 @@ export function CompanySettingsPage() {
               <input className="field-control mt-1.5" placeholder="Ciudad, departamento" {...register("location")} />
             </Field>
             <Field label="Sitio web">
-              <input className="field-control mt-1.5" type="url" placeholder="https://empresa.com" {...register("website")} />
+              <input className="field-control mt-1.5" type="url" placeholder="Pega el enlace completo del sitio de la empresa" {...register("website")} />
             </Field>
           </div>
-          <label className="text-sm font-semibold text-[var(--muted)]/60">
+          <label className="text-sm font-semibold text-[var(--muted)]">
             Descripción
             <textarea
               className="field-control input-md mt-1.5 min-h-36"
-              placeholder="Cuenta a los candidatos a que se dedica tu empresa..."
+              placeholder="Describe a qué se dedica tu empresa"
               {...register("description")}
             />
           </label>
@@ -199,11 +199,11 @@ export function CompanySettingsPage() {
           </Field>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Valores y cultura">
-              <textarea className="field-control mt-1.5 min-h-28" placeholder="Colaboración, transparencia, aprendizaje" {...register("values")} />
+              <textarea className="field-control mt-1.5 min-h-28" placeholder="Describe los valores que guían a tu equipo" {...register("values")} />
               <span className="mt-1 block text-xs text-[var(--muted)]">Separa cada elemento con una coma.</span>
             </Field>
             <Field label="Beneficios para el equipo">
-              <textarea className="field-control mt-1.5 min-h-28" placeholder="Trabajo híbrido, formación, horario flexible" {...register("benefits")} />
+              <textarea className="field-control mt-1.5 min-h-28" placeholder="Describe los beneficios y sus condiciones" {...register("benefits")} />
               <span className="mt-1 block text-xs text-[var(--muted)]">Separa cada beneficio con una coma.</span>
             </Field>
           </div>
@@ -236,7 +236,7 @@ function splitList(value) {
 
 function Field({ label, children }) {
   return (
-    <label className="text-sm font-semibold text-[var(--muted)]/60">
+    <label className="text-sm font-semibold text-[var(--muted)]">
       {label}
       {children}
     </label>

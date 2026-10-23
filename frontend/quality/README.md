@@ -36,3 +36,10 @@ de estilo globales de la aplicación. La suite intercepta las API con datos
 sintéticos; comprueba descarga, cancelación de borrado, confirmación, sincronizar,
 desconectar y estados de entrega, en móvil/escritorio y ambos temas. No conecta
 Google ni envía correos. Las capturas de revisión se guardan en `.local/operations/`.
+
+
+## Cierre visual y accesibilidad de los controles
+
+`design-closure.spec.js` monta el layout real en candidato, empresa y administración. Comprueba los colores de texto y fondo de botones y placeholders, los bordes de los campos estándar, la ampliación del texto al 200 %, la navegación de pestañas con teclado, el salto al contenido y el foco del menú móvil. También verifica error y reintento de una confirmación asíncrona sin doble envío, y la asociación de errores a los campos de acceso. Estos casos usan datos sintéticos y no acreditan conformidad completa de accesibilidad de todas las pantallas.
+
+Los criterios para mantener componentes y textos consistentes están en [DISENO_INTERFAZ](../../DISENO_INTERFAZ.md). Las capturas locales de la revisión se guardan en `.local/design-closure-review/`.

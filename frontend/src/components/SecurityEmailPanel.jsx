@@ -32,7 +32,7 @@ export function SecurityEmailPanel({ user, localMail = false }) {
     {!user.email_verified && <button type="button" className="button-secondary" disabled={busy} onClick={verify}><Send size={15} />{busy ? "Enviando…" : "Enviar confirmación"}</button>}
     {editing && <form id={formId} className="security-email-edit" onSubmit={submit}>
       <div><h3>Elige tu nuevo correo</h3><p>El cambio se completa al confirmar el enlace que recibirás.</p></div>
-      <label>Nuevo correo<input className="field-control" name="email" required type="email" autoComplete="email" placeholder="nombre@correo.com" maxLength={255} disabled={busy} /></label>
+      <label>Nuevo correo<input className="field-control" name="email" required type="email" autoComplete="email" placeholder="Introduce la dirección de correo" maxLength={255} disabled={busy} /></label>
       <label>Contraseña actual<input className="field-control" name="password" required type="password" autoComplete="current-password" disabled={busy} /></label>
       <footer><button type="button" className="button-secondary" disabled={busy} onClick={() => { setEditing(false); setError(""); }}>Cancelar</button><button disabled={busy} className="button-primary">{busy ? "Solicitando…" : "Enviar enlace de confirmación"}<ArrowRight size={16} aria-hidden="true" /></button></footer>
     </form>}

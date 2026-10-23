@@ -4,7 +4,7 @@ import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from "lucide-react"
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import "../styles/feedback.css";
 
-const roleScope = () => ["role-candidate", "role-company", "role-admin"].find((role) => document.activeElement?.closest(`.${role}`) || document.querySelector(`main.${role}, main .${role}`)) || "role-candidate";
+const roleScope = () => ["role-candidate", "role-company", "role-admin"].find((role) => document.activeElement?.closest(`.${role}`) || document.querySelector(`main.${role}, main .${role}`)) || (["candidate", "company", "admin"].includes(document.documentElement.dataset.role) ? `role-${document.documentElement.dataset.role}` : "role-candidate");
 const FeedbackContext = createContext(null);
 export const useFeedback = () => useContext(FeedbackContext);
 

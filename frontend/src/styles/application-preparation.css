@@ -17,7 +17,7 @@
 .preparation-cv-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; align-items:start; }
 .preparation-cv-layout.is-submitted { grid-template-columns:1fr; }
 .preparation-field { display:grid; gap:.45rem; min-width:0; color:var(--ink-strong); font-size:.85rem; font-weight:600; }
-.preparation-field > :is(input,textarea,select) { width:100%; min-height:var(--control-height); padding:.75rem; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font:inherit; font-weight:400; line-height:1.7; }
+.preparation-field > :is(input,textarea,select) { width:100%; min-height:var(--control-height); padding:.75rem; border:1px solid var(--control-border); border-radius:8px; background:var(--surface); color:var(--ink); font:inherit; font-weight:400; line-height:1.7; }
 .preparation-cv-name { margin-bottom:20px; }
 .preparation-version-heading > div { min-width:0; }
 .preparation-version-heading strong { display:block; font-size:14px; font-weight:650; overflow-wrap:anywhere; }

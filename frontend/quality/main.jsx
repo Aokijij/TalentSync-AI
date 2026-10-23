@@ -1,3 +1,4 @@
+import { DesignClosureReview } from "./DesignClosureReview.jsx";
 import { ApplicationsPage } from "../src/pages/ApplicationsPage.jsx";
 import { ResponseDeadlineReview } from "./ResponseDeadlineReview.jsx";
 import { RecruitmentWorkspace } from "../src/components/recruitment/RecruitmentWorkspace.jsx";
@@ -61,6 +62,7 @@ function QualityPage() {
   const [tab, setTab] = useState("cv"), [filters, setFilters] = useState({}), [answers, setAnswers] = useState({}), [dirty, setDirty] = useState(false), [saved, setSaved] = useState(false);
   const [form, setForm] = useState({ summary: data.profile.summary, experiences: [0], skills: data.profile.skills, style: "modern", includePhoto: false });
   if (params.has("auth")) return <AuthAccessReview params={params} />;
+  if (params.has("design")) return <DesignClosureReview role={role} theme={params.get("theme") || "light"} />;
   if (params.has("controls")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><AccountControlsReview /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("cvnames")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><CvNamesExample /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("profile")) return <MemoryRouter><AuthContext.Provider value={{ user: { id: 1, role: "candidate" }, refreshUser: async () => {} }}><FeedbackProvider><main className="quality-shell role-candidate"><ProfilePage /></main></FeedbackProvider></AuthContext.Provider></MemoryRouter>;

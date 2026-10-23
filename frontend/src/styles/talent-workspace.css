@@ -28,7 +28,7 @@
 .talent-comparison thead { color:var(--muted); font-size:.72rem; }
 .talent-comparison small { display:block; margin-top:.25rem; font-size:.7rem; color:var(--muted); font-weight:400; }
 .talent-comparison td>span { display:grid; place-items:center; width:28px; height:28px; border-radius:8px; margin:auto; }
-.talent-comparison .matched { background:var(--accent); color:white; }
+.talent-comparison .matched { background:var(--accent); color:var(--on-accent); }
 .talent-comparison .missing { background:var(--surface-subtle); color:var(--muted); }
 @media(max-width:700px) { .talent-search-filters,.talent-search-filters.applied { grid-template-columns:1fr 1fr; gap:.8rem; } .talent-search-filters>label:first-child { grid-column:1/-1; } .talent-search-filters.applied>button { grid-column:1/-1; } .talent-comparison summary>span { display:block; margin:.4rem 0 0; } }
 .talent-job-detail { margin-top:1rem; }

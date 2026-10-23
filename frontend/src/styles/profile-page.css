@@ -8,9 +8,7 @@
 .profile-is-editing .profile-mode > span { background:var(--warning); }
 .profile-toolbar { position:sticky; top:.75rem; z-index:30; display:flex; align-items:center; justify-content:space-between; gap:1.25rem; background:var(--surface); border:1px solid var(--line); border-radius:1rem; padding:1rem 1.2rem; box-shadow:var(--profile-shadow); }
 .profile-toolbar-actions { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:flex-end; }
-.profile-page .button-primary, .profile-page .button-secondary { min-height:40px; border-radius:.65rem; font-size:.78rem; padding:.6rem .85rem; }
 .profile-page .button-primary { box-shadow:0 2px 5px rgb(0 0 0 / 8%); }
-html[data-theme="dark"] .profile-page .button-primary { color:#082f49; }
 .profile-page :is(button,a,summary):focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
 .profile-upload-note { color:var(--muted); font-size:.73rem; line-height:1.6; padding-inline:.25rem; margin-top:-.7rem; }
 .profile-section-nav { display:flex; align-items:center; flex-wrap:wrap; gap:.35rem; padding:.5rem; border:1px solid var(--line); border-radius:.85rem; background:var(--surface); }

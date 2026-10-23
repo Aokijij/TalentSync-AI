@@ -12,7 +12,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0, workers: 2,
   snapshotPathTemplate: "{testDir}/../baselines/{platform}/{arg}{ext}",
   expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.001, threshold: 0.15, animations: "disabled" } },
-  timeout: 45000, globalTimeout: 300000,
+  timeout: 45000, globalTimeout: 600000,
   reporter: [["list"], ["html", { open: "never" }]],
   use: { baseURL: "http://127.0.0.1:4175", browserName: "chromium", launchOptions: executablePath ? { executablePath } : undefined, locale: "es-CO", timezoneId: "America/Bogota", reducedMotion: "reduce", trace: "retain-on-failure", screenshot: "only-on-failure" },
   webServer: { command: "node quality/server.mjs", url: "http://127.0.0.1:4175/quality/", reuseExistingServer: false, timeout: 60000 },

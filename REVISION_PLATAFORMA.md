@@ -212,3 +212,17 @@ Verificación: 233 pruebas frontend, análisis ESLint y compilación; 22 recorri
 Las pestañas de Postulaciones y Entrevistas usan un selector delimitado con estado activo destacado. La pantalla controla su separación mediante una cuadrícula, evitando que los indicadores queden pegados a la navegación. Los totales y el filtro comparten una barra con jerarquía tipográfica y separadores; en móvil, los números se sitúan sobre las etiquetas y el filtro ocupa su propia fila. Se conservan los nombres accesibles, el teclado, los conteos y el comportamiento de filtrado.
 
 Validación: 233 pruebas frontend, seis recorridos existentes de seguimiento y agenda a 360/1280 px en ambos temas, ESLint y compilación aprobados. Las capturas del bloque están en `.local/candidate-controls-review/`; los informes, en `.local/candidate-controls-*.log`. Se usan datos sintéticos y no se modifica la API.
+
+### Diseño y usabilidad compartidos: prioridades 1 a 5 — 23/10/2026
+
+Se unifican controles, pestañas, tarjetas y encabezados manteniendo los colores de candidato, empresa y administración. Los botones estándar y campos comparten una altura de 44 px; los botones compactos, 40 px. Los bordes de campos y los textos de botones primarios, destructivos y placeholders se ajustan por rol y tema. Las páginas comparten separación entre bloques y permiten redistribuir acciones sin comprimir iconos ni ocultar el desbordamiento del documento.
+
+Los placeholders con nombres, correos, enlaces, salarios o respuestas ficticias se sustituyen por instrucciones breves sobre qué escribir. Se conservan las etiquetas y las ayudas visibles. En el perfil, la ayuda permanece junto al error, y los campos de acceso y registro relacionan sus errores con el control correspondiente.
+
+Las confirmaciones compartidas esperan la promesa de guardado, impiden dobles envíos y cierre durante la operación, muestran el error y permiten reintentar conservando la edición. El llamador mantiene el control del cierre tras guardar. Los avisos emitidos en segundo plano respetan el rol de la sesión; sus controles de cierre y altura se adaptan a móvil.
+
+El menú móvil usa un diálogo con foco contenido, salida con Escape y devolución del foco al botón de apertura. Se añade salto al contenido, desplazamiento propio de la navegación y cierre del menú al pasar a escritorio. Los campos móviles estándar conservan texto de 16 px y se comprueba ampliación al 200 %, junto con teclado y contraste de controles compartidos. Estas verificaciones no equivalen a una certificación completa de accesibilidad de todas las pantallas.
+
+Validación: 233 pruebas frontend, 92 recorridos funcionales de interfaz, ESLint y compilación aprobados. Se revisan las diferencias visuales antes de actualizar las referencias; la comparación final de 36 capturas en 12 combinaciones de rol, tema y ancho pasa sin diferencias fuera de tolerancia. Se amplía a diez minutos el límite global de Playwright para permitir el cierre de la suite ampliada; los límites por prueba y los dos trabajadores se conservan. Los recorridos utilizan API interceptada y datos sintéticos: no toman decisiones sobre candidaturas reales, envían comunicaciones ni escriben en calendarios personales. Informes privados en `.local/design-closure-*.log` y capturas en `.local/design-closure-review/`. Los criterios de mantenimiento están en `DISENO_INTERFAZ.md`.
+
+Esta entrega mejora funciones existentes; no añade landing, nuevos flujos de bienvenida ni despliegue de producción. No modifica la API ni requiere migraciones.
