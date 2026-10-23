@@ -7,7 +7,7 @@ import { createElement } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { comparisonFacts, comparisonIds, comparisonRequirements, comparisonSalary, toggleComparedJob } from "../src/utils/jobComparison.js";
-import { activeInterview, interviewDateParts, interviewInputUtc, interviewInputValue, processDate, upcomingInterviews } from "../src/utils/interviewAgenda.js";
+import { activeInterview, candidateInterviewGroup, candidateInterviewRows, interviewDateParts, interviewInputUtc, interviewInputValue, processDate, upcomingInterviews } from "../src/utils/interviewAgenda.js";
 
 const require = createRequire(import.meta.url);
 async function components(file) {
@@ -163,4 +163,31 @@ test("agenda distinguishes loading and failure from an empty calendar and explai
   const closed = render(createElement(ProcessInterview, { process: { ...appointment, status: "hired" }, now }));
   assert.match(closed, /El proceso finalizó/);
   assert.doesNotMatch(closed, /Descargar cita/);
+});
+
+
+test("candidate interview groups do not infer attendance and exclude completed appointments from upcoming", () => {
+  const past = { ...appointment, interview_at: "2026-10-20T14:00:00" };
+  assert.equal(candidateInterviewGroup(past, now), "pending");
+  assert.equal(candidateInterviewGroup({ ...past, interview_completed_at: "2026-10-20T15:00:00" }, now), "pending");
+  assert.equal(candidateInterviewGroup({ ...past, interview_completed_at: "2026-10-20T15:00:00", status: "reviewing" }, now), "history");
+  assert.equal(candidateInterviewGroup({ ...appointment, status: "hired" }, now), "history");
+  assert.equal(candidateInterviewGroup({ ...appointment, released_at: "2026-10-22" }, now), "history");
+  assert.equal(candidateInterviewGroup({ ...appointment, interview_at: "invalid" }, now), null);
+  assert.equal(activeInterview({ ...appointment, interview_completed_at: "2026-10-21T14:00:00" }, now), false);
+});
+
+test("candidate agenda combines accent-insensitive search and modality, with stable chronological order", () => {
+  const rows = [{ ...appointment, id: 6, company_name: "Compañía Única", interview_details: { mode: "virtual" } }, { ...appointment, id: 7, company_name: "Compañía Única", interview_details: { mode: "in_person" } }, { ...appointment, id: 8, interview_at: "2026-10-25T14:00:00" }];
+  assert.deepEqual(candidateInterviewRows(rows, { search: "compania unica", mode: "virtual", now }).map((row) => row.id), [6]);
+  assert.deepEqual(candidateInterviewRows(rows, { mode: "unknown", now }).map((row) => row.id), [8]);
+  assert.deepEqual(candidateInterviewRows(rows, { now }).map((row) => row.id), [8, 6, 7]);
+});
+
+test("candidate agenda bounds rendered rows without mounting calendar synchronization for every appointment", () => {
+  const rows = Array.from({ length: 120 }, (_, index) => ({ ...appointment, id: index + 1 }));
+  const html = render(createElement(InterviewAgenda, { applications: rows, now }));
+  assert.equal((html.match(/class="candidate-interview-summary"/g) || []).length, 6);
+  assert.match(html, /Página 1 de 20/);
+  assert.doesNotMatch(html, /calendar-sync-trigger|candidate-interview-expanded/);
 });

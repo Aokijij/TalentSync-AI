@@ -1,16 +1,11 @@
 .interview-agenda-heading { display:flex; align-items:center; gap:var(--space-3); }
 .interview-agenda-heading > span { display:grid; place-items:center; width:44px; height:44px; flex-shrink:0; border-radius:10px; background:var(--surface-subtle); color:var(--accent); }
-.interview-agenda-list { list-style:none; margin:0; padding:0; }
-.interview-agenda-list > li, .interview-process-content { display:flex; align-items:center; flex-wrap:wrap; gap:var(--space-4); padding:var(--panel-padding); }
-.interview-agenda-list > li + li { border-top:1px solid var(--line); }
+.interview-process h2 { color:var(--ink-strong); font-weight:700; }
+.interview-process p { font-size:var(--text-body); }
+.interview-process-content { display:flex; align-items:center; flex-wrap:wrap; gap:var(--space-4); padding:var(--panel-padding); }
 .interview-date-tile { display:flex; flex-direction:column; flex-shrink:0; align-items:center; justify-content:center; width:60px; min-height:66px; border:1px solid var(--line); border-radius:10px; background:var(--surface-subtle); color:var(--accent); }
 .interview-date-tile strong { font-size:1.5rem; line-height:1.2; font-weight:750; }
 .interview-date-tile span { font-size:var(--text-meta); }
-.interview-agenda-info { min-width:0; flex:1 1 220px; font-size:var(--text-body); line-height:1.7; overflow-wrap:anywhere; }
-.interview-agenda-info > span { color:var(--muted); font-size:var(--text-meta); }
-.interview-agenda-info h3, .interview-process h2 { color:var(--ink-strong); font-weight:700; }
-.interview-agenda-info p, .interview-process p { font-size:var(--text-body); }
-.interview-agenda-info a { display:inline-flex; align-items:center; gap:4px; margin-top:6px; min-height:44px; color:var(--accent); font-size:var(--text-meta); font-weight:600; }
 .interview-agenda,.interview-process { container-type:inline-size; }
 .interview-calendar-actions { flex:0 1 auto; max-width:100%; margin-left:auto; }
 .interview-calendar-actions:has(.calendar-sync-trigger[aria-expanded=true]) { flex-basis:100%; width:100%; }
@@ -29,13 +24,10 @@
 .company-agenda-content article p,.company-agenda-content article small { font-size:.8rem; color:var(--muted); line-height:1.7; }
 @media(max-width:600px) { .company-agenda-filters { grid-template-columns:1fr; } .company-agenda-content article { align-items:stretch; flex-direction:column; } }
 .interview-agenda-note { margin:0; padding:var(--space-4) var(--panel-padding); color:var(--muted); font-size:var(--text-meta); line-height:1.7; border-top:1px solid var(--line); background:var(--surface-subtle); }
-.interview-agenda-more { padding:0 var(--panel-padding) var(--space-4); }
 .interview-process-content > div:nth-child(2) { flex:1 1 220px; min-width:0; overflow-wrap:anywhere; }
 .interview-process small { color:var(--muted); font-size:var(--text-meta); }
 .interview-process .interview-agenda-note { font-size:var(--text-meta); }
 @media(max-width:600px) {
   .interview-calendar-actions { width:100%; flex-basis:100%; }
-  .interview-agenda-list > li { align-items:flex-start; }
-  .interview-agenda-info { flex-basis:calc(100% - 80px); }
   .interview-process-content > div:nth-child(2) { flex-basis:calc(100% - 80px); }
 }

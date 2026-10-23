@@ -15,10 +15,11 @@ import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import { responseState } from "../utils/responseDeadlines.js";
 import { ResponseDeadlineBadge } from "../components/ResponseDeadlinePanel.jsx";
 import { InterviewAgenda } from "../components/InterviewAgenda.jsx";
-import { activeInterview, interviewDateParts, processDate } from "../utils/interviewAgenda.js";
+import { activeInterview, interviewDateParts, processDate, upcomingInterviews } from "../utils/interviewAgenda.js";
 import { isOpenProcess } from "../utils/dashboardData.js";
 import { pageItems, paginationState } from "../utils/pagination.js";
 import { Pagination } from "../components/Pagination.jsx";
+import { WorkspaceTabs } from "../components/ui/Panel.jsx";
 
 const statusLabel = {
   submitted: "Postulación recibida",
@@ -53,7 +54,7 @@ const steps = [
 const interviewStatuses = ["technical_interview", "psychometric_test"];
 
 export function ApplicationsPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true), [loadError, setLoadError] = useState(""), [retry, setRetry] = useState(0);
   const [jobs, setJobs] = useState([]);
@@ -61,6 +62,12 @@ export function ApplicationsPage() {
   const [page, setPage] = useState(1);
   const [pendingWithdrawal, setPendingWithdrawal] = useState(null);
   const focusedId = searchParams.get("focus");
+  const section = !focusedId && searchParams.get("section") === "interviews" ? "interviews" : "applications";
+  function changeSection(value) {
+    const next = new URLSearchParams(searchParams);
+    next.set("section", value); next.delete("focus");
+    setSearchParams(next, { replace: true });
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -127,13 +134,18 @@ export function ApplicationsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="candidate-processes space-y-6">
       <PageHeader
         kicker="Seguimiento"
-        title="Seguimiento de postulaciones"
-        description="Sigue cada proceso desde el envío hasta la decisión final en una línea de tiempo clara."
+        title="Postulaciones y entrevistas"
+        description="Sigue tus procesos y organiza tus entrevistas en un solo lugar."
       />
-      <InterviewAgenda applications={applications} loading={loading} error={loadError} />
+      <WorkspaceTabs id="candidate-processes" label="Seguimiento y agenda" value={section} onChange={changeSection} items={[["applications", `Postulaciones${loading || loadError ? "" : ` (${applications.length})`}`, FileCheck2], ["interviews", `Entrevistas${loading || loadError ? "" : ` (${upcomingInterviews(applications).length})`}`, CalendarClock]]} />
+      <div role="tabpanel" id="candidate-processes-panel-interviews" aria-labelledby="candidate-processes-tab-interviews" hidden={section !== "interviews"} tabIndex={0}>
+        <InterviewAgenda applications={applications} loading={loading} error={loadError} active={section === "interviews"} onRetry={() => setRetry((value) => value + 1)} />
+      </div>
+      <div role="tabpanel" className="candidate-applications-panel" id="candidate-processes-panel-applications" aria-labelledby="candidate-processes-tab-applications" hidden={section !== "applications"} tabIndex={0}>
+      {loading && <p role="status">Consultando tus postulaciones…</p>}
       {loadError && <p role="alert" className="surface-card p-4">{loadError} <button type="button" className="button-secondary button-sm" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></p>}
       <section className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
         <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
@@ -294,6 +306,7 @@ export function ApplicationsPage() {
         ) : null}
       </section>
       {!!visibleApplications.length && <Pagination page={paging.page} total={visibleApplications.length} pageSize={8} onChange={setPage} label="Páginas de postulaciones" busy={loading} />}
+      </div>
       <ConfirmModal
         open={Boolean(pendingWithdrawal)}
         title="Retirar postulación"

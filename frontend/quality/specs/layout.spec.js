@@ -84,6 +84,7 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     } else await expect(tracking.getByRole("tab", { name: "Evaluación interna", exact: true })).toHaveCount(0);
     await tracking.getByRole("tab", { name: "Resumen", exact: true }).click();
     await expect(page.getByRole("button", { name: "Descargar cita", exact: true })).toHaveCount(0);
+    await page.locator('[data-quality="agenda"] .candidate-interview-summary').first().click();
     await expect(page.getByRole("button", { name: "Añadir a Google Calendar", exact: true }).first()).toBeVisible();
     await page.getByRole("button", { name: "Gestionar proceso de ejemplo" }).click();
     const process = page.getByRole("dialog", { name: "Candidata de ejemplo", exact: true });

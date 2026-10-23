@@ -9,7 +9,7 @@ export function processDate(value) {
 
 export function activeInterview(row, now = new Date()) {
   const date = processDate(row.interview_at);
-  return !row.released_at && !FINAL_PROCESS_STATUSES.has(row.status) && date != null && date > now;
+  return !row.released_at && !FINAL_PROCESS_STATUSES.has(row.status) && date != null && date > now && !row.interview_completed_at;
 }
 
 export function upcomingInterviews(applications, now = new Date()) {
@@ -24,6 +24,7 @@ export function interviewDateParts(value) {
     day: date.toLocaleDateString("es-CO", { ...options, day: "2-digit" }),
     month: date.toLocaleDateString("es-CO", { ...options, month: "short" }),
     full: date.toLocaleDateString("es-CO", { ...options, weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+    short: date.toLocaleDateString("es-CO", { ...options, day: "numeric", month: "short", year: "numeric" }),
     time: date.toLocaleTimeString("es-CO", { ...options, hour: "2-digit", minute: "2-digit" }),
   };
 }
@@ -39,4 +40,22 @@ export function interviewInputUtc(value) {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value || "")) return null;
   const date = processDate(`${value}:00-05:00`);
   return date && interviewInputValue(date.toISOString()) === value ? date.toISOString() : null;
+}
+
+// A past date alone does not establish that the candidate attended.
+export function candidateInterviewGroup(row, now = new Date()) {
+  const date = processDate(row.interview_at);
+  if (!date) return null;
+  if (row.released_at || FINAL_PROCESS_STATUSES.has(row.status)) return "history";
+  if (row.interview_completed_at) return ["technical_interview", "psychometric_test"].includes(row.status) ? "pending" : "history";
+  return date > now ? "upcoming" : "pending";
+}
+
+export function candidateInterviewRows(applications, { group = "upcoming", mode = "all", search = "", now = new Date() } = {}) {
+  const normalize = (text) => String(text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const term = normalize(search).trim();
+  return applications.filter((row) => candidateInterviewGroup(row, now) === group
+    && (mode === "all" || (mode === "unknown" ? !["virtual", "in_person"].includes(row.interview_details?.mode) : row.interview_details?.mode === mode))
+    && (!term || normalize(`${row.job_title || ""} ${row.company_name || ""}`).includes(term)))
+    .sort((a, b) => (group === "upcoming" ? 1 : -1) * (processDate(a.interview_at) - processDate(b.interview_at)) || a.id - b.id);
 }

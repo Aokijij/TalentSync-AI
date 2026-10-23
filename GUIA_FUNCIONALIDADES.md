@@ -24,9 +24,10 @@ En **Mercado laboral**, la compatibilidad mínima parte de **Cualquiera**: inclu
 
 ## Novedad: agenda de entrevistas y calendario
 
-**Dónde:** candidato → Postulaciones (`/postulaciones`) → **Tu agenda de entrevistas**. También dentro de un proceso (`/procesos/{id}`), accesible a sus participantes autorizados.
+**Dónde:** candidato → Postulaciones (`/postulaciones`) → pestaña **Entrevistas**. También dentro de un proceso (`/procesos/{id}`), accesible a sus participantes autorizados.
 
-- Reúne las entrevistas futuras de procesos abiertos y las ordena por fecha. Muestra primero tres; se pueden desplegar las restantes.
+- Postulaciones y Entrevistas son pestañas separadas dentro de la misma pantalla. Conservan sus filtros y páginas al alternarlas mientras la pantalla siga abierta. También se puede abrir directamente `/postulaciones?section=interviews`.
+- La agenda presenta seis citas por página, ordenadas por fecha, con búsqueda por empresa o vacante y filtro de modalidad. Separa Próximas, Pendientes e Historial; una fecha pasada no se interpreta como asistencia confirmada. Abre una fila para consultar dirección, enlace, indicaciones, proceso y Google Calendar. Solo se despliega una cita a la vez; las finalizadas son de consulta.
 - La empresa programa, reprograma o cancela desde **Gestionar proceso**, la agenda de la vacante o el propio proceso. **Guardar y notificar** aplica la entrevista directamente, sin otro guardado en el tablero.
 - Se definen fecha y hora de Colombia, modalidad virtual o presencial, duración, enlace HTTPS o dirección e indicaciones para el candidato. Los datos antiguos sin modalidad se identifican como pendientes de confirmar.
 - **Añadir a Google Calendar** guarda el evento con esos detalles y un recordatorio 30 minutos antes. Una vez añadido, los cambios y cancelaciones se actualizan automáticamente. La conexión se autoriza una vez desde Seguridad; solo se pide renovarla cuando Google revoca o vence el permiso.
