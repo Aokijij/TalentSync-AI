@@ -848,7 +848,8 @@ class Notification(Base):
 
 class OfferFeedback(Base):
     __tablename__ = "offer_feedback"
-    __table_args__ = (UniqueConstraint("user_id", "job_id", name="uq_offer_feedback_pair"),)
+    __table_args__ = (UniqueConstraint("user_id", "job_id", name="uq_offer_feedback_pair"),
+                      Index("ix_offer_feedback_job_revision", "job_id", "revision"))
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)

@@ -62,7 +62,47 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment", "interview_evaluations"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0046_account_erasure"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0047_schema_alignment"
+        command.check(migration_config())
+    finally:
+        engine.dispose()
+
+
+def test_schema_alignment_preserves_data_and_normalizes_missing_collections(monkeypatch, tmp_path):
+    import json
+
+    import pytest
+    from sqlalchemy.exc import IntegrityError
+
+    url = f"sqlite:///{(tmp_path / 'alignment.sqlite3').as_posix()}"
+    monkeypatch.setattr(settings, "database_url", url)
+    command.upgrade(migration_config(), "0046_account_erasure")
+    engine = create_engine(url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO users (id,name,email,password_hash,role,created_at) VALUES (1,'Synthetic','synthetic@example.com','unchanged','CANDIDATE','2025-01-01')"))
+            connection.execute(text("INSERT INTO profiles (user_id,skills,experiences,educations,certifications,updated_at) VALUES (1,NULL,'null','[{\"title\":\"Preserved\"}]',NULL,NULL)"))
+            connection.execute(text("INSERT INTO companies (id,owner_user_id,name,nit) VALUES (1,1,'Synthetic','SYNTHETIC')"))
+            connection.execute(text("INSERT INTO jobs (id,company_id,title,description,requirements,modality,employment_type,status,skills,benefits,created_at) VALUES (1,1,'Synthetic','Preserved','Preserved','hybrid','full_time','active',NULL,'null',CURRENT_TIMESTAMP)"))
+            connection.execute(text("INSERT INTO applications (user_id,job_id,status,created_at) VALUES (1,1,'TECHNICAL_INTERVIEW',CURRENT_TIMESTAMP)"))
+            connection.execute(text("INSERT INTO recommendations (user_id,job_id,match_percentage,reasons,created_at) VALUES (1,1,75,NULL,CURRENT_TIMESTAMP)"))
+        command.upgrade(migration_config(), "head")
+        engine.dispose()
+        with engine.connect() as connection:
+            row = connection.execute(text("SELECT skills,experiences,educations,certifications,updated_at FROM profiles")).one()
+            assert [json.loads(value) for value in row[:4]] == [[], [], [{"title": "Preserved"}], []]
+            assert str(row[4]).startswith("2025-01-01")
+            assert tuple(connection.execute(text("SELECT skills,benefits FROM jobs")).one()) == ("[]", "[]")
+            assert connection.execute(text("SELECT reasons FROM recommendations")).scalar_one() == "[]"
+            assert connection.execute(text("SELECT status FROM applications")).scalar_one() == "TECHNICAL_INTERVIEW"
+            assert connection.execute(text("SELECT password_hash FROM users")).scalar_one() == "unchanged"
+            assert "AUTOINCREMENT" in connection.execute(text("SELECT sql FROM sqlite_master WHERE name='users'")).scalar_one()
+        with pytest.raises(IntegrityError), engine.begin() as connection:
+            connection.execute(text("UPDATE profiles SET skills=NULL"))
+        command.check(migration_config())
+        command.downgrade(migration_config(), "0046_account_erasure")
+        command.upgrade(migration_config(), "head")
+        command.check(migration_config())
     finally:
         engine.dispose()
 

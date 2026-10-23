@@ -154,10 +154,12 @@ def check():
 
         alembic = [str(local.PYTHON), "-m", "alembic"]
         step("migrations_upgrade", [*alembic, "upgrade", "head"])
+        step("schema_metadata_check", [*alembic, "check"])
         step("cross_role_acceptance", [str(local.PYTHON), "-m", "pytest", "-q", "tests/test_postgres_acceptance.py",
                                       "--disable-warnings", "-W", "error::sqlalchemy.exc.SAWarning"])
         step("migration_downgrade", [*alembic, "downgrade", "-1"])
         step("migration_reupgrade", [*alembic, "upgrade", "head"])
+        step("schema_metadata_recheck", [*alembic, "check"])
         backup = FOLDER / (database + ".dump")
         pg_env = {**os.environ, "PGHOST": "127.0.0.1", "PGPORT": str(PORT), "PGUSER": ROLE,
                   "PGPASSWORD": values["app"], "PGDATABASE": database, "PGCONNECT_TIMEOUT": "5"}

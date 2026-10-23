@@ -23,6 +23,13 @@ CI nunca actualiza las referencias. Conserva el informe y las diferencias como a
 
 ## Datos de cuenta y operación
 
+`/quality/?auth=register` y `?auth=login` montan las pantallas reales con proveedores
+sintéticos habilitados; `?auth=accounts` muestra vinculación. `providers=off`
+comprueba la configuración ausente. `social-access.spec.js` revisa móvil/escritorio,
+ambos temas, errores de proveedor, redirección con almacenamiento bloqueado y
+separación del registro empresarial. Las API se interceptan: no abre Google,
+GitHub o LinkedIn ni crea cuentas externas.
+
 `/quality/?controls=1&role=candidate&theme=dark` monta los componentes reales de
 portabilidad, Google Calendar y diagnóstico operativo con las mismas tres hojas
 de estilo globales de la aplicación. La suite intercepta las API con datos

@@ -1,0 +1,23 @@
+.access-provider-options { margin-top:1.5rem; display:grid; gap:.8rem; }
+.access-provider-caption { text-align:center; font-size:.875rem; font-weight:600; color:var(--muted); }
+.access-provider-buttons { display:grid; gap:.65rem; }
+.access-provider-button { width:100%; min-height:48px; gap:.8rem; background:var(--surface); }
+.access-provider-button svg { flex-shrink:0; }
+.access-provider-note { font-size:.75rem; line-height:1.6; color:var(--muted); text-align:center; }
+.access-provider-divider { display:flex; align-items:center; gap:1rem; color:var(--muted); font-size:.75rem; margin:.5rem 0 0; }
+.access-provider-divider::before,.access-provider-divider::after { content:""; height:1px; flex:1; background:var(--line); }
+.social-accounts-heading { display:flex; align-items:center; gap:.75rem; }
+.social-accounts-heading > svg { color:var(--accent); }
+.social-accounts-heading p { margin:.15rem 0 0; color:var(--muted); font-size:.75rem; }
+.social-account-row { display:flex; align-items:center; gap:1rem; padding:1rem; border:1px solid var(--line); border-radius:var(--radius-md); }
+.social-account-icon { display:grid; place-items:center; width:42px; height:42px; flex-shrink:0; background:var(--surface-subtle); border:1px solid var(--line); border-radius:.75rem; }
+.social-account-description { flex:1; min-width:0; }
+.social-account-description h3 { display:flex; align-items:center; gap:.65rem; flex-wrap:wrap; font-weight:600; }
+.social-account-description h3 span { display:inline-flex; align-items:center; gap:.3rem; padding:.2rem .5rem; border-radius:2rem; background:color-mix(in srgb,var(--success) 10%,var(--surface)); color:var(--success); font-size:.7rem; }
+.social-account-description p { font-size:.8rem; line-height:1.5; color:var(--muted); margin-top:.25rem; }
+.social-account-row.is-connected { border-color:color-mix(in srgb,var(--success) 45%,var(--line)); }
+.social-account-row > button { flex-shrink:0; }
+@media(max-width:560px) {
+  .social-account-row { flex-wrap:wrap; gap:.75rem; }
+  .social-account-row > button { width:100%; }
+}

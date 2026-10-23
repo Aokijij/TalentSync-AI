@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { Link, Navigate, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { AuthFrame } from "../components/AuthFrame.jsx";
+import { AccessProviders } from "../components/AccessProviders.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { getApiErrorMessage } from "../api/client.js";
 
@@ -35,7 +36,8 @@ export function RegisterPage() {
   return <AuthFrame company={company} registering>
     <div className="flex items-center justify-between gap-3"><span className="access-portal-tag">{company ? invitation ? "Unirse al equipo" : "Registrar mi empresa" : "Registro de candidato"}</span><Link className="text-sm text-[var(--accent)]" state={company && invitation ? { from: invitationPath(invitation) } : undefined} to={company ? "/empresa/login" : "/login"}>Ya tengo cuenta</Link></div>
     <h2 className="mt-5 text-3xl font-bold">{company ? invitation ? "Crea tu acceso al equipo" : "Construye tu espacio de contratación" : "Comienza tu próximo capítulo"}</h2>
-    <p className="mt-2 text-sm text-[var(--muted)]">Cuatro pasos breves. Puedes volver y ajustar tus datos antes de confirmar.</p>
+    <p className="mt-2 text-sm text-[var(--muted)]">{!company && accessOptions.providers?.some((provider) => provider.enabled) ? "Continúa con tu cuenta de confianza o regístrate con tu correo." : "Cuatro pasos breves. Puedes volver y ajustar tus datos antes de confirmar."}</p>
+    {!company && step === 0 && accessOptions.providers?.some((provider) => provider.enabled) && <AccessProviders availableOnly registering />}
     <ol className="registration-steps" aria-label="Progreso de registro">{steps.map((title, index) => <li key={title} aria-current={step === index ? "step" : undefined} className={index <= step ? "reached" : ""}><span>{index < step ? <Check size={15} /> : index + 1}</span><small>{title}</small></li>)}</ol>
     <form onSubmit={next} noValidate className="space-y-5">
       <h3 className="text-xl font-bold" tabIndex={-1}>Paso {step + 1}: {steps[step]}</h3>

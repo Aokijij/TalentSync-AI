@@ -116,9 +116,17 @@ Antes de entregar puedes consultar todas las respuestas y editar cualquiera. La 
 
 ## Qué sigue pendiente de las propuestas
 
-Las cartas de presentación, el simulador conversacional y el seguimiento de postulaciones externas mediante correo autorizado siguen siendo propuestas. La sincronización con Google Calendar y el panel unificado de integraciones ya están implementados; requieren configuración y comprobación externa donde corresponda. Los pendientes actuales son alinear las diferencias históricas de esquema, verificar proveedores con cuentas autorizadas, ejecutar el piloto y completar las pruebas de carga y la operación en staging.
+Las cartas de presentación, el simulador conversacional y el seguimiento de postulaciones externas mediante correo autorizado siguen siendo propuestas. La sincronización con Google Calendar y el panel unificado de integraciones ya están implementados; requieren configuración y comprobación externa donde corresponda. La migración 0047 corrige las diferencias históricas del esquema. Siguen pendientes la configuración y verificación externa de proveedores, ejecutar el piloto y completar las pruebas de carga y la operación en staging.
 
 Breken y Figma no están conectados. Las referencias de diseño se utilizan para mejorar los componentes existentes; no se incorporaron nuevas dependencias de animación o 3D.
+
+## Registro y acceso con proveedores
+
+Google, GitHub y LinkedIn comparten el flujo de registro e inicio de sesión de candidatos. Cuando se configura un proveedor, aparece en ambas pantallas. Una cuenta nueva pasa por la bienvenida para completar su perfil; una cuenta que regresa conserva sus datos. Si el correo ya existe por otro método, se entra con ese método y se vincula el proveedor desde Seguridad. Las cuentas no se fusionan automáticamente y se conserva el segundo factor cuando está activo.
+
+Seguridad muestra el proveedor con su icono, estado de conexión y acción para vincular o desvincular. Vincular requiere demostrar acceso a TalentSync y autorizar la cuenta en el proveedor. Si la cuenta se creó con acceso social y no tiene contraseña conocida, se establece mediante Recuperar acceso antes de gestionar otras vinculaciones.
+
+Todavía faltan las aplicaciones y credenciales externas. La configuración privada, los callbacks y los pasos de Google, GitHub, LinkedIn, Calendar y correo están en [INTEGRACIONES_ACCESO](INTEGRACIONES_ACCESO.md). Los botones se habilitan con configuración válida; su aparición no demuestra un consentimiento real completado.
 
 Las pruebas de lógica, permisos y compilación se complementan con una suite visual de componentes: **24 casos ejecutados con Chromium**, en tres roles, dos temas y cuatro tamaños. Se inspeccionaron capturas representativas y se corrigieron detalles de espaciado y datos ausentes. Esta comprobación con datos ficticios no sustituye una revisión completa de todas las pantallas con cuentas autenticadas ni una comparación automática con capturas de referencia.
 
