@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "test": "node --test",
     "quality:ui": "playwright test",
+    "quality:visual": "node quality/visual.mjs",
+    "quality:visual:update": "node quality/visual.mjs --update",
     "quality:ui:list": "playwright test --list",
     "quality:ui:build": "vite build --config vite.quality.config.js",
     "update:locations": "node scripts/update-colombian-cities.mjs"

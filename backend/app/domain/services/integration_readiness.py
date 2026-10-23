@@ -1,29 +1,57 @@
-def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog, resend=False, learn=False, github_projects=False, codewars=False):
-    """Report only explicit capabilities; configuration is not proof of delivery."""
-    rows = [
-        {"name": "Modelo de compatibilidad local", "state": "local_ready" if neural_active else "local_fallback", "status": "Modelo neuronal activo en esta máquina." if neural_active else "Compatibilidad léxica disponible; el modelo neuronal no está activo.", "next_steps": "Revisar afinidad y brechas con los escenarios de candidato."},
-        {"name": "Correo y avisos", "state": "local_ready" if local_mail else "configured" if smtp else "disabled", "status": "Bandeja de desarrollo local; no entrega correo externo." if local_mail else "SMTP configurado; entrega externa pendiente de comprobar." if smtp else "Correo desactivado.", "next_steps": "Revisar invitaciones y recuperación en la bandeja local." if local_mail else "Configurar un transporte y comprobar la entrega con una cuenta autorizada."},
-        {"name": "Acceso social", "state": "configured" if any(providers.get(key) for key in ("google", "github", "linkedin")) else "provider_required", "status": "Proveedores habilitados: " + (", ".join(key for key in ("google", "github", "linkedin") if providers.get(key)) or "ninguno") + ". Configuración comprobada, sin iniciar sesiones externas.", "next_steps": "Registrar una aplicación del proveedor, configurar el retorno y comprobar el acceso con cuentas autorizadas."},
-        {"name": "SSO administrativo", "state": "configured" if any(providers.get(key) for key in ("workspace", "entra")) else "provider_required", "status": "Proveedores habilitados: " + (", ".join(key for key in ("workspace", "entra") if providers.get(key)) or "ninguno") + ".", "next_steps": "Configurar la organización y aprovisionar las identidades administrativas antes de exigir SSO."},
-        {"name": "Vacantes externas", "state": "configured" if catalog else "local_manual", "status": "Adaptador de catálogo configurado; no se realizó sincronización externa en esta comprobación." if catalog else "Importación manual CSV/Excel disponible. Sin proveedor externo configurado.", "next_steps": "Probar los archivos de ejemplo desde administración o conectar una fuente autorizada."},
-        {"name": "Cursos y certificados", "state": "local_manual", "status": "Catálogo, planes y registro de certificados por enlace disponibles. La autenticidad no se verifica automáticamente.", "next_steps": "Completar un plan y registrar un certificado aportado; para sincronizar se necesita acceso del proveedor.", "action_url": "/admin/aprendizaje", "action_label": "Revisar catálogo"},
-        {"name": "Verificación empresarial", "state": "local_manual", "status": "Solicitud y revisión manual con soportes disponibles. Sin consulta a registros oficiales.", "next_steps": "Revisar la solicitud y sus soportes. La comprobación automática requiere un registro autorizado.", "action_url": "/admin/verificaciones", "action_label": "Revisar organizaciones"},
-        {"name": "Referencia salarial", "state": "local_manual", "status": "Comparación de ofertas locales con muestra mínima de cinco empresas. Sin datos del mercado externo.", "next_steps": "Revisar las condiciones comparadas; una fuente externa requiere cobertura y permisos de uso."},
-        {"name": "Calidad y redacción de ofertas", "state": "local_ready", "status": "Puntuación, misiones, borradores editables y orden por calidad disponibles sin servicios de pago.", "next_steps": "Probar las ofertas de demostración desde una cuenta de empresa."},
-        {"name": "Evaluaciones prácticas", "state": "local_ready", "status": "Retos guiados y SQL restringido disponibles. No se ejecuta código arbitrario de otros lenguajes.", "next_steps": "Recorrer los escenarios de aprendizaje y comprobar resultados y evidencias."},
-    ]
-    if resend:
-        rows[1].update(state="configured", status="Resend configurado; entrega externa pendiente de comprobar con un dominio verificado.")
-    rows.extend([
-        {"name": "Microsoft Learn", "state": "configured" if learn else "provider_required",
-         "status": "Conector autenticado configurado; consulta manual con vista previa." if learn else "Conector preparado. Falta registrar una aplicación de Microsoft Entra y configurar sus credenciales.",
-         "next_steps": "Consultar módulos o rutas, importar borradores y revisar habilidades antes de publicar. El catálogo no verifica certificados personales.",
-         "action_url": "/admin/aprendizaje", "action_label": "Importar formación"},
-        {"name": "Proyectos públicos de GitHub", "state": "configured" if github_projects else "disabled",
-         "status": "Consulta pública disponible por solicitud del candidato, con caché y presupuesto de peticiones." if github_projects else "Lector preparado, pendiente de habilitar. No requiere credenciales para repositorios públicos.",
-         "next_steps": "El candidato elige un repositorio desde su perfil. Los archivos aportan indicios técnicos; no prueban autoría ni dominio profesional."},
-        {"name": "Codewars", "state": "configured" if codewars else "disabled",
-         "status": "Consulta pública por solicitud del candidato, sin claves, con caché y presupuesto de peticiones." if codewars else "Conector público preparado, pendiente de habilitar.",
-         "next_steps": "Consultar el usuario desde Evidencias del perfil, elegir lenguajes y guardar una referencia declarada. Los rangos no certifican dominio ni titularidad."},
-    ])
+"""Capabilities, configuration and observed results are separate facts."""
+from datetime import datetime, timedelta
+
+from app.domain.services.market_radar import MINIMUM_SAMPLE
+
+
+def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog, resend=False, learn=False, github_projects=False, codewars=False, youtube=False, public_learning=False, observations=None, now=None, catalog_providers=None):
+    now = now or datetime.utcnow()
+    observations = observations or {}
+    rows = []
+
+    def add(key, name, state, status, next_steps, *, configured=None, enabled=True, action_url=None, action_label=None):
+        seen = observations.get(key, {})
+        success = seen.get("last_success_at")
+        error = seen.get("last_error", "")
+        operational = "disabled" if not enabled else "not_configured" if configured is False else "manual" if state == "local_manual" else "local" if state in {"local_ready", "local_fallback"} else "unverified"
+        if enabled and configured is not False and seen.get("last_attempt_at"):
+            operational = "error" if error else "observed"
+            if not error and success:
+                try:
+                    if now - datetime.fromisoformat(success.rstrip("Z")) > timedelta(hours=24):
+                        operational = "stale"
+                except (ValueError, TypeError):
+                    operational = "unverified"
+        row = {"id": key, "name": name, "state": state, "status": status, "next_steps": next_steps,
+               "implemented": True, "enabled": enabled, "configured": configured, "operational_state": operational,
+               "last_success_at": success, "last_attempt_at": seen.get("last_attempt_at"), "last_error": error if enabled and configured is not False else ""}
+        if action_url:
+            row.update(action_url=action_url, action_label=action_label)
+        rows.append(row)
+
+    add("matching", "Modelo de compatibilidad", "local_ready" if neural_active else "local_fallback", "Modelo neuronal activo en este proceso." if neural_active else "Compatibilidad léxica disponible como alternativa local.", "Revisar afinidad y brechas con los escenarios de candidato.")
+    add("mail", "Correo y avisos", "local_ready" if local_mail else "configured" if smtp or resend else "disabled", "Bandeja de desarrollo; no entrega correo externo." if local_mail else "Transporte externo configurado; la aceptación no confirma entrega al destinatario." if smtp or resend else "No hay transporte habilitado.", "Revisar la bandeja local." if local_mail else "Comprobar envío, entrega y rebotes con una cuenta autorizada.", configured=True if local_mail else bool(smtp or resend), enabled=bool(local_mail or smtp or resend))
+    for key, title, names in [("social", "Acceso social", ("google", "github", "linkedin")), ("sso", "SSO administrativo", ("workspace", "entra"))]:
+        active = [name for name in names if providers.get(name)]
+        add(key, title, "configured" if active else "provider_required", "Proveedores configurados: " + (", ".join(active) or "ninguno") + ".", "Comprobar acceso, vinculación y recuperación con una cuenta autorizada.", configured=bool(active))
+    sources = catalog_providers if catalog_providers is not None else {"jsearch": bool(catalog)}
+    for key, configured in sources.items():
+        if key != "jsearch" and not configured:
+            continue
+        name = {"jsearch": "JSearch", "jooble": "Jooble", "adzuna": "Adzuna"}[key]
+        add(key, "Vacantes externas · " + name, "configured" if configured else "local_manual", "Fuente configurada. La importación manual CSV/Excel también está disponible." if configured else "Importación manual CSV/Excel disponible; sin fuente automática configurada.", "Revisar vigencia, duplicados y el resultado de la sincronización.", configured=bool(configured), action_url="/vacantes", action_label="Revisar vacantes")
+    for key, name, configured in [("youtube", "YouTube", youtube), ("microsoft_learn", "Microsoft Learn", learn)]:
+        add(key, name, "configured" if configured else "provider_required", "Consulta e importación editorial disponibles; los recursos se revisan antes de publicar.", "Consultar la fuente desde el catálogo. Las fechas registran el resultado de esa operación y pueden incluir caché.", configured=configured, action_url="/admin/aprendizaje", action_label="Revisar fuente")
+    for key, name in [("sena", "SENA"), ("sapiencia", "Sapiencia")]:
+        add(key, name, "configured" if public_learning else "local_manual", "Consultas manuales disponibles. " + ("Actualización periódica habilitada." if public_learning else "Actualización periódica desactivada."), "Revisar disponibilidad, vigencia y última actualización del catálogo.", configured=True, action_url="/admin/aprendizaje", action_label="Revisar fuente")
+    add("certificates", "Cursos y certificados", "local_manual", "Catálogo, planes y evidencias declaradas disponibles; no autentican certificados.", "La verificación automática requiere acceso autorizado al proveedor.", action_url="/admin/aprendizaje", action_label="Revisar catálogo")
+    add("verification", "Verificación empresarial", "local_manual", "Solicitud y revisión manual de soportes; sin consulta a registros oficiales.", "Revisar los soportes de cada organización.", action_url="/admin/verificaciones", action_label="Revisar organizaciones")
+    add("salary", "Referencia salarial", "local_ready", f"Radar por ciudad o todo el país. Cada grupo salarial requiere al menos {MINIMUM_SAMPLE} empresas con condiciones comparables.", "Elegir área, nivel y ubicación. Los datos disponibles no representan todo el mercado laboral.")
+    add("quality", "Calidad de ofertas", "local_ready", "Misiones, revisión de condiciones y borradores editables disponibles.", "Revisar la calidad antes de publicar.")
+    add("practice", "Evaluaciones prácticas", "local_ready", "Retos guiados disponibles; ejecución SQL restringida en el backend.", "Revisar entregas y evidencias. No se ejecuta código arbitrario de otros lenguajes.")
+    # Supplemental capabilities only appear when actually enabled.
+    if github_projects:
+        add("github_projects", "Proyectos públicos de GitHub", "configured", "Consulta pública por solicitud del candidato.", "Un repositorio no acredita autoría ni dominio profesional.", configured=True)
+    if codewars:
+        add("codewars", "Codewars", "configured", "Consulta pública por solicitud del candidato.", "Los rangos no certifican dominio ni titularidad.", configured=True)
     return rows

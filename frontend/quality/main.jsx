@@ -1,3 +1,6 @@
+import { ProfilePage } from "../src/pages/ProfilePage.jsx";
+import { AuthContext } from "../src/contexts/AuthContext.jsx";
+import { SystemReview } from "./SystemReview.jsx";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
@@ -50,6 +53,8 @@ function QualityPage() {
   const [tab, setTab] = useState("cv"), [filters, setFilters] = useState({}), [answers, setAnswers] = useState({}), [dirty, setDirty] = useState(false), [saved, setSaved] = useState(false);
   const [form, setForm] = useState({ summary: data.profile.summary, experiences: [0], skills: data.profile.skills, style: "modern", includePhoto: false });
   if (params.has("cvnames")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><CvNamesExample /></main></FeedbackProvider></MemoryRouter>;
+  if (params.has("profile")) return <MemoryRouter><AuthContext.Provider value={{ user: { id: 1, role: "candidate" }, refreshUser: async () => {} }}><FeedbackProvider><main className="quality-shell role-candidate"><ProfilePage /></main></FeedbackProvider></AuthContext.Provider></MemoryRouter>;
+  if (params.has("system")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><SystemReview /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("radar")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><MarketRadar /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("submit")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><button className="button-primary" type="button" onClick={() => { setSubmittedExample(null); setSubmitOpen(true); }}>Postularme</button>{submittedExample && <p role="status">Postulación enviada</p>}{submitOpen && <ApplicationSubmitDialog job={comparisonJobs[0]} onClose={() => setSubmitOpen(false)} onSubmitted={(row) => { setSubmittedExample(row); setSubmitOpen(false); }} />}</main></FeedbackProvider></MemoryRouter>;
   if (practiceMode === "active") return <MemoryRouter><div className={`quality-shell role-${role}`}><ChallengeWorkspace attempt={practiceExample} seconds={441} answers={practiceAnswers} step={practiceStep} onStep={setPracticeStep} onAnswer={(id, value) => setPracticeAnswers((current) => ({ ...current, [id]: value }))} onExit={() => setPracticeMode(null)} onSubmit={() => setPracticeMode("result")} /></div></MemoryRouter>;

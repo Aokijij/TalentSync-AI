@@ -1,4 +1,4 @@
-.vacancy-card { display:flex; flex-direction:column; min-width:0; gap:14px; padding:20px; border:1px solid var(--line); border-radius:var(--panel-radius); background:var(--surface); transition:border-color .15s,box-shadow .15s; }
+.vacancy-card { display:flex; flex-direction:column; min-width:0; gap:14px; padding:20px; transition:border-color .15s,box-shadow .15s; }
 .vacancy-card:hover { border-color:color-mix(in srgb,var(--accent) 45%,var(--line)); box-shadow:0 5px 20px #00000008; }
 .vacancy-card.is-applied { border-top:3px solid var(--success); }
 .vacancy-card.is-closed-application { border-top-color:var(--muted); }

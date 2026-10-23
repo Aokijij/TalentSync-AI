@@ -16,7 +16,7 @@ export function VacancyCard({ interests, comparison, job, match, confidence, app
   const skills = [...new Set(job.skills || [])];
   const hasApplication = applied || Boolean(application);
   const closedApplication = application?.released_at || application?.status === "rejected";
-  return <article className={`vacancy-card${selected ? " is-compared" : ""}${hasApplication ? " is-applied" : ""}${closedApplication ? " is-closed-application" : ""}`}>
+  return <article className={`ui-card vacancy-card${selected ? " is-compared" : ""}${hasApplication ? " is-applied" : ""}${closedApplication ? " is-closed-application" : ""}`}>
     <header><Link to={`/empresas/${job.company_id}`} className="vacancy-company">{job.company_name || "Empresa"}</Link><span className="vacancy-modality">{{ remote: "Remoto", hybrid: "Híbrido", onsite: "Presencial" }[job.modality] || "Por confirmar"}</span></header>
     <h2><Link to={`/vacantes/${job.id}`} state={{ returnTo }}>{job.title}</Link></h2>
     <div className="vacancy-meta"><span><MapPin size={14} />{[job.location, job.department].filter(Boolean).join(", ") || "Ubicación por confirmar"}</span><span><CalendarDays size={14} />{formatRelativeTime(job.created_at)}</span></div>

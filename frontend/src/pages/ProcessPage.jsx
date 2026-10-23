@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
+import { InlineNotice } from "../components/ui/Panel.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ApplicationPreparation } from "../components/ApplicationPreparation.jsx";
 import { InterviewEvaluationPanel } from "../components/InterviewEvaluationPanel.jsx";
@@ -34,7 +35,7 @@ function ProcessController({ applicationId }) {
     try {
       const payload = { status: values.status, expected_version: process.version };
       if (values.message.trim()) payload.candidate_feedback = { message: values.message.trim(), reason_code: values.reason_code };
-      await api.put(`/applications/${applicationId}/status`, payload);
+      await api.put(`/applications/${applicationId}/status`, payload, { __quiet: true });
       setProcess((await api.get(`/workflow/applications/${applicationId}`)).data);
       setMessage("Avance comunicado y guardado en el historial.");
       return true;
@@ -44,8 +45,8 @@ function ProcessController({ applicationId }) {
 
   return <div className="process-page space-y-5">
     <PageHeader kicker="Seguimiento transparente" title={process?.job_title || "Tu proceso de selección"} description={user.role === "company" ? "Consulta el avance, prepara la entrevista y comunica el siguiente paso." : "Consulta el estado y los próximos pasos de tu postulación."} />
-    {error && <p role="alert" className="ui-inline-notice is-error">{error}</p>}
-    {message && <p role="status" className="ui-inline-notice">{message}</p>}
+    {error && <InlineNotice error title="No pudimos actualizar el proceso">{error}</InlineNotice>}
+    {message && <InlineNotice tone="success" title="Proceso actualizado">{message}</InlineNotice>}
     {!process && !error && <p role="status" className="text-sm text-[var(--muted)]">Cargando el proceso…</p>}
     {process && <>
       <ProcessWorkspace process={process} role={user.role}

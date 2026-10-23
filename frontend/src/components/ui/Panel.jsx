@@ -6,7 +6,7 @@ export function Panel({ title, description, actions, children, className = "", .
 }
 
 export function PanelActions({ children, className = "" }) {
-  return <footer className={`ui-panel-actions ${className}`}>{children}</footer>;
+  return <footer className={`ui-panel-actions ui-card-actions ${className}`}>{children}</footer>;
 }
 
 export function WorkspaceTabs({ items, value, onChange, label, id }) {
@@ -19,6 +19,10 @@ export function WorkspaceTabs({ items, value, onChange, label, id }) {
   }}>{items.map(([key, text, Icon]) => <button key={key} id={`${id}-tab-${key}`} role="tab" type="button" aria-selected={value === key} aria-controls={`${id}-panel-${key}`} tabIndex={value === key ? 0 : -1} onClick={() => onChange(key)}>{Icon && <Icon size={17} />}{text}</button>)}</div>;
 }
 
-export function InlineNotice({ children, error = false }) {
-  return <div className={`ui-inline-notice${error ? " is-error" : ""}`} role={error ? "alert" : "status"}>{children}</div>;
+export function InlineNotice({ children, error = false, tone = error ? "error" : "info", title, actions, onDismiss }) {
+  return <div className={`ui-inline-notice is-${tone}`} role={tone === "error" ? "alert" : "status"}>
+    <div className="ui-notice-copy">{title && <strong>{title}</strong>}<div>{children}</div></div>
+    {actions && <div className="ui-notice-actions">{actions}</div>}
+    {onDismiss && <button type="button" className="button-ghost button-sm" onClick={onDismiss} aria-label="Cerrar aviso">×</button>}
+  </div>;
 }

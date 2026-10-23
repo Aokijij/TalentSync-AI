@@ -86,3 +86,14 @@ Las verificaciones específicas incluyen permisos de descarga, ausencia de PDF a
 - Correo externo, OAuth/SSO, calendarios sincronizados y otros proveedores requieren cuentas y configuración autorizadas. Las pruebas de adaptadores o transportes locales no equivalen a comprobar una entrega o conexión externa real.
 - Las pruebas de concurrencia usan datos sintéticos. No representan una certificación de capacidad o una auditoría de producción.
 - No se publicaron cambios ni se alteraron cuentas personales para realizar esta revisión.
+
+
+## Consolidación de componentes, regresión visual e integraciones
+
+Filtros de formación y radar, tarjetas de vacantes y cursos, pies de acciones y avisos utilizan geometría compartida. Se retiran reglas antiguas de tarjetas compactas y el inventario de conexiones que duplicaba el servicio vigente.
+
+Las confirmaciones usan un diálogo nativo para funcionar sobre otros modales. El foco inicial está en cancelar; Escape conserva la edición. Los avisos distinguen tono, permiten cierre y pausa, evitan mensajes repetidos y evitan el cierre por tiempo de los errores. Perfil permite cancelar ediciones con confirmación y recuperar los datos guardados; un fallo conserva los campos. La protección de recarga/cierre no bloquea toda navegación interna de la aplicación.
+
+El panel de conexiones muestra hechos separados: configuración, último intento, última operación correcta, problema registrado y antigüedad. YouTube, Microsoft Learn, SENA, Sapiencia y catálogos de vacantes aportan observaciones persistidas durante operaciones autorizadas. Los errores se traducen a categorías públicas; no se guardan tokens, respuestas del proveedor ni datos personales. Los proveedores sin observaciones continúan como sin comprobar. Consultar estado no consume cuotas. La aceptación del transporte de correo no se presenta como entrega.
+
+Se incorporan 36 referencias visuales versionadas y un trabajo Windows de CI con Chromium fijado por Playwright. Cubren componentes, confirmaciones y avisos en tres roles, dos temas y dos tamaños; los recorridos funcionales conservan su cobertura de cuatro anchos. Los resultados locales de esta revisión se guardan en `.local/verification/platform-polish.json`. Esto no demuestra una ejecución del CI remoto ni una conexión externa real.

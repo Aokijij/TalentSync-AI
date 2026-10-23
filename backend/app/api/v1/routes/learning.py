@@ -21,6 +21,7 @@ from app.api.schemas.learning import (
 )
 from app.application.use_cases import learning as cases
 from app.application.use_cases import learning_resources, learning_sources
+from app.application.use_cases.integration_observations import observed
 from app.domain.entities.enums import UserRole
 
 router = APIRouter()
@@ -88,8 +89,8 @@ def youtube_status(user=Depends(admin), gateway=Depends(get_youtube_learning)):
 
 
 @router.post("/admin/learning/sources/youtube/preview")
-def youtube_preview(payload: YouTubePreview, user=Depends(admin), gateway=Depends(get_youtube_learning)):
-    return gateway.preview(payload.url, actor_id=user.id)
+def youtube_preview(payload: YouTubePreview, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_youtube_learning)):
+    return observed(db, "youtube", lambda: gateway.preview(payload.url, actor_id=user.id))
 
 
 @router.post("/admin/learning/sources/youtube/import")
@@ -111,7 +112,7 @@ def youtube_import(payload: YouTubeImport, user=Depends(admin), db=Depends(get_u
 
 @router.post("/admin/learning/sources/sena/preview")
 def preview_sena(payload: PublicPreview, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_public_learning_catalog)):
-    return learning_sources.preview_sena(db, user, gateway, payload.query, force=payload.refresh)
+    return observed(db, "sena", lambda: learning_sources.preview_sena(db, user, gateway, payload.query, force=payload.refresh))
 
 
 @router.post("/admin/learning/sources/sena/import")
@@ -123,8 +124,8 @@ def import_sena(payload: PublicImport, user=Depends(admin), db=Depends(get_unit_
 @router.post("/admin/learning/sources/public/refresh")
 def refresh_public(payload: PublicRefresh, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_public_learning_catalog)):
     if payload.provider == "sapiencia":
-        return learning_sources.refresh_sapiencia(db, user, gateway, force=True)
-    return learning_sources.refresh_sena(db, user, gateway, limit=5)
+        return observed(db, "sapiencia", lambda: learning_sources.refresh_sapiencia(db, user, gateway, force=True))
+    return observed(db, "sena", lambda: learning_sources.refresh_sena(db, user, gateway, limit=5))
 
 
 @router.get("/learning/opportunities")
@@ -155,8 +156,8 @@ def configured_learning_sources(user=Depends(admin), gateway=Depends(get_learn_c
 
 
 @router.post("/admin/learning/sources/microsoft-learn/preview")
-def preview_learn(payload: LearnPreview, user=Depends(admin), gateway=Depends(get_learn_catalog)):
-    return gateway.preview(**payload.model_dump(), actor_id=user.id)
+def preview_learn(payload: LearnPreview, user=Depends(admin), db=Depends(get_unit_of_work), gateway=Depends(get_learn_catalog)):
+    return observed(db, "microsoft_learn", lambda: gateway.preview(**payload.model_dump(), actor_id=user.id))
 
 
 @router.post("/admin/learning/sources/microsoft-learn/import")

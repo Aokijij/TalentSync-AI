@@ -1,3 +1,5 @@
+import { useFeedback } from "../contexts/FeedbackContext.jsx";
+import { InlineNotice } from "../components/ui/Panel.jsx";
 import { ProfileFormFeedback, SectionFieldIssues } from "../components/ProfileFormFeedback.jsx";
 import { PrivateProfileDetails } from "../components/PrivateProfileDetails.jsx";
 import { profileValidation, profileServerErrors, focusProfileError } from "../utils/profileValidation.js";
@@ -18,7 +20,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ProfileEvidence } from "../components/ProfileEvidence.jsx";
 import { ProfileLinks } from "../components/ProfileLinks.jsx";
 import { profileLinksPayload } from "../utils/profileLinks.js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import {
   BookOpen,
@@ -93,6 +95,9 @@ const normalize = (data) => ({
 
 export function ProfilePage() {
   const { refreshUser } = useAuth();
+  const { confirm } = useFeedback();
+  const saved = useRef(null);
+  const [savingProfile, setSavingProfile] = useState(false);
   const location = useLocation();
   const [coachOpen, setCoachOpen] = useState(false);
 
@@ -134,7 +139,8 @@ export function ProfilePage() {
   useEffect(() => {
     Promise.all([api.get("/profiles/me"), api.get("/auth/me")])
       .then(([profileResponse, accountResponse]) => {
-        setProfile(normalize(profileResponse.data));
+        saved.current = { profile: normalize(profileResponse.data), name: accountResponse.data.name || "Candidato" };
+        setProfile(saved.current.profile);
         setEmail(accountResponse.data.email || "");
         setName(accountResponse.data.name || "Candidato");
       })
@@ -147,6 +153,25 @@ export function ProfilePage() {
     else if (target === "preferencias") { setCoachTarget(target); }
     else if (["evidencias", "profile-evidence"].includes(target)) { setCoachTarget("profile-evidence"); }
   }, [Boolean(profile), location.hash]);
+  useEffect(() => { if (profile && !editing) saved.current = { profile, name }; }, [profile, name, editing]);
+  const dirty = editing && saved.current && JSON.stringify({ profile, name }) !== JSON.stringify(saved.current);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  async function cancelEditing() {
+    if (savingProfile) return;
+    if (dirty && !await confirm({ title: "Descartar los cambios del perfil", description: "Se perderán las ediciones que aún no has guardado. Los archivos y cambios ya guardados se conservarán.", tone: "warning", confirmLabel: "Descartar cambios", cancelLabel: "Seguir editando" })) return;
+    setSavingProfile(true); setError("");
+    try {
+      const [profileResponse, accountResponse] = await Promise.all([api.get("/profiles/me"), api.get("/auth/me")]);
+      saved.current = { profile: normalize(profileResponse.data), name: accountResponse.data.name || "Candidato" };
+      setProfile(saved.current.profile); setName(saved.current.name); setEditing(false); setFieldErrors({}); setMessage("");
+    } catch (failure) { setError(getApiErrorMessage(failure, "No pudimos recuperar el perfil guardado. Tus ediciones siguen aquí.")); }
+    finally { setSavingProfile(false); }
+  }
   const update = (key, value) => { clearFieldError(key); setProfile((p) => ({ ...p, [key]: value })); };
   const updateItem = (key, index, field, value) =>
     update(
@@ -160,23 +185,26 @@ export function ProfilePage() {
     setSkill("");
   };
   async function save() {
+    if (savingProfile) return null;
     setError("");
     const issues = profileValidation(profile, name);
     setFieldErrors(issues);
     if (Object.keys(issues).length) { requestAnimationFrame(() => focusProfileError(issues)); return null; }
+    setSavingProfile(true);
     try {
       const { data } = await api.put("/profiles/me", { ...profile, name, links: profileLinksPayload(profile.links), mobility: { ...profile.mobility, commuting_cities: (profile.mobility?.commuting_cities || []).map((value) => value.trim()).filter(Boolean) } }, { __quiet: true });
-      setProfile(normalize(data));
-      await refreshUser();
+      saved.current = { profile: normalize(data), name };
+      setProfile(saved.current.profile);
       setEditing(false);
       setMessage("Hoja de vida actualizada correctamente");
+      await refreshUser().catch(() => setMessage("Perfil guardado. Recarga la página si la cabecera aún muestra los datos anteriores."));
       return data;
     } catch (requestError) {
       const issues = profileServerErrors(requestError);
       if (Object.keys(issues).length) { setFieldErrors(issues); requestAnimationFrame(() => focusProfileError(issues)); return null; }
       setError(requestError instanceof Error && !requestError.isAxiosError ? requestError.message : getApiErrorMessage(requestError, "No fue posible actualizar la hoja de vida"));
       return null;
-    }
+    } finally { setSavingProfile(false); }
   }
   async function upload(event) {
     const file = event.target.files?.[0];
@@ -187,8 +215,9 @@ export function ProfilePage() {
     setError("");
     setMessage("Analizando PDF y preparando recomendaciones para tu hoja de vida...");
     try {
-      const { data } = await api.post("/profiles/me/cv", form, { timeout: 190000 });
-      setProfile(normalize(data));
+      const { data } = await api.post("/profiles/me/cv", form, { timeout: 190000, __quiet: true });
+      saved.current = { profile: normalize(data), name };
+      setProfile(saved.current.profile);
       setEditing(true);
       setMessage(
         `CV analizado: ${data.experiences?.length ?? 0} experiencias, ${data.educations?.length ?? 0} estudios y ${data.skills?.length ?? 0} habilidades. La extracción se ha guardado. Revisa y corrige los campos detectados.`,
@@ -207,7 +236,8 @@ export function ProfilePage() {
     form.append("file", file);
     setError("");
     try {
-      const { data } = await api.post("/profiles/me/photo", form);
+      const { data } = await api.post("/profiles/me/photo", form, { __quiet: true });
+      if (saved.current) saved.current = { ...saved.current, profile: { ...saved.current.profile, photo_url: data.photo_url } };
       setProfile((current) => ({ ...current, photo_url: data.photo_url }));
       setPhotoVersion((current) => current + 1);
       setEditing(true);
@@ -227,7 +257,7 @@ export function ProfilePage() {
       </section>
     );
   return (
-    <ProfileFormFeedback errors={fieldErrors} clearError={clearFieldError}><div className={`profile-page space-y-6 ${editing ? "profile-is-editing" : ""}`}>
+    <ProfileFormFeedback errors={fieldErrors} clearError={clearFieldError}><fieldset disabled={savingProfile || uploadingCv} aria-label="Perfil profesional" className={`profile-page min-w-0 space-y-6 ${editing ? "profile-is-editing" : ""}`}>
       <header className="profile-page-heading">
         <div><h1>Mi perfil</h1></div>
         <div className="profile-heading-actions"><button type="button" className="profile-coach-launch" aria-haspopup="dialog" onClick={() => setCoachOpen(true)}><span><Sparkles size={22} /></span><span><strong>Ideas para mejorar tu hoja de vida</strong><small>Tu ayuda de redacción, a un clic</small></span></button><span className="profile-mode"><span />{editing ? "Editando tu perfil" : "Tu perfil guardado"}</span></div>
@@ -235,14 +265,14 @@ export function ProfilePage() {
       <section className="profile-toolbar print-hidden">
         <ProfileCompletionRing profile={profile} variant="summary" onReview={() => setCompletionOpen(true)} />
           <div className="profile-toolbar-actions">
-            <label className="button-secondary cursor-pointer hover-lift pressed focus-ring" role="button" tabIndex={uploadingCv ? -1 : 0} aria-disabled={uploadingCv} onKeyDown={(event) => { if (!uploadingCv && ["Enter", " "].includes(event.key)) { event.preventDefault(); event.currentTarget.querySelector("input").click(); } }}>
+            <label className="button-secondary cursor-pointer hover-lift pressed focus-ring" role="button" tabIndex={uploadingCv ? -1 : 0} aria-disabled={uploadingCv || savingProfile} onKeyDown={(event) => { if (!uploadingCv && ["Enter", " "].includes(event.key)) { event.preventDefault(); event.currentTarget.querySelector("input").click(); } }}>
               <Upload size={16} />
               {uploadingCv ? "Analizando CV…" : "Subir CV"}
               <input
                 className="hidden"
                 type="file"
                 accept="application/pdf"
-                disabled={uploadingCv}
+                disabled={uploadingCv || savingProfile}
                 onChange={upload}
               />
             </label>
@@ -257,23 +287,19 @@ export function ProfilePage() {
             <button
               className="profile-edit-action focus-ring"
               type="button"
-              disabled={uploadingCv}
+              disabled={uploadingCv || savingProfile}
               onClick={() =>
                 editing ? save() : setEditing(true)
               }
             >
               {editing ? <Save size={16} /> : <Edit3 size={16} />}
-              {editing ? "Guardar cambios" : "Editar perfil"}
+              {savingProfile ? "Procesando…" : editing ? "Guardar cambios" : "Editar perfil"}
             </button>
+            {editing && <button className="button-secondary" type="button" disabled={savingProfile || uploadingCv} onClick={cancelEditing}>Cancelar edición</button>}
           </div>
       </section>
-      {(message || error) && (
-        <p
-          className={`rounded-[var(--radius-lg)] border px-4 py-3 text-sm ${error ? "border-[var(--error)] bg-[var(--error)]/10 text-[var(--error)]" : "border-[var(--success)] bg-[var(--success)]/10 text-[var(--success)]"}`}
-        >
-          {error || message}
-        </p>
-      )}
+      {dirty && <InlineNotice tone="warning" title="Tienes cambios sin guardar">Pulsa Guardar cambios para conservar las ediciones del perfil.</InlineNotice>}
+      {(message || error) && <InlineNotice error={Boolean(error)} tone={error ? "error" : uploadingCv || editing ? "info" : "success"}>{error || message}</InlineNotice>}
       <ProfileIdentity profile={profile} name={name} email={email} editing={editing} photoVersion={photoVersion} onNameChange={setName} onChange={(patch) => setProfile((current) => ({ ...current, ...patch }))} />
       <Section id="profile-private" icon={LockKeyhole} title="Datos personales"><PrivateProfileDetails birthDate={profile.birth_date} identification={profile.identification} visibility={profile.personal_visibility} editing={editing} onChange={(patch) => { Object.keys(patch).forEach(clearFieldError); setProfile((current) => ({ ...current, ...patch })); }} /></Section>
       <ResumeExportDialog open={exportOpen} onClose={() => setExportOpen(false)} profile={profile} name={name} photoVersion={photoVersion} onPhoto={uploadPhoto} onDesignSaved={(design) => setProfile((current) => ({ ...current, ...design }))} onEdit={() => editFromCoach("profile-experiences")} />
@@ -450,7 +476,7 @@ export function ProfilePage() {
       )}
       {editing && <p className="surface-card p-5 text-sm text-[var(--muted)]">Guarda tus cambios para gestionar las evidencias de tu perfil.</p>}
       {!editing && <div id="profile-evidence"><ProfileEvidence profile={profile} onChanged={async () => setProfile(normalize((await api.get("/profiles/me")).data))} /></div>}
-    </div></ProfileFormFeedback>
+    </fieldset></ProfileFormFeedback>
   );
 }
 function Section({ id, icon: Icon, title, children }) {

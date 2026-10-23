@@ -1,7 +1,7 @@
 import axios from "axios";
 import { validationMessage } from "./errors.js";
 import { resolveApiBase } from "./config.js";
-import { shouldNotifyMutation } from "./feedback.js";
+import { shouldNotifyMutation, mutationMessage } from "./feedback.js";
 
 export const api = axios.create({
   baseURL: resolveApiBase(import.meta.env.VITE_API_URL, window.location),
@@ -32,7 +32,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     if (shouldNotifyMutation(response.config)) {
-      window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { message: response.data?.message || (response.config.method === "delete" ? "Acción completada. La información se ha actualizado." : "Cambios guardados correctamente.") } }));
+      window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { message: mutationMessage(response.config, response.data) } }));
     }
     return response;
   },
@@ -57,7 +57,7 @@ api.interceptors.response.use(
       localStorage.removeItem("talentsync_token");
       window.dispatchEvent(new CustomEvent("talentsync:session-expired"));
     }
-    if (shouldNotifyMutation(config) && error.code !== "ERR_CANCELED") window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { error: true, message: getApiErrorMessage(error, "No se pudo guardar el cambio. Intenta de nuevo.") } }));
+    if (shouldNotifyMutation(config) && error.code !== "ERR_CANCELED") window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { error: true, message: getApiErrorMessage(error, config.__errorMessage || "No se completó la operación. Revisa los datos e inténtalo de nuevo.") } }));
     return Promise.reject(error);
   },
 );

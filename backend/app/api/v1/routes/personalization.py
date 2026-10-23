@@ -9,6 +9,7 @@ from app.api.deps import (
     require_roles,
 )
 from app.application.use_cases import personalization as cases
+from app.application.use_cases.integration_observations import observations
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
 from app.domain.services.integration_readiness import integration_readiness
@@ -44,8 +45,10 @@ def status(user=Depends(admin), db=Depends(get_unit_of_work), nlp=Depends(get_te
     result["integrations"] = integration_readiness(
         neural_active=getattr(nlp, "match_method", "").startswith("local-sentence-transformer:"),
         local_mail=settings.local_mail_enabled, smtp=settings.smtp_enabled,
-        resend=settings.resend_enabled, learn=settings.learn_enabled, github_projects=settings.github_project_analysis_enabled,
+        resend=settings.resend_enabled, learn=bool(settings.learn_enabled and settings.learn_tenant_id and settings.learn_client_id and settings.learn_client_secret), github_projects=settings.github_project_analysis_enabled,
+        youtube=bool(settings.youtube_learning_enabled and settings.youtube_api_key), public_learning=settings.public_learning_refresh_enabled, observations=observations(db),
         codewars=settings.codewars_enabled,
+        catalog_providers={"jsearch": bool(settings.jsearch_api_key), "adzuna": bool(settings.adzuna_app_id and settings.adzuna_app_key), "jooble": bool(settings.jooble_api_key)},
         providers={key: gateway.configured(key) for key in ("google", "github", "linkedin", "workspace", "entra")},
         catalog=bool(settings.jsearch_api_key or settings.jooble_api_key or settings.adzuna_app_id and settings.adzuna_app_key))
     result["mfa_review_active"] = settings.mfa_review_active

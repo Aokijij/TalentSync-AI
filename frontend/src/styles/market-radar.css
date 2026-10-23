@@ -18,7 +18,7 @@
 .market-radar h2 { font-size:26px; font-weight:750; margin:3px 0; }
 .market-radar p,.market-radar small { color:var(--muted); line-height:1.65; }
 .market-filters,.market-panel { border:1px solid var(--line); border-radius:20px; padding:24px; background:var(--surface); }
-.market-filter-main { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr); align-items:start; gap:16px; }
+.market-filter-main { grid-template-columns:minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr); }
 .market-filter-main label,.market-participation-fields label { display:grid; align-content:start; gap:7px; min-width:0; font-size:13px; font-weight:650; }
 .market-filter-main .city-combobox>label { font-size:13px; color:var(--ink); font-weight:650; }
 .market-primary-filters.has-city { grid-template-columns:minmax(0,1.35fr) minmax(0,.8fr) minmax(0,.9fr) minmax(0,1.15fr); }

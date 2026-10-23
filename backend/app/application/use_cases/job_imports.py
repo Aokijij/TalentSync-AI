@@ -11,6 +11,9 @@ from openpyxl import load_workbook
 from app.application.errors import CatalogProviderError, UseCaseError
 from app.application.ports.services import JobCatalog, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
+from app.application.use_cases.integration_observations import (
+    record as record_integration,
+)
 from app.domain.entities.catalog import CatalogJob
 from app.domain.entities.job_sectors import JOB_SECTORS
 from app.domain.entities.records import User
@@ -300,7 +303,9 @@ def sync_job_catalog(
             if not result.jobs or len(rows) >= result.total:
                 break
     except CatalogProviderError as error:
+        record_integration(db, source_name.casefold(), "provider_error")
         raise UseCaseError(status_code=502, detail=str(error)) from error
+    record_integration(db, source_name.casefold())
 
     if not rows:
         raise UseCaseError(

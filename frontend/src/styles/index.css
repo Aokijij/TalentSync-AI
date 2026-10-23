@@ -996,7 +996,6 @@ html[data-theme="dark"] .auth-stage {
 .company-profile-cover { background: linear-gradient(120deg, #281b39, #62407c 65%, #9262b1); }
 
 /* Interaction and review workspaces */
-.feedback-toast { position: fixed; z-index: 95; bottom: 1.25rem; right: 1.25rem; width: min(460px, calc(100vw - 2.5rem)); display: flex; align-items: center; gap: .9rem; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; color: var(--ink); background: var(--surface); box-shadow: 0 12px 45px #0004; animation: fade-in .2s ease-out; }
 .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 45; margin-top: .4rem; padding: .4rem; max-height: 260px; overflow: auto; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; box-shadow: 0 14px 35px #0003; }
 .autocomplete-list li { padding: .7rem; border-radius: 8px; cursor: pointer; font-size: .85rem; }
 .autocomplete-list li:hover, .autocomplete-list li.selected { background: var(--surface-subtle); color: var(--accent); }
@@ -1084,10 +1083,6 @@ html[data-theme="dark"] .role-admin .button-primary { color: #302211; }
 .skill-evidence-chip { border: 1px solid var(--line); border-radius: 9px; padding: .55rem .7rem; font-size: .75rem; background: var(--surface-subtle); }
 .skill-evidence-chip small { display: block; font-size: .65rem; margin-top: .2rem; color: var(--muted); }
 .skill-evidence-chip.covered { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
-.learning-resource-compact { display: flex; align-items: start; flex-wrap: wrap; gap: .8rem; border: 1px solid var(--line); border-radius: 12px; padding: 1rem; background: var(--surface); }
-.learning-resource-compact .learning-area-icon { width: 34px; height: 34px; border-radius: 10px; }
-.learning-resource-compact .learning-area-icon svg { width: 18px; }
-.learning-resource-compact .button-sm { align-self: center; }
 @media (max-width: 640px) {
   .catalog-guide, .catalog-fields { grid-template-columns: 1fr; }
   .trust-summary { padding: 1rem; }
@@ -1994,3 +1989,6 @@ html[data-theme="dark"] .date-picker-days button[aria-pressed="true"] { color:#0
 
 @media(max-width:1000px) { .candidate-profile-hero > .candidate-profile-score { border-left:0; border-top:1px solid var(--line); } }
 @media(max-width:600px) { .candidate-profile-hero > .profile-identity { padding:1.1rem; } .candidate-profile-hero .profile-name { font-size:1.2rem; } .candidate-profile-contact { gap:.65rem 1rem; } }
+
+/* Error buttons retain readable text on the lighter dark-theme error color. */
+html[data-theme="dark"] .button-danger { color:#300b15; }

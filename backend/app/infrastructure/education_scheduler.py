@@ -2,6 +2,7 @@
 import asyncio
 import logging
 
+from app.application.use_cases.integration_observations import observed
 from app.application.use_cases.learning_sources import refresh_sapiencia, refresh_sena
 from app.domain.entities.enums import UserRole
 from app.infrastructure.database.models import User
@@ -19,8 +20,8 @@ def refresh_cycle():
         if actor is None:
             return
         db = SqlAlchemyUnitOfWork(session)
-        refresh_sena(db, actor, gateway, limit=40, budget_seconds=45)
-        refresh_sapiencia(db, actor, gateway)
+        observed(db, "sena", lambda: refresh_sena(db, actor, gateway, limit=40, budget_seconds=45))
+        observed(db, "sapiencia", lambda: refresh_sapiencia(db, actor, gateway))
 
 
 async def periodic_education(stop_event):

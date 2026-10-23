@@ -123,3 +123,12 @@ Breken y Figma no están conectados. Las referencias de diseño se utilizan para
 Las pruebas de lógica, permisos y compilación se complementan con una suite visual de componentes: **24 casos ejecutados con Chromium**, en tres roles, dos temas y cuatro tamaños. Se inspeccionaron capturas representativas y se corrigieron detalles de espaciado y datos ausentes. Esta comprobación con datos ficticios no sustituye una revisión completa de todas las pantallas con cuentas autenticadas ni una comparación automática con capturas de referencia.
 
 La revisión posterior recorrió **140 vistas autenticadas y 18 flujos funcionales** con el frontend y la API locales completos, sobre una copia aislada y cuentas de demostración. Incluye entrega de retos, conservación de respuestas, PDF del CV, edición de ofertas, borradores privados y comunicación de avances entre empresa y candidato. El alcance y los resultados se describen en `REVISION_PLATAFORMA.md`.
+
+
+## Avisos, confirmaciones y estado de conexiones
+
+- Los avisos distinguen información, éxito, advertencia y error. Los errores no desaparecen automáticamente por tiempo; los avisos temporales pausan su cierre mientras tienen el foco o el puntero. Los cálculos, búsquedas y vistas previas no anuncian que se guardaron cambios.
+- Las confirmaciones aparecen encima de otros modales, permiten volver a la edición y enfocan primero la opción de cancelar. Las eliminaciones tienen una presentación distinta y describen su alcance.
+- Mi perfil indica cuándo hay ediciones pendientes, evita envíos simultáneos y ofrece Cancelar edición. Descartar recupera el perfil guardado; un fallo al guardar conserva los campos. Al recargar o cerrar una pestaña con cambios pendientes se utiliza el aviso del navegador.
+- Motor e integraciones permite buscar y filtrar conexiones. Separa configuración de resultados: último intento, última operación correcta, error y registros de más de 24 horas. Las consultas de fuentes educativas y sincronizaciones de vacantes registran resultados sanitizados desde esta versión; no se reconstruye historial inexistente. Las operaciones pueden usar caché, y consultar el panel no ejecuta pruebas externas.
+- La regresión visual compara 36 capturas de componentes compartidos. Su ejecución y revisión se describen en `frontend/quality/README.md`.

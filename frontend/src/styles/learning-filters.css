@@ -6,9 +6,9 @@
 .course-filter-reset { display:inline-flex; align-items:center; gap:.4rem; margin-left:auto; padding:.45rem .6rem; border:1px solid var(--line); border-radius:7px; background:var(--surface); color:var(--muted); font-size:.7rem; white-space:nowrap; }
 .course-filter-reset > span { color:var(--accent); font-weight:700; }
 .course-filter-main { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr) minmax(0,1.15fr); align-items:end; gap:1rem; padding:1rem 1.1rem; }
-.course-filter-field { display:grid; gap:.5rem; min-width:0; }
+
 .course-filter-field > span { color:var(--muted); font-size:.72rem; font-weight:600; }
-.course-filter-field .field-control { width:100%; min-width:0; min-height:44px; font-size:.8rem; font-weight:500; border-radius:9px; margin:0; }
+.course-filter-field .field-control { border-radius:9px; }
 .course-filter-search > div { position:relative; }
 .course-filter-search > div > svg { position:absolute; left:.85rem; top:50%; transform:translateY(-50%); color:var(--accent); pointer-events:none; }
 .course-filter-search .field-control { padding-left:2.5rem; padding-right:2.6rem; }

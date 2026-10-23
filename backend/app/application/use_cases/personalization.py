@@ -86,14 +86,6 @@ def model_status(db, nlp):
     applications = [row for user in db.users.candidates_with_profiles() if not synthetic_email(user.email) for row in db.applications.for_user(user.id)]
     return {"version": feature_version(nlp), "text_method": getattr(nlp, "match_method", "lexical-hashing-v1"),
         "training_data": training_gate(rows), "features": FEATURES, "minimum_data": {"rows": 100, "users": 20, "jobs": 10, "each_label": 20},
-        "integrations": [
-            {"name": "Modelo neuronal local", "status": "Activo" if getattr(nlp, "match_method", "").startswith("local-sentence-transformer:") else "Adaptador disponible; faltan dependencia y pesos locales"},
-            {"name": "Acceso social de candidatos", "status": "Adaptadores Google, GitHub y LinkedIn disponibles; requieren credenciales OAuth. LinkedIn exige origen HTTPS. Consulta el login para ver cuáles están activos."},
-            {"name": "Catálogos de cursos y afiliación", "status": "Catálogo local administrable e importación JSON disponibles; patrocinios visibles sin alterar ranking. APIs, compras y acuerdos externos pendientes."},
-            {"name": "SSO corporativo del administrador", "status": "Google Workspace y Microsoft Entra ID disponibles con identidades aprovisionadas y MFA; requieren credenciales y selección del proveedor."},
-            {"name": "Verificación oficial de empresas", "status": "Revisión manual local; falta proveedor de registros"},
-            {"name": "Retos con ejecución", "status": "SQL restringido en memoria disponible en Aprendizaje. Otros lenguajes requieren un ejecutor aislado adicional."},
-        ],
         "observed_processes": len(applications), "processes_advanced_to_interview": sum(row.status == "technical_interview" or any(event.details.get("status") == "technical_interview" for event in db.events.for_entity("application", row.id)) for row in applications),
         "experiments": [{"id": row.id, "version": row.version, "status": row.status, "metrics": row.metrics, "created_at": row.created_at} for row in db.personalization.experiments()],
         "notice": "Entrena interés declarado, no probabilidad de contratación. Los experimentos se evalúan fuera del ranking y no deciden postulaciones."}

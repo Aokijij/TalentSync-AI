@@ -11,3 +11,11 @@ body { margin:0; background:var(--canvas); color:var(--ink); }
 @media(max-width:900px) { .quality-vacancy-grid { grid-template-columns:1fr; } }
 @media(max-width:600px) { .quality-shell { padding:16px; gap:20px; } .quality-course-grid { grid-template-columns:1fr; } }
 .quality-shell { padding-bottom:240px; }
+
+.system-review { display:grid; gap:1.25rem; min-width:0; }
+.system-review-actions { display:flex; flex-wrap:wrap; gap:.65rem; }
+.system-review-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; align-items:start; }
+.system-review-editor { display:grid; gap:1rem; padding:1.25rem; }
+@media(max-width:640px) { .system-review-cards { grid-template-columns:1fr; } }
+
+.system-review-cards .learning-course-card { height:auto; }

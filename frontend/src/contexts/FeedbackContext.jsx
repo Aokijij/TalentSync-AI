@@ -1,32 +1,62 @@
 import { useLocation } from "react-router-dom";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { CheckCircle2, AlertCircle, X } from "lucide-react";
+import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from "lucide-react";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
+import "../styles/feedback.css";
 
+const roleScope = () => ["role-candidate", "role-company", "role-admin"].find((role) => document.activeElement?.closest(`.${role}`)) || "role-candidate";
 const FeedbackContext = createContext(null);
 export const useFeedback = () => useContext(FeedbackContext);
 
+function FeedbackToast({ notice, onDismiss }) {
+  const [paused, setPaused] = useState(false);
+  const remaining = useRef(notice.duration ?? (notice.tone === "error" ? 0 : 6500));
+  useEffect(() => {
+    if (paused || remaining.current <= 0) return;
+    const start = Date.now(), timer = setTimeout(() => onDismiss(notice.id), remaining.current);
+    return () => { clearTimeout(timer); remaining.current = Math.max(1, remaining.current - (Date.now() - start)); };
+  }, [paused, notice.id, onDismiss]);
+  const Icon = { success: CheckCircle2, error: AlertCircle, warning: AlertTriangle, info: Info }[notice.tone];
+  return <div className={`feedback-toast ${notice.scope}`} data-tone={notice.tone} role={notice.tone === "error" ? "alert" : "status"}
+    onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
+    <Icon size={21} /><div className="feedback-toast-copy"><strong>{notice.title || { success: "Listo", error: "No se pudo completar", warning: "Revisa antes de continuar", info: "Información" }[notice.tone]}</strong><p>{notice.message}</p></div>
+    <button type="button" aria-label="Cerrar aviso" onClick={() => onDismiss(notice.id)}><X size={16} /></button>
+  </div>;
+}
+
 export function FeedbackProvider({ children }) {
   const location = useLocation();
-  const [notice, setNotice] = useState(null), [dialog, setDialog] = useState(null);
-  useEffect(() => { setNotice(null); }, [location.pathname]);
-  const pending = useRef(null);
-  const notify = useCallback((message, error = false) => setNotice({ message, error, at: Date.now() }), []);
+  const [notices, setNotices] = useState([]), [dialog, setDialog] = useState(null);
+  const sequence = useRef(0), pending = useRef([]);
+  const dismiss = useCallback((id) => setNotices((current) => current.filter((notice) => notice.id !== id)), []);
+  const notify = useCallback((message, options = {}) => {
+    if (typeof message !== "string" || !message.trim()) return;
+    const values = typeof options === "boolean" ? { tone: options ? "error" : "success" } : options;
+    const tone = ["success", "error", "warning", "info"].includes(values.tone) ? values.tone : "success";
+    const id = ++sequence.current;
+    setNotices((current) => [...current.filter((notice) => notice.message !== message || notice.tone !== tone), { ...values, tone, message, id, scope: roleScope() }].slice(-3));
+  }, []);
   const confirm = useCallback((options) => new Promise((resolve) => {
-    pending.current?.(false); pending.current = resolve; setDialog(options);
+    const scoped = { ...options, className: roleScope() };
+    pending.current.push({ options: scoped, resolve });
+    if (pending.current.length === 1) setDialog(scoped);
   }), []);
-  const resolve = (answer) => { pending.current?.(answer); pending.current = null; setDialog(null); };
+  const resolve = useCallback((answer) => {
+    pending.current.shift()?.resolve(answer);
+    setDialog(pending.current[0]?.options || null);
+  }, []);
   useEffect(() => {
-    const handle = (event) => notify(event.detail.message, event.detail.error);
+    setNotices([]);
+    pending.current.splice(0).forEach((entry) => entry.resolve(false));
+    setDialog(null);
+  }, [location.pathname]);
+  useEffect(() => {
+    const handle = (event) => notify(event.detail?.message, event.detail?.error ? { tone: "error" } : event.detail?.options);
     window.addEventListener("talentsync:feedback", handle);
-    return () => { window.removeEventListener("talentsync:feedback", handle); pending.current?.(false); };
+    return () => { window.removeEventListener("talentsync:feedback", handle); pending.current.splice(0).forEach((entry) => entry.resolve(false)); };
   }, [notify]);
-  useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(null), notice.error ? 10000 : 6000); return () => clearTimeout(timer); }, [notice]);
   return <FeedbackContext.Provider value={{ notify, confirm }}>{children}
-    {notice && <div className="feedback-toast" role={notice.error ? "alert" : "status"} key={notice.at}>
-      {notice.error ? <AlertCircle className="shrink-0 text-[var(--error)]" /> : <CheckCircle2 className="shrink-0 text-[var(--success)]" />}
-      <p className="min-w-0 flex-1 text-sm">{notice.message}</p><button aria-label="Cerrar aviso" onClick={() => setNotice(null)}><X size={18} /></button>
-    </div>}
-    <ConfirmModal open={Boolean(dialog)} {...dialog} onClose={() => resolve(false)} onConfirm={() => resolve(true)} />
+    <div className="feedback-stack" aria-label="Avisos de la aplicación">{notices.map((notice) => <FeedbackToast notice={notice} key={notice.id} onDismiss={dismiss} />)}</div>
+    <ConfirmModal key={dialog?.title || "closed"} open={Boolean(dialog)} {...dialog} onClose={() => resolve(false)} onConfirm={() => resolve(true)} />
   </FeedbackContext.Provider>;
 }
