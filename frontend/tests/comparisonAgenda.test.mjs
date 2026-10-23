@@ -149,9 +149,10 @@ test("editing a saved interview preserves the instant across offsets and incompl
 test("agenda distinguishes loading and failure from an empty calendar and explains manual import", () => {
   const html = render(createElement(InterviewAgenda, { applications: [appointment], now }));
   assert.match(html, /1 cita próxima/);
-  assert.match(html, /Añadir al calendario/);
+  assert.match(html, /Descargar cita/);
   assert.match(html, /recordatorio de 30 minutos/);
-  assert.match(html, /No se sincroniza/);
+  assert.match(html, /copia sin actualizaciones/);
+  assert.match(html, /Google Calendar/);
   assert.match(html, /Duración|duración/);
   const error = render(createElement(InterviewAgenda, { applications: [], now, error: "No pudimos consultar tus procesos" }));
   assert.match(error, /role="alert"/);
@@ -161,5 +162,5 @@ test("agenda distinguishes loading and failure from an empty calendar and explai
   assert.doesNotMatch(loading, /Las próximas citas aparecerán/);
   const closed = render(createElement(ProcessInterview, { process: { ...appointment, status: "hired" }, now }));
   assert.match(closed, /El proceso finalizó/);
-  assert.doesNotMatch(closed, /Añadir al calendario/);
+  assert.doesNotMatch(closed, /Descargar cita/);
 });

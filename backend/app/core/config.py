@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     resend_enabled: bool = False
     resend_api_key: str = ""
     resend_from: str = ""
+    resend_webhook_secret: str = ""
+    account_cleanup_enabled: bool = True
+    account_retention_enabled: bool = False
+    account_retention_days: int = Field(default=90, ge=7, le=365)
+    mail_event_retention_days: int = Field(default=90, ge=7, le=365)
     learn_enabled: bool = False
     learn_tenant_id: str = ""
     learn_client_id: str = ""
@@ -43,6 +48,9 @@ class Settings(BaseSettings):
     oauth_github_client_secret: str = ""
     oauth_google_client_id: str = ""
     oauth_google_client_secret: str = ""
+    calendar_google_client_id: str = ""
+    calendar_google_client_secret: str = ""
+    calendar_sync_enabled: bool = False
     oauth_linkedin_client_id: str = ""
     oauth_linkedin_client_secret: str = ""
     github_project_analysis_enabled: bool = False
@@ -156,6 +164,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def safe_smtp_configuration(self):
+        if self.calendar_sync_enabled and (not self.session_auth_enabled or not self.calendar_google_client_id or not self.calendar_google_client_secret):
+            raise ValueError("Google Calendar requiere sesión de navegador y credenciales OAuth propias")
         if self.resend_enabled:
             if self.smtp_enabled or self.local_mail_enabled:
                 raise ValueError("Selecciona un solo transporte de correo: local, SMTP o Resend")

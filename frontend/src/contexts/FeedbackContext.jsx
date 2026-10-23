@@ -4,7 +4,7 @@ import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from "lucide-react"
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import "../styles/feedback.css";
 
-const roleScope = () => ["role-candidate", "role-company", "role-admin"].find((role) => document.activeElement?.closest(`.${role}`)) || "role-candidate";
+const roleScope = () => ["role-candidate", "role-company", "role-admin"].find((role) => document.activeElement?.closest(`.${role}`) || document.querySelector(`main.${role}, main .${role}`)) || "role-candidate";
 const FeedbackContext = createContext(null);
 export const useFeedback = () => useContext(FeedbackContext);
 
@@ -31,7 +31,7 @@ export function FeedbackProvider({ children }) {
   const dismiss = useCallback((id) => setNotices((current) => current.filter((notice) => notice.id !== id)), []);
   const notify = useCallback((message, options = {}) => {
     if (typeof message !== "string" || !message.trim()) return;
-    const values = typeof options === "boolean" ? { tone: options ? "error" : "success" } : options;
+    const values = typeof options === "boolean" ? { tone: options ? "error" : "success" } : options && typeof options === "object" ? options : {};
     const tone = ["success", "error", "warning", "info"].includes(values.tone) ? values.tone : "success";
     const id = ++sequence.current;
     setNotices((current) => [...current.filter((notice) => notice.message !== message || notice.tone !== tone), { ...values, tone, message, id, scope: roleScope() }].slice(-3));

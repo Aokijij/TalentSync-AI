@@ -17,6 +17,8 @@ def observed(db, provider, operation):
         if failure.status_code == 429 or failure.status_code >= 500:
             record(db, provider, "rate_limit" if failure.status_code == 429 else "provider_error")
         raise
+    if isinstance(result, dict) and "checked" in result and not result.get("checked") and not result.get("failed"):
+        return result  # Nothing was checked; keep the previous observation date.
     partial = isinstance(result, dict) and (result.get("warning") or result.get("failed"))
     record(db, provider, "partial" if partial else "")
     return result

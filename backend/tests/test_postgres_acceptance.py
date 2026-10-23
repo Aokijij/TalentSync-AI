@@ -109,3 +109,33 @@ def test_postgres_journey_uses_migrated_schema_and_real_sessions(browser):
         worker.commit()
         assert worker.accounts.finish_mail(message_id, "recovered-worker", delivery_state="sent", body="")
         worker.commit()
+
+    # The new portability/removal paths use real PostgreSQL constraints too.
+    from types import SimpleNamespace
+
+    from app.application.use_cases import account_data
+    from app.domain.entities.enums import UserRole
+    from app.infrastructure.database.models import (
+        CalendarConnection,
+        CareerCoachState,
+        FileErasureTask,
+        User,
+    )
+    from app.infrastructure.security.accounts import AccountSecurity
+    security = AccountSecurity()
+    with browser.session_factory() as session:
+        worker = SqlAlchemyUnitOfWork(session)
+        person = User(name="Synthetic removal", email="synthetic-removal@example.test", password_hash=security.hash_password("Synthetic-pass-2026!"), role=UserRole.CANDIDATE)
+        session.add(person)
+        session.flush()
+        identifier = person.id
+        session.add(CareerCoachState(user_id=identifier, content={"draft": "synthetic"}))
+        session.add(CalendarConnection(user_id=identifier, refresh_cipher=security.encrypt_secret("synthetic-refresh")))
+        worker.commit()
+        content = account_data.export(worker, person, {"password": "Synthetic-pass-2026!"}, security, SimpleNamespace(export=lambda owner: []))
+        assert content.startswith(b"PK")
+        result = account_data.erase(worker, person, {"password": "Synthetic-pass-2026!", "confirmation": "ELIMINAR"}, security, SimpleNamespace(erase=lambda owner: None))
+        assert not result["files_pending"] and session.get(User, identifier) is None
+        assert session.query(CareerCoachState).filter_by(user_id=identifier).count() == 0
+        assert session.query(CalendarConnection).filter_by(user_id=identifier).count() == 0
+        assert session.get(FileErasureTask, result["receipt"]).owner_id is None

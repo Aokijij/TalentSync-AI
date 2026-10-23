@@ -132,3 +132,12 @@ La revisión posterior recorrió **140 vistas autenticadas y 18 flujos funcional
 - Mi perfil indica cuándo hay ediciones pendientes, evita envíos simultáneos y ofrece Cancelar edición. Descartar recupera el perfil guardado; un fallo al guardar conserva los campos. Al recargar o cerrar una pestaña con cambios pendientes se utiliza el aviso del navegador.
 - Motor e integraciones permite buscar y filtrar conexiones. Separa configuración de resultados: último intento, última operación correcta, error y registros de más de 24 horas. Las consultas de fuentes educativas y sincronizaciones de vacantes registran resultados sanitizados desde esta versión; no se reconstruye historial inexistente. Las operaciones pueden usar caché, y consultar el panel no ejecuta pruebas externas.
 - La regresión visual compara 36 capturas de componentes compartidos. Su ejecución y revisión se describen en `frontend/quality/README.md`.
+
+## Calendario, datos de cuenta y operación
+
+- **Seguridad → Calendario:** autoriza Google Calendar por separado del inicio de sesión. Desde una entrevista, elige duración de la copia y sincroniza; cambios y cancelaciones se actualizan con reintentos. No se añaden invitados ni notas internas. Desconectar conserva los eventos ya copiados en Google. Requiere configurar el cliente OAuth del entorno.
+- **Seguridad → Mis datos:** descarga ZIP con datos propios y CV, o solicita eliminar la cuenta con contraseña, segundo factor si está activo, texto ELIMINAR y confirmación. Los fallos de limpieza de archivos quedan pendientes y se reintentan. Una cuenta propietaria de organización debe transferir propiedad; debe quedar otro administrador.
+- **Administración → Motor e integraciones → Operación y correos:** consulta base, archivos, configuración de Calendar, limpieza, conservación, p95/errores y entrega de correo. Aceptado por el proveedor y entregado son estados distintos; los webhooks firmados de Resend confirman entrega/rebote, SMTP no confirma recepción.
+- **Evaluación de calidad:** [protocolo y herramienta](docs/PROTOCOLO_PILOTO.md) para recorridos, extracción y relevancia con datos sintéticos. El piloto real queda pendiente de consentimiento y muestra autorizada.
+
+[Configuración y límites operativos](docs/OPERACION_Y_DATOS.md). Estas funciones no implican una conexión externa verificada, publicación en nube ni validación con personas reales.

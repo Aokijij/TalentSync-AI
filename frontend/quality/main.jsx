@@ -1,5 +1,6 @@
 import { ProfilePage } from "../src/pages/ProfilePage.jsx";
 import { AuthContext } from "../src/contexts/AuthContext.jsx";
+import { AccountControlsReview } from "./AccountControlsReview.jsx";
 import { SystemReview } from "./SystemReview.jsx";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -24,6 +25,8 @@ import { ChallengeWorkspace, ChallengeResult } from "../src/components/Challenge
 import { ProcessWorkspace } from "../src/components/ProcessWorkspace.jsx";
 import { toggleComparedJob } from "../src/utils/jobComparison.js";
 import "../src/styles/index.css";
+import "../src/styles/review-refinements.css";
+import "../src/styles/catalog-organization.css";
 import "./quality.css";
 
 const params = new URLSearchParams(window.location.search);
@@ -52,6 +55,7 @@ function QualityPage() {
   const [selected, setSelected] = useState([101, 102]);
   const [tab, setTab] = useState("cv"), [filters, setFilters] = useState({}), [answers, setAnswers] = useState({}), [dirty, setDirty] = useState(false), [saved, setSaved] = useState(false);
   const [form, setForm] = useState({ summary: data.profile.summary, experiences: [0], skills: data.profile.skills, style: "modern", includePhoto: false });
+  if (params.has("controls")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><AccountControlsReview /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("cvnames")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><CvNamesExample /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("profile")) return <MemoryRouter><AuthContext.Provider value={{ user: { id: 1, role: "candidate" }, refreshUser: async () => {} }}><FeedbackProvider><main className="quality-shell role-candidate"><ProfilePage /></main></FeedbackProvider></AuthContext.Provider></MemoryRouter>;
   if (params.has("system")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><SystemReview /></main></FeedbackProvider></MemoryRouter>;

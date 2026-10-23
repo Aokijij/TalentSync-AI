@@ -92,3 +92,16 @@ def test_admin_panel_is_read_only_and_preview_observations_persist_without_secre
     assert "PRIVATE" not in response.text
     # GET only reads persisted evidence; never calls the preview method.
     assert client.get(root, headers=admin).json()["integrations"] == response.json()["integrations"]
+
+
+def test_empty_refresh_never_claims_provider_was_checked(client):
+    with client.session_factory() as session:
+        db = SqlAlchemyUnitOfWork(session)
+        observed(db, "sena", lambda: {"checked": 0, "failed": 0})
+        assert "sena" not in observations(db)
+
+
+def test_provider_dates_accept_explicit_utc_offsets():
+    rows = integration_readiness(neural_active=False, local_mail=False, smtp=False, providers={}, catalog=False, youtube=True,
+        now=datetime(2026, 10, 23, 15), observations={"youtube": {"last_success_at": "2026-10-23T09:00:00-05:00", "last_attempt_at": "2026-10-23T09:00:00-05:00", "last_error": ""}})
+    assert next(row for row in rows if row["id"] == "youtube")["operational_state"] == "observed"

@@ -41,6 +41,8 @@ def client(monkeypatch):
     monkeypatch.setattr(settings, "environment", "development")
     monkeypatch.setattr(settings, "session_auth_enabled", False)
     monkeypatch.setattr(settings, "local_mail_enabled", False)
+    monkeypatch.setattr(settings, "account_cleanup_enabled", False)
+    monkeypatch.setattr(settings, "calendar_sync_enabled", False)
     monkeypatch.setattr(settings, "workflow_maintenance_enabled", False)
     monkeypatch.setattr(settings, "model_maintenance_enabled", False)
     monkeypatch.setattr(settings, "match_model_path", "")

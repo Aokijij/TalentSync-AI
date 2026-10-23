@@ -40,6 +40,7 @@ class EventLog(Base):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
@@ -157,6 +158,9 @@ class MailMessage(Base):
     lease_until: Mapped[datetime | None] = mapped_column(DateTime)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    provider_message_id: Mapped[str | None] = mapped_column(String(100), unique=True, index=True)
+    transport_status: Mapped[str | None] = mapped_column(String(24))
+    provider_event_at: Mapped[datetime | None] = mapped_column(DateTime)
     failure_kind: Mapped[str] = mapped_column(String(32), default="", server_default="", nullable=False)
 
 
@@ -853,3 +857,51 @@ class OfferFeedback(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     user: Mapped[User] = relationship(back_populates="offer_feedback")
     job: Mapped[Job] = relationship(back_populates="offer_feedback")
+
+
+class MailDeliveryEvent(Base):
+    __tablename__ = "mail_delivery_events"
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    provider_message_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    happened_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    received_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CalendarConnection(Base):
+    __tablename__ = "calendar_connections"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    refresh_cipher: Mapped[str] = mapped_column(Text, nullable=False)
+    connected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    last_error: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+
+
+class CalendarEvent(Base):
+    __tablename__ = "calendar_events"
+    __table_args__ = (UniqueConstraint("user_id", "application_id", name="uq_calendar_event_owner_application"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    application_id: Mapped[int] = mapped_column(ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, index=True)
+    remote_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    minutes: Mapped[int] = mapped_column(Integer, default=45, nullable=False)
+    application_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime)
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime)
+    error_code: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    lease_token: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class FileErasureTask(Base):
+    __tablename__ = "file_erasure_tasks"
+    lease_token: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    owner_id: Mapped[int | None] = mapped_column(Integer)
+    state: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)

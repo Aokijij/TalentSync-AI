@@ -39,6 +39,12 @@ def prepare_environment(*, testing=False):
                    "YOUTUBE_LEARNING_ENABLED": values.get("YOUTUBE_LEARNING_ENABLED", "false"),
                    "YOUTUBE_API_KEY": values.get("YOUTUBE_API_KEY", ""),
                    "YOUTUBE_LEARNING_DAILY_REQUESTS": values.get("YOUTUBE_LEARNING_DAILY_REQUESTS", "100"),
+                   "CALENDAR_SYNC_ENABLED": values.get("CALENDAR_SYNC_ENABLED", "false"),
+                   "CALENDAR_GOOGLE_CLIENT_ID": values.get("CALENDAR_GOOGLE_CLIENT_ID", ""),
+                   "CALENDAR_GOOGLE_CLIENT_SECRET": values.get("CALENDAR_GOOGLE_CLIENT_SECRET", ""),
+                   "ACCOUNT_CLEANUP_ENABLED": values.get("ACCOUNT_CLEANUP_ENABLED", "true"),
+                   "ACCOUNT_RETENTION_ENABLED": values.get("ACCOUNT_RETENTION_ENABLED", "false"),
+                   "RESEND_WEBHOOK_SECRET": "",
                    "RESEND_ENABLED": "false", "RESEND_API_KEY": "", "RESEND_FROM": "",
                    **{key: values.get(key, "false" if key == "LEARN_ENABLED" else "") for key in (
                        "LEARN_ENABLED", "LEARN_TENANT_ID", "LEARN_CLIENT_ID", "LEARN_CLIENT_SECRET")},
@@ -73,6 +79,7 @@ def prepare_environment(*, testing=False):
                    "ADZUNA_APP_KEY": "", "JOOBLE_API_KEY": "", "STATIC_DIR": ""})
     if testing:
         # Tests must not depend on user integrations, weights or the demo database.
+        values.update({"CALENDAR_SYNC_ENABLED": "false", "CALENDAR_GOOGLE_CLIENT_ID": "", "CALENDAR_GOOGLE_CLIENT_SECRET": "", "ACCOUNT_RETENTION_ENABLED": "false", "ACCOUNT_CLEANUP_ENABLED": "false"})
         values.update({"DATABASE_URL": "sqlite://", "MATCH_MODEL_PATH": "", "CV_ENTITY_MODEL_PATH": "", "CV_ENTITY_PYTHON": "",
                        "CAREER_WRITER_MODEL": "", "CAREER_WRITER_EXECUTABLE": "",
                        "PUBLIC_LEARNING_REFRESH_ENABLED": "false",

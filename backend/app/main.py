@@ -1,6 +1,8 @@
 import asyncio
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
+from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,9 +14,11 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.gzip import GZipMiddleware
 
 from app.api.v1.router import api_router
+from app.api.v1.routes.operations import health_router
 from app.application.errors import UseCaseError
 from app.core.config import settings
 from app.core.limiter import limiter
+from app.core.operations import metrics
 
 
 @asynccontextmanager
@@ -24,10 +28,18 @@ async def lifespan(app: FastAPI):
     model_task = None
     mail_task = None
     education_task = None
+    calendar_task = None
+    account_task = None
     stop_event = asyncio.Event()
     if settings.match_model_path:
         from app.infrastructure.nlp.matching_encoder import matching_encoder
         await asyncio.to_thread(matching_encoder)
+    if settings.account_cleanup_enabled:
+        from app.infrastructure.account_retention import periodic_accounts
+        account_task = asyncio.create_task(periodic_accounts(stop_event))
+    if settings.calendar_sync_enabled:
+        from app.infrastructure.calendar_scheduler import periodic_calendar
+        calendar_task = asyncio.create_task(periodic_calendar(stop_event))
     if settings.smtp_enabled or settings.resend_enabled:
         from app.infrastructure.mail_scheduler import periodic_mail
         mail_task = asyncio.create_task(periodic_mail(stop_event))
@@ -58,6 +70,10 @@ async def lifespan(app: FastAPI):
             await mail_task
         if education_task:
             await education_task
+        if calendar_task:
+            await calendar_task
+        if account_task:
+            await account_task
 
 
 def create_app() -> FastAPI:
@@ -94,8 +110,19 @@ def create_app() -> FastAPI:
     async def security_headers(request: Request, call_next):
         from time import perf_counter
         started = perf_counter()
-        response = await call_next(request)
-        response.headers["Server-Timing"] = f"app;dur={(perf_counter() - started) * 1000:.2f}"
+        incoming = request.headers.get("x-request-id", "")
+        request_id = incoming if re.fullmatch(r"[A-Za-z0-9_-]{8,64}", incoming) else uuid4().hex
+        try:
+            response = await call_next(request)
+        except Exception:
+            route = getattr(request.scope.get("route"), "path", "unmatched")
+            metrics.observe(request.method, route, 500, (perf_counter() - started) * 1000)
+            raise
+        elapsed = (perf_counter() - started) * 1000
+        route = getattr(request.scope.get("route"), "path", "unmatched")
+        metrics.observe(request.method, route, response.status_code, elapsed)
+        response.headers["X-Request-ID"] = request_id
+        response.headers["Server-Timing"] = f"app;dur={elapsed:.2f}"
         response.headers["X-Content-Type-Options"] = "nosniff"
         if request.method == "GET" and request.url.path.startswith("/api/v1/profiles/me/export/preview/") and response.status_code == 200 and response.headers.get("content-type", "").startswith("application/pdf"):
             origins = [origin for origin in settings.cors_origins if origin.startswith(("http://", "https://")) and not any(char in origin for char in " ;'\n\r")]
@@ -118,6 +145,7 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
     app.include_router(api_router, prefix="/api/v1")
+    app.include_router(health_router)
 
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, str]:

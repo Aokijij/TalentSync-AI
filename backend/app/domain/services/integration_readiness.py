@@ -1,10 +1,10 @@
 """Capabilities, configuration and observed results are separate facts."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.domain.services.market_radar import MINIMUM_SAMPLE
 
 
-def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog, resend=False, learn=False, github_projects=False, codewars=False, youtube=False, public_learning=False, observations=None, now=None, catalog_providers=None):
+def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog, resend=False, learn=False, github_projects=False, codewars=False, youtube=False, public_learning=False, observations=None, now=None, catalog_providers=None, calendar=False, mail_events=False):
     now = now or datetime.utcnow()
     observations = observations or {}
     rows = []
@@ -18,7 +18,10 @@ def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog
             operational = "error" if error else "observed"
             if not error and success:
                 try:
-                    if now - datetime.fromisoformat(success.rstrip("Z")) > timedelta(hours=24):
+                    recorded = datetime.fromisoformat(success.replace("Z", "+00:00"))
+                    recorded = recorded.astimezone(timezone.utc).replace(tzinfo=None) if recorded.tzinfo else recorded
+                    reference = now.astimezone(timezone.utc).replace(tzinfo=None) if now.tzinfo else now
+                    if reference - recorded > timedelta(hours=24):
                         operational = "stale"
                 except (ValueError, TypeError):
                     operational = "unverified"
@@ -31,6 +34,9 @@ def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog
 
     add("matching", "Modelo de compatibilidad", "local_ready" if neural_active else "local_fallback", "Modelo neuronal activo en este proceso." if neural_active else "Compatibilidad léxica disponible como alternativa local.", "Revisar afinidad y brechas con los escenarios de candidato.")
     add("mail", "Correo y avisos", "local_ready" if local_mail else "configured" if smtp or resend else "disabled", "Bandeja de desarrollo; no entrega correo externo." if local_mail else "Transporte externo configurado; la aceptación no confirma entrega al destinatario." if smtp or resend else "No hay transporte habilitado.", "Revisar la bandeja local." if local_mail else "Comprobar envío, entrega y rebotes con una cuenta autorizada.", configured=True if local_mail else bool(smtp or resend), enabled=bool(local_mail or smtp or resend))
+    add("calendar", "Google Calendar", "configured" if calendar else "provider_required", "Sincronización de entrevistas elegidas; cambios y cancelaciones con reintentos." if calendar else "Sincronización implementada; falta habilitar la aplicación de Google Calendar.", "Autorizar desde Seguridad y sincronizar una entrevista de prueba. La descarga de citas sigue disponible.", configured=calendar, action_url="/seguridad#security-calendar", action_label="Revisar calendario")
+    if resend:
+        add("mail_events", "Confirmación de entrega de correo", "configured" if mail_events else "provider_required", "Eventos firmados de Resend: entrega, retrasos y rebotes." if mail_events else "El transporte puede aceptar mensajes, pero falta configurar el webhook firmado de entrega.", "Revisar los estados desde Operación y correos.", configured=mail_events)
     for key, title, names in [("social", "Acceso social", ("google", "github", "linkedin")), ("sso", "SSO administrativo", ("workspace", "entra"))]:
         active = [name for name in names if providers.get(name)]
         add(key, title, "configured" if active else "provider_required", "Proveedores configurados: " + (", ".join(active) or "ninguno") + ".", "Comprobar acceso, vinculación y recuperación con una cuenta autorizada.", configured=bool(active))

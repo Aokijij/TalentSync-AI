@@ -82,7 +82,7 @@ Las verificaciones específicas incluyen permisos de descarga, ausencia de PDF a
 
 ## Límites de la revisión
 
-- Se comprobaron las rutas principales con cuentas de demostración y una selección representativa de capturas. No hay comparaciones automáticas contra imágenes aprobadas. Los recorridos no cubren todas las combinaciones posibles de datos, permisos de miembros de equipo, dispositivos o navegadores.
+- Se comprobaron las rutas principales con cuentas de demostración y una selección representativa de capturas. Desde la consolidación posterior hay 36 referencias versionadas de componentes, avisos y confirmaciones. Los recorridos no cubren todas las combinaciones posibles de datos, permisos de miembros de equipo, dispositivos o navegadores.
 - Correo externo, OAuth/SSO, calendarios sincronizados y otros proveedores requieren cuentas y configuración autorizadas. Las pruebas de adaptadores o transportes locales no equivalen a comprobar una entrega o conexión externa real.
 - Las pruebas de concurrencia usan datos sintéticos. No representan una certificación de capacidad o una auditoría de producción.
 - No se publicaron cambios ni se alteraron cuentas personales para realizar esta revisión.
@@ -97,3 +97,17 @@ Las confirmaciones usan un diálogo nativo para funcionar sobre otros modales. E
 El panel de conexiones muestra hechos separados: configuración, último intento, última operación correcta, problema registrado y antigüedad. YouTube, Microsoft Learn, SENA, Sapiencia y catálogos de vacantes aportan observaciones persistidas durante operaciones autorizadas. Los errores se traducen a categorías públicas; no se guardan tokens, respuestas del proveedor ni datos personales. Los proveedores sin observaciones continúan como sin comprobar. Consultar estado no consume cuotas. La aceptación del transporte de correo no se presenta como entrega.
 
 Se incorporan 36 referencias visuales versionadas y un trabajo Windows de CI con Chromium fijado por Playwright. Cubren componentes, confirmaciones y avisos en tres roles, dos temas y dos tamaños; los recorridos funcionales conservan su cobertura de cuatro anchos. Los resultados locales de esta revisión se guardan en `.local/verification/platform-polish.json`. Esto no demuestra una ejecución del CI remoto ni una conexión externa real.
+
+## Revisión previa y cuatro bloques posteriores
+
+Se corrige el registro de operaciones sin comprobaciones (`checked: 0`), la lectura de fechas con zona horaria y la detección de rol de avisos sin foco en un panel. La página de pruebas ahora carga también las dos hojas de estilo globales que faltaban; las capturas reflejan los mismos estilos que la aplicación.
+
+Se implementan eventos firmados de entrega de Resend, conexión delegada y sincronización de entrevistas con Google Calendar, exportación/borrado de datos propios, limpieza durable con arrendamientos, protocolo de piloto sin documentos personales y panel operativo de dependencias, colas y métricas acotadas. Hay tres migraciones nuevas; SQLite conserva los registros y evita reutilizar ID de cuentas borradas mientras se limpian archivos. Los controles de borrado no eliminan organizaciones ni la última cuenta administradora.
+
+El protocolo se encuentra en [PROTOCOLO_PILOTO](docs/PROTOCOLO_PILOTO.md) y la configuración en [OPERACION_Y_DATOS](docs/OPERACION_Y_DATOS.md). El ejemplo de evaluación es sintético y no acredita calidad con personas reales. No se conectaron cuentas de Google ni se enviaron correos externos. No se publicaron recursos en nube.
+
+Una comparación global de metadatos con Alembic también detecta diferencias históricas ajenas a estas tres migraciones: nulabilidad de campos JSON/fecha, longitud del enum de estados en SQLite y un índice de offer_feedback ausente del modelo. Las pruebas específicas de upgrade/downgrade comprueban los cambios nuevos y la conservación de datos; no se presenta `alembic check` global como aprobado. Esa alineación histórica sigue como deuda técnica separada.
+
+Validación de esta entrega: suite general con 1.082 pruebas backend aprobadas y una aceptación PostgreSQL reservada para el ensayo aislado; 218 pruebas frontend; 46 recorridos de interfaz; 12 comprobaciones de capturas que comparan 36 referencias sin regenerarlas; cuatro revisiones adicionales de la pantalla completa de Seguridad con datos interceptados. Tras reforzar la concurrencia del calendario y la finalización de limpieza, se repitieron 64 pruebas de los módulos afectados, todas aprobadas. ESLint, Ruff y compilación aprobados.
+
+El ensayo PostgreSQL 18 aplica migraciones, prueba flujos y concurrencia, y compara las 35 tablas tras restaurar el respaldo. La recuperación de archivos usa dos documentos sintéticos y verifica sus hashes. El servidor local responde en liveness/readiness; 40 comprobaciones de readiness con cuatro conexiones terminaron sin errores (p95 aproximado de 31 ms). Este dato no mide extracción de CV, matching, vídeo ni capacidad en nube. Se verificó el respaldo SQLite antes de aplicar las migraciones y se conservaron los recuentos de las tablas existentes. Los informes privados quedan en `.local/operations/`, `.local/staging/verification.json` y `.local/final-targeted-tests.log`.

@@ -14,8 +14,10 @@ from app.infrastructure.database.models import (
     Recommendation,
     User,
 )
+from app.infrastructure.repositories.account_data import AccountDataRepository
 from app.infrastructure.repositories.accounts import AccountRepository
 from app.infrastructure.repositories.applications import ApplicationRepository
+from app.infrastructure.repositories.calendars import CalendarRepository
 from app.infrastructure.repositories.companies import CompanyRepository
 from app.infrastructure.repositories.ecosystem import EcosystemRepository
 from app.infrastructure.repositories.events import EventRepository
@@ -39,7 +41,9 @@ class SqlAlchemyUnitOfWork:
         self.organizations = OrganizationRepository(session)
         self.ecosystem = EcosystemRepository(session)
         self.learning = LearningRepository(session)
+        self.account_data = AccountDataRepository(session)
         self.accounts = AccountRepository(session)
+        self.calendars = CalendarRepository(session)
         self.events = EventRepository(session, EventLog)
         self.users = UserRepository(session, User)
         self.profiles = ProfileRepository(session, Profile)

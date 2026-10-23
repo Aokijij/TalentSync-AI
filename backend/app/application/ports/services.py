@@ -23,7 +23,7 @@ class AccountSecurity(Protocol):
 
 
 class MailDelivery(Protocol):
-    def send(self, *, recipient: str, subject: str, body: str, message_id: int) -> None: ...
+    def send(self, *, recipient: str, subject: str, body: str, message_id: int) -> str | None: ...
 
 
 class MailDeliveryError(Exception):

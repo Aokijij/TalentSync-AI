@@ -125,3 +125,19 @@ La implementación usa [smtplib](https://docs.python.org/3/library/smtplib.html)
 y [ssl.create_default_context](https://docs.python.org/3/library/ssl.html#ssl.create_default_context)
 de Python. No se instaló ni contrató un servidor SMTP. Se mantienen los correos
 sintéticos en la bandeja de desarrollo para usar toda la aplicación local.
+
+## Controles operativos implementados
+
+La API expone `/health/live` y `/health/ready` (503 si falla base o almacén privado).
+Configurar esas rutas como sondas cuando se cree la aplicación; la plantilla de
+infraestructura todavía no despliega una revisión. Administración dispone de
+Operación y correos para p95/errores, cola, entrega confirmada y limpieza pendiente.
+Los informes son por proceso y deben complementarse con monitorización externa.
+
+La sincronización delegada de Google Calendar, los eventos firmados de Resend y
+los controles de portabilidad/borrado están implementados; su aceptación externa
+sigue pendiente. Véase [operación y datos](../../docs/OPERACION_Y_DATOS.md) para
+configuración, conservación y ensayos reproducibles. El protocolo de evaluación
+usa datos sintéticos hasta contar con participantes y documentos autorizados.
+
+Nada de esta entrega activa recursos facturables ni publica una aplicación.

@@ -1,0 +1,26 @@
+.account-controls { display:grid; gap:1.25rem; }
+.account-controls>header { display:flex; align-items:flex-start; gap:.8rem; }
+.account-controls>header>svg { flex:none; color:var(--accent); }
+.account-controls h2 { font-size:1.15rem; font-weight:700; }
+.account-controls p,.account-controls small { color:var(--muted); font-size:.85rem; line-height:1.65; }
+.account-action-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
+.account-action-options button { display:grid; gap:.5rem; text-align:left; padding:1.1rem; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+.account-action-options button[aria-pressed=true] { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 7%,var(--surface)); }
+.account-action-options span { color:var(--muted); font-size:.8rem; }
+.account-controls fieldset { min-width:0; }
+.account-controls legend { font-weight:700; margin-bottom:.5rem; }
+.account-credential-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr)); gap:1rem; margin-block:1rem; }
+.account-controls label { font-size:.8rem; display:grid; gap:.4rem; }
+.account-controls footer { display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:space-between; border-top:1px solid var(--line); padding-top:1rem; }
+.account-controls footer>span,.account-controls footer>small { flex:1 1 220px; font-size:.75rem; color:var(--muted); }
+.account-controls .account-erase { border-color:var(--error); color:var(--error); }
+.account-button-row { display:flex; flex-wrap:wrap; gap:.5rem; }
+.calendar-steps { display:grid; gap:.7rem; list-style:decimal inside; font-size:.85rem; }
+.calendar-sync { position:relative; }
+.calendar-sync-options { display:grid; gap:.6rem; margin-top:.65rem; padding:1rem; border:1px solid var(--line); background:var(--surface); border-radius:12px; max-width:300px; font-size:.8rem; }
+.calendar-sync-options label { display:grid; gap:.4rem; }
+.calendar-sync-options small { color:var(--muted); line-height:1.6; }
+.calendar-sync-options a { color:var(--accent); text-decoration:underline; }
+@media(max-width:600px) { .account-action-options { grid-template-columns:1fr; } .account-controls footer>button { width:100%; } }
+
+.security-panel.account-controls>header { margin:0; }

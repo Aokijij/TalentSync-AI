@@ -20,3 +20,12 @@ Si un diseño cambia intencionadamente:
 4. Ejecutar de nuevo `npm run quality:visual` sin actualizar imágenes.
 
 CI nunca actualiza las referencias. Conserva el informe y las diferencias como artefactos. Las imágenes cubren los componentes compartidos; no equivalen a una referencia de cada pantalla, estado o navegador de toda la plataforma.
+
+## Datos de cuenta y operación
+
+`/quality/?controls=1&role=candidate&theme=dark` monta los componentes reales de
+portabilidad, Google Calendar y diagnóstico operativo con las mismas tres hojas
+de estilo globales de la aplicación. La suite intercepta las API con datos
+sintéticos; comprueba descarga, cancelación de borrado, confirmación, sincronizar,
+desconectar y estados de entrega, en móvil/escritorio y ambos temas. No conecta
+Google ni envía correos. Las capturas de revisión se guardan en `.local/operations/`.

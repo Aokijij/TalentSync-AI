@@ -2,17 +2,21 @@ from fastapi import APIRouter
 
 from app.api.v1.routes import (
     account,
+    account_data,
     admin,
     admin_sso,
     applications,
     auth,
+    calendars,
     companies,
+    delivery,
     ecosystem,
     hiring,
     jobs,
     learning,
     match_settings,
     notifications,
+    operations,
     organizations,
     personalization,
     profiles,
@@ -23,6 +27,10 @@ from app.api.v1.routes import (
 )
 
 api_router = APIRouter()
+api_router.include_router(operations.router, tags=["operations"])
+api_router.include_router(account_data.router, tags=["account"])
+api_router.include_router(calendars.router, tags=["calendar"])
+api_router.include_router(delivery.router, tags=["delivery"])
 api_router.include_router(sql_practice.router, tags=["learning"])
 api_router.include_router(admin_sso.router, tags=["account"])
 api_router.include_router(account.router, tags=["account"])

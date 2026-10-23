@@ -32,6 +32,12 @@ class ResumePreviews:
             if value[3] <= monotonic():
                 self.entries.pop(key)
 
+    def forget_owner(self, owner_id):
+        with self.lock:
+            for key, value in list(self.entries.items()):
+                if value[0] == owner_id:
+                    self.entries.pop(key)
+
     def get(self, owner_id, token, filename):
         with self.lock:
             self._expire()

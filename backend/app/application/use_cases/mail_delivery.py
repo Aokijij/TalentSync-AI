@@ -20,8 +20,8 @@ def deliver_outbox(db, gateway, *, now=None, limit=20):
             state, values = "failed", {"body": "", "failure_kind": "temporary"}
         else:
             try:
-                gateway.send(recipient=message.recipient, subject=message.subject, body=message.body, message_id=message_id)
-                state, values = "sent", {"sent_at": now or datetime.utcnow(), "body": "", "failure_kind": ""}
+                receipt = gateway.send(recipient=message.recipient, subject=message.subject, body=message.body, message_id=message_id)
+                state, values = "sent", {"sent_at": now or datetime.utcnow(), "body": "", "failure_kind": "", "provider_message_id": receipt if isinstance(receipt, str) else None, "transport_status": "accepted"}
             except MailDeliveryError as error:
                 state = "retry" if error.retryable and attempts < 5 else "failed"
                 values = {"failure_kind": error.kind}
@@ -31,5 +31,7 @@ def deliver_outbox(db, gateway, *, now=None, limit=20):
                     values["body"] = ""
         if db.accounts.finish_mail(message_id, lease, delivery_state="pending" if state == "retry" else state, **values):
             counts[state] += 1
+            if values.get("provider_message_id"):
+                db.accounts.reconcile_mail_events(values["provider_message_id"])
         db.commit()
     return counts

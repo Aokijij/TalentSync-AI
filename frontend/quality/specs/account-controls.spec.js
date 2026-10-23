@@ -1,0 +1,54 @@
+import { test, expect } from "@playwright/test";
+
+for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Account controls, calendar and operations · ${width} · ${theme}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 950 });
+  const errors = []; page.on("pageerror", (error) => errors.push(error.message));
+  const calls = [];
+  let connected = true;
+  await page.route("**/api/v1/**", async (route) => {
+    const request = route.request(), path = new URL(request.url()).pathname.replace("/api/v1", "");
+    calls.push([request.method(), path]);
+    const json = (data, status = 200) => route.fulfill({ status, json: data });
+    if (path === "/account/data") return json({ deletion_block: "", note: "Eliminar retira tu perfil y postulaciones." });
+    if (path === "/account/data/export") return route.fulfill({ status: 200, contentType: "application/zip", body: "synthetic ZIP" });
+    if (path === "/account/data/erase") return json({ message: "Cuenta eliminada", receipt: "synthetic-receipt", files_pending: false });
+    if (path === "/account/calendar" && request.method() === "DELETE") { connected = false; return json({ message: "Desconectado" }); }
+    if (path === "/account/calendar") return json({ configured: true, connected, note: "Solo entrevistas elegidas, sin notas internas." });
+    if (path === "/workflow/applications/101/calendar") return json({ state: request.method() === "POST" ? "synced" : "none", minutes: 45, enabled: request.method() === "POST", error: "" });
+    if (path === "/admin/operations") return json({ checks: { database: true, private_storage: true }, calendar_configured: true, retention_enabled: false, cleanup_enabled: true, alerts: ["La conservación automática está desactivada."], note: "Muestras de este proceso.", requests: { sample_limit_per_route: 512, routes: [{ method: "GET", route: "/profiles/{user_id}", samples: 42, errors: 0, p95_ms: 125 }] }, queues: { mail_pending: 2, mail_failed: 1, calendar_failed: 0, file_erasure_pending: 0 } });
+    if (path === "/admin/mail-delivery") return json({ items: [{ id: 1, queue_state: "sent", transport_status: "delivered", attempts: 1 }, { id: 2, queue_state: "sent", transport_status: "bounced", attempts: 1 }], total: 2, page: 1, page_size: 20, note: "Aceptado no significa entregado." });
+    return json({ detail: "Ruta inesperada" }, 404);
+  });
+  await page.goto(`/quality/?controls=1&role=candidate&theme=${theme}`);
+  await page.getByLabel("Contraseña actual", { exact: true }).fill("Synthetic-pass-2026!");
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Descargar copia ZIP", exact: true }).click();
+  expect((await download).suggestedFilename()).toBe("TalentSync-mis-datos.zip");
+  await expect(page.getByText("Copia descargada.", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Eliminar mi cuenta", exact: false }).first().click();
+  await page.getByLabel("Contraseña actual", { exact: true }).fill("Synthetic-pass-2026!");
+  await page.getByLabel("Escribe ELIMINAR").fill("ELIMINAR");
+  await page.locator("form").getByRole("button", { name: "Eliminar mi cuenta", exact: true }).click();
+  const dialog = page.getByRole("alertdialog", { name: "Eliminar tu cuenta" });
+  await expect(dialog.getByRole("button", { name: "Cancelar", exact: true })).toBeFocused();
+  await page.keyboard.press("Escape");
+  expect(calls.filter(([, path]) => path === "/account/data/erase")).toHaveLength(0);
+  await page.locator("form").getByRole("button", { name: "Eliminar mi cuenta", exact: true }).click();
+  await dialog.getByRole("button", { name: "Eliminar mi cuenta", exact: true }).click();
+  await expect(page.getByText("Cuenta de ejemplo eliminada", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Calendario", exact: true }).click();
+  await expect(page.getByText("Calendario conectado", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Google Calendar", exact: true }).click();
+  await page.getByRole("button", { name: "Sincronizar entrevista", exact: true }).click();
+  await expect(page.getByText("Entrevista sincronizada", { exact: true })).toBeVisible();
+  await page.screenshot({ path: `../.local/operations/calendar-${theme}-${width}.png`, fullPage: true });
+  await page.getByRole("button", { name: "Desconectar", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Desconectar", exact: true }).click();
+  await expect(page.getByText("Sin conectar", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Operaciones", exact: true }).click();
+  await expect(page.getByText("Entregado", { exact: true })).toBeVisible();
+  await expect(page.getByText("Rebotado", { exact: true })).toBeVisible();
+  await page.screenshot({ path: `../.local/operations/admin-${theme}-${width}.png`, fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  expect(errors).toEqual([]);
+});

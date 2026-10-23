@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BrainCircuit, Plug, FlaskConical, CheckCircle2, ArrowRight, Database, Info } from "lucide-react";
+import { BrainCircuit, Plug, FlaskConical, CheckCircle2, ArrowRight, Database, Info, Activity } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
+import { OperationsPanel } from "../components/OperationsPanel.jsx";
 import { IntegrationStatus } from "../components/IntegrationStatus.jsx";
 import { InlineNotice } from "../components/ui/Panel.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 
 const statuses = { insufficient_data: "Faltan datos reales", insufficient_validation_data: "Faltan datos de evaluación", validated_shadow: "Evaluación aprobada", needs_review_shadow: "Necesita revisión", invalidated_consent_withdrawal: "Consentimiento retirado", invalidated_feedback_removal: "Señal retirada" };
-const tabs = [["overview", "Funcionamiento", BrainCircuit], ["connections", "Integraciones", Plug], ["experiments", "Pruebas de mejora", FlaskConical]];
+const tabs = [["overview", "Funcionamiento", BrainCircuit], ["connections", "Integraciones", Plug], ["experiments", "Pruebas de mejora", FlaskConical], ["operations", "Operación y correos", Activity]];
 
 export function ModelPage() {
   const { confirm } = useFeedback();
@@ -33,6 +34,7 @@ export function ModelPage() {
         <div className="grid gap-4 md:grid-cols-3">{[["01", "Lee el perfil", "Organiza habilidades, experiencia y formación."], ["02", "Compara la vacante", "Calcula afinidad con sus requisitos y funciones."], ["03", "Explica el resultado", "Muestra coincidencias, brechas y opciones para reforzarlas."]].map(([number, title, copy]) => <article className="surface-card p-6" key={number}><p className="section-kicker">{number}</p><h3 className="mt-3 font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-[var(--muted)]">{copy}</p></article>)}</div>
         <section className="surface-card flex flex-wrap items-center justify-between gap-4 p-6"><div><h3 className="font-bold">Seguimiento de procesos reales</h3><p className="mt-1 text-sm text-[var(--muted)]">{data.observed_processes} observados · {data.processes_advanced_to_interview} avanzados a entrevista. Se excluyen cuentas de demostración.</p></div><Link className="button-secondary" to="/admin/ecosistema">Revisar recomendaciones<ArrowRight size={16} /></Link></section>
       </>}
+      {tab === "operations" && <OperationsPanel />}
       {tab === "connections" && <>{data.mfa_review_active && <InlineNotice tone="warning">Verificación en dos pasos pausada para la revisión local.</InlineNotice>}<IntegrationStatus rows={data.integrations} busy={busy} onRefresh={refreshIntegrations} /></>}
       {tab === "experiments" && <>
         <section className="surface-card space-y-5 p-6"><div className="flex items-start gap-3"><Database className="text-[var(--accent)]" /><div><h2 className="text-xl font-bold">Aprender de decisiones explícitas</h2><p className="mt-2 text-sm leading-6 text-[var(--muted)]">Analiza si guardar u ocultar una vacante ayuda a entender intereses. Usa únicamente decisiones consentidas de usuarios reales. Los datos de demostración no cuentan.</p></div></div>

@@ -240,3 +240,18 @@ def get_resume_exporter():
 def get_resume_previews():
     from app.infrastructure.resume_previews import resume_previews
     return resume_previews
+
+
+def get_calendar_gateway():
+    from app.infrastructure.google_calendar import GoogleCalendar
+    return GoogleCalendar(settings)
+
+
+def get_account_files():
+    from app.infrastructure.private_account_files import PrivateAccountFiles
+    return PrivateAccountFiles()
+
+
+def get_request_metrics():
+    from app.core.operations import metrics
+    return metrics

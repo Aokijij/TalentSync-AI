@@ -1,6 +1,7 @@
 """Resend transport for the existing leased outbox. Never logs provider bodies."""
 import hashlib
 import hmac
+import re
 
 import httpx
 
@@ -26,7 +27,18 @@ class ResendDelivery:
                          "html": render_email(subject, body, public_app_url=getattr(self.settings, "public_app_url", ""))}) as response:
                     status = response.status_code
                     if 200 <= status < 300:
-                        return
+                        raw = bytearray()
+                        for chunk in response.iter_bytes():
+                            raw.extend(chunk)
+                            if len(raw) > 4096:
+                                raise MailDeliveryError(retryable=False, kind="permanent")
+                        import json
+                        try:
+                            identifier = json.loads(raw).get("id")
+                        except (ValueError, AttributeError):
+                            identifier = None
+                        # Older transports/stubs may not return an id. Never invent one.
+                        return identifier if isinstance(identifier, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,100}", identifier) else None
                     # Retry only temporary errors. Do not expose response text or secrets.
                     raise MailDeliveryError(retryable=status == 429 or status >= 500,
                                             kind="configuration" if status in {401, 403} else "temporary" if status == 429 or status >= 500 else "permanent")

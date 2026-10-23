@@ -5,11 +5,13 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth.js";
 import { AuthFrame } from "../components/AuthFrame.jsx";
+import { InlineNotice } from "../components/ui/Panel.jsx";
 import { MfaChallenge } from "../components/MfaChallenge.jsx";
 import { AccessProviders } from "../components/AccessProviders.jsx";
 import { getApiErrorMessage } from "../api/client.js";
 
 export function LoginPage() {
+  const [erasure, setErasure] = useState(() => { try { return JSON.parse(sessionStorage.getItem("talentsync_account_erasure") || "null"); } catch { return null; } });
   const { register, handleSubmit, resetField, formState: { errors, isSubmitting } } = useForm();
   const { login, accessOptions } = useAuth();
   const navigate = useNavigate(), location = useLocation();
@@ -26,6 +28,7 @@ export function LoginPage() {
     } catch (failure) { setError(getApiErrorMessage(failure, "No pudimos validar este acceso. Revisa tu cuenta y el portal seleccionado.")); }
   }
   return <AuthFrame company={company}>
+    {erasure && <InlineNotice title="Cuenta eliminada" onDismiss={() => { sessionStorage.removeItem("talentsync_account_erasure"); setErasure(null); }}>{erasure.message}<small className="mt-2 block break-all">Comprobante: {erasure.receipt}</small></InlineNotice>}
     {credentials ? <MfaChallenge email={credentials.email} busy={verifying} error={error} onBack={() => { setCredentials(null); setError(""); }} onVerify={async (code) => { setVerifying(true); await authenticate(credentials, code); setVerifying(false); }} /> : <>
       <div className="access-portal-tag">{company ? "Acceso de empresa" : "Acceso de candidato"}</div>
       <h2 className="mt-5 text-3xl font-bold sm:text-4xl">{company ? "Bienvenido a tu equipo" : "Qué bueno verte de nuevo"}</h2>

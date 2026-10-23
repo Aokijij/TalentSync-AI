@@ -31,7 +31,7 @@ class ResumeReader:
     def storage_available(self) -> bool:
         if settings.azure_storage_account_url:
             try:
-                return self._blob_container().exists()
+                return self._blob_container().exists(timeout=3, connection_timeout=3, read_timeout=3, retry_total=0)
             except Exception:
                 return False
         directory = Path(settings.upload_dir)

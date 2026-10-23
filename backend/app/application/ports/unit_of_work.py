@@ -1,7 +1,9 @@
 from typing import Protocol
 
+from app.domain.repositories.account_data import AccountDataRepository
 from app.domain.repositories.accounts import AccountRepository
 from app.domain.repositories.applications import ApplicationRepository
+from app.domain.repositories.calendars import CalendarRepository
 from app.domain.repositories.companies import CompanyRepository
 from app.domain.repositories.ecosystem import EcosystemRepository
 from app.domain.repositories.events import EventRepository
@@ -23,6 +25,8 @@ class UnitOfWork(Protocol):
     ecosystem: EcosystemRepository
     learning: LearningRepository
     organizations: OrganizationRepository
+    calendars: CalendarRepository
+    account_data: AccountDataRepository
     accounts: AccountRepository
     events: EventRepository
     users: UserRepository

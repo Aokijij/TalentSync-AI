@@ -1,9 +1,12 @@
 from datetime import datetime
 
 from sqlalchemy import and_, or_, update
+from sqlalchemy.exc import IntegrityError
 
+from app.domain.services.mail_webhooks import EVENTS
 from app.infrastructure.database.models import (
     AccountToken,
+    MailDeliveryEvent,
     MailMessage,
     OAuthAttempt,
     SocialIdentity,
@@ -110,3 +113,36 @@ class AccountRepository:
             MailMessage.id == message_id, MailMessage.delivery_state == "sending", MailMessage.lease_token == lease,
         ).values(**values, lease_token="", lease_until=None).execution_options(synchronize_session=False))
         return result.rowcount == 1
+
+    def record_mail_event(self, values):
+        if self.session.get(MailDeliveryEvent, values["id"]):
+            return False
+        try:
+            with self.session.begin_nested():
+                self.session.add(MailDeliveryEvent(**values))
+                self.session.flush()
+        except IntegrityError:
+            return False
+        self.reconcile_mail_events(values["provider_message_id"])
+        return True
+
+    def reconcile_mail_events(self, provider_message_id):
+        message = self.session.query(MailMessage).filter_by(provider_message_id=provider_message_id).populate_existing().first()
+        if message is None:
+            return
+        events = self.session.query(MailDeliveryEvent).filter_by(provider_message_id=provider_message_id).order_by(MailDeliveryEvent.happened_at, MailDeliveryEvent.id).all()
+        priority = {None: 0, "accepted": 1, "delayed": 1, "delivered": 2, "failed": 3, "bounced": 4, "complained": 5}
+        for event in events:
+            state = EVENTS[event.event_type]
+            if priority[state] < priority.get(message.transport_status, 0):
+                continue
+            if message.provider_event_at and event.happened_at < message.provider_event_at:
+                continue
+            message.transport_status, message.provider_event_at = state, event.happened_at
+
+    def mail_status_page(self, offset=0, limit=20):
+        query = self.session.query(MailMessage)
+        return query.count(), query.order_by(MailMessage.id.desc()).offset(offset).limit(limit).all()
+
+    def trim_delivery_events(self, before):
+        return self.session.query(MailDeliveryEvent).filter(MailDeliveryEvent.received_at < before).delete(synchronize_session=False)

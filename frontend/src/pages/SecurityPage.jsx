@@ -1,6 +1,8 @@
 import { requiresAuthenticator } from "../utils/accountAccess.js";
+import { AccountDataPanel } from "../components/AccountDataPanel.jsx";
+import { GoogleCalendarPanel } from "../components/GoogleCalendarPanel.jsx";
 import { SecuritySessions } from "../components/SecuritySessions.jsx";
-import { ShieldCheck, Mail, LockKeyhole, Monitor, Eye } from "lucide-react";
+import { ShieldCheck, Mail, LockKeyhole, Monitor, Eye, CalendarDays, FileArchive } from "lucide-react";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
@@ -16,8 +18,8 @@ export function SecurityPage() {
   const requested = location.hash.replace("#security-", "");
   const { confirm } = useFeedback();
   const { user, refreshUser, accessOptions, refreshAccessOptions, logout } = useAuth();
-  const panel = ["email", "mfa", "sessions", ...(user.role === "candidate" ? ["privacy"] : [])].includes(requested) ? requested : "email";
-  const sections = [["email", "Correo y acceso", "Tu dirección y cuentas conectadas", Mail], ["mfa", "Verificación en dos pasos", "Estado del autenticador", ShieldCheck], ...(user.role === "candidate" ? [["privacy", "Privacidad", "Controla tus preferencias", Eye]] : []), ["sessions", "Dispositivos", "Dónde está abierta tu cuenta", Monitor]];
+  const panel = ["email", "mfa", "sessions", "calendar", "data", ...(user.role === "candidate" ? ["privacy"] : [])].includes(requested) ? requested : "email";
+  const sections = [["email", "Correo y acceso", "Tu dirección y cuentas conectadas", Mail], ["mfa", "Verificación en dos pasos", "Estado del autenticador", ShieldCheck], ...(user.role === "candidate" ? [["privacy", "Privacidad", "Controla tus preferencias", Eye]] : []), ["calendar", "Calendario", "Sincroniza tus entrevistas", CalendarDays], ["data", "Mis datos", "Exporta o elimina tu cuenta", FileArchive], ["sessions", "Dispositivos", "Dónde está abierta tu cuenta", Monitor]];
   const [sessions, setSessions] = useState([]);
   const [privacy, setPrivacy] = useState(null);
   const [setup, setSetup] = useState(null);
@@ -67,6 +69,8 @@ export function SecurityPage() {
       {user.mfa_enabled && user.role === "candidate" && <form className="mt-4 flex flex-wrap gap-3" onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); act(async () => { await api.post("/account/mfa/disable", { password: data.get("password"), code: data.get("code") }); setRecovery([]); await refreshUser(); setMessage("Autenticación desactivada"); }); }}><label className="text-sm">Contraseña<input className="field-control mt-1" name="password" type="password" required autoComplete="current-password" /></label><label className="text-sm">Código<input className="field-control mt-1" name="code" required autoComplete="one-time-code" /></label><button disabled={busy} className="button-secondary self-end">Desactivar</button></form>}
     </section>)}
     {panel === "privacy" && user.role === "candidate" && <section id="security-privacy" className="security-panel"><h2 className="flex items-center gap-3 text-lg font-bold"><Eye size={21} className="text-[var(--accent)]" />Privacidad</h2>{privacy && <div className="mt-4 space-y-3">{Object.entries({ share_evidence: "Compartir evidencias con empresas de mis procesos", notify_new_skills: "Avisar a empresas de mis procesos cuando acredite habilidades", personalize_recommendations: "Usar mis decisiones explícitas de interés para personalizar recomendaciones y evaluar modelos" }).map(([key, label]) => <label className="privacy-choice" key={key}><input type="checkbox" checked={privacy[key]} onChange={(event) => setPrivacy({ ...privacy, [key]: event.target.checked })} />{label}</label>)}<p className="text-xs text-[var(--muted)]">Desactivar la personalización borra tus interacciones y los artefactos experimentales que pudieran incluirlas.</p><button disabled={busy} className="button-primary" onClick={async () => { if (!privacy.personalize_recommendations && !await confirm({ title: "Guardar privacidad", description: "Al desactivar la personalización se borran tus decisiones guardadas y los modelos experimentales que las incluyan.", confirmLabel: "Guardar preferencias" })) return; act(async () => { const { data } = await api.put("/account/privacy", privacy); setPrivacy(data); setMessage("Preferencias guardadas"); }); }}>Guardar preferencias</button></div>}</section>}
+    {panel === "calendar" && <GoogleCalendarPanel />}
+    {panel === "data" && <AccountDataPanel user={user} onDeleted={logout} />}
     {panel === "sessions" && <SecuritySessions sessions={sessions} busy={busy} onRevoke={async (session) => { if (!await confirm({ title: "Cerrar esta sesión", description: session.current ? "Saldrás de la cuenta en este dispositivo." : "Este dispositivo tendrá que iniciar sesión de nuevo.", confirmLabel: "Cerrar sesión" })) return; act(async () => { if (session.current) await logout(); else { await api.delete(`/account/sessions/${session.id}`); await load(); } }); }} />}
     </div></div>
     <Link className="button-secondary inline-flex" to={params.get("invitation") ? `/equipo/invitacion?token=${encodeURIComponent(params.get("invitation"))}` : user.role === "candidate" ? "/candidato" : user.role === "company" ? "/empresa/equipo" : "/admin"}>Continuar a mi espacio</Link>
