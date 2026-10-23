@@ -7,14 +7,17 @@ LinkedIn, además de vincular y desvincular proveedores desde Seguridad. El regi
 ahora muestra las mismas opciones habilitadas que el inicio de sesión. Las cuentas
 de empresa conservan su registro y sus permisos propios.
 
-Faltan las aplicaciones OAuth y sus credenciales. Por decisión del propietario se
-preparan la configuración y esta guía antes de crearlas. Ningún botón se presenta
-como operativo mientras falte su configuración. Una configuración completa tampoco
-demuestra que se haya terminado un consentimiento real.
+Google y GitHub están configurados y habilitados para el registro e inicio de
+sesión local. Google Calendar está habilitado con su cliente independiente.
+LinkedIn sigue pendiente de credenciales y origen HTTPS. Se comprobaron los
+botones contra la API real y la generación de enlaces de autorización; todavía
+falta completar el consentimiento externo y comprobar los callbacks registrados
+en cada consola. Disponer de configuración no demuestra un acceso externo completo.
 
-Se creó `.local/integrations.env` como archivo privado, inicialmente desactivado.
-No contiene claves. No se enviaron correos, se crearon cuentas externas ni se
-contrataron servicios durante esta preparación.
+Las credenciales están únicamente en `.local/integrations.env`, excluido de Git.
+No copies ese archivo a documentación o repositorios. El correo externo sigue
+desactivado. No se enviaron correos, se crearon cuentas externas ni se contrataron
+servicios durante esta activación.
 
 ## Preparar la configuración privada
 
@@ -164,6 +167,6 @@ No uses direcciones ajenas para las pruebas.
 | Registro empresarial | Conserva el flujo y permisos de empresa; los proveedores sociales son para candidatos. |
 
 Las pruebas automatizadas verifican estos contratos con identidades sintéticas y
-respuestas controladas. Los consentimientos reales y la entrega externa siguen
-pendientes hasta configurar las aplicaciones, el dominio/remitente y las cuentas
-autorizadas.
+respuestas controladas. Los consentimientos reales siguen pendientes de comprobar
+con cuentas autorizadas. La entrega de correo externo requiere todavía configurar
+el remitente y el transporte correspondiente.

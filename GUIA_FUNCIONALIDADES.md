@@ -126,7 +126,7 @@ Google, GitHub y LinkedIn comparten el flujo de registro e inicio de sesión de 
 
 Seguridad muestra el proveedor con su icono, estado de conexión y acción para vincular o desvincular. Vincular requiere demostrar acceso a TalentSync y autorizar la cuenta en el proveedor. Si la cuenta se creó con acceso social y no tiene contraseña conocida, se establece mediante Recuperar acceso antes de gestionar otras vinculaciones.
 
-Todavía faltan las aplicaciones y credenciales externas. La configuración privada, los callbacks y los pasos de Google, GitHub, LinkedIn, Calendar y correo están en [INTEGRACIONES_ACCESO](INTEGRACIONES_ACCESO.md). Los botones se habilitan con configuración válida; su aparición no demuestra un consentimiento real completado.
+Google y GitHub ya están habilitados en el entorno local, y Google Calendar tiene su cliente independiente configurado. Queda pendiente completar los consentimientos externos y comprobar los callbacks registrados; LinkedIn y el correo externo todavía requieren configuración. La configuración privada, los callbacks y los pasos de cada proveedor están en [INTEGRACIONES_ACCESO](INTEGRACIONES_ACCESO.md). La aparición de los botones no demuestra un consentimiento real completado.
 
 Las pruebas de lógica, permisos y compilación se complementan con una suite visual de componentes: **24 casos ejecutados con Chromium**, en tres roles, dos temas y cuatro tamaños. Se inspeccionaron capturas representativas y se corrigieron detalles de espaciado y datos ausentes. Esta comprobación con datos ficticios no sustituye una revisión completa de todas las pantallas con cuentas autenticadas ni una comparación automática con capturas de referencia.
 
