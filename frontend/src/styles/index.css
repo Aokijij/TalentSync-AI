@@ -1111,9 +1111,6 @@ html[data-theme="dark"] .role-admin .button-primary { color: #302211; }
 .interest-toggle[aria-checked="true"] .switch-track span { transform: translateX(.9rem); background: var(--surface); }
 .match-preferences { padding-top: 1rem; border-top: 1px solid var(--line); }
 .match-condition { padding: .85rem 1rem; border: 1px solid var(--line); border-radius: var(--radius-md); }
-.candidate-card-actions { display: grid; gap: .65rem; margin-top: 1rem; }
-.candidate-card-actions > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .4rem .8rem; }
-.candidate-card-actions a { display: inline-flex; align-items: center; gap: .3rem; color: var(--accent); font-size: .75rem; font-weight: 600; }
 .directory-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; color: var(--muted); font-size: .8rem; }
 .directory-pagination > div { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
 .trust-directory { border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
@@ -1521,11 +1518,6 @@ html[data-theme="dark"] .role-admin .button-primary { color: #302211; }
 .vacancy-actions .button-secondary { background:transparent; border-color:transparent; }
 .vacancy-actions .button-secondary:hover { background:var(--surface-subtle); border-color:var(--line); }
 .vacancy-delete { width:36px; height:36px; justify-content:center; }
-.board-toolbar { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; padding:1.1rem 1.25rem; }
-.board-toolbar > div:first-child { max-width:100%; }
-.board-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; border-top:1px solid var(--line); padding-top:1rem; }
-.board-actions > button { min-height:2.5rem; padding:.6rem .9rem; font-size:.82rem; white-space:nowrap; }
-.board-actions > .button-primary { margin-right:auto; }
 .talent-results-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
 .talent-card { padding:1.1rem; display:flex; flex-direction:column; min-width:0; }
 .talent-card > div:first-child > span { width:2.5rem; height:2.5rem; border-radius:.8rem; font-size:.8rem; }
@@ -1560,7 +1552,7 @@ html[data-theme="dark"] .role-admin .button-primary { color: #302211; }
 .offer-checklist .offer-criterion:focus-visible, .workspace-tabs button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 @media (min-width:1450px) { .talent-results-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media (max-width:900px) { .assigned-row { grid-template-columns:minmax(0,1fr) auto; } .assigned-row > p { grid-column:1; } .compact-filterbar { grid-template-columns:1fr 1fr; } .compact-filterbar > label:first-child { grid-column:1 / -1; } .learning-context-bar { grid-template-columns:1fr minmax(180px,250px); } .learning-context-bar > a { grid-column:1 / -1; } }
-@media (max-width:640px) { .recommendation-filterbar, .learning-filter-primary, .talent-results-grid { grid-template-columns:1fr; } .learning-context-bar, .compact-filterbar { grid-template-columns:1fr; } .learning-context-bar > a { grid-column:auto; } .vacancy-actions { grid-template-columns:repeat(3,minmax(0,1fr)); } .vacancy-actions > .button-primary { grid-column:1 / -1; } .vacancy-actions > .vacancy-delete { grid-column:3; justify-self:end; } .vacancy-actions .button-sm { white-space:normal; } .board-actions > button { flex:1 1 45%; justify-content:center; } .board-actions > .button-primary { flex-basis:100%; margin:0; } .assigned-row { gap:.65rem; padding:1rem; } .assigned-row > a { grid-column:2; grid-row:2; } }
+@media (max-width:640px) { .recommendation-filterbar, .learning-filter-primary, .talent-results-grid { grid-template-columns:1fr; } .learning-context-bar, .compact-filterbar { grid-template-columns:1fr; } .learning-context-bar > a { grid-column:auto; } .vacancy-actions { grid-template-columns:repeat(3,minmax(0,1fr)); } .vacancy-actions > .button-primary { grid-column:1 / -1; } .vacancy-actions > .vacancy-delete { grid-column:3; justify-self:end; } .vacancy-actions .button-sm { white-space:normal; } .assigned-row { gap:.65rem; padding:1rem; } .assigned-row > a { grid-column:2; grid-row:2; } }
 
 .source-switcher { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.7rem; }
 .source-switcher button { padding:1rem .7rem; border:1px solid var(--line); border-radius:var(--radius-md); background:var(--surface); color:var(--muted); font-size:.83rem; font-weight:650; }

@@ -15,7 +15,6 @@
 .schedule-notes summary { cursor:pointer; color:var(--muted); font-size:.85rem; font-weight:600; }
 .schedule-notes label { margin-top:.75rem; }
 .schedule-save-note { font-size:.75rem; color:var(--muted); line-height:1.7; }
-.candidate-answers-link { min-height:40px; width:100%; color:var(--accent); font-size:12px; font-weight:600; text-align:left; }
 .profile-coach-dialog.answers-dialog { width:min(700px,calc(100vw - 2rem)); }
 .answers-workspace { padding:20px; }
 .answers-context { color:var(--muted); font-size:14px; line-height:1.7; }

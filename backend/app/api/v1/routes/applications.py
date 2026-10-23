@@ -1,5 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from typing import Literal
+
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 
 from app.api.deps import (
     get_current_user,
@@ -14,13 +17,36 @@ from app.api.schemas.application import (
     CompanyApplicationResponse,
 )
 from app.application.ports.unit_of_work import UnitOfWork
-from app.application.use_cases import application_preparation
+from app.application.use_cases import application_preparation, recruitment
 from app.application.use_cases import applications as use_cases
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Application, User
 from app.domain.services.resume_filename import resume_disposition
 
 router = APIRouter()
+
+
+@router.get("/jobs/{job_id}/workspace")
+def recruitment_workspace(job_id: int, bucket: Literal["inbox", "active", "closed", "interviews"] = "inbox",
+    search: str = Query(default="", max_length=150), score_filter: Literal["all", "strong", "missing", "unreviewed"] = "all",
+    order: Literal["score", "recent", "oldest"] = "score", stage: str | None = Query(default=None, max_length=80),
+    page: int = Query(default=1, ge=1), page_size: int = Query(default=25, ge=1, le=50),
+    user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return recruitment.workspace(db, user, job_id, bucket=bucket, search=search, score_filter=score_filter, order=order, stage=stage, page=page, page_size=page_size)
+
+
+@router.get("/{application_id}/review")
+def applicant_review(application_id: int, user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return recruitment.detail(db, user, application_id)
+
+
+class ReviewRequest(BaseModel):
+    expected_version: int = Field(ge=1)
+
+
+@router.post("/{application_id}/reviewed")
+def mark_reviewed(application_id: int, payload: ReviewRequest, user=Depends(require_roles(UserRole.COMPANY, UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return recruitment.mark_reviewed(db, user, application_id, payload.expected_version)
 
 
 @router.get("/{application_id}/resume", response_class=Response)

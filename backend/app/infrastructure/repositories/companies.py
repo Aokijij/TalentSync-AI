@@ -11,6 +11,11 @@ from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class CompanyRepository(SqlAlchemyRepository[Company]):
+    def find_for_access(self, user_id):
+        return self.session.query(Company).filter(or_(Company.owner_user_id == user_id, Company.id.in_(
+            self.session.query(CompanyMember.company_id).filter(CompanyMember.user_id == user_id, CompanyMember.active.is_(True))
+        ))).first()
+
     @staticmethod
     def _scored(query):
         return query.options(selectinload(Company.jobs).selectinload(Job.applications), selectinload(Company.incidents))

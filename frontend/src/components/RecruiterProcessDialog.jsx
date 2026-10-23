@@ -6,7 +6,7 @@ import { ConfirmModal } from "./ConfirmModal.jsx";
 import { interviewInputUtc, interviewInputValue } from "../utils/interviewAgenda.js";
 import "../styles/recruiter-dialog.css";
 
-export function RecruiterProcessDialog({ application, onClose, onDelete, onSave }) {
+export function RecruiterProcessDialog({ application, onClose, onDelete, onSave, onRequestFinalize }) {
   const root = useRef(null);
   const [notes, setNotes] = useState(application.recruiter_notes || "");
   const [interviewAt, setInterviewAt] = useState(
@@ -101,7 +101,7 @@ export function RecruiterProcessDialog({ application, onClose, onDelete, onSave 
               type="button"
               className="button-ghost text-[var(--error)]"
               disabled={busy || closed}
-              onClick={() => setConfirmDelete(true)}
+              onClick={() => onRequestFinalize ? onRequestFinalize() : setConfirmDelete(true)}
             >
               <Trash2 size={16} />
               Finalizar participación

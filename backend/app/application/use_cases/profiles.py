@@ -128,9 +128,9 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
     ):
         raise UseCaseError(status_code=404, detail="Perfil de candidato no encontrado")
     if current_user.role == UserRole.COMPANY and job_id is not None:
-        company = db.companies.find_by_owner(current_user.id)
+        company = db.companies.find_for_access(current_user.id)
         job = db.jobs.get(job_id)
-        application = next((row for row in job.applications if row.user_id == user_id), None) if job else None
+        application = db.applications.find_for_user_job(user_id, job_id) if job else None
         if not company or not job or job.company_id != company.id or application is None:
             raise UseCaseError(status_code=403, detail="El perfil debe pertenecer a una postulación de esta vacante")
         if identity_hidden(job, application):
@@ -146,7 +146,7 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_
                 "experiences": [{key: row.get(key) for key in ("role", "start_year", "end_year", "start_date", "end_date", "is_current")} for row in profile.experiences or []],
                 "educations": [{key: row.get(key) for key in ("degree", "start_year", "end_year", "is_current")} for row in profile.educations or []],
             }
-    if current_user.role == UserRole.COMPANY and (
+    if current_user.role == UserRole.COMPANY and application is None and (
         not company_can_view_candidate(db, current_user, user_id)
     ):
         raise UseCaseError(

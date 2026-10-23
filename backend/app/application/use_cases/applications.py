@@ -398,10 +398,12 @@ def delete_application(application_id: int, current_user: User, db: UnitOfWork) 
     db.commit()
 
 
-def company_application_view(row, user):
+def company_application_view(row, user, *, scores=None):
     hidden = user.role != UserRole.ADMIN and identity_hidden(row.job, row)
-    fields = ["id", "user_id", "job_id", "status", "created_at", "job_title", "company_name", "candidate_name", "interview_at", "pipeline_stage", "pipeline_stage_title", "resolution_reason", "recruiter_notes", "screening_adjustment", "base_match_percentage", "adjusted_match_percentage", "version", "response_due_at", "released_at", "candidate_feedback"]
+    fields = ["id", "user_id", "job_id", "status", "created_at", "job_title", "company_name", "candidate_name", "interview_at", "pipeline_stage", "pipeline_stage_title", "resolution_reason", "recruiter_notes", "screening_adjustment", "version", "response_due_at", "released_at", "candidate_feedback"]
     result = {key: getattr(row, key) for key in fields}
+    result["base_match_percentage"], result["adjusted_match_percentage"] = scores if scores is not None else (row.base_match_percentage, row.adjusted_match_percentage)
+    result["reviewed_at"] = row.reviewed_at
     result["interview_details"] = row.interview_details or {}
     result["identity_hidden"] = hidden
     result["screening_answers"] = [] if hidden else row.screening_answers or []

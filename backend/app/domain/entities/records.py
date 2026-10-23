@@ -137,6 +137,7 @@ class Application(Protocol):
     recruiter_notes: str | None
     interview_at: datetime | None
     interview_details: dict
+    reviewed_at: datetime | None
     pipeline_stage: str | None
     resolution_reason: str | None
     screening_answers: list[dict]

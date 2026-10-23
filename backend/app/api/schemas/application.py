@@ -84,6 +84,7 @@ ApplicationStatusUpdate.model_rebuild()
 
 
 class ApplicationResponse(BaseModel):
+    reviewed_at: datetime | None = None
     resume_version_id: str | None = None
     coach_draft_id: str | None = None
     version: int = 1

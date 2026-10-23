@@ -1,14 +1,64 @@
 from datetime import datetime
 
-from sqlalchemy import and_
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import joinedload
 
 from app.domain.entities.enums import ApplicationStatus
-from app.infrastructure.database.models import Application, Job, Recommendation
+from app.infrastructure.database.models import (
+    Application,
+    Job,
+    Profile,
+    Recommendation,
+    User,
+)
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class ApplicationRepository(SqlAlchemyRepository[Application]):
+    def workspace_page(self, job, *, bucket="inbox", search="", score_filter="all", order="score", stage=None, page=1, page_size=25):
+        first_stage = (job.pipeline_stages or [{"id": "submitted"}])[0]["id"]
+        final = or_(Application.released_at.is_not(None), Application.status.in_([ApplicationStatus.REJECTED, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED]))
+        incoming = Application.status.in_([ApplicationStatus.SUBMITTED, ApplicationStatus.SEEN])
+        bucket_expr = case((final, "closed"), (incoming, "inbox"), else_="active")
+        stage_expr = func.coalesce(Application.pipeline_stage, case(
+            (Application.status.in_([ApplicationStatus.SUBMITTED, ApplicationStatus.SEEN]), first_stage),
+            (Application.status.in_([ApplicationStatus.TECHNICAL_INTERVIEW, ApplicationStatus.PSYCHOMETRIC_TEST]), "interview"),
+            (Application.status.in_([ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED]), "hired"),
+            (Application.status == ApplicationStatus.REJECTED, "rejected"), else_="reviewing"))
+        raw_score = Recommendation.match_percentage + func.coalesce(Application.screening_adjustment, 0)
+        score = case((Recommendation.id.is_(None), None), (raw_score > 100, 100.0), (raw_score < 0, 0.0), else_=raw_score)
+        base = self.session.query(Application).filter(Application.job_id == job.id)
+        counts = {name: amount for name, amount in base.with_entities(bucket_expr, func.count(Application.id)).group_by(bucket_expr).all()}
+        stage_counts = dict(base.filter(bucket_expr == "active").with_entities(stage_expr, func.count(Application.id)).group_by(stage_expr).all())
+        all_stage_counts = dict(base.with_entities(stage_expr, func.count(Application.id)).group_by(stage_expr).all())
+        hired_count = base.filter(Application.status.in_([ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED])).count()
+        unreviewed = base.filter(bucket_expr == "inbox", Application.reviewed_at.is_(None)).count()
+        query = base.join(User, User.id == Application.user_id).outerjoin(Profile, Profile.user_id == Application.user_id).outerjoin(
+            Recommendation, and_(Recommendation.user_id == Application.user_id, Recommendation.job_id == Application.job_id))
+        interview_filter = and_(~final, Application.interview_at > datetime.utcnow())
+        counts["interviews"] = base.filter(interview_filter).count()
+        query = query.filter(interview_filter if bucket == "interviews" else bucket_expr == bucket)
+        if search.strip():
+            term = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            query = query.filter(or_(User.name.ilike(f"%{term}%", escape="\\"), Profile.profession.ilike(f"%{term}%", escape="\\")))
+        if score_filter == "strong":
+            query = query.filter(score >= 85)
+        elif score_filter == "missing":
+            query = query.filter(score.is_(None))
+        elif score_filter == "unreviewed":
+            query = query.filter(Application.reviewed_at.is_(None))
+        if stage:
+            query = query.filter(stage_expr == stage)
+        total = query.count()
+        safe_page = min(page, max(1, (total + page_size - 1) // page_size))
+        sorting = [score.is_(None), score.desc(), Application.created_at.asc(), Application.id.asc()] if order == "score" else [Application.created_at.desc(), Application.id.desc()] if order == "recent" else [Application.created_at.asc(), Application.id.asc()]
+        rows = query.with_entities(Application.id, Application.user_id, Application.job_id, Application.status, Application.pipeline_stage,
+            Application.created_at, Application.reviewed_at, Application.interview_at, Application.interview_details, Application.version, Application.screening_adjustment,
+            User.name.label("candidate_name"), Profile.profession, Recommendation.match_percentage.label("base_match_percentage"), score.label("adjusted_match_percentage"),
+            stage_expr.label("effective_stage")).order_by(*sorting).offset((safe_page - 1) * page_size).limit(page_size).all()
+        return {"items": [dict(row._mapping) for row in rows], "total": total, "page": safe_page, "page_size": page_size,
+                "counts": {name: counts.get(name, 0) for name in ("inbox", "active", "closed", "interviews")}, "unreviewed": unreviewed, "stage_counts": stage_counts, "all_stage_counts": all_stage_counts, "hired_count": hired_count}
+
     def approaching_deadlines(self, before):
         return self.session.query(Application).filter(Application.response_due_at <= before, Application.released_at.is_(None),
             Application.status.notin_([ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED, ApplicationStatus.REJECTED])).order_by(Application.response_due_at).limit(500).all()

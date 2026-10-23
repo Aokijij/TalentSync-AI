@@ -503,6 +503,7 @@ class Application(Base):
     __tablename__ = "applications"
     __table_args__ = (
         Index("ix_applications_job_status", "job_id", "status"),
+        Index("ix_applications_job_reviewed", "job_id", "reviewed_at"),
         UniqueConstraint("user_id", "job_id", name="uq_application_user_job"),
     )
 
@@ -528,6 +529,7 @@ class Application(Base):
     interview_evaluations: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     interview_at: Mapped[datetime | None] = mapped_column(DateTime)
     interview_details: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
     pipeline_stage: Mapped[str | None] = mapped_column(String(80), nullable=True)
     resolution_reason: Mapped[str | None] = mapped_column(String(80), nullable=True)
     screening_answers: Mapped[list[dict]] = mapped_column(

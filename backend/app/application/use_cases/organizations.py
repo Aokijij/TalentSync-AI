@@ -10,8 +10,8 @@ from app.domain.services.blind_hiring import candidate_alias, identity_hidden
 from app.domain.services.pipeline import stages_for
 
 
-def context(db, user, *, owner=False):
-    company = db.companies.find_by_owner(user.id)
+def context(db, user, *, owner=False, light=False):
+    company = db.companies.find_for_access(user.id) if light else db.companies.find_by_owner(user.id)
     if company is None:
         raise UseCaseError(status_code=404, detail="No tienes una empresa asociada")
     if owner and company.owner_user_id != user.id:
@@ -35,7 +35,7 @@ def authorize_request(db, user, path, method):
         return
     if path in {"/api/v1/organization/access", "/api/v1/organization/access-review"}:
         return
-    company = context(db, user)
+    company = context(db, user, light=True)
     member = db.organizations.member_for_user(user.id)
     owner = company.owner_user_id == user.id
     if company.verification_status == "suspended" and not path.startswith(("/api/v1/organization/", "/api/v1/trust/")):

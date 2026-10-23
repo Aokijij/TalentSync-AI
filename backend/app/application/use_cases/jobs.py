@@ -47,7 +47,7 @@ def ensure_job_access(db: UnitOfWork, job: Job, user: User) -> None:
 
 
 def company_board_jobs(current_user, db):
-    company = owned_company(db, current_user)
+    company = db.companies.find_for_access(current_user.id)
     if company is None:
         raise UseCaseError(status_code=403, detail="No tienes una empresa asociada")
     return db.jobs.board_choices(company.id)
