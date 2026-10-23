@@ -164,3 +164,6 @@
 @media(min-width:1450px) { .recruitment-content.is-board.has-selection { grid-template-columns:minmax(560px,1fr) minmax(380px,460px); } .recruitment-content.is-board.has-selection .recruitment-detail-wrap { position:sticky; top:1rem; height:70dvh; } }
 @media(max-width:1050px) { .recruitment-filters.has-stage-filter { grid-template-columns:1fr 1fr 44px; } .recruitment-filters.has-stage-filter .recruitment-search { grid-column:1/-1; } }
 @media(max-width:760px) { .recruitment-content.is-board.has-selection>.recruitment-candidate-list { display:none; } .recruitment-content.is-board .recruitment-detail-wrap { max-height:none; } .recruitment-filters.has-stage-filter { grid-template-columns:minmax(0,1fr) 44px; } .recruitment-filters.has-stage-filter label { grid-column:1/-1; } .recruitment-filters.has-stage-filter>button { grid-column:2; } .recruitment-interview-filters { display:grid; grid-template-columns:1fr 1fr; } .recruitment-interview-filters button { font-size:.7rem; justify-content:space-between; padding:.5rem; } }
+
+.pipeline-applicant>.response-deadline-badge { grid-column:1/-1; }
+.applicant-list-info>.response-deadline-badge { color:var(--ink-strong); }

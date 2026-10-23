@@ -139,6 +139,10 @@ class Application(Protocol):
     interview_details: dict
     interview_completed_at: datetime | None
     reviewed_at: datetime | None
+    response_overdue_at: datetime | None
+    response_paused_at: datetime | None
+    deadline_missed_at: datetime | None
+    deadline_extension_count: int
     pipeline_stage: str | None
     resolution_reason: str | None
     screening_answers: list[dict]

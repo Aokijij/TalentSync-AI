@@ -12,6 +12,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
+import { responseState } from "../utils/responseDeadlines.js";
+import { ResponseDeadlineBadge } from "../components/ResponseDeadlinePanel.jsx";
 import { InterviewAgenda } from "../components/InterviewAgenda.jsx";
 import { activeInterview, interviewDateParts, processDate } from "../utils/interviewAgenda.js";
 import { isOpenProcess } from "../utils/dashboardData.js";
@@ -213,6 +215,7 @@ export function ApplicationsPage() {
                 </span>
               </div>
 
+              <div className="mt-3"><ResponseDeadlineBadge application={application} /></div>
               <div
                 className="relative mt-7 grid grid-cols-4 gap-2"
                 aria-label={`Progreso: ${statusLabel[application.status] || "En revisión"}`}
@@ -268,7 +271,7 @@ export function ApplicationsPage() {
                     </p>
                   )}
                 </div>
-                {isOpenProcess(application) && ["submitted", "seen"].includes(application.status) ? (
+                {isOpenProcess(application) && (["submitted", "seen"].includes(application.status) || responseState(application) === "paused") ? (
                   <button
                     className="text-sm font-semibold text-[var(--error)] hover:underline"
                     type="button"

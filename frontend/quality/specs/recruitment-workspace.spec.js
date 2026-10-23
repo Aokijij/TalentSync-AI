@@ -6,13 +6,13 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Re
   page.on("pageerror", (error) => errors.push(error.message));
   const stages = [{ id: "submitted", title: "Recibidas" }, { id: "reviewing", title: "En revisión" }, { id: "interview", title: "Entrevista" }, { id: "hired", title: "Contratados" }, { id: "rejected", title: "No seleccionados" }];
   const rows = Array.from({ length: 400 }, (_, i) => ({ id: i + 1, user_id: i + 1001, job_id: 101, candidate_name: `Persona ${String(i).padStart(3, "0")}`, profession: "Analista de operaciones", created_at: "2026-10-20T14:00:00", reviewed_at: null, version: 1, base_match_percentage: i % 5 ? 75 : null, adjusted_match_percentage: i % 5 ? 75 : null, screening_adjustment: 0, recruiter_notes: "Solo para el equipo", screening_answers: i === 398 ? [{ question_id: "example", question: "Describe un resultado", answer: "Organicé inventarios y verifiqué las diferencias.", type: "open", reviewer_adjustment: 1 }] : [], interview_at: i === 396 ? "2030-10-30T14:00:00" : null, interview_details: i === 396 ? { mode: "virtual", minutes: 60, location: "https://meet.google.com/example" } : {}, status: i < 396 ? "submitted" : i < 398 ? "reviewing" : i === 398 ? "hired" : "rejected", pipeline_stage: i < 396 ? "submitted" : i < 398 ? "reviewing" : i === 398 ? "hired" : "rejected" }));
-  const group = (row) => ["hired", "accepted", "rejected"].includes(row.status) ? "closed" : ["submitted", "seen"].includes(row.status) ? "inbox" : "active";
+  const group = (row) => ["hired", "accepted", "rejected"].includes(row.status) ? "closed" : row.response_paused_at ? "paused" : ["submitted", "seen"].includes(row.status) ? "inbox" : "active";
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request(), url = new URL(request.url()), path = url.pathname.replace("/api/v1", ""); calls.push({ method: request.method(), path, params: url.searchParams, body: request.method() === "POST" || request.method() === "PUT" ? request.postDataJSON() : null });
     const json = (data, status = 200) => route.fulfill({ status, json: data });
     if (path === "/jobs/mine/board") return json([{ id: 101, title: "Analista de operaciones y coordinación de inventarios", status: "active", applications_count: 400, pipeline_stages: stages }]);
     if (path === "/applications/jobs/101/workspace") {
-      const counts = { inbox: 0, active: 0, closed: 0, interviews: 1 }, stageCounts = {}, allStageCounts = {};
+      const counts = { inbox: 0, active: 0, closed: 0, interviews: 1, paused: 0 }, stageCounts = {}, allStageCounts = {};
       for (const row of rows) { counts[group(row)]++; allStageCounts[row.pipeline_stage] = (allStageCounts[row.pipeline_stage] || 0) + 1; if (group(row) === "active") stageCounts[row.pipeline_stage] = (stageCounts[row.pipeline_stage] || 0) + 1; }
       const bucket = url.searchParams.get("bucket"), search = url.searchParams.get("search") || "", score = url.searchParams.get("score_filter");
       const filtered = rows.filter((row) => (bucket === "interviews" ? row.interview_at && group(row) !== "closed" : group(row) === bucket) && (bucket !== "interviews" || !url.searchParams.get("interview_state") || url.searchParams.get("interview_state") === "all" || (url.searchParams.get("interview_state") === "awaiting_response" ? !!row.interview_completed_at : url.searchParams.get("interview_state") === "scheduled" ? new Date(row.interview_at) > new Date() && !row.interview_completed_at : new Date(row.interview_at) < new Date() && !row.interview_completed_at)) && (!url.searchParams.get("stage") || row.pipeline_stage === url.searchParams.get("stage")) && `${row.candidate_name} ${row.profession}`.toLowerCase().includes(search.toLowerCase()) && (score === "missing" ? row.adjusted_match_percentage == null : score === "unreviewed" ? !row.reviewed_at : true));
@@ -127,6 +127,12 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Re
   await expect(closedAnswers.getByRole("combobox")).toBeDisabled();
   await expect(closedAnswers.getByRole("button", { name: /Guardar valoración/ })).toHaveCount(0);
   await closedAnswers.getByRole("button", { name: "Cerrar", exact: true }).click();
+  rows[397].response_paused_at = new Date().toISOString(); rows[397].response_due_at = "2020-10-20T15:00:00";
+  await page.getByRole("tab", { name: /^En pausa/ }).click();
+  await expect(page.locator(".applicant-list-row")).toHaveCount(1);
+  await page.locator(".applicant-list-row").first().click();
+  await expect(detail.getByRole("link", { name: "Gestionar plazo", exact: true })).toBeVisible();
+  await expect(detail.getByText("En pausa · Falta de respuesta de la empresa", { exact: true })).toBeVisible();
   await page.getByRole("tab", { name: /^Por revisar/ }).click();
   await page.getByRole("textbox", { name: "Buscar candidatura", exact: true }).fill("Persona 200");
   await expect(page.locator(".applicant-list-row")).toHaveCount(1);

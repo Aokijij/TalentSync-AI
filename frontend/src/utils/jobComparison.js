@@ -41,7 +41,7 @@ export function comparisonFacts(job) {
     education: [EDUCATION_LEVELS[job.required_education_level], ...(job.required_study_fields || []), job.required_education_level && details.education_accepts_in_progress ? "Admite estudios en curso" : ""].filter(Boolean).join(" · ") || "Formación sin especificar",
     languages: (job.languages || []).map((item) => `${item.name} · ${languageLevelLabel(item.level)}`).join(", ") || "Idiomas sin especificar",
     benefits: (job.benefits || []).join(" · ") || "Beneficios sin especificar",
-    process: [details.process_days != null ? `${details.process_days} días estimados de selección` : "", job.source_kind !== "external" && job.response_days != null ? `${job.response_days} días para responder a cada avance` : ""].filter(Boolean).join(" · ") || "Plazos sin especificar",
+    process: [details.process_days != null ? `${details.process_days} días estimados de selección` : "", job.source_kind !== "external" && job.response_days != null ? `${job.response_days} días laborables para responder a cada avance` : ""].filter(Boolean).join(" · ") || "Plazos sin especificar",
   };
 }
 

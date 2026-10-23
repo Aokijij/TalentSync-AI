@@ -18,9 +18,10 @@ class EcosystemRepository:
 
     def company_directory(self, *, search, filter, page, page_size):
         cutoff = datetime.utcnow() - timedelta(days=90)
+        missed_deadline = or_(Application.deadline_missed_at.is_not(None), Application.resolution_reason == "response_deadline")
         processes = self.session.query(Job.company_id.label("company_id"), func.count(Application.id).label("measured"),
-            func.sum(case((Application.resolution_reason == "response_deadline", 1), else_=0)).label("missed")).join(Application, Application.job_id == Job.id).filter(
-                Application.created_at >= cutoff, or_(Application.first_response_at.is_not(None), Application.resolution_reason == "response_deadline")).group_by(Job.company_id).subquery()
+            func.sum(case((missed_deadline, 1), else_=0)).label("missed")).join(Application, Application.job_id == Job.id).filter(
+                Application.created_at >= cutoff, or_(Application.first_response_at.is_not(None), missed_deadline)).group_by(Job.company_id).subquery()
         incidents = self.session.query(TrustIncident.company_id.label("company_id"), func.count(TrustIncident.id).label("confirmed")).filter(
             TrustIncident.created_at >= cutoff, TrustIncident.status.in_(["confirmed", "appealed"])).group_by(TrustIncident.company_id).subquery()
         measured = func.coalesce(processes.c.measured, 0)

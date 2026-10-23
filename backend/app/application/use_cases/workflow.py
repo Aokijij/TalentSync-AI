@@ -8,6 +8,15 @@ from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.services.blind_hiring import candidate_alias, identity_hidden
 from app.domain.services.interview_calendar import interview_calendar, utc
 from app.domain.services.pipeline import stage_id_for, stages_for
+from app.domain.services.response_deadlines import (
+    EXTENSION_LIMIT,
+    EXTENSION_WORKDAYS,
+    PAUSE_WORKDAYS,
+    add_workdays,
+    deadline_view,
+    interview_deadline,
+    reset_response,
+)
 
 FINAL = {ApplicationStatus.REJECTED, ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED}
 
@@ -16,8 +25,7 @@ def transition(db, row, actor_id, *, previous_status=None, previous_stage=None, 
     now = now or datetime.utcnow()
     if source == "company" and row.first_response_at is None:
         row.first_response_at = now
-    row.response_due_at = None if row.status in FINAL or row.released_at else now + timedelta(days=row.job.response_days)
-    row.reminder_sent_at = None
+    reset_response(row, None if row.status in FINAL or row.released_at else add_workdays(now, row.job.response_days))
     record_event(db, "application.transition", "application", row.id, actor_user_id=actor_id, details={
         "status": row.status.value, "previous_status": previous_status.value if previous_status else None,
         "stage": stage_id_for(row), "previous_stage": previous_stage, "job_id": row.job_id,
@@ -44,8 +52,8 @@ def timeline(db, user, application_id):
     member = db.organizations.member_for_user(user.id) if user.role == UserRole.COMPANY else None
     history = [{"id": item.id, "at": item.created_at, "type": item.event_type, **item.details}
                for item in reversed(db.events.for_entity("application", row.id, 500))
-               if item.event_type in {"application.transition", "application.deadline_released", "application.withdrawn", "application.feedback_shared", "application.interview_updated", "application.interview_completed"}]
-    return {"job_title": row.job.title, "company_name": row.job.company.name, "job_id": row.job_id, "application_id": row.id, "can_manage": user.role != UserRole.CANDIDATE and (member is None or member.role != "interviewer"), "version": row.version, "status": row.status.value, "stage": stage_id_for(row),
+               if item.event_type in {"application.transition", "application.deadline_released", "application.withdrawn", "application.feedback_shared", "application.interview_updated", "application.interview_completed", "application.response_overdue", "application.response_paused", "application.deadline_extended", "application.deadline_protected"}]
+    return {**deadline_view(row), "response_owner": f"Equipo de selección de {row.job.company.name}", "job_title": row.job.title, "company_name": row.job.company.name, "job_id": row.job_id, "application_id": row.id, "can_manage": user.role != UserRole.CANDIDATE and (member is None or member.role != "interviewer"), "version": row.version, "status": row.status.value, "stage": stage_id_for(row),
             "stage_title": row.pipeline_stage_title,
             "interview_at": row.interview_at, "interview_details": row.interview_details or {}, "interview_completed_at": row.interview_completed_at, "job_description": row.job.description, "job_requirements": row.job.requirements,
             "job_conditions": {"salary": row.job.salary, "quality_details": row.job.quality_details,
@@ -89,29 +97,77 @@ def withdraw(db, user, application_id):
 
 def deadline_cycle(db, *, now=None):
     now = now or datetime.utcnow()
-    released = 0
-    reminders = 0
-    for row in db.applications.approaching_deadlines(now + timedelta(days=1)):
+    result = {"released": 0, "reminders": 0, "overdue": 0, "paused": 0, "protected": 0}
+    for row in db.applications.approaching_deadlines(now + timedelta(days=1), now=now):
+        floor = interview_deadline(row)
+        if floor and floor > row.response_due_at:
+            if db.applications.claim_response_change(row, {"response_due_at": floor, "response_overdue_at": None, "reminder_sent_at": None}):
+                record_event(db, "application.deadline_protected", "application", row.id,
+                    details={"source": "system", "job_id": row.job_id, "deadline": floor.isoformat(), "reason_code": "interview_schedule"})
+                result["protected"] += 1
+            continue
         if row.response_due_at <= now:
-            if not db.applications.claim_deadline(row, now):
+            if row.response_overdue_at is None:
+                changes = {"response_overdue_at": now}
+                if row.deadline_missed_at is None:
+                    changes["deadline_missed_at"] = now
+                kind, title = "overdue", "Respuesta atrasada de la empresa"
+                message = "La empresa superó su fecha de respuesta. Tu candidatura sigue abierta y el equipo de selección debe comunicar el siguiente paso."
+            elif add_workdays(row.response_overdue_at, PAUSE_WORKDAYS) <= now:
+                changes = {"response_paused_at": now}
+                kind, title = "paused", "Proceso en pausa por falta de respuesta de la empresa"
+                message = "La empresa sigue sin comunicar un avance. Tu candidatura y su etapa se conservan; puedes consultar el historial o retirar tu postulación."
+            else:
                 continue
-            row.candidate_feedback = {"source": "system", "reason_code": "response_deadline",
-                "message": "La empresa no comunicó un avance dentro del plazo. El proceso se cerró por vencimiento; esto no evalúa tu capacidad.",
-                "created_at": now.isoformat()}
-            record_event(db, "application.deadline_released", "application", row.id, details={"job_id": row.job_id, "company_id": row.job.company_id, "reason_code": "response_deadline"})
-            for recipient in [row.user_id, row.job.company.owner_user_id]:
-                db.add(db.notifications.new(user_id=recipient, type="application_deadline", title="Proceso cerrado por falta de respuesta",
-                    body=f"Venció el plazo de {row.job.title}. El cierre quedó registrado en el historial.", action_url=f"/procesos/{row.id}"))
-            released += 1
-        elif row.reminder_sent_at is None:
-            row.reminder_sent_at = now
+            if not db.applications.claim_response_change(row, changes):
+                continue
+            record_event(db, f"application.response_{kind}", "application", row.id,
+                details={"source": "system", "job_id": row.job_id, "deadline": row.response_due_at.isoformat()})
+            for recipient in {row.user_id, row.job.company.owner_user_id}:
+                db.add(db.notifications.new(user_id=recipient, type=f"application_response_{kind}", title=title,
+                    body=f"{row.job.title}. {message}", action_url=f"/procesos/{row.id}"))
+            result[kind] += 1
+        elif row.reminder_sent_at is None and db.applications.claim_response_change(row, {"reminder_sent_at": now}):
+            local = row.response_due_at.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=-5)))
             db.add(db.notifications.new(user_id=row.job.company.owner_user_id, type="application_deadline_reminder",
-                title="Un plazo de respuesta está por vencer", body=f"Actualiza el proceso de {row.job.title} antes de {row.response_due_at.isoformat()} UTC.",
+                title="Tu compromiso de respuesta está por vencer", body=f"Comunica el siguiente paso de {row.job.title} antes del {local.strftime('%d/%m/%Y a las %H:%M')} (Colombia). Puedes ampliar el plazo una vez con un motivo y una nueva fecha.",
                 action_url=f"/procesos/{row.id}"))
-            reminders += 1
-    if released or reminders:
+            result["reminders"] += 1
+    if any(result.values()):
         db.commit()
-    return {"released": released, "reminders": reminders}
+    return result
+
+
+def extend_deadline(db, user, application_id, *, expected_version, due_at, reason, now=None):
+    now = now or datetime.utcnow()
+    row = accessible_application(db, user, application_id)
+    member = db.organizations.member_for_user(user.id)
+    if user.role != UserRole.COMPANY or member and member.role == "interviewer":
+        raise UseCaseError(status_code=403, detail="Solo el equipo que gestiona la selección puede ampliar el plazo")
+    if row.released_at or row.status in FINAL:
+        raise UseCaseError(status_code=409, detail="Este proceso finalizó y es de solo lectura")
+    if row.version != expected_version:
+        raise UseCaseError(status_code=409, detail="El proceso cambió; actualiza antes de ampliar el plazo")
+    if row.deadline_extension_count >= EXTENSION_LIMIT:
+        raise UseCaseError(status_code=409, detail="Ya utilizaste la ampliación de esta etapa. Comunica un avance o una decisión al candidato")
+    if due_at <= now or row.response_due_at and due_at <= row.response_due_at or due_at > add_workdays(max(now, row.response_due_at or now), EXTENSION_WORKDAYS):
+        raise UseCaseError(status_code=422, detail="Elige una fecha posterior al plazo actual y hasta 7 días laborables adicionales")
+    floor = interview_deadline(row)
+    if floor and due_at < floor:
+        raise UseCaseError(status_code=422, detail="El nuevo plazo debe respetar la entrevista y su tiempo de respuesta posterior")
+    local = due_at.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=-5)))
+    if local.weekday() >= 5:
+        raise UseCaseError(status_code=422, detail="Elige un día de lunes a viernes para el compromiso de respuesta")
+    previous, was_paused = row.response_due_at, row.response_paused_at is not None
+    row.response_due_at, row.response_overdue_at, row.response_paused_at, row.reminder_sent_at = due_at, None, None, None
+    row.deadline_extension_count += 1
+    record_event(db, "application.deadline_extended", "application", row.id, actor_user_id=user.id,
+        details={"source": "company", "job_id": row.job_id, "deadline": due_at.isoformat(), "previous_deadline": previous.isoformat() if previous else None,
+                 "extension_reason": reason, "resumed": was_paused})
+    db.add(db.notifications.new(user_id=row.user_id, type="application_deadline_extended", title="Nuevo compromiso de respuesta de la empresa",
+        body=f"{row.job.company.name} responderá sobre {row.job.title} antes del {local.strftime('%d/%m/%Y a las %H:%M')} (Colombia). Motivo: {reason}", action_url=f"/procesos/{row.id}"))
+    db.commit()
+    return timeline(db, user, row.id)
 
 
 def evaluate_interview(db, user, application_id, payload):

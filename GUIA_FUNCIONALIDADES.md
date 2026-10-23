@@ -32,7 +32,7 @@ En **Mercado laboral**, la compatibilidad mínima parte de **Cualquiera**: inclu
 - **Añadir a Google Calendar** guarda el evento con esos detalles y un recordatorio 30 minutos antes. Una vez añadido, los cambios y cancelaciones se actualizan automáticamente. La conexión se autoriza una vez desde Seguridad; solo se pide renovarla cuando Google revoca o vence el permiso.
 - Se retiró **Descargar cita** de la interfaz. El endpoint histórico de iCalendar permanece por compatibilidad.
 - Cambiar fecha, modalidad, lugar o indicaciones genera una notificación y una entrada del historial. El contador de avisos se actualiza periódicamente mientras la aplicación está visible.
-- El plazo de respuesta tiene en cuenta una entrevista futura para no cerrar el proceso antes de celebrarla. El guardado conserva las comprobaciones de versión para evitar sobrescribir cambios de otro miembro del equipo.
+- El plazo de respuesta protege la entrevista y su periodo posterior. Vencer el compromiso activa seguimiento y avisos; el resultado de selección se comunica expresamente. El guardado conserva las comprobaciones de versión para evitar sobrescribir cambios de otro miembro del equipo.
 
 También se corrigió la conversión de fechas: abrir una entrevista ya guardada y volver a guardar su hora no debe desplazarla cinco horas. Los avisos indican expresamente la hora de Colombia.
 
@@ -163,3 +163,16 @@ La revisión posterior recorrió **140 vistas autenticadas y 18 flujos funcional
 - Una reprogramación reinicia la confirmación de asistencia y conserva el evento anterior en el historial. Un avance posterior saca la candidatura del grupo de decisiones de entrevista pendientes.
 - Los procesos finalizados conservan respuestas y evaluaciones en modo de consulta. No permiten gestionar entrevistas, modificar valoraciones ni reactivarse al reabrir la vacante.
 - Google Calendar muestra un acceso de conexión legible y compacto. Conectar la cuenta y añadir una entrevista son acciones distintas; solo las entrevistas añadidas se actualizan con sus cambios.
+
+
+### Compromisos de respuesta y seguimiento de retrasos
+
+La duración estimada de selección se muestra separada del próximo compromiso de respuesta. Las nuevas ofertas proponen cinco días laborables por avance; la empresa puede ajustar entre 1 y 30. Los nuevos plazos se calculan de lunes a viernes en hora de Colombia, sin descontar festivos. Las fechas previamente acordadas se conservan hasta un avance o una ampliación explícita, salvo la protección necesaria por una entrevista.
+
+1. Antes de vencer, se recuerda el compromiso al responsable de selección.
+2. Al vencer, se registra **Respuesta atrasada** y se avisa a empresa y candidato. La etapa, la candidatura y el último feedback de la empresa se conservan.
+3. Si pasan tres días laborables desde el aviso sin respuesta, el proceso aparece en **En pausa**. Se conserva su historial y no se convierte en un descarte.
+4. La empresa puede ampliar una vez por etapa, con motivo público y nueva fecha. La ampliación añade hasta siete días laborables al compromiso actual, o desde hoy si venció. Requiere confirmar el aviso al candidato y respetar la entrevista programada.
+5. Un avance real o la gestión de una nueva fecha de entrevista establece su compromiso correspondiente. Guardar notas, valorar respuestas, abrir perfiles o repetir la misma etapa no reinicia el plazo.
+
+El seguimiento muestra responsable, fecha comprometida, estado del plazo y fecha de pausa prevista. Las pausas se consultan en su propia sección de postulaciones; desde allí puede retomarse con nuevo compromiso o comunicarse una decisión. Las ampliaciones y los avisos se registran en el historial. El incumplimiento se conserva en los indicadores de respuesta incluso si luego se amplía el plazo. Los cierres históricos ya comunicados conservan su resultado.

@@ -174,3 +174,14 @@ La confirmación de entrevista realizada se registra en `interview_completed_at`
 Validación: 66 pruebas backend, incluida migración y entrega de calendario con proveedor simulado; 223 pruebas frontend; 13 recorridos de interfaz a 360/1280 px en claro/oscuro. Las capturas con 400 postulaciones usan datos sintéticos de Playwright, no una cuenta persistente. La migración local se aplicó con copia de seguridad e integridad verificada; conservó todos los datos previos de postulaciones. No se enviaron decisiones a candidatos reales ni se crearon eventos de Google para estas pruebas.
 
 Continúan fuera de esta entrega las entrevistas múltiples por postulación, reservas de disponibilidad y evaluaciones por criterios. El flujo actual gestiona una entrevista por candidatura con su historial de reprogramaciones.
+
+
+### Seguimiento de plazos sin descarte automático — 23/10/2026
+
+Se sustituyó el cierre por vencimiento por avisos de respuesta atrasada y pausa tras tres días laborables desde el aviso. La etapa, la candidatura y el último mensaje empresarial se conservan. La pausa se consulta fuera del tablero activo y admite retomar mediante ampliación pública limitada, avance real o programación de entrevista. El resultado de selección sigue requiriendo comunicación explícita.
+
+La migración `0051_response_followup` añade marcas de retraso, pausa, primer incumplimiento y contador de ampliaciones. No reclasifica cierres previos. El trabajador revalida la protección de entrevistas, usa actualizaciones condicionadas por versión para evitar duplicados y omite periodos de gracia aún vigentes para no bloquear lotes posteriores. La reputación incorpora el incumplimiento sin asignar un rechazo al candidato.
+
+Los plazos nuevos cuentan lunes a viernes en Colombia, sin calendario de festivos. Las ampliaciones requieren versión vigente, permisos de gestión, motivo público de 20 a 500 caracteres, fecha posterior al compromiso y un máximo de siete días laborables adicionales. Se permite una por etapa. Notas, consultas y valoraciones no reinician el plazo. Las pruebas de ciclo y notificaciones usan bases descartables y proveedores simulados.
+
+Verificación de esta entrega: 80 pruebas backend, 227 pruebas frontend y 17 recorridos de interfaz en claro/oscuro y móvil/escritorio. La migración local preservó todas las columnas previas de las postulaciones y pasó la comprobación de integridad. El servidor local tiene activo el ciclo de seguimiento; la cuenta de empresa de demostración pudo consultar las cinco secciones y su política de plazos. Las pruebas de ampliación y pausa se ejecutaron sobre datos sintéticos, sin modificar decisiones de candidaturas personales.

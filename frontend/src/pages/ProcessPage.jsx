@@ -1,3 +1,4 @@
+import { responseState } from "../utils/responseDeadlines.js";
 import { isProcessClosed } from "../utils/recruitmentState.js";
 import { RecruiterProcessDialog } from "../components/RecruiterProcessDialog.jsx";
 import { useEffect, useState } from "react";
@@ -61,7 +62,7 @@ function ProcessController({ applicationId }) {
     {message && <InlineNotice tone="success" title="Proceso actualizado">{message}</InlineNotice>}
     {!process && !error && <p role="status" className="text-sm text-[var(--muted)]">Cargando el proceso…</p>}
     {process && <>
-      <ProcessWorkspace process={process} role={user.role} onCompleteInterview={process.can_manage && !isProcessClosed(process) ? async () => { if (busy || !await confirm({ title: "Registrar entrevista realizada", description: "Se avisará al candidato que su entrevista se realizó y que está pendiente de respuesta. El plazo para comunicar la decisión comienza ahora.", confirmLabel: "Registrar y notificar" })) return; setBusy(true); try { await saveProcess({ interview_action: "complete" }, "Entrevista realizada. Registra la evaluación y comunica la decisión."); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } } : undefined} onManageInterview={process.can_manage && !isProcessClosed(process) ? () => setManageInterview(true) : undefined}
+      <ProcessWorkspace process={process} role={user.role} onProcessUpdated={(updated) => { setProcess(updated); setMessage("Nuevo compromiso guardado y comunicado al candidato."); }} onCompleteInterview={process.can_manage && !isProcessClosed(process) ? async () => { if (busy || !await confirm({ title: "Registrar entrevista realizada", description: "Se avisará al candidato que su entrevista se realizó y que está pendiente de respuesta. El plazo para comunicar la decisión comienza ahora.", confirmLabel: "Registrar y notificar" })) return; setBusy(true); try { await saveProcess({ interview_action: "complete" }, "Entrevista realizada. Registra la evaluación y comunica la decisión."); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } } : undefined} onManageInterview={process.can_manage && !isProcessClosed(process) ? () => setManageInterview(true) : undefined}
         evaluation={user.role === "company" ? <InterviewEvaluationPanel process={process} onSaved={setProcess} /> : null}
         communication={process.can_manage && !isProcessClosed(process) ? <CommunicationForm process={process} busy={busy} onCommunicate={communicate} /> : null}
         preparation={user.role === "candidate" ? <ApplicationPreparation applicationId={applicationId} jobId={process.job_id} /> : null}
@@ -76,6 +77,7 @@ function CommunicationForm({ process, busy, onCommunicate }) {
   const [values, setValues] = useState({ status: process.status, message: "", reason_code: "other" });
   const change = (event) => setValues((current) => ({ ...current, [event.target.name]: event.target.value }));
   return <Panel title="Comunicar avance o resultado" description="El candidato podrá consultar este estado y el mensaje en su seguimiento." className="process-communicate">
+    {responseState(process) === "paused" && <p className="text-sm text-[var(--muted)]">Para retomar el seguimiento, comunica un cambio de etapa o registra un nuevo compromiso desde el resumen. Enviar un mensaje conserva la etapa y el plazo actuales.</p>}
     <form onSubmit={async (event) => { event.preventDefault(); if (await onCommunicate(values)) setValues((current) => ({ ...current, message: "" })); }}>
       <label>Estado<select className="field-control" name="status" value={values.status} onChange={change} disabled={busy}>{Object.entries(processLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label>Motivo del feedback<select className="field-control" name="reason_code" value={values.reason_code} onChange={change} disabled={busy}><option value="other">Otro motivo</option><option value="skills_gap">Habilidades por acreditar</option><option value="experience_gap">Experiencia solicitada</option><option value="position_closed">Vacante cerrada</option></select></label>

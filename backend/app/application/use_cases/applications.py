@@ -10,6 +10,12 @@ from app.domain.entities.records import Application, User
 from app.domain.services.blind_hiring import identity_hidden
 from app.domain.services.interview_calendar import utc
 from app.domain.services.pipeline import stages_for
+from app.domain.services.response_deadlines import (
+    add_workdays,
+    deadline_view,
+    interview_deadline,
+    reset_response,
+)
 
 
 def _screening_result(job, submitted: list[dict]) -> tuple[list[dict], float]:
@@ -211,8 +217,7 @@ def update_status(
             raise UseCaseError(status_code=422, detail="Registra la entrevista realizada antes de cambiar su programación o etapa")
         if application.interview_completed_at is None:
             application.interview_completed_at = datetime.utcnow()
-            application.response_due_at = datetime.utcnow() + timedelta(days=application.job.response_days)
-            application.reminder_sent_at = None
+            reset_response(application, add_workdays(datetime.utcnow(), application.job.response_days))
             record_event(db, "application.interview_completed", "application", application.id, actor_user_id=current_user.id,
                          details={"source": "company", "job_id": application.job_id})
             db.add(db.notifications.new(user_id=application.user_id, type="application_interview",
@@ -309,6 +314,8 @@ def update_status(
     interview_changed = application.interview_at != previous_interview or (application.interview_details or {}) != previous_details
     if application.interview_at != previous_interview:
         application.interview_completed_at = None
+        if application.status not in {ApplicationStatus.REJECTED, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED}:
+            reset_response(application, add_workdays(datetime.utcnow(), application.job.response_days))
     final_statuses = {ApplicationStatus.REJECTED, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED}
     if interview_changed and application.interview_at and application.status in final_statuses:
         raise UseCaseError(status_code=409, detail="Un proceso finalizado no admite entrevistas nuevas o modificadas")
@@ -328,16 +335,15 @@ def update_status(
     if application.status not in final_statuses and (interview_changed or status_changed or stage_changed):
         now = datetime.utcnow()
         if application.interview_at and application.interview_at > now:
-            interview_deadline = application.interview_at + timedelta(minutes=(application.interview_details or {}).get("minutes", 45), days=application.job.response_days)
+            protected_deadline = interview_deadline(application)
             # Do not close a process for silence before its scheduled interview.
-            if application.response_due_at is None or application.response_due_at < interview_deadline:
-                application.response_due_at = interview_deadline
+            if application.response_due_at is None or application.response_due_at < protected_deadline:
+                application.response_due_at = protected_deadline
                 application.reminder_sent_at = None
             if application.first_response_at is None:
                 application.first_response_at = now
         elif previous_interview and not application.interview_at:
-            application.response_due_at = now + timedelta(days=application.job.response_days)
-            application.reminder_sent_at = None
+            reset_response(application, add_workdays(now, application.job.response_days))
     if (status_changed or stage_changed) and application.status != ApplicationStatus.REJECTED:
         application.resolution_reason = None
     if application.status == ApplicationStatus.HIRED and (
@@ -442,6 +448,7 @@ def company_application_view(row, user, *, scores=None):
     result["reviewed_at"] = row.reviewed_at
     result["interview_details"] = row.interview_details or {}
     result["interview_completed_at"] = row.interview_completed_at
+    result.update(deadline_view(row))
     result["identity_hidden"] = hidden
     result["screening_answers"] = [] if hidden else row.screening_answers or []
     return result

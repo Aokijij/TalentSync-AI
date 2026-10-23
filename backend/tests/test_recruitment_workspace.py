@@ -85,7 +85,7 @@ def test_mass_inbox_is_paged_ranked_and_keeps_all_buckets(client):
         event.remove(engine, "before_cursor_execute", capture)
     assert response.status_code == 200, response.text
     data = response.json()
-    assert data["counts"] == {"inbox": 396, "active": 2, "closed": 2, "interviews": 0}
+    assert data["counts"] == {"inbox": 396, "active": 2, "closed": 2, "interviews": 0, "paused": 0}
     assert data["hired_count"] == 1 and data["unreviewed"] == 396
     assert len(data["items"]) == 25 and data["total"] == 396
     assert all(row["adjusted_match_percentage"] is not None for row in data["items"])

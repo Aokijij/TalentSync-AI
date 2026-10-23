@@ -6,6 +6,7 @@ from test_api_flows import client, company_account, create_job, register  # noqa
 
 from app.application.errors import UseCaseError
 from app.application.use_cases.workflow import deadline_cycle
+from app.domain.services.response_deadlines import add_workdays
 from app.infrastructure.database.models import Application
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -44,21 +45,26 @@ def test_deadline_reminders_release_once_and_conflicting_update(client):
         application = db.get(Application, row["id"])
         due = application.response_due_at
         uow = SqlAlchemyUnitOfWork(db)
-        assert deadline_cycle(uow, now=due - timedelta(hours=12)) == {"released": 0, "reminders": 1}
-        assert deadline_cycle(uow, now=due - timedelta(hours=6)) == {"released": 0, "reminders": 0}
+        assert deadline_cycle(uow, now=due - timedelta(hours=12)) ["reminders"] == 1
+        assert deadline_cycle(uow, now=due - timedelta(hours=6)) ["reminders"] == 0
     with client.session_factory() as stale:
         outdated = stale.get(Application, row["id"])
         with client.session_factory() as db:
-            assert deadline_cycle(SqlAlchemyUnitOfWork(db), now=due + timedelta(seconds=1))["released"] == 1
-            assert deadline_cycle(SqlAlchemyUnitOfWork(db), now=due + timedelta(seconds=2))["released"] == 0
+            assert deadline_cycle(SqlAlchemyUnitOfWork(db), now=due + timedelta(seconds=1))["overdue"] == 1
+            assert deadline_cycle(SqlAlchemyUnitOfWork(db), now=due + timedelta(seconds=2))["overdue"] == 0
         outdated.recruiter_notes = "An update after the deadline"
         with pytest.raises(UseCaseError, match="") as failure:
             SqlAlchemyUnitOfWork(stale).commit()
         assert failure.value.status_code == 409
     response = client.get(f"/api/v1/workflow/applications/{row['id']}", headers=candidate).json()
-    assert response["status"] == "rejected"
-    assert response["feedback"]["reason_code"] == "response_deadline"
-    assert len([item for item in response["events"] if item["type"] == "application.deadline_released"]) == 1
+    assert response["status"] == "submitted" and response["released_at"] is None
+    assert len([item for item in response["events"] if item["type"] == "application.response_overdue"]) == 1
+    with client.session_factory() as db:
+        assert deadline_cycle(SqlAlchemyUnitOfWork(db), now=add_workdays(due + timedelta(seconds=1), 3))["paused"] == 1
+        assert deadline_cycle(SqlAlchemyUnitOfWork(db), now=add_workdays(due + timedelta(seconds=1), 4))["paused"] == 0
+    response = client.get(f"/api/v1/workflow/applications/{row['id']}", headers=candidate).json()
+    assert response["response_state"] == "paused" and response["released_at"] is None
+    assert response["status"] == "submitted"
 
 
 def test_company_cannot_erase_process_history_with_legacy_delete_endpoints(client):

@@ -504,6 +504,7 @@ class Application(Base):
     __table_args__ = (
         Index("ix_applications_job_status", "job_id", "status"),
         Index("ix_applications_job_reviewed", "job_id", "reviewed_at"),
+        Index("ix_applications_job_paused", "job_id", "response_paused_at"),
         UniqueConstraint("user_id", "job_id", name="uq_application_user_job"),
     )
 
@@ -513,6 +514,10 @@ class Application(Base):
     first_response_at: Mapped[datetime | None] = mapped_column(DateTime)
     response_due_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    response_overdue_at: Mapped[datetime | None] = mapped_column(DateTime)
+    response_paused_at: Mapped[datetime | None] = mapped_column(DateTime)
+    deadline_missed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    deadline_extension_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
     released_at: Mapped[datetime | None] = mapped_column(DateTime)
     candidate_feedback: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
     coach_snapshot: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
@@ -577,6 +582,12 @@ class Application(Base):
             if stage.get("id") == stage_id:
                 return stage.get("title")
         return stage_id.replace("_", " ").capitalize()
+
+    @property
+    def response_state(self) -> str:
+        from app.domain.services.response_deadlines import response_state
+
+        return response_state(self)
 
     @property
     def base_match_percentage(self) -> float | None:

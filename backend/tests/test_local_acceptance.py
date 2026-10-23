@@ -102,14 +102,14 @@ def test_local_journey_connects_all_roles_with_sessions_and_mfa(browser):
         assert "PRIVATE-RECRUITER-NOTE" not in str(timeline)
         assert timeline["feedback"]["source"] == "company" and timeline["version"] == updated["version"]
 
-        # The worker endpoint also closes a real overdue process and emits its public feedback exactly once.
+        # The worker records an overdue response once and preserves the candidature.
         with browser.session_factory() as db:
             db.get(Application, application["id"]).response_due_at = datetime.utcnow() - timedelta(seconds=1)
             db.commit()
-        assert request(admin, "POST", "/admin/workflow/run")["released"] == 1
-        assert request(admin, "POST", "/admin/workflow/run")["released"] == 0
+        assert request(admin, "POST", "/admin/workflow/run")["overdue"] == 1
+        assert request(admin, "POST", "/admin/workflow/run")["overdue"] == 0
         final = request(browser, "GET", f"/workflow/applications/{application['id']}")
-        assert final["released_at"] and final["feedback"]["reason_code"] == "response_deadline"
+        assert final["released_at"] is None and final["response_state"] == "overdue"
         trust = request(browser, "GET", f"/trust/companies/{job['company_id']}")
         assert trust["missed_deadlines"] == 1
         report = request(browser, "POST", "/trust/incidents", json={"application_id": application["id"], "category": "ghosting", "details": "FICTITIOUS-PRIVATE-DETAILS: proceso de prueba sin respuesta."})

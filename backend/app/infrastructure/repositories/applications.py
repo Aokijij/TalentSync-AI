@@ -4,6 +4,7 @@ from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import joinedload
 
 from app.domain.entities.enums import ApplicationStatus
+from app.domain.services.response_deadlines import PAUSE_WORKDAYS, add_workdays
 from app.infrastructure.database.models import (
     Application,
     Job,
@@ -19,7 +20,7 @@ class ApplicationRepository(SqlAlchemyRepository[Application]):
         first_stage = (job.pipeline_stages or [{"id": "submitted"}])[0]["id"]
         final = or_(Application.released_at.is_not(None), Application.status.in_([ApplicationStatus.REJECTED, ApplicationStatus.ACCEPTED, ApplicationStatus.HIRED]))
         incoming = Application.status.in_([ApplicationStatus.SUBMITTED, ApplicationStatus.SEEN])
-        bucket_expr = case((final, "closed"), (incoming, "inbox"), else_="active")
+        bucket_expr = case((final, "closed"), (Application.response_paused_at.is_not(None), "paused"), (incoming, "inbox"), else_="active")
         stage_expr = case((Application.status.in_([ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED]), "hired"),
             (Application.status == ApplicationStatus.REJECTED, "rejected"), else_=func.coalesce(Application.pipeline_stage, case(
             (Application.status.in_([ApplicationStatus.SUBMITTED, ApplicationStatus.SEEN]), first_stage),
@@ -37,7 +38,7 @@ class ApplicationRepository(SqlAlchemyRepository[Application]):
         query = base.join(User, User.id == Application.user_id).outerjoin(Profile, Profile.user_id == Application.user_id).outerjoin(
             Recommendation, and_(Recommendation.user_id == Application.user_id, Recommendation.job_id == Application.job_id))
         now = datetime.utcnow()
-        interview_filter = and_(~final, Application.interview_at.is_not(None), or_(Application.status.in_([ApplicationStatus.TECHNICAL_INTERVIEW, ApplicationStatus.PSYCHOMETRIC_TEST]), Application.interview_completed_at.is_(None)))
+        interview_filter = and_(~final, Application.response_paused_at.is_(None), Application.interview_at.is_not(None), or_(Application.status.in_([ApplicationStatus.TECHNICAL_INTERVIEW, ApplicationStatus.PSYCHOMETRIC_TEST]), Application.interview_completed_at.is_(None)))
         interview_states = {
             "scheduled": and_(Application.interview_completed_at.is_(None), Application.interview_at > now),
             "unconfirmed": and_(Application.interview_completed_at.is_(None), Application.interview_at <= now),
@@ -63,22 +64,25 @@ class ApplicationRepository(SqlAlchemyRepository[Application]):
         safe_page = min(page, max(1, (total + page_size - 1) // page_size))
         sorting = [score.is_(None), score.desc(), Application.created_at.asc(), Application.id.asc()] if order == "score" else [Application.created_at.desc(), Application.id.desc()] if order == "recent" else [Application.created_at.asc(), Application.id.asc()]
         rows = query.with_entities(Application.id, Application.user_id, Application.job_id, Application.status, Application.pipeline_stage,
-            Application.created_at, Application.reviewed_at, Application.interview_at, Application.interview_details, Application.interview_completed_at, Application.released_at, Application.version, Application.screening_adjustment,
+            Application.created_at, Application.reviewed_at, Application.interview_at, Application.interview_details, Application.interview_completed_at, Application.released_at, Application.response_due_at, Application.response_overdue_at, Application.response_paused_at, Application.deadline_extension_count, Application.version, Application.screening_adjustment,
             User.name.label("candidate_name"), Profile.profession, Recommendation.match_percentage.label("base_match_percentage"), score.label("adjusted_match_percentage"),
             stage_expr.label("effective_stage")).order_by(*sorting).offset((safe_page - 1) * page_size).limit(page_size).all()
         return {"items": [dict(row._mapping) for row in rows], "total": total, "page": safe_page, "page_size": page_size,
-                "counts": {name: counts.get(name, 0) for name in ("inbox", "active", "closed", "interviews")}, "interview_counts": interview_counts, "unreviewed": unreviewed, "stage_counts": stage_counts, "all_stage_counts": all_stage_counts, "hired_count": hired_count}
+                "counts": {name: counts.get(name, 0) for name in ("inbox", "active", "closed", "interviews", "paused")}, "interview_counts": interview_counts, "unreviewed": unreviewed, "stage_counts": stage_counts, "all_stage_counts": all_stage_counts, "hired_count": hired_count}
 
-    def approaching_deadlines(self, before):
+    def approaching_deadlines(self, before, now=None):
+        now = now or datetime.utcnow()
         return self.session.query(Application).filter(Application.response_due_at <= before, Application.released_at.is_(None),
+            Application.response_paused_at.is_(None),
+            or_(and_(Application.response_due_at > now, Application.reminder_sent_at.is_(None)),
+                and_(Application.response_due_at <= now, Application.response_overdue_at.is_(None)),
+                Application.response_overdue_at <= add_workdays(now, -PAUSE_WORKDAYS)),
             Application.status.notin_([ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED, ApplicationStatus.REJECTED])).order_by(Application.response_due_at).limit(500).all()
 
-    def claim_deadline(self, row, now):
+    def claim_response_change(self, row, changes):
         return self.session.query(Application).filter(Application.id == row.id, Application.version == row.version,
-            Application.response_due_at <= now, Application.released_at.is_(None),
-            Application.status.notin_([ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED, ApplicationStatus.REJECTED])).update({
-                Application.released_at: now, Application.status: ApplicationStatus.REJECTED,
-                Application.resolution_reason: "response_deadline", Application.response_due_at: None,
+            Application.released_at.is_(None), Application.response_paused_at.is_(None),
+            Application.status.notin_([ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED, ApplicationStatus.REJECTED])).update({**{getattr(Application, key): value for key, value in changes.items()},
                 Application.version: Application.version + 1}, synchronize_session="fetch") == 1
 
     def count(self) -> int:

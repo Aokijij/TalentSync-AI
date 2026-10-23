@@ -15,7 +15,7 @@ export function qualityStepProgress(quality, step) {
 }
 
 export function offerDraft(job = {}) {
-  return { title: "", description: "", requirements: "", salary: null, location: "", department: "", modality: "remote", employment_type: "full_time", sector: JOB_SECTORS[0], benefits: [], languages: [], application_questions: [], required_education_level: null, required_study_fields: [], response_days: 7, blind_hiring: true, status: "draft", ...job,
+  return { title: "", description: "", requirements: "", salary: null, location: "", department: "", modality: "remote", employment_type: "full_time", sector: JOB_SECTORS[0], benefits: [], languages: [], application_questions: [], required_education_level: null, required_study_fields: [], response_days: 5, blind_hiring: true, status: "draft", ...job,
     skill_requirements: job.skill_requirements?.length ? job.skill_requirements.map((row) => ({ ...row })) : (job.skills || []).map((skill) => ({ skill, essential: false, weight: 1 })),
     quality_details: { ...EMPTY_DETAILS, ...job.quality_details, credential_requirements: { driving_categories: [...(job.quality_details?.credential_requirements?.driving_categories || [])], professional_cards: [...(job.quality_details?.credential_requirements?.professional_cards || [])] }, missions: (job.quality_details?.missions || []).map((row) => ({ ...row })) } };
 }
@@ -27,7 +27,7 @@ export function offerPayload(draft) {
   payload.required_study_fields = draft.required_education_level === "secondary" ? [] : textItems(draft.required_study_fields);
   payload.blind_hiring = draft.id ? draft.blind_hiring : true;
   payload.salary = draft.salary === "" || draft.salary == null ? null : Number(draft.salary);
-  payload.response_days = Number(draft.response_days) || 7;
+  payload.response_days = Number(draft.response_days) || 5;
   payload.skill_requirements = (draft.skill_requirements || []).filter((row) => row.skill.trim()).map((row) => ({ ...row, skill: row.skill.trim(), weight: Number(row.weight) || 1 }));
   const months = minimumExperienceMonths(draft.quality_details);
   if (draft.modality === "remote" && draft.quality_details.remote_scope) { payload.location = remoteLocationLabel(draft.quality_details.remote_scope); payload.department = ""; }

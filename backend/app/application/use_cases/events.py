@@ -7,6 +7,7 @@ ALLOWED_DETAILS = {
     "company_id", "reason_code", "version", "position", "source", "role",
     "deadline", "assessment_id", "skill_id", "result", "session_id",
     "action", "interview_at", "previous_interview_at", "interview_mode", "interview_minutes",
+    "extension_reason", "previous_deadline", "resumed",
 }
 
 
@@ -17,6 +18,8 @@ def record_event(db: UnitOfWork, event_type: str, entity_type: str,
     unknown = values.keys() - ALLOWED_DETAILS
     if unknown:
         raise ValueError(f"Unsupported event details: {', '.join(sorted(unknown))}")
+    if "extension_reason" in values and (event_type != "application.deadline_extended" or not isinstance(values["extension_reason"], str) or not 20 <= len(values["extension_reason"]) <= 500):
+        raise ValueError("Only a bounded public extension reason may be recorded with a deadline extension")
     if any(not isinstance(value, (str, int, float, bool, type(None))) for value in values.values()):
         raise ValueError("Event details must contain scalar values")
     db.add(db.events.new(

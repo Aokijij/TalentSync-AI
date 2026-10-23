@@ -27,7 +27,7 @@ router = APIRouter()
 
 
 @router.get("/jobs/{job_id}/workspace")
-def recruitment_workspace(job_id: int, bucket: Literal["inbox", "active", "closed", "interviews"] = "inbox",
+def recruitment_workspace(job_id: int, bucket: Literal["inbox", "active", "closed", "interviews", "paused"] = "inbox",
     search: str = Query(default="", max_length=150), score_filter: Literal["all", "strong", "missing", "unreviewed"] = "all",
     order: Literal["score", "recent", "oldest"] = "score", stage: str | None = Query(default=None, max_length=80),
     interview_state: Literal["all", "scheduled", "unconfirmed", "awaiting_response"] = "all",

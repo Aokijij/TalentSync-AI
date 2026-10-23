@@ -5,8 +5,8 @@ def company_health(company, *, now=None):
     now = now or datetime.utcnow()
     cutoff = now - timedelta(days=90)
     rows = [application for job in company.jobs for application in job.applications if application.created_at >= cutoff]
-    eligible = [row for row in rows if getattr(row, "first_response_at", None) or row.resolution_reason == "response_deadline"]
-    missed = sum(row.resolution_reason == "response_deadline" for row in eligible)
+    eligible = [row for row in rows if getattr(row, "first_response_at", None) or getattr(row, "deadline_missed_at", None) or row.resolution_reason == "response_deadline"]
+    missed = sum(bool(getattr(row, "deadline_missed_at", None)) or row.resolution_reason == "response_deadline" for row in eligible)
     confirmed = sum(row.status in {"confirmed", "appealed"} and row.created_at >= cutoff for row in getattr(company, "incidents", []))
     return health_from_counts(len(eligible), missed, confirmed)
 

@@ -1,3 +1,4 @@
+import { ResponseDeadlineReview } from "./ResponseDeadlineReview.jsx";
 import { RecruitmentWorkspace } from "../src/components/recruitment/RecruitmentWorkspace.jsx";
 import { InterviewManagementReview } from "./InterviewManagementReview.jsx";
 import { ProfilePage } from "../src/pages/ProfilePage.jsx";
@@ -63,6 +64,7 @@ function QualityPage() {
   if (params.has("cvnames")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><CvNamesExample /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("profile")) return <MemoryRouter><AuthContext.Provider value={{ user: { id: 1, role: "candidate" }, refreshUser: async () => {} }}><FeedbackProvider><main className="quality-shell role-candidate"><ProfilePage /></main></FeedbackProvider></AuthContext.Provider></MemoryRouter>;
   if (params.has("system")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><SystemReview /></main></FeedbackProvider></MemoryRouter>;
+  if (params.has("deadlines")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><ResponseDeadlineReview role={role} /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("recruitment")) return <MemoryRouter><FeedbackProvider><main className="quality-shell role-company"><RecruitmentWorkspace /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("interviews")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><InterviewManagementReview /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("radar")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><MarketRadar /></main></FeedbackProvider></MemoryRouter>;

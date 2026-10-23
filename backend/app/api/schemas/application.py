@@ -90,6 +90,10 @@ class ApplicationResponse(BaseModel):
     coach_draft_id: str | None = None
     version: int = 1
     response_due_at: datetime | None = None
+    response_state: str = "none"
+    response_overdue_at: datetime | None = None
+    response_paused_at: datetime | None = None
+    deadline_extension_count: int = 0
     released_at: datetime | None = None
     candidate_feedback: dict = Field(default_factory=dict)
     id: int

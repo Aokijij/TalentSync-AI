@@ -74,7 +74,7 @@ def default_pipeline_stages() -> list[PipelineStage]:
 class JobCreate(PipelineStagesMixin):
     quality_details: QualityDetails | None = None
     blind_hiring: bool = True
-    response_days: int = Field(default=7, ge=1, le=30)
+    response_days: int = Field(default=5, ge=1, le=30)
     skill_requirements: list[SkillRequirement] = Field(default_factory=list, max_length=50)
     _unique_requirements = field_validator("skill_requirements")(unique_requirements)
     status: Literal["active", "draft"] = "active"
@@ -171,7 +171,7 @@ class JobResponse(BaseModel):
     quality_summary: dict | None = None
     employer_trust: dict = Field(default_factory=dict)
     blind_hiring: bool = False
-    response_days: int = 7
+    response_days: int = 5
     skill_requirements: list[SkillRequirement] = Field(default_factory=list)
     languages: list[LanguageLevel] = Field(default_factory=list)
     application_questions: list[ScreeningQuestionPublic] = Field(default_factory=list)
