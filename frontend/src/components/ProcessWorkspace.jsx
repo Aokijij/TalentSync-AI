@@ -1,8 +1,7 @@
 import { isProcessClosed, recruitmentStage, interviewState, interviewStateLabels } from "../utils/recruitmentState.js";
 import { CalendarClock, BriefcaseBusiness, ClipboardCheck, History, LayoutDashboard, MessageSquare, UserRound } from "lucide-react";
-import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { responseState } from "../utils/responseDeadlines.js";
 import { ResponseDeadlinePanel } from "./ResponseDeadlinePanel.jsx";
 import { ProcessInterview } from "./InterviewAgenda.jsx";
@@ -16,7 +15,9 @@ export const processTime = (value, fallback = "Sin plazo activo") => processDate
 
 // Panels stay mounted: changing sections must not discard an evaluation or feedback draft.
 export function ProcessWorkspace({ process, role, evaluation, communication, preparation, onManageInterview, onCompleteInterview, onProcessUpdated }) {
-  const [tab, setTab] = useState("overview");
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("section") || "overview";
+  function setTab(value) { const next = new URLSearchParams(params); next.set("section", value); setParams(next, { replace: true }); }
   const company = role === "company";
   const closed = isProcessClosed(process), interview = interviewState(process), response = responseState(process);
   const stage = recruitmentStage(process);

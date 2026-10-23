@@ -2,7 +2,7 @@ import { responseState } from "../utils/responseDeadlines.js";
 import { isProcessClosed } from "../utils/recruitmentState.js";
 import { RecruiterProcessDialog } from "../components/RecruiterProcessDialog.jsx";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
@@ -21,9 +21,12 @@ export function ProcessPage() {
 function ProcessController({ applicationId }) {
   const { confirm } = useFeedback();
   const { user } = useAuth();
+  const { hash } = useLocation();
   const [process, setProcess] = useState(null), [error, setError] = useState("");
   const [manageInterview, setManageInterview] = useState(false);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState("");
+  const ready = !!process;
+  useEffect(() => { if (ready && hash === "#response-deadline") requestAnimationFrame(() => document.getElementById("response-deadline")?.scrollIntoView({ block: "start" })); }, [ready, hash]);
   useEffect(() => {
     const controller = new AbortController();
     api.get(`/workflow/applications/${applicationId}`, { signal: controller.signal })

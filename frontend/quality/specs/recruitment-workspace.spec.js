@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Recruitment inbox and active process · ${width} · ${theme}`, async ({ page }) => {
+for (const width of [360, 1280, 1600]) for (const theme of ["light", "dark"]) test(`Recruitment inbox and active process · ${width} · ${theme}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 950 });
   const errors = [], calls = []; let failUpdate = true;
   page.on("pageerror", (error) => errors.push(error.message));
@@ -44,6 +44,12 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Re
   await expect(detail.getByRole("heading", { name: "Persona 000", exact: true })).toBeVisible();
   await expect(detail.getByRole("button", { name: "Cambiar etapa", exact: true })).toBeEnabled();
   expect(calls.filter((item) => item.path.endsWith("/reviewed"))).toHaveLength(1);
+  await expect(detail.getByText("Resumen profesional", { exact: true })).toHaveCount(0);
+  await expect(detail.getByText("Experiencia", { exact: true })).toHaveCount(0);
+  await expect(detail.getByText("Habilidades del perfil", { exact: true })).toHaveCount(0);
+  await expect(detail.getByRole("link", { name: "Ver perfil", exact: true })).toHaveAttribute("href", /empresa\/candidatos\/1001/);
+  await expect(detail.getByLabel("Etapa de destino", { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: `../.local/compact-candidate-review/unscheduled-${theme}-${width}.png`, fullPage: true });
   if (width > 760) {
     await page.locator(".applicant-list-row").first().focus();
     await page.keyboard.press("ArrowDown");
@@ -59,17 +65,19 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Re
     expect(calls.filter((item) => item.method === "PUT")).toHaveLength(0);
   }
   await page.screenshot({ path: `../.local/recruitment-review/inbox-${theme}-${width}.png`, fullPage: true });
-  await detail.getByRole("button", { name: "Cambiar etapa", exact: true }).click();
+  await requestStageChange(detail);
   await page.getByRole("alertdialog", { name: "Confirmar cambio de etapa", exact: true }).getByRole("button", { name: "Cancelar", exact: true }).click();
+  await expect(page.getByRole("alertdialog", { name: "Confirmar cambio de etapa", exact: true })).toHaveCount(0);
   expect(calls.filter((item) => item.method === "PUT")).toHaveLength(0);
-  await detail.getByRole("button", { name: "Cambiar etapa", exact: true }).click();
+  await requestStageChange(detail);
   await page.getByRole("button", { name: "Cambiar y notificar", exact: true }).click();
   await expect(detail.getByRole("alert")).toContainText("No se pudo guardar");
   await expect(detail.getByRole("heading", { name: "Persona 000", exact: true })).toBeVisible();
-  await detail.getByRole("button", { name: "Cambiar etapa", exact: true }).click();
+  await requestStageChange(detail);
   await page.getByRole("button", { name: "Cambiar y notificar", exact: true }).click();
   await expect(detail.getByRole("heading", { name: "Persona 001", exact: true })).toBeVisible();
   await expect(detail.getByRole("button", { name: "Cambiar etapa", exact: true })).toBeEnabled();
+  await detail.locator(".applicant-outcome-menu>summary").click();
   await detail.getByRole("button", { name: "Finalizar con feedback", exact: true }).click();
   const rejection = page.getByRole("dialog", { name: "Finalizar candidatura con feedback", exact: true });
   const before = calls.filter((item) => item.method === "PUT").length;
@@ -113,10 +121,20 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Re
   await page.getByRole("tab", { name: /^Entrevistas/ }).click();
   await page.getByRole("button", { name: /^Por registrar/ }).click();
   await page.locator(".applicant-list-row").first().click();
+  await detail.scrollIntoViewIfNeeded();
+  await expect(detail.getByRole("button", { name: "Registrar entrevista realizada", exact: true })).toBeInViewport();
+  const format = detail.locator(".interview-format"), access = detail.getByRole("link", { name: "Abrir videollamada", exact: true });
+  await expect(access).toBeVisible();
+  expect((await access.boundingBox()).y).toBeGreaterThan((await format.boundingBox()).y + (await format.boundingBox()).height);
+  expect(await detail.locator(".applicant-process-summary").evaluate((element) => getComputedStyle(element).overflowY)).toBe("visible");
+  await page.screenshot({ path: `../.local/compact-candidate-review/unconfirmed-${theme}-${width}.png`, fullPage: true });
   await detail.getByRole("button", { name: "Registrar entrevista realizada", exact: true }).click();
   const completion = page.getByRole("alertdialog", { name: "Registrar entrevista realizada", exact: true });
   await completion.getByRole("button", { name: "Registrar y notificar", exact: true }).click();
   await expect(detail.getByText("El candidato espera tu respuesta")).toBeVisible();
+  await expect(detail.getByRole("link", { name: "Comunicar decisión", exact: true })).toHaveAttribute("href", "/procesos/397?section=communicate");
+  await expect(detail.getByRole("link", { name: "Evaluar entrevista", exact: true })).toHaveAttribute("href", "/procesos/397?section=evaluation");
+  await page.screenshot({ path: `../.local/compact-candidate-review/awaiting-response-${theme}-${width}.png`, fullPage: true });
   await page.getByRole("button", { name: /^Pendientes de respuesta/ }).click();
   await expect(page.locator(".applicant-list-row")).toHaveCount(1);
   await page.getByRole("tab", { name: /^Finalizados/ }).click();
@@ -162,3 +180,8 @@ test("Recruitment can recover a failed vacancy load without claiming an empty in
   await expect(page.getByText("Tu bandeja está al día", { exact: true })).toBeVisible();
   expect(attempts).toBe(3);
 });
+
+async function requestStageChange(detail) {
+  if (!await detail.getByLabel("Etapa de destino", { exact: true }).isVisible()) await detail.getByRole("button", { name: "Cambiar etapa", exact: true }).click();
+  await detail.getByRole("button", { name: "Revisar cambio", exact: true }).click();
+}

@@ -1,0 +1,10 @@
+.interview-details { display:grid; gap:.45rem; margin-top:.65rem; min-width:0; }
+.interview-details .interview-format { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; color:var(--ink); font-weight:600; font-size:.8rem; line-height:1.6; }
+.interview-details .interview-format>svg { flex:none; }
+.interview-details p { margin:0; overflow-wrap:anywhere; white-space:pre-wrap; font-size:.8rem; line-height:1.7; }
+.interview-details .interview-access-link { display:inline-flex; align-items:center; justify-self:start; gap:.5rem; min-height:36px; padding:.4rem .65rem; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--accent); font-size:.77rem; font-weight:650; text-decoration:none; }
+.interview-details .interview-access-link:hover { border-color:var(--accent); background:var(--surface-subtle); }
+.interview-details .interview-access-link>svg { flex:none; }
+.interview-details .interview-instructions { color:var(--muted); }
+.interview-instruction-disclosure summary { width:fit-content; min-height:32px; align-content:center; color:var(--muted); font-size:.72rem; cursor:pointer; }
+.interview-instruction-disclosure p { margin-top:.3rem; }

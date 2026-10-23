@@ -23,7 +23,7 @@ const Answers = await component("ApplicationAnswersModal", "ApplicationAnswersMo
 const StructuredJobText = await component("StructuredJobText", "StructuredJobText");
 const processTime = await component("ProcessWorkspace", "processTime");
 const process = { application_id: 5, job_id: 12, company_name: "Empresa ejemplo", candidate_name: "Persona ejemplo", status: "technical_interview", stage_title: "Entrevista técnica", response_days: 3, created_at: "2026-10-18T18:00:00", response_due_at: "2026-10-25T15:00:00", can_evaluate: true, events: [{ id: 1, type: "application.feedback_shared", source: "company", at: "2026-10-22T14:00:00" }], job_description: "Trabajarás con el equipo. Responsabilidades: • Implementar integraciones. • Documentar decisiones.", job_requirements: "Experiencia con Python y SQL." };
-const render = (Component, props) => renderToStaticMarkup(createElement(MemoryRouter, {}, createElement(Component, props)));
+const render = (Component, props, entry = "/") => renderToStaticMarkup(createElement(MemoryRouter, { initialEntries: [entry] }, createElement(Component, props)));
 
 test("process opens a concise overview and keeps other tab panels mounted but hidden", () => {
   const html = render(Workspace, { process, role: "company", evaluation: createElement("textarea", { name: "private-draft", defaultValue: "Evidencia aún sin guardar" }), communication: createElement("form", {}, "Comunicación pendiente") });
@@ -106,4 +106,24 @@ test("projection bounds and choice scoring cannot be changed by extraneous manua
   assert.equal(projectedMatch(98, 5), 100);
   assert.equal(projectedMatch(2, -5), 0);
   assert.equal(answerAdjustment(Array.from({ length: 10 }, (_, question_id) => ({ question_id, type: "choice", configured_adjustment: 5 }))), 20);
+});
+
+test("direct interview links open the company evaluation section", () => {
+  const html = render(Workspace, { process, role: "company", evaluation: createElement("textarea", { name: "review", defaultValue: "Borrador conservado" }) }, "/procesos/5?section=evaluation");
+  assert.match(html, /id="process-tab-evaluation"[^>]*aria-selected="true"/);
+  assert.match(html, /id="process-panel-evaluation"[^>]*><textarea name="review">Borrador conservado/);
+});
+
+test("a direct decision link opens communication without exposing private evaluations to candidates", () => {
+  const html = render(Workspace, { process, role: "company", communication: createElement("form", {}, "Decisión para comunicar") }, "/procesos/5?section=communicate");
+  assert.match(html, /id="process-tab-communicate"[^>]*aria-selected="true"/);
+  const candidate = render(Workspace, { process, role: "candidate", evaluation: "PRIVATE-EVALUATION" }, "/procesos/5?section=evaluation");
+  assert.match(candidate, /id="process-tab-overview"[^>]*aria-selected="true"/);
+  assert.doesNotMatch(candidate, /PRIVATE-EVALUATION/);
+});
+
+test("a closed process falls back to its overview for an unavailable communication link", () => {
+  const html = render(Workspace, { process: { ...process, status: "hired" }, role: "company" }, "/procesos/5?section=communicate");
+  assert.match(html, /id="process-tab-overview"[^>]*aria-selected="true"/);
+  assert.doesNotMatch(html, /id="process-tab-communicate"/);
 });

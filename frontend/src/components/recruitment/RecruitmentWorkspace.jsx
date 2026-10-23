@@ -120,7 +120,7 @@ export function RecruitmentWorkspace() {
     if (!await confirm({ title: "Registrar entrevista realizada", description: "Confirma que la entrevista se realizó. El candidato recibirá un aviso y verá que está pendiente de respuesta. Después registra tu evaluación y comunica la decisión.", confirmLabel: "Registrar y notificar" })) return;
     try { await save({ interview_action: "complete" }); } catch { /* Keep the failure visible. */ }
   }
-  async function advance() { if (!await confirmMove(detail.application, nextStage)) return; try { await save({ pipeline_stage: nextStage }, { moveNext: bucket === "inbox" }); } catch { /* The selected profile keeps the failure visible. */ } }
+  async function advance() { if (!detail || !await confirmMove(detail.application, nextStage)) return false; try { await save({ pipeline_stage: nextStage }, { moveNext: bucket === "inbox" }); return true; } catch { return false; } }
   async function hire() { if (await confirm({ title: "Confirmar contratación", description: `Se comunicará la contratación a ${detail.application.candidate_name}. El cambio quedará en el historial.`, confirmLabel: "Confirmar y notificar" })) { try { await save({ status: "hired" }, { moveNext: true }); } catch { /* Keep the selected candidature. */ } } }
   function shortcuts(event) {
     if (busy || loading || detailLoading || manage || answers || reject || stageEditor || picker || reopen || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.target.closest("input, textarea, select, [contenteditable=true]")) return;
@@ -176,7 +176,7 @@ export function RecruitmentWorkspace() {
           {!loading && result && <Pagination page={result.page} total={result.total} pageSize={25} busy={busy} label="Páginas de candidaturas" onChange={(value) => { setPage(value); setSelectedId(null); }} />}
           </>}
         </div>
-        <div className="recruitment-detail-wrap"><ApplicantDetail key={selectedId || "empty"} data={detail} loading={detailLoading} error={detailError} busy={busy} nextStage={nextStage} onNextStage={setNextStage} stages={advanceStages.filter((item) => item.id !== detail?.application.pipeline_stage)} allStages={stages} onCompleteInterview={completeInterview} onAdvance={advance} onReject={() => setReject(true)} onHire={bucket === "active" ? hire : null} onManage={() => setManage(true)} onAnswers={() => setAnswers(true)} onClose={closeDetail} onRetry={() => setDetailRevision((value) => value + 1)} />{detail?.application.adjusted_match_percentage == null && detail && <button type="button" className="button-secondary recruitment-calculate" disabled={busy || detailLoading} onClick={() => { void calculate().catch(() => {}); }}>Calcular compatibilidad de este perfil</button>}</div>
+        <div className="recruitment-detail-wrap"><ApplicantDetail key={selectedId || "empty"} data={detail} loading={detailLoading} error={detailError} busy={busy} nextStage={nextStage} onNextStage={setNextStage} stages={advanceStages.filter((item) => item.id !== detail?.application.pipeline_stage)} allStages={stages} onCompleteInterview={completeInterview} onAdvance={advance} onReject={() => setReject(true)} onHire={bucket === "active" ? hire : null} onManage={() => setManage(true)} onAnswers={() => setAnswers(true)} onClose={closeDetail} onRetry={() => setDetailRevision((value) => value + 1)} /></div>
       </div>
     </section></>}
     {picker && <JobPickerModal jobs={jobs} selectedId={jobId} onSelect={chooseJob} onClose={() => setPicker(false)} />}
