@@ -205,3 +205,10 @@ La agenda muestra seis filas por página y despliega solo una cita a la vez. Inc
 Al desplegar una cita se consultan enlace o dirección, indicaciones y acceso al proceso. Google Calendar se monta únicamente para la cita futura abierta y mientras la pestaña de entrevistas está activa, evitando una consulta por cada registro. Los estados históricos no ofrecen sincronización. Se conserva el flujo existente de autorización y sincronización, sin escrituras de prueba en calendarios personales. La versión móvil usa fecha abreviada, hora legible y acciones apiladas cuando se abre Calendar.
 
 Verificación: 233 pruebas frontend, análisis ESLint y compilación; 22 recorridos de interfaz de agenda, gestión de entrevistas y componentes compartidos del candidato. La muestra de 120 entrevistas usa respuestas sintéticas de Playwright, sin crear cuentas o citas persistentes. Se comprueban paginación, búsqueda, filtros, errores y reintento, conservación de página entre pestañas, enlaces directos y límites del panel de Calendar. Capturas revisadas e informes privados en `.local/candidate-agenda-review/` y `.local/candidate-agenda-*.log`. La paginación de esta vista opera sobre la colección existente de postulaciones del candidato; esta entrega no modifica la API ni requiere migraciones.
+
+
+### Controles visuales del seguimiento — 23/10/2026
+
+Las pestañas de Postulaciones y Entrevistas usan un selector delimitado con estado activo destacado. La pantalla controla su separación mediante una cuadrícula, evitando que los indicadores queden pegados a la navegación. Los totales y el filtro comparten una barra con jerarquía tipográfica y separadores; en móvil, los números se sitúan sobre las etiquetas y el filtro ocupa su propia fila. Se conservan los nombres accesibles, el teclado, los conteos y el comportamiento de filtrado.
+
+Validación: 233 pruebas frontend, seis recorridos existentes de seguimiento y agenda a 360/1280 px en ambos temas, ESLint y compilación aprobados. Las capturas del bloque están en `.local/candidate-controls-review/`; los informes, en `.local/candidate-controls-*.log`. Se usan datos sintéticos y no se modifica la API.

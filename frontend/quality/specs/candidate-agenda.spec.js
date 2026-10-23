@@ -32,6 +32,7 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Ca
   await expect(applications).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tu agenda de entrevistas" })).toBeHidden();
   await expect(applications.locator('article[id^="application-"]')).toHaveCount(8);
+  await page.screenshot({ path: `../.local/candidate-controls-review/overview-${theme}-${width}.png` });
   expect(requests.filter((path) => path.endsWith("/calendar"))).toHaveLength(0);
   await applications.getByRole("navigation", { name: "Páginas de postulaciones" }).getByRole("button", { name: "Siguiente" }).click();
   await expect(applications.locator("#application-9")).toBeVisible();

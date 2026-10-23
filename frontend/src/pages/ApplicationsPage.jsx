@@ -134,7 +134,7 @@ export function ApplicationsPage() {
   }
 
   return (
-    <div className="candidate-processes space-y-6">
+    <div className="candidate-processes">
       <PageHeader
         kicker="Seguimiento"
         title="Postulaciones y entrevistas"
@@ -147,32 +147,14 @@ export function ApplicationsPage() {
       <div role="tabpanel" className="candidate-applications-panel" id="candidate-processes-panel-applications" aria-labelledby="candidate-processes-tab-applications" hidden={section !== "applications"} tabIndex={0}>
       {loading && <p role="status">Consultando tus postulaciones…</p>}
       {loadError && <p role="alert" className="surface-card p-4">{loadError} <button type="button" className="button-secondary button-sm" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></p>}
-      <section className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
-        <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
-          <div className="surface-card px-4 py-3">
-            <p className="text-2xl font-bold text-[var(--ink-strong)]">
-              {loading || loadError ? "—" : applications.length}
-            </p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-              Procesos totales
-            </p>
-          </div>
-          <div className="surface-card px-4 py-3">
-            <p className="text-2xl font-bold text-[var(--accent)]">
-              {loading || loadError ? "—" : activeCount}
-            </p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-              En curso
-            </p>
-          </div>
-        </div>
-        <label className="text-sm font-semibold text-[var(--muted)]">
-          Mostrar estado
-          <select
-            className="field-control mt-1 sm:w-56"
-            value={filter}
-            onChange={(event) => { setFilter(event.target.value); setPage(1); }}
-          >
+      <section className="candidate-application-toolbar" aria-label="Resumen y filtros de postulaciones">
+        <dl className="candidate-process-metrics">
+          <div><dt><FileCheck2 size={16} aria-hidden="true" />Procesos totales</dt><dd>{loading || loadError ? "—" : applications.length}</dd></div>
+          <div className="is-active"><dt><Clock3 size={16} aria-hidden="true" />En curso</dt><dd>{loading || loadError ? "—" : activeCount}</dd></div>
+        </dl>
+        <label className="candidate-process-state-filter">
+          <span>Mostrar estado</span>
+          <select className="field-control" value={filter} onChange={(event) => { setFilter(event.target.value); setPage(1); }}>
             <option value="all">Todos</option>
             <option value="active">En curso</option>
             <option value="interview">Con entrevista</option>
