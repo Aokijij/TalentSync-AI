@@ -33,6 +33,8 @@ const SecurityPage = lazyNamed(() => import("../pages/SecurityPage.jsx"), "Secur
 const AccountActionPage = lazyNamed(() => import("../pages/AccountActionPage.jsx"), "AccountActionPage");
 const LocalMailboxPage = lazyNamed(() => import("../pages/LocalMailboxPage.jsx"), "LocalMailboxPage");
 const OnboardingPage = lazyNamed(() => import("../pages/OnboardingPage.jsx"), "OnboardingPage");
+const LandingPage = lazyNamed(() => import("../pages/LandingPage.jsx"), "LandingPage");
+const CompanyWelcomePage = lazyNamed(() => import("../pages/CompanyWelcomePage.jsx"), "CompanyWelcomePage");
 const OrganizationPage = lazyNamed(() => import("../pages/OrganizationWorkspace.jsx"), "OrganizationWorkspace");
 const VerificationQueuePage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "VerificationQueuePage");
 const InvitationPage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "InvitationPage");
@@ -88,6 +90,11 @@ function HomeRedirect() {
   return <Navigate to="/candidato" replace />;
 }
 
+function PublicHome() {
+  const { user } = useAuth();
+  return user ? <HomeRedirect /> : <LandingPage />;
+}
+
 function RequireRole({ roles, children }) {
   const { user } = useAuth();
   return roles.includes(user.role) ? children : <HomeRedirect />;
@@ -108,7 +115,7 @@ export function AppRoutes() {
       <Route path="/cuenta/confirmar" element={<AccountActionPage />} />
       <Route path="/desarrollo/correos" element={<LocalMailboxPage />} />
       <Route path="/equipo/invitacion" element={<InvitationPage />} />
-      <Route path="/" element={<HomeRedirect />} />
+      <Route path="/" element={<PublicHome />} />
 
       <Route
         element={
@@ -131,6 +138,7 @@ export function AppRoutes() {
         <Route path="/empresa/equipo" element={<RequireRole roles={["company"]}><OrganizationPage /></RequireRole>} />
         <Route path="/admin/verificaciones" element={<RequireRole roles={["admin"]}><VerificationQueuePage /></RequireRole>} />
         <Route path="/bienvenida" element={<RequireRole roles={["candidate"]}><OnboardingPage /></RequireRole>} />
+        <Route path="/empresa/bienvenida" element={<RequireRole roles={["company"]}><CompanyWelcomePage /></RequireRole>} />
         <Route
           path="/candidato"
           element={

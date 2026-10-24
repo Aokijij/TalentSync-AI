@@ -43,3 +43,7 @@ Google ni envía correos. Las capturas de revisión se guardan en `.local/operat
 `design-closure.spec.js` monta el layout real en candidato, empresa y administración. Comprueba los colores de texto y fondo de botones y placeholders, los bordes de los campos estándar, la ampliación del texto al 200 %, la navegación de pestañas con teclado, el salto al contenido y el foco del menú móvil. También verifica error y reintento de una confirmación asíncrona sin doble envío, y la asociación de errores a los campos de acceso. Estos casos usan datos sintéticos y no acreditan conformidad completa de accesibilidad de todas las pantallas.
 
 Los criterios para mantener componentes y textos consistentes están en [DISENO_INTERFAZ](../../DISENO_INTERFAZ.md). Las capturas locales de la revisión se guardan en `.local/design-closure-review/`.
+
+## Landing y bienvenida por rol
+
+`entry.spec.js` monta `AppRoutes` con los componentes y permisos de navegación reales, autenticación sintética y todas las peticiones externas bloqueadas. Revisa landing, bienvenida de candidato y de empresa a 360/1280 px, ambos temas y texto al 200 %. Incluye conservación de datos tras un fallo, lectura reciente antes de reemplazar el perfil, continuar sin guardar, acceso al control de CV y separación de revisión, aprobación, exención y suspensión. Las capturas se guardan en `.local/entry-review/`; no se incluyen en el sitio publicado. Las pruebas backend de API, organizaciones, calidad y perfil utilizan bases descartables.

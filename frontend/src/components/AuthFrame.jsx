@@ -1,13 +1,14 @@
 import { ArrowUpRight, BriefcaseBusiness, Check, Compass, ShieldCheck, UsersRound } from "lucide-react";
 import { BrandLogo } from "./brand/BrandLogo.jsx";
 import { ThemeToggle } from "./ThemeToggle.jsx";
+import { Link } from "react-router-dom";
 
 export function AuthFrame({ company = false, admin = false, children, registering = false }) {
   return <main className={`access-page ${admin ? "role-admin" : company ? "role-company" : "role-candidate"}`}>
     <ThemeToggle compact className="fixed right-4 top-4 z-20" />
     <section className="access-stage">
       <aside className="access-story">
-        <BrandLogo size="lg" subtitle={admin ? "ADMINISTRACIÓN" : company ? "EMPRESAS" : "TU SIGUIENTE PASO"} tone="inverse" />
+        <Link to="/" aria-label="Volver al inicio de TalentSync"><BrandLogo size="lg" subtitle={admin ? "ADMINISTRACIÓN" : company ? "EMPRESAS" : "TU SIGUIENTE PASO"} tone="inverse" /></Link>
         <div className="access-story-heading"><p className="access-eyebrow">{admin ? "Tu centro de control" : company ? "Tu centro de contratación" : "Tu carrera, con dirección"}</p>
           <h1>{admin ? "Cuida cada parte de la plataforma." : company ? "El próximo talento de tu equipo empieza aquí." : "Dale forma a tu próximo paso."}</h1>
           <p>{admin ? "Supervisa organizaciones, revisa incidencias y acompaña el desarrollo del ecosistema desde un acceso reservado." : company ? "Un espacio propio para preparar ofertas claras, comparar talento y acompañar cada proceso." : "Descubre oportunidades, practica con un propósito y muestra lo que puedes aportar."}</p>

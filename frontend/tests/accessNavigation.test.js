@@ -6,7 +6,7 @@ test("invited registration returns to acceptance with or without MFA", () => {
   const args = { company: true, invitation: "test-token+with/slash", accessOptions: { mode: "session", company_mfa_required: false } };
   assert.equal(registrationDestination(args), invitationPath(args.invitation));
   assert.equal(registrationDestination({ ...args, accessOptions: { mode: "session" } }), "/seguridad?invitation=test-token%2Bwith%2Fslash");
-  assert.equal(registrationDestination({ ...args, invitation: null }), "/empresa/equipo");
+  assert.equal(registrationDestination({ ...args, invitation: null }), "/empresa/bienvenida");
   assert.equal(registrationDestination({ ...args, company: false }), "/bienvenida");
 });
 

@@ -116,12 +116,12 @@ export function ProfilePage() {
   const [uploadingCv, setUploadingCv] = useState(false);
   const [coachTarget, setCoachTarget] = useState("");
   useEffect(() => {
-    if (!coachTarget || !editing && !["profile-evidence", "preferencias"].includes(coachTarget)) return;
+    if (!coachTarget || !editing && !["profile-evidence", "preferencias", "profile-cv"].includes(coachTarget)) return;
     const target = document.getElementById(coachTarget);
     const frame = window.requestAnimationFrame(() => {
       if (target) {
         target.scrollIntoView({ block: "center", behavior: "smooth" });
-        (target.matches("input,textarea") ? target : target.querySelector(coachTarget === "profile-summary" ? "textarea" : "input,textarea,button"))?.focus({ preventScroll: true });
+        (target.matches("input,textarea,[tabindex]") ? target : target.querySelector(coachTarget === "profile-summary" ? "textarea" : "input,textarea,button"))?.focus({ preventScroll: true });
       }
       setCoachTarget("");
     });
@@ -150,7 +150,7 @@ export function ProfilePage() {
     if (!profile || !location.hash) return;
     const target = location.hash.slice(1);
     if (["profile-profession", "profile-contact", "profile-summary", "profile-skills", "profile-languages", "profile-certifications", "profile-experiences", "profile-educations", "profile-links", "profile-credentials", "profile-driving-licenses", "profile-professional-cards", "profile-private"].includes(target)) { setEditing(true); setCoachTarget(target); }
-    else if (target === "preferencias") { setCoachTarget(target); }
+    else if (["preferencias", "profile-cv"].includes(target)) { setCoachTarget(target); }
     else if (["evidencias", "profile-evidence"].includes(target)) { setCoachTarget("profile-evidence"); }
   }, [Boolean(profile), location.hash]);
   useEffect(() => { if (profile && !editing) saved.current = { profile, name }; }, [profile, name, editing]);
@@ -265,7 +265,7 @@ export function ProfilePage() {
       <section className="profile-toolbar print-hidden">
         <ProfileCompletionRing profile={profile} variant="summary" onReview={() => setCompletionOpen(true)} />
           <div className="profile-toolbar-actions">
-            <label className="button-secondary cursor-pointer hover-lift pressed focus-ring" role="button" tabIndex={uploadingCv ? -1 : 0} aria-disabled={uploadingCv || savingProfile} onKeyDown={(event) => { if (!uploadingCv && ["Enter", " "].includes(event.key)) { event.preventDefault(); event.currentTarget.querySelector("input").click(); } }}>
+            <label id="profile-cv" className="button-secondary cursor-pointer hover-lift pressed focus-ring" role="button" tabIndex={uploadingCv ? -1 : 0} aria-disabled={uploadingCv || savingProfile} onKeyDown={(event) => { if (!uploadingCv && ["Enter", " "].includes(event.key)) { event.preventDefault(); event.currentTarget.querySelector("input").click(); } }}>
               <Upload size={16} />
               {uploadingCv ? "Analizando CV…" : "Subir CV"}
               <input

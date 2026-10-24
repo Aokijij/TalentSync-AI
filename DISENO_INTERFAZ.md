@@ -1,6 +1,6 @@
 # Criterios compartidos de interfaz
 
-Alcance de esta revisión: diseño y usabilidad de las funciones existentes de candidato, empresa y administración. La landing, nuevas bienvenidas y preparación de producción se trabajan después.
+Alcance de esta revisión: diseño y usabilidad de las funciones de candidato, empresa y administración, la landing pública y las bienvenidas de ambos roles. La preparación de producción se trabaja después.
 
 ## Componentes y jerarquía
 
@@ -34,6 +34,8 @@ Alcance de esta revisión: diseño y usabilidad de las funciones existentes de c
 - El enlace Saltar al contenido permite evitar la navegación repetida. El foco usa el color del rol y se conserva la preferencia de movimiento reducido.
 
 ## Validación
+
+La landing mantiene un titular estable y dos accesos explícitos: buscar empleo y contratar. Su demostración identifica los datos ficticios y compara requisitos seleccionados, sin presentar una probabilidad de contratación. Las bienvenidas son consultables desde los paneles; la del candidato precarga datos y permite explorar sin escribir el perfil. La de empresa distingue solicitud, revisión y aprobación, y remite al formulario de ofertas existente.
 
 `npm run lint`, `npm test` y `npm run build` comprueban código y compilación. `npm run quality:ui` revisa recorridos con datos sintéticos. `design-closure.spec.js` monta el layout y controles reales para comprobar foco, contraste, ampliación y recuperación de confirmaciones fallidas.
 

@@ -9,7 +9,7 @@ export function invitationTokenFromPath(path) {
 export function registrationDestination({ company, invitation, accessOptions }) {
   if (!company) return "/bienvenida";
   if (accessOptions.mode === "session" && accessOptions.company_mfa_required !== false) return `/seguridad${invitation ? `?invitation=${encodeURIComponent(invitation)}` : ""}`;
-  return invitation ? invitationPath(invitation) : "/empresa/equipo";
+  return invitation ? invitationPath(invitation) : "/empresa/bienvenida";
 }
 
 export function loginDestination({ company, from, user, accessOptions }) {

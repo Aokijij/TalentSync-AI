@@ -1,12 +1,23 @@
 # TalentSync: funciones principales y cómo utilizarlas
 
-Actualizado el 22 de octubre de 2026. Describe la versión local del proyecto. Una integración implementada puede requerir configuración y autorización antes de funcionar con cuentas externas.
+Actualizado el 23 de octubre de 2026. Describe la versión local del proyecto. Una integración implementada puede requerir configuración y autorización antes de funcionar con cuentas externas.
 
 Los [criterios de diseño y usabilidad](DISENO_INTERFAZ.md) definen los componentes, estados, ayudas y navegación compartidos por los tres roles.
+
+La [lista de cierre funcional](CIERRE_VERSION.md) reúne las comprobaciones de las prioridades 1 a 9 y su evidencia de validación.
 
 La [revisión de estabilidad y listados](REVISION_PLATAFORMA.md) documenta las correcciones, comprobaciones reproducibles y límites de validación de esta versión.
 
 TalentSync conecta tres recorridos: el candidato organiza su trayectoria y búsqueda; la empresa publica ofertas y gestiona la selección; administración revisa la calidad, las fuentes educativas y la salud del ecosistema.
+
+## Inicio y primeros pasos
+
+- **Inicio público (`/`):** presenta los caminos Busco empleo y Quiero contratar. La demostración con habilidades utiliza datos ficticios y explica requisitos; no realiza un cálculo real de compatibilidad. Una sesión abierta conserva la redirección a su panel.
+- **Candidato → Ajustar mi búsqueda (`/bienvenida`):** carga las preferencias guardadas, permite revisarlas o completar después y ofrece acceso directo a Subir CV en el perfil. Solo guarda los campos modificados, combinándolos con una lectura reciente del perfil. Si falla, conserva la edición para reintentar. Explorar sin cambios no escribe datos. Las recomendaciones posteriores corresponden a la respuesta de la API y pueden estar vacías.
+- **Empresa → Guía de publicación (`/empresa/bienvenida`):** consulta correo, solicitud, revisión y requisitos para preparar una oferta. Muestra correcciones y respuesta administrativa cuando existen. Presentar la solicitud no equivale a estar verificada. Las organizaciones exentas de verificación obligatoria se identifican sin atribuirles una aprobación administrativa.
+- El registro empresarial sin una configuración de autenticador pendiente conduce a la bienvenida; las invitaciones y el requisito de autenticador conservan su recorrido previo. Los entrevistadores mantienen su acceso a procesos asignados.
+
+Estas entradas reutilizan perfil, verificación y formulario de ofertas existentes. No analizan repositorios por iniciar sesión ni generan resultados de selección simulados.
 
 ## Novedad: comparar vacantes antes de postularse
 
