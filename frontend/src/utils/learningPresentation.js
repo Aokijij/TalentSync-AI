@@ -21,3 +21,9 @@ export function formatLearningHours(value) {
   if (!Number.isFinite(hours) || hours <= 0) return "Por confirmar";
   return hours < 0.05 ? "< 0.1" : String(Math.round(hours * 10) / 10);
 }
+
+
+export function canonicalLearningLanguage(value) {
+  const key = String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().split(/[-_]/)[0];
+  return ({ espanol: "es", castellano: "es", spanish: "es", ingles: "en", english: "en", portugues: "pt", portuguese: "pt", frances: "fr", french: "fr", aleman: "de", german: "de" })[key] || key;
+}

@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 
 import pytest
 from test_api_flows import client, company_account, create_job, register  # noqa: F401
+from test_ecosystem import administrator
+from test_learning_resources import content
 
 from app.domain.services.learning_catalog import ASSESSMENTS
 from app.infrastructure.database.models import AssessmentAttempt
@@ -42,12 +44,18 @@ def test_learning_plan_is_separate_from_validated_fundamentals(client):
     _, company = company_account(client)
     job = create_job(client, company)
     _, candidate = register(client, "learner", skills=["Java"])
+    admin = administrator(client)
+    course_ids = []
+    for skill in ("python", "sql"):
+        created = client.post("/api/v1/admin/learning/resources", headers=admin, json=content(title=f"Curso de {skill}", skills=[skill], url=f"https://example.org/{skill}"))
+        assert created.status_code == 201
+        course_ids.append(next(row["id"] for row in created.json() if row["title"] == f"Curso de {skill}"))
     response = client.get(f"/api/v1/learning/jobs/{job['id']}", headers=candidate)
     assert response.status_code == 200
     resources = response.json()["resources"]
-    assert {row["id"] for row in resources} == {"project-python", "project-sql"}
+    assert {row["id"] for row in resources} == set(course_ids)
     assert all(row["projected_match"] >= row["current_match"] for row in resources)
-    assert client.put("/api/v1/learning/plans/project-python", headers=candidate, json={"status": "completed"}).status_code == 200
+    assert client.put(f"/api/v1/learning/plans/{course_ids[0]}", headers=candidate, json={"status": "completed"}).status_code == 200
     assert client.get("/api/v1/learning/passport", headers=candidate).json()["assessments"] == []
     assert "python" not in client.get("/api/v1/profiles/me", headers=candidate).json()["skills"]
     endpoint = "/api/v1/learning/assessments/python-foundations-v1/start"

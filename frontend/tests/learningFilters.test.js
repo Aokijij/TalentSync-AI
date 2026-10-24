@@ -53,3 +53,10 @@ test("old or failed source observations never show an open enrollment as current
   assert.equal(courseAvailability({ ...course, availability: { status: "open", checked_on: "2026-10-01", unavailable: true } }, "2026-10-02").status, "unknown");
   assert.equal(courseAvailability({ availability: { status: "open", checked_on: "invalid" } }, "2026-10-02").status, "unknown");
 });
+
+
+test("Spanish discovery combines provider language codes and older Spanish labels", () => {
+  const rows = ["es", "Español", "es-ES", "Spanish", "en"].map((language, index) => ({ id: String(index), title: "Formación", details: { languages: [language] } }));
+  assert.deepEqual(filterResources(rows, { language: "es" }).map((row) => row.id), ["0", "1", "2", "3"]);
+  assert.deepEqual(filterResources(rows, { language: "Español" }).map((row) => row.id), ["0", "1", "2", "3"]);
+});

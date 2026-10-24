@@ -1,18 +1,17 @@
 import "../styles/learning-filters.css";
 import { ChevronDown, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
-import { certificateCosts, courseModalities, enrollmentStatuses, learningLanguages, learningLevels } from "../utils/learningPresentation.js";
+import { canonicalLearningLanguage, certificateCosts, courseModalities, enrollmentStatuses, learningLanguages, learningLevels } from "../utils/learningPresentation.js";
 
 export function LearningFilters({ value, onChange, resources = [], resultCount }) {
   const change = (key, next) => onChange({ ...value, [key]: next });
   const providers = [...new Set(resources.map((row) => row.provider).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
-  const languages = [...new Set(resources.flatMap((row) => row.details?.languages || []))].sort();
+  const languages = [...new Set(resources.flatMap((row) => (row.details?.languages || []).map(canonicalLearningLanguage)))].sort();
   const options = [
     ["provider", "Proveedor", [["all", "Todos los proveedores"], ...providers.map((name) => [name, name])]],
     ["cost", "Acceso al curso", [["all", "Cualquier coste"], ["free", "Gratuito"], ["paid", "De pago"], ["unknown", "Por confirmar"]]],
     ["level", "Nivel", [["all", "Todos los niveles"], ...Object.entries(learningLevels)]],
     ["language", "Idioma", [["all", "Cualquier idioma"], ...languages.map((code) => [code, learningLanguages([code])])]],
-    ["origin", "Origen", [["all", "Todos los orígenes"], ["local", "TalentSync"], ["external", "Proveedores externos"]]],
-    ["kind", "Formato", [["all", "Todos los formatos"], ["project", "Laboratorio / práctica"], ["course", "Curso o ruta"], ["workshop", "Taller"], ["documentation", "Documentación"]]],
+    ["kind", "Formato", [["all", "Todos los formatos"], ["course", "Curso o ruta"], ["workshop", "Taller"], ["documentation", "Documentación"]]],
     ["enrollment", "Inscripciones", [["all", "Cualquier disponibilidad"], ...Object.entries(enrollmentStatuses)]],
     ["modality", "Modalidad", [["all", "Cualquier modalidad"], ...Object.entries(courseModalities)]],
     ["certificate", "Certificado", [["all", "Cualquier certificado"], ...Object.entries(certificateCosts)]],

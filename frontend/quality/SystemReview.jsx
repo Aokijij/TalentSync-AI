@@ -13,7 +13,7 @@ const integrations = [
   { id: "learn", name: "Microsoft Learn", implemented: true, enabled: true, configured: true, operational_state: "error", status: "La configuración está disponible; la última consulta falló.", last_attempt_at: "2026-10-22T15:05:00Z", last_success_at: "2026-10-21T12:00:00Z", last_error: "La última operación no pudo completarse. Revisa la fuente desde su sección.", next_steps: "Revisar el acceso y los permisos de la aplicación." },
   { id: "social", name: "Acceso social", implemented: true, enabled: true, configured: false, operational_state: "not_configured", status: "No hay proveedores configurados.", next_steps: "Configurar un proveedor y comprobar el acceso." },
 ];
-const resource = { id: "review", title: "Análisis de datos con hojas de cálculo", provider: "Formación de ejemplo", category: "business", skills: ["excel"], hours: 12, cost: "free", active: true };
+const resource = { id: "review", title: "Análisis de datos con hojas de cálculo", provider: "Formación de ejemplo", category: "administration", kind: "course", url: "https://example.org/course", instructions: "Organiza tablas y revisa sus datos con ejercicios del proveedor.", details: { languages: ["es"] }, skills: ["excel"], hours: 12, cost: "free", active: true };
 export function SystemReview() {
   const feedback = useFeedback();
   const [filters, setFilters] = useState({}), [open, setOpen] = useState(false), [text, setText] = useState(""), [saved, setSaved] = useState(false);

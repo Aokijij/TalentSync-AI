@@ -62,3 +62,12 @@ La ampliación de `guide-learning.spec.js` incluye 31 retos sintéticos, paginac
 La revisión de `guide-learning.spec.js` conserva las cuatro combinaciones de viewport/tema para fichas de curso, retos asignados, certificado con proveedor de solo lectura, fallo/reintento y un único aviso. Añade un catálogo sintético de 79 retos: filtro de sector y nivel, paginación, ausencia de filtros por curso/plan y cambio de pestaña conservando consultas independientes. Las capturas están en `.local/challenge-paths-review/`; los servicios externos permanecen bloqueados.
 
 `test_challenge_tracks.py` cubre los 79 formularios con nivel, formatos y casos originales de los 24 recorridos nuevos, correspondencia por habilidad, metadatos públicos sin soluciones y descubrimiento sin cursos guardados. `test_curated_learning.py` valida las 169 fichas, los 18 proveedores, fechas individuales, idiomas, condiciones y conservación de cambios al importar. Las áreas nuevas tienen retos y formación externa: las pruebas de prácticas guiadas anteriores se parametrizan sobre `EXERCISES`, no sobre todas las áreas del catálogo.
+
+
+## Cursos centrados en retos y limpieza del catálogo
+
+`guide-learning.spec.js` comprueba tarjetas resumidas, apertura de la ficha desde el plan, ausencia de la práctica complementaria aunque exista una asociación histórica, habilidades practicadas, botón de certificado y edición administrativa por habilidades. Un caso adicional comprueba que un recurso retirado no permite abrir curso, práctica o certificado y puede retirarse del plan mediante confirmación. La guía y los textos públicos utilizan Cursos y Retos como recorridos actuales.
+
+`test_learning_resources.py` verifica la retirada de recursos internos y ficticios sin pérdida de planes históricos y los nombres de YouTube. Los casos históricos de `test_learning_journeys.py` y `test_learning_flow_revision.py` reconstruyen planes anteriores a la retirada para comprobar conservación, permisos y privacidad; no vuelven a ofrecer los recursos para planes nuevos. `test_market_radar.py` comprueba que las ofertas de demostración vuelven a consultar en desarrollo y siguen excluidas en producción.
+
+La ampliación del banco llega a 111 formularios con nivel; las 59 rutas nuevas en español se validan mediante el catálogo oficial de Microsoft Learn. Las capturas de tarjetas resumidas están en `.local/refined-learning-review/` y las de los planes, en `.local/challenge-paths-review/`.

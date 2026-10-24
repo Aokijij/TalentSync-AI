@@ -201,3 +201,22 @@ def test_saving_design_changes_only_presentation_and_restores_options(client):
     assert after["resume_style"] == "modern" and after["resume_color"] == "teal"
     for field in ["skills", "profession", "experience", "experiences", "educations", "cv_text"]:
         assert after[field] == before[field]
+
+
+def test_fixture_radar_works_in_development_and_stays_excluded_from_production(client, monkeypatch):
+    from app.core.config import settings
+    _, company = company_account(client)
+    posted = create_job(client, company)
+    _, candidate = register(client, "radar-fixture-filters")
+    with client.session_factory() as db:
+        row = db.get(Job, posted["id"])
+        row.source_name = "local-realistic"
+        db.commit()
+    path = "/api/v1/profiles/me/market"
+    filters = {"location_scope": "country", "level": "", "family": ""}
+    development = client.get(path, headers=candidate, params=filters).json()
+    assert development["local_data"] and development["demand"]["sample"] == 1
+    assert "demostración" in development["demand"]["note"]
+    monkeypatch.setattr(settings, "environment", "production")
+    production = client.get(path, headers=candidate, params=filters).json()
+    assert not production["local_data"] and production["demand"]["sample"] == 0

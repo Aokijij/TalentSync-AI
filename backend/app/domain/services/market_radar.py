@@ -154,6 +154,7 @@ def market_report(profile, jobs, candidates, courses, filters, now=None):
     cohorts = Counter((family, (job.quality_details or {}).get("seniority"), job.location) for job in jobs if not synthetic_job(job) or (local_data and getattr(job, "source_name", "") == "local-realistic") for family in families_for(job.title))
     available = [{"family": family, "level": level, "location": city, "offers": count} for (family, level, city), count in cohorts.most_common() if level and city and count >= MINIMUM_SAMPLE][:8]
     if local_data:
+        demand["sources"] = {"Datos de demostración": len(selected)}
         demand["note"] = "Datos de demostración. Las empresas, procesos y salarios son ficticios; no describen el mercado laboral real."
         peers["note"] = "Comparación agregada de perfiles de prueba del mismo grupo. " + peers["note"]
         salary["note"] = "Salarios de las vacantes de prueba, no remuneraciones oficiales. " + salary["note"]

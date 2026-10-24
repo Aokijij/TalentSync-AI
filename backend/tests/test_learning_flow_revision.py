@@ -2,6 +2,7 @@
 from datetime import datetime
 
 from test_api_flows import client, company_account, register  # noqa: F401
+from test_learning_journeys import preserve_legacy_plan
 
 from app.domain.services.learning_activities import activities_for
 from app.infrastructure.database.models import LearningPlan, User
@@ -9,8 +10,9 @@ from app.infrastructure.learn_catalog import LearnCatalog
 
 
 def test_practice_submission_hides_solutions_locks_scores_and_preserves_history(client):
-    _, candidate = register(client, "flow-attempt", skills=[])
+    user, candidate = register(client, "flow-attempt", skills=[])
     _, other = register(client, "flow-other")
+    preserve_legacy_plan(client, user["id"], "project-python")
     base = "/api/v1/learning/plans/project-python"
     plan = client.put(base, headers=candidate, json={}).json()[0]
     answers = {row["id"]: row["answer"] for row in activities_for("project-python")}
@@ -42,7 +44,8 @@ def test_practice_submission_hides_solutions_locks_scores_and_preserves_history(
 
 
 def test_partial_draft_does_not_evaluate_unfinished_matching(client):
-    _, candidate = register(client, "flow-partial")
+    user, candidate = register(client, "flow-partial")
+    preserve_legacy_plan(client, user["id"], "project-python")
     base = "/api/v1/learning/plans/project-python"
     plan = client.put(base, headers=candidate, json={}).json()[0]
     response = client.patch(base + "/journey", headers=candidate, json={"version": plan["version"], "activity_answers": {"connections": [0, -1, -1]}})
@@ -52,6 +55,7 @@ def test_partial_draft_does_not_evaluate_unfinished_matching(client):
 
 def test_legacy_completed_practice_can_retry_without_losing_the_previous_result(client):
     user, candidate = register(client, "flow-legacy")
+    preserve_legacy_plan(client, user["id"], "project-python")
     base = "/api/v1/learning/plans/project-python"
     plan = client.put(base, headers=candidate, json={}).json()[0]
     answers = {row["id"]: row["answer"] for row in activities_for("project-python")}

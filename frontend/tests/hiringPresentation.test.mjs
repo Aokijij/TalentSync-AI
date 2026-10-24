@@ -314,10 +314,11 @@ test("academic comparison starts collapsed and retains all three explanations", 
 test("dashboard formation shows saved courses and opens the chosen plan directly", async () => {
   const DashboardLearning = await component("DashboardLearning", "DashboardLearning");
   const render = (props) => renderToStaticMarkup(createElement(MemoryRouter, null, createElement(DashboardLearning, props)));
-  const active = render({ plans: [{ id: 1, status: "in_progress", resource: { id: "sql-one", title: "SQL aplicado", provider: "Ejemplo" } }] });
+  const active = render({ plans: [{ id: 1, status: "in_progress", resource: { id: "sql-one", title: "SQL aplicado", url: "https://example.org/sql", provider: "Ejemplo" } }] });
   assert.match(active, /SQL aplicado/);
   assert.match(active, /resource=sql-one#mi-plan/);
   assert.ok(!active.includes("Aprende con un objetivo"));
+  assert.doesNotMatch(render({ plans: [{ id: 2, status: "in_progress", resource: { id: "retired", url: "https://example.org/old", title: "Formación ficticia", retired: true } }] }), /Formación ficticia/);
   const saved = render({ certifications: [{ name: "Excel básico", issuer: "Instituto" }] });
   assert.match(saved, /Excel básico/);
   assert.match(saved, /profile-certifications/);

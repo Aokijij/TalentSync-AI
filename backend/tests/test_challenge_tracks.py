@@ -15,7 +15,7 @@ from app.infrastructure.database.models import AssessmentAttempt
 
 def test_bank_has_real_level_blueprints_private_solutions_and_unique_questions():
     current = [row for row in ASSESSMENTS.values() if row.get("selection")]
-    assert len(current) == 79
+    assert len(current) == 111
     assert {row["category"] for row in current} == {"general", "technology", "service", "sales", "administration", "finance", "logistics", "education", "design", "care", "industry", "hospitality", "agriculture", "construction"}
     for bank in current:
         assert bank["question_count"] == {"beginner": 10, "intermediate": 15, "advanced": 20}[bank["level"]]
@@ -25,7 +25,7 @@ def test_bank_has_real_level_blueprints_private_solutions_and_unique_questions()
         for question in bank["questions"]:
             assert evaluate(question, question["answer"])
             assert question["topic"] and question["feedback"]
-    assert related_assessments({"skills": ["HTML", "CSS"]}, ASSESSMENTS) == ["web-beginner-v2", "web-intermediate-v2"]
+    assert set(related_assessments({"skills": ["HTML", "CSS"]}, ASSESSMENTS)) == {"web-beginner-v2", "web-intermediate-v2", "html-beginner-v1", "html-intermediate-v1", "css-beginner-v1", "css-intermediate-v1"}
     assert not related_assessments({"skills": ["cirugia"]}, ASSESSMENTS)
 
 
@@ -89,7 +89,11 @@ def test_production_hides_mailbox_and_rejects_demo_statistics(client, monkeypatc
 
 def test_new_sector_cases_are_distinct_and_assign_by_declared_skill_not_title():
     from app.application.use_cases.learning_resources import enrich
-    from app.domain.services.sector_challenges import TRACKS
+    from app.domain.services.professional_challenges import (
+        TRACKS as PROFESSIONAL_TRACKS,
+    )
+    from app.domain.services.sector_challenges import TRACKS as SECTOR_TRACKS
+    TRACKS = [*SECTOR_TRACKS, *PROFESSIONAL_TRACKS]
 
     for slug, category, skill, _, _ in TRACKS:
         for level in ("beginner", "intermediate"):
@@ -99,6 +103,7 @@ def test_new_sector_cases_are_distinct_and_assign_by_declared_skill_not_title():
             assert all(item.get("context") for item in bank["questions"] if item["id"].startswith("case-"))
         resource = enrich({"id": "course-coverage", "category": category, "title": "Formación del proveedor", "skills": [skill], "url": "https://example.org/course", "kind": "course", "hours": 1})
         assert f"{slug}-beginner-v1" in resource["assessment_ids"]
+        assert all(row["course_skills"] == [skill] for row in resource["assigned_challenges"])
         assert all(not ({"questions", "answer", "feedback", "selection"} & set(row)) for row in resource["assigned_challenges"])
     assert not related_assessments({"title": "Curso de React y Python", "skills": ["historia del arte"]}, ASSESSMENTS)
     assert not related_assessments({"skills": ["turismo sostenible", "agricultura"]}, ASSESSMENTS)

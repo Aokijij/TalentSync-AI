@@ -4,7 +4,7 @@ from test_account_security import browser, login  # noqa: F401
 from test_api_flows import client, company_account, create_job, register  # noqa: F401
 from test_ecosystem import administrator
 
-from app.infrastructure.database.models import EventLog, LearningResource
+from app.infrastructure.database.models import EventLog, LearningPlan, LearningResource
 
 
 def content(**changes):
@@ -75,3 +75,29 @@ def test_catalog_management_is_admin_only_and_browser_writes_require_csrf(browse
     assert browser.get("/api/v1/admin/learning/resources").status_code == 403
     assert browser.post("/api/v1/admin/learning/resources", json=content()).status_code == 403
     assert browser.get("/api/v1/learning/catalog").status_code == 200
+
+
+def test_retired_internal_and_fictional_resources_disappear_but_keep_owned_history(client):
+    admin = administrator(client)
+    user, candidate = register(client, "retired-catalog")
+    rows = client.post("/api/v1/admin/learning/resources", headers=admin, json=content(provider="Proveedor ficticio de escenarios")).json()
+    fictitious = next(row for row in rows if row.get("provider") == "Proveedor ficticio de escenarios")
+    assert not fictitious["active"] and fictitious["retired"]
+    catalog = client.get("/api/v1/learning/catalog?area=all", headers=candidate).json()["resources"]
+    assert all(row.get("url") and not row["provider"].startswith("TalentSync") and "ficticio" not in row["provider"] for row in catalog)
+    assert client.put("/api/v1/learning/plans/project-python", headers=candidate, json={}).status_code == 404
+    assert client.put(f"/api/v1/learning/plans/{fictitious['id']}", headers=candidate, json={}).status_code == 404
+    with client.session_factory() as db:
+        db.add(LearningPlan(user_id=user["id"], resource_id=fictitious["id"], status="in_progress", progress={}))
+        db.commit()
+    historical = client.get("/api/v1/learning/plans", headers=candidate).json()[0]
+    assert historical["resource"]["retired"] and historical["resource"]["id"] == fictitious["id"]
+
+
+def test_youtube_labels_use_real_platform_and_no_course_practice_in_catalog(client):
+    admin = administrator(client)
+    _, candidate = register(client, "youtube-presentation")
+    client.post("/api/v1/admin/learning/resources", headers=admin, json=content(provider="YouTube · selección de TalentSync", title="Python inicial con un proyecto para practicar", url="https://www.youtube.com/playlist?list=public-test-list"))
+    row = next(row for row in client.get("/api/v1/learning/catalog?area=all", headers=candidate).json()["resources"] if row.get("url", "").startswith("https://www.youtube.com/"))
+    assert row["provider"] == "YouTube" and row["title"] == "Python: fundamentos y ejercicios en vídeo"
+    assert row["journey"] is None

@@ -123,7 +123,7 @@ def test_rich_course_metadata_has_bounded_strict_schema(details):
 
 def test_expanded_official_catalog_preserves_review_dates_and_access_conditions():
     current = curated_learning.catalog()["resources"]
-    assert len(current) == 169
+    assert len(current) == 228
     assert {"industry", "hospitality", "agriculture", "construction"} <= {row["content"]["category"] for row in current}
     additions = [row for row in current if row["provider_id"] == "saylor"]
     assert len(additions) == 95
@@ -133,3 +133,13 @@ def test_expanded_official_catalog_preserves_review_dates_and_access_conditions(
     assert all("créditos académicos" in row["content"]["details"]["certificate_notes"] for row in additions)
     from app.application.use_cases.learning_resources import enrich
     assert any(enrich(row["content"])["assigned_challenges"] for row in additions)
+
+
+def test_new_spanish_paths_use_official_spanish_metadata_without_tracking_duplicates():
+    rows = curated_learning.catalog()["resources"]
+    selected = [row for row in rows if row["source_id"].startswith("learn-es:")]
+    assert len(selected) == 59
+    assert all(row["content"]["details"]["languages"] == ["es"] for row in selected)
+    assert all("/es-es/training/" in row["content"]["url"] and "?" not in row["content"]["url"] for row in selected)
+    assert all(row["content"]["details"]["certificate_cost"] == "none" for row in selected)
+    assert all(row["content"]["details"]["syllabus"] for row in selected)

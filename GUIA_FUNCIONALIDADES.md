@@ -23,7 +23,7 @@ Estas entradas reutilizan perfil, verificación y formulario de ofertas existent
 
 ## Cursos, prácticas y certificados por separado
 
-**Dónde:** candidato → Mi desarrollo → Cursos y prácticas, Mi plan y Mis resultados.
+**Dónde:** candidato → Mi desarrollo → Cursos, Mi plan y Mis resultados.
 
 1. Revisa el temario, proveedor, acceso y condiciones de certificación antes de añadir un recurso. **Añadir a Mi plan** guarda un seguimiento personal; no te inscribe en el proveedor. Aparece un único aviso con acceso a Mi plan.
 2. En **Gestionar curso**, abre la formación en el proveedor. **Ya terminé el curso** registra una finalización declarada por ti, sin nota ni acreditación automática de habilidades.
@@ -121,7 +121,7 @@ Antes de entregar puedes consultar todas las respuestas y editar cualquiera. La 
 | Recomendaciones y compatibilidad | Encontrar ofertas y consultar razones y requisitos relacionados con el perfil. Una afinidad académica compara datos declarados; no autentica un diploma. |
 | Guardar y ocultar ofertas | Organizar oportunidades y, cuando se autoriza, utilizar esas decisiones explícitas para personalizar sugerencias. |
 | Seguimiento de postulaciones | Consultar estado, etapas, plazos, historial y feedback comunicado por la empresa; retirar una postulación cuando el proceso lo permite. |
-| Cursos y prácticas | Filtrar recursos, ver las habilidades que refuerzan y añadir actividades al plan personal. Completar un curso no acredita automáticamente dominio de una habilidad. |
+| Cursos | Filtrar recursos, ver las habilidades que refuerzan y añadir actividades al plan personal. Completar un curso no acredita automáticamente dominio de una habilidad. |
 | Mi plan y resultados | Continuar actividades iniciadas y consultar sus entregas o resultados, distinguiendo práctica, información declarada y evaluación disponible. |
 | Radar laboral | Explorar habilidades solicitadas, perfiles comparables y salarios publicados. En Ubicación puedes elegir Todo el país o Una ciudad y pulsar Actualizar radar. Las comparaciones de perfiles y medianas salariales requieren área, nivel y muestra suficiente; Usar mi perfil recupera tu ciudad y los filtros sugeridos. La muestra corresponde a los datos disponibles en la plataforma y no representa todo el mercado laboral colombiano. |
 
@@ -215,6 +215,9 @@ El seguimiento muestra responsable, fecha comprometida, estado del plazo y fecha
 
 En **Mi desarrollo → Retos**, busca la habilidad y filtra por sector y nivel. «Más filtros» permite consultar tu avance u ordenar por las menciones de habilidades en ofertas disponibles. La búsqueda de retos no depende del curso ni de Mi plan. El catálogo muestra 12 tarjetas por página.
 
-En **Cursos y prácticas**, abre «Ver detalle» para consultar el contenido, las condiciones y los **retos asignados al curso**. Desde Mi plan puedes continuar la formación y consultar los mismos resultados de retos compartidos. Si no hay una asignación pertinente, puedes estudiar y aportar el certificado igualmente.
+En **Cursos**, abre «Ver detalle» para consultar el contenido, las condiciones y los **retos asignados al curso**. Desde Mi plan puedes continuar la formación y consultar los mismos resultados de retos compartidos. Si no hay una asignación pertinente, puedes estudiar y aportar el certificado igualmente.
 
-Para **aportar un certificado**, conserva el proveedor indicado, revisa nombre y año y pega el enlace público HTTPS del documento o de su verificación. El identificador de credencial es opcional. Guardar el documento no verifica su autenticidad ni completa retos. La colección editorial ampliada incluye 169 cursos de 18 proveedores; utiliza el filtro de idioma para distinguir la formación en español de la impartida en inglés. Consulta las condiciones actuales en el proveedor antes de inscribirte.
+Para **aportar un certificado**, conserva el proveedor indicado, revisa nombre y año y pega el enlace público HTTPS del documento o de su verificación. El identificador de credencial es opcional. Guardar el documento no verifica su autenticidad ni completa retos. La colección editorial ampliada incluye 228 cursos de 18 proveedores; utiliza el filtro de idioma para distinguir la formación en español de la impartida en inglés. Consulta las condiciones actuales en el proveedor antes de inscribirte.
+
+
+La tarjeta de un curso muestra un resumen breve; abre «Ver detalle» para consultar temario, requisitos y condiciones. Dentro de Mi plan, «Detalle del curso» abre esa misma ficha. Las prácticas complementarias antiguas dejan de mostrarse como tareas del curso: utiliza sus retos por habilidad. Los recursos internos retirados no se ofrecen para planes nuevos; sus resultados guardados se conservan. Las fichas de YouTube identifican la formación en vídeo sin presentar a TalentSync como proveedor.

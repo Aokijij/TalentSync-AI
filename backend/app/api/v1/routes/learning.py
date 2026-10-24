@@ -99,7 +99,7 @@ def youtube_import(payload: YouTubeImport, user=Depends(admin), db=Depends(get_u
     content = payload.editorial.model_dump(mode="json")
     # Independent editorial fields are supplied by the reviewer; API descriptions,
     # channel names, statistics and sample titles are not copied into persistence.
-    content.update(url=f"https://www.youtube.com/playlist?list={identifier}", provider="YouTube · selección de TalentSync",
+    content.update(url=f"https://www.youtube.com/playlist?list={identifier}", provider="YouTube",
                    cost="free", sponsored=False, affiliate=False, disclosure="")
     content.setdefault("details", None)
     content["details"] = {**(content["details"] or {}), "certificate_cost": "none",

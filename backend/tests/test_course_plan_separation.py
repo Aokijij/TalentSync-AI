@@ -59,7 +59,7 @@ def test_authored_practice_solutions_are_private_and_course_progress_survives_su
     catalog = client.get("/api/v1/learning/catalog", params={"area": "all"}, headers=candidate).json()
     public = next(row for row in catalog["resources"] if row["id"] == source["id"])
     assert "draft" not in public["practice"]
-    assert all("answer" not in item and "feedback" not in item for item in public["journey"]["activities"])
+    assert public["journey"] is None  # Course catalog no longer offers per-course practices.
     base = f"/api/v1/learning/plans/{source['id']}"
     plan = client.put(base, headers=candidate, json={}).json()[0]
     with client.session_factory() as db:

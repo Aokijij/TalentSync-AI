@@ -473,11 +473,11 @@ appointments|La agenda ofrece doce espacios. Tres están bloqueados y otros dos 
 """
 
 
-def banks():
+def banks(tracks=TRACKS, content=CONTENT, case_data=CASE_DATA):
     from app.domain.services.challenge_tracks import LEVELS, decisions
 
     cases = {}
-    for line in CASE_DATA.strip().splitlines():
+    for line in case_data.strip().splitlines():
         slug, context, steps, prompt, answer, explanation, pairs = line.split("|")
         sequence = steps.split(">")
         terms, meanings = zip(*(pair.split("=", 1) for pair in pairs.split(";")), strict=True)
@@ -489,8 +489,8 @@ def banks():
         for item in cases[slug]:
             item.update(context=context, topic="Caso y comprobación")
     result = {}
-    for slug, area, skill, aliases, scope in TRACKS:
-        authored = decisions(CONTENT[slug], "Aplicación de la habilidad", "item")
+    for slug, area, skill, aliases, scope in tracks:
+        authored = decisions(content[slug], "Aplicación de la habilidad", "item")
         foundation, application = authored[:5], authored[5:]
         for item in foundation:
             item["topic"] = "Conceptos y criterios"

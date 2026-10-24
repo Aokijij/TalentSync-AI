@@ -1,4 +1,4 @@
-const names = { sql: "SQL", python: "Python", excel: "Excel", git: "Git", "power bi": "Power BI", "api rest": "API REST", fastapi: "FastAPI", javascript: "JavaScript", typescript: "TypeScript", html: "HTML", html5: "HTML5", css: "CSS", css3: "CSS3", aws: "AWS", java: "Java", react: "React", nodejs: "Node.js" };
+const names = { "c#": "C#", docker: "Docker", word: "Word", powerpoint: "PowerPoint", "accesibilidad web": "Accesibilidad web", sql: "SQL", python: "Python", excel: "Excel", git: "Git", "power bi": "Power BI", "api rest": "API REST", fastapi: "FastAPI", javascript: "JavaScript", typescript: "TypeScript", html: "HTML", html5: "HTML5", css: "CSS", css3: "CSS3", aws: "AWS", java: "Java", react: "React", nodejs: "Node.js" };
 export const skillName = (value) => names[value.toLocaleLowerCase()] || value.charAt(0).toLocaleUpperCase() + value.slice(1);
 export const skillKey = (value) => String(value || "").trim().normalize("NFKD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 

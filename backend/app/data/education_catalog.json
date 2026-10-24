@@ -7371,6 +7371,2372 @@
           "duration_notes": "15 horas publicadas en el catálogo de OpenLearn."
         }
       }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.get-started-c-sharp-part-4",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Trabajo con datos de variables en aplicaciones de consola de C# (Introducción a C#, parte 4)",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar c#. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-c-sharp-part-4/",
+        "skills": [
+          "c#"
+        ],
+        "hours": 6.35,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Elección del tipo de datos correcto en el código de C#",
+            "Conversión de tipos de datos mediante técnicas de conversión y conversión en C#",
+            "Realizar operaciones en matrices mediante métodos auxiliares en C#",
+            "Aplicación de formato a datos alfanuméricos para su presentación en C#",
+            "Modificación del contenido de cadenas con métodos de tipo de datos de cadena integrados en C#",
+            "Proyecto guiado: trabajar con datos variables en C#",
+            "Proyecto de desafío: trabajo con datos variables en C#"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.get-started-c-sharp-part-6",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Depuración de aplicaciones de consola de C# (Introducción a C#, parte 6)",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar c#. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-c-sharp-part-6/",
+        "skills": [
+          "c#"
+        ],
+        "hours": 5.45,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Revisión de los principios de depuración de código y control de excepciones",
+            "Implementación de las herramientas de depuración de Visual Studio Code para C#",
+            "Implementación del control de excepciones en aplicaciones de consola de C#",
+            "Creación e inicio de excepciones en aplicaciones de consola de C#",
+            "Proyecto guiado: Depuración y control de excepciones en una aplicación de consola de C# mediante Visual Studio Code",
+            "Proyecto de desafío: Depuración de una aplicación de consola de C# mediante Visual Studio Code"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.get-started-c-sharp-part-1",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Escribir el primer código con C# (Introducción a C#, parte 1)",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar c#. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-c-sharp-part-1/",
+        "skills": [
+          "c#"
+        ],
+        "hours": 2.65,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Escritura del primer código de C#",
+            "Almacenamiento de datos con variables en C#",
+            "Realizar operaciones básicas en números en C#",
+            "Adición de lógica de decisión al código en C#"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.get-started-c-sharp-part-3",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Adición de lógica a aplicaciones de consola de C# (Introducción a C#, parte 3)",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar c#. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-c-sharp-part-3/",
+        "skills": [
+          "c#"
+        ],
+        "hours": 6.35,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Evaluación de expresiones booleanas para tomar decisiones en C#",
+            "Control de la lógica y el ámbito de las variables mediante bloques de código en C#",
+            "Ramificación del flujo de código mediante la construcción Switch Case en C#",
+            "Iteración de un bloque de código mediante la instrucción for en C#",
+            "Adición de lógica de bucle al código mediante las instrucciones do-while y while en C#",
+            "Proyecto guiado: desarrollo de estructuras de bucle y bifurcación condicional en C#",
+            "Proyecto que plantea un desafío: desarrollo de estructuras de bifurcación y bucle en C#"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.get-started-c-sharp-part-2",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Creación y ejecución de aplicaciones de consola de C# sencillas (Introducción a C#, parte 2)",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar c#. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-c-sharp-part-2/",
+        "skills": [
+          "c#"
+        ],
+        "hours": 4.333333333333333,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Instalación y configuración de Visual Studio Code",
+            "Repeat actions with loops in C#",
+            "Organización de datos con matrices y listas en C#",
+            "Escribe código reutilizable en C#",
+            "Leer y escribir archivos en C#"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.get-started-c-sharp-part-5",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Creación de métodos en aplicaciones de consola de C# (Introducción a C#, Parte 5)",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar c#. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-c-sharp-part-5/",
+        "skills": [
+          "c#"
+        ],
+        "hours": 3.9166666666666665,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Escritura de código de C# por primera vez",
+            "Creación de métodos de C# con parámetros",
+            "Creación de métodos de C# que devuelven valores",
+            "Proyecto guiado: Planeamiento de una visita al zoológico de mascotas",
+            "Proyecto de desafío: Creación de un minijuego"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.github-copilot",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Aspectos básicos de GitHub Copilot, parte 1 de 2",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar git. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/copilot/",
+        "skills": [
+          "git"
+        ],
+        "hours": 5.283333333333333,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "IA responsable con GitHub Copilot",
+            "Introducción a GitHub Copilot",
+            "Introducción a la ingeniería de solicitudes con GitHub Copilot",
+            "Introducción a Copilot Spaces",
+            "Uso de las características avanzadas de GitHub Copilot",
+            "GitHub Copilot en distintos entornos: IDE, Chat, GitHub.com, técnicas de la línea de comandos y la aplicación GitHub Copilot",
+            "Consideraciones de administración y personalización con GitHub Copilot",
+            "Casos de uso con GitHub Copilot para la inteligencia artificial de los desarrolladores",
+            "Desarrollo de pruebas unitarias mediante herramientas de GitHub Copilot"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.github-foundations",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Fundamentos de GitHub, parte 1 de 2",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar git. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/github-foundations/",
+        "skills": [
+          "git"
+        ],
+        "hours": 6.733333333333333,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a Git",
+            "Introducción a GitHub",
+            "Introducción a los productos de GitHub",
+            "Configuración del examen de código en GitHub",
+            "Introducción a GitHub Copilot",
+            "Código con GitHub Codespaces",
+            "Administración del trabajo con GitHub Projects",
+            "Comunicación eficaz en GitHub mediante Markdown"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.github-foundations-2",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Fundamentos de GitHub, parte 2 de 2",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar git. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/github-foundations-2/",
+        "skills": [
+          "git"
+        ],
+        "hours": 4.95,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Contribución a un proyecto de código abierto en GitHub",
+            "Administración de un programa de InnerSource mediante GitHub",
+            "Mantenimiento de un repositorio seguro mediante procedimientos recomendados de GitHub",
+            "Introducción a la administración de GitHub",
+            "Autenticación y autorización de identidades de usuario en GitHub",
+            "Administración de cambios de repositorio por medio de solicitudes de incorporación de cambios en GitHub",
+            "Organización del historial de un repositorio y búsqueda mediante GitHub",
+            "Uso de GitHub Copilot con Python"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.github.github-administration-products-1",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Aspectos básicos de GitHub: aspectos básicos de administración y características del producto, parte 1 de 2",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar git. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/github-administration-products/",
+        "skills": [
+          "git"
+        ],
+        "hours": 3.466666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a GitHub",
+            "Introducción a la administración de GitHub",
+            "Introducción a los productos de GitHub",
+            "Mantenimiento de un repositorio seguro mediante procedimientos recomendados de GitHub"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.get-started-with-python-fundamentals",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Introducción a la programación de Python: parte 1: aspectos básicos",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar python. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-with-python-fundamentals/",
+        "skills": [
+          "python"
+        ],
+        "hours": 3.2,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Escribir el primer código de Python",
+            "Trabajar con datos en Python",
+            "Instalación y configuración de Visual Studio Code",
+            "Incorporación de la toma de decisiones al código"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.get-started-with-python-programs",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Introducción a la programación de Python: Parte 2: creación de programas",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar python. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-with-python-programs/",
+        "skills": [
+          "python"
+        ],
+        "hours": 3.5,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Repetir acciones con bucles",
+            "Organización de datos con colecciones",
+            "Lee y escribe archivos",
+            "Escritura de código reutilizable"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.mec.minecraft-python-coding-academy",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Academia de codificación de Python de Minecraft",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar python. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/minecraft-python-coding-academy/",
+        "skills": [
+          "python"
+        ],
+        "hours": 1.8,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "advanced",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Begin Python coding in Minecraft with MakeCode",
+            "Build programs using Python coding in Minecraft"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-m365.m365-msgraph-scenarios",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Explorar escenarios de Microsoft Graph para el desarrollo de JavaScript",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar javascript. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/m365-msgraph-scenarios/",
+        "skills": [
+          "javascript"
+        ],
+        "hours": 1.7333333333333334,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Mostrar los correos electrónicos de un usuario en una aplicación de JavaScript con Microsoft Graph",
+            "Acceso a los eventos de calendario de un usuario en una aplicación de JavaScript con Microsoft Graph",
+            "Descargar y cargar archivos en una aplicación de JavaScript con Microsoft Graph"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.get-started-java-azure",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Introducción a Java en Azure",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar java. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-java-azure/",
+        "skills": [
+          "java"
+        ],
+        "hours": 4.35,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a Java en Azure",
+            "Elección del servicio de Azure adecuado para implementar una aplicación de Java",
+            "Implementar una aplicación de Quarkus en Azure Container Apps",
+            "Implementación de una aplicación web de Java en un servidor de Tomcat en Azure App Service",
+            "Compilación de una solución Java controlada por eventos en tiempo real en Azure",
+            "Implementación de una aplicación de Jakarta EE en Azure",
+            "Conteneriza e implementa una aplicación Java en Azure"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.expand-capabilities-java-azure",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Expanda las funcionalidades de las aplicaciones de Java en Azure",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar java. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/expand-capabilities-java-azure/",
+        "skills": [
+          "java"
+        ],
+        "hours": 1.4333333333333333,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Implementación de una aplicación de Jakarta EE en Azure",
+            "Descripción del inicio de sesión con Microsoft Entra ID en aplicaciones web de Java"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.manage-virtualization-containers-hybrid-environment",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Administración de la virtualización y los contenedores en un entorno híbrido",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar docker. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/manage-virtualization-containers-hybrid-environment/",
+        "skills": [
+          "docker"
+        ],
+        "hours": 7.033333333333333,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Configuración y administración de Hyper-V",
+            "Configuración y administración de máquinas virtuales de Hyper-V",
+            "Protección de las cargas de trabajo de Hyper-V",
+            "Planeación e implementación de máquinas virtuales de IaaS de Windows Server",
+            "Personalización de las imágenes de máquina virtual de IaaS de Windows Server",
+            "Automatización de la configuración de máquinas virtuales de IaaS de Windows Server",
+            "Ejecución de contenedores en Windows Server",
+            "Orquestación de contenedores en Windows Server con Kubernetes"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.deploy-manage-containers-azure-kubernetes-service",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Implementar contenedores mediante Azure Kubernetes Service (AKS)",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar docker. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/deploy-manage-containers-azure-kubernetes-service/",
+        "skills": [
+          "docker"
+        ],
+        "hours": 6.066666666666666,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Planeamiento de una implementación de Azure Kubernetes Service",
+            "Implementación y uso de Azure Container Registry",
+            "Implementación de un clúster de Azure Kubernetes Service",
+            "Configuración de un clúster de Azure Kubernetes Service",
+            "Implementar aplicaciones en Azure Kubernetes Service",
+            "Configurar el escalado en Azure Kubernetes Service",
+            "Proyecto guiado: implementación de aplicaciones en Azure Kubernetes Service"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.deploy-manage-monitor-wincontainers-aks",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Implementación, administración y supervisión de contenedores de Windows en Azure Kubernetes Service",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar docker. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/deploy-manage-monitor-wincontainers-aks/",
+        "skills": [
+          "docker"
+        ],
+        "hours": 4.866666666666666,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Ejecución de contenedores en Windows Server",
+            "Compilación de una aplicación web en contenedores con Docker",
+            "Administración de Azure Kubernetes Service en Azure Stack HCI",
+            "Aplicación de conceptos de almacenamiento a contenedores de Windows que se ejecutan en Azure Kubernetes Service (AKS) y AKS Hybrid",
+            "Aplicación de conceptos de redes a contenedores de Windows que se ejecutan en Azure Kubernetes Service (AKS) y AKS Hybrid"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.implement-azure-sql-database-security",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Implementación de la seguridad para bases de datos de Azure SQL",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar sql, bases de datos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/implement-azure-sql-database-security/",
+        "skills": [
+          "sql",
+          "bases de datos"
+        ],
+        "hours": 1.0333333333333334,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Configuración de la seguridad de nivel de plataforma para Azure SQL",
+            "Configuración de auditoría para Azure SQL Database y SQL Managed Instance",
+            "Implementación de Microsoft Defender para bases de datos"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.get-started-querying-with-transact-sql",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Consulta y modificación de datos con Transact-SQL",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar sql, bases de datos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-querying-with-transact-sql/",
+        "skills": [
+          "sql",
+          "bases de datos"
+        ],
+        "hours": 5.75,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a Transact-SQL",
+            "Ordenación y filtrado de resultados en T-SQL",
+            "Combinación de varias tablas con JOIN en T-SQL",
+            "Escritura de subconsultas en T-SQL",
+            "Uso de funciones integradas y GROUP BY en Transact-SQL",
+            "Modificación de datos con T-SQL"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.optimize-query-performance-sql-server",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Optimización del rendimiento de las consultas en Azure SQL",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar sql, bases de datos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/optimize-query-performance-sql-server/",
+        "skills": [
+          "sql",
+          "bases de datos"
+        ],
+        "hours": 3.933333333333333,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Exploración de la optimización del rendimiento de las consultas",
+            "Exploración del diseño de bases de datos basadas en el rendimiento",
+            "Evaluación de las mejoras de rendimiento"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.monitor-optimize-operational-resources-sql-server",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Supervisión y optimización de los recursos operativos en Azure SQL",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar sql, bases de datos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/monitor-optimize-operational-resources-sql-server/",
+        "skills": [
+          "sql",
+          "bases de datos"
+        ],
+        "hours": 2.816666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Describir la supervisión del rendimiento",
+            "Configuración de recursos de SQL Server para un rendimiento óptimo",
+            "Configuración de bases de datos para un rendimiento óptimo"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.automate-tasks-sql-server",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Automatización de tareas de base de datos para Azure SQL",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar sql, bases de datos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/automate-tasks-sql-server/",
+        "skills": [
+          "sql",
+          "bases de datos"
+        ],
+        "hours": 2.783333333333333,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Automatización de la implementación de bases de datos",
+            "Creación y administración de trabajos del Agente SQL",
+            "Administración de tareas de PaaS de Azure mediante automatización"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-bizapps.power-bi-effective",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Diseño de informes eficaces en Power BI",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar power bi, analisis de datos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/power-bi-effective/",
+        "skills": [
+          "power bi",
+          "analisis de datos"
+        ],
+        "hours": 5.116666666666666,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Definición del ámbito de los requisitos de diseño del informe",
+            "Diseñar informes de Power BI",
+            "Mejorar los diseños de informes en Power BI para la experiencia de usuario",
+            "Realizar análisis en Power BI"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-bizapps.manage-secure-power-bi",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Administración y protección de Power BI",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar power bi, analisis de datos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/manage-secure-power-bi/",
+        "skills": [
+          "power bi",
+          "analisis de datos"
+        ],
+        "hours": 2.8,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Administrar espacios de trabajo en el servicio Power BI",
+            "Administrar modelos semánticos en Power BI",
+            "Elegir un método de distribución de contenido",
+            "Crear paneles en Power BI",
+            "Proteger el acceso a los datos en Power BI"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.prepare-visualize-data-power-bi",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Preparar y visualizar datos con Microsoft Power BI",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar power bi, analisis de datos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/prepare-visualize-data-power-bi/",
+        "skills": [
+          "power bi",
+          "analisis de datos"
+        ],
+        "hours": 8.183333333333334,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a la compilación con Power BI",
+            "Obtener datos en Power BI",
+            "Limpiar, transformar y cargar datos en Power BI",
+            "Configurar un modelo semántico",
+            "Diseñar informes de Power BI",
+            "Crear informes interactivos con Copilot para Power BI",
+            "Introducción al análisis de un extremo a otro mediante Microsoft Fabric"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.prepare-to-teach-pl-300-microsoft-power-bi-data-analyst",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Preparación para enseñar PL-300: Analista de datos de Microsoft Power BI",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar power bi, analisis de datos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/prepare-to-teach-pl-300-microsoft-power-bi-data-analyst/",
+        "skills": [
+          "power bi",
+          "analisis de datos"
+        ],
+        "hours": 4.133333333333334,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "advanced",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción al programa de Microsoft Learn para educadores",
+            "Introducción al programa de Microsoft Learn para educadores",
+            "Preparación de los cursos de Microsoft Learn para educadores",
+            "Planificación de cursos de Microsoft Learn para educadores",
+            "Más información sobre los procedimientos recomendados de Microsoft Technical Trainers",
+            "Sugerencias y trucos para enseñar PL-300: Analista de datos de Microsoft Power BI en programas académicos",
+            "Microsoft Learn para educadores que se preparan para impartir cursos",
+            "Certificación de alumnos de Microsoft Learn para educadores"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.ai-technical-concepts",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Conceptos de inteligencia artificial para desarrolladores y profesionales tecnológicos",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar inteligencia artificial. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/ai-concepts/",
+        "skills": [
+          "inteligencia artificial"
+        ],
+        "hours": 3.85,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a los conceptos de inteligencia artificial",
+            "Introducción a la inteligencia artificial y los agentes generativos",
+            "Introducción a los conceptos de procesamiento de lenguaje natural",
+            "Introducción a los conceptos de voz de IA",
+            "Introducción a los conceptos de computer vision",
+            "Introducción a los conceptos de extracción de información con tecnología de inteligencia artificial",
+            "Introducción a los conceptos de generación aumentada por recuperación"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.philanthropies.responsible-use-of-artificial-intelligence-in-education",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Uso responsable de la inteligencia artificial en la educación",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar inteligencia artificial. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/responsible-use-of-artificial-intelligence-in-education/",
+        "skills": [
+          "inteligencia artificial"
+        ],
+        "hours": 2.7,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción al enfoque de inteligencia artificial responsable de Microsoft",
+            "Aplicar los principios de inteligencia artificial responsable en entornos de aprendizaje",
+            "Proyecto guiado: adoptar la IA responsable"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.design-model-solutions-power-platform",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Introducción a las soluciones de inteligencia artificial en Microsoft Power Platform",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar inteligencia artificial. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/design-model-solutions-power-platform/",
+        "skills": [
+          "inteligencia artificial"
+        ],
+        "hours": 1.5166666666666666,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Diseño de soluciones empresariales con tecnología de inteligencia artificial con Microsoft Power Platform",
+            "Creación de solicitudes eficaces para las herramientas de entrenamiento de ia generativa",
+            "Convertir ideas empresariales en soluciones de Power Platform con Planes"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.accessibility-fundamental",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Aspectos básicos de accesibilidad",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar accesibilidad web. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/accessibility-fundamental/",
+        "skills": [
+          "accesibilidad web"
+        ],
+        "hours": 2.816666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a la accesibilidad",
+            "Principios y directrices de accesibilidad web",
+            "Creación de contenido accesible",
+            "Crear sitios de SharePoint accesibles",
+            "Evaluación y pruebas de accesibilidad",
+            "Introducción a los conceptos de inteligencia artificial",
+            "Creación de experiencias de IA accesibles"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.gaming-accessibility-fundamentals",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "design",
+        "title": "Aspectos básicos sobre la accesibilidad en los juegos",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para estudiar la accesibilidad en videojuegos. Consulta sus módulos y las condiciones de las actividades en Microsoft Learn.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/gaming-accessibility-fundamentals/",
+        "skills": [
+          "accesibilidad en videojuegos"
+        ],
+        "hours": 3.816666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a los juegos y la discapacidad",
+            "Colaboración de la comunidad para el diseño accesible",
+            "Tecnologías de asistencia para juegos",
+            "Procedimientos recomendados de accesibilidad para juegos y plataformas",
+            "Procedimientos recomendados de accesibilidad para el hardware de juegos"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.describe-concepts-of-security-compliance-identity",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Introducción a los conceptos de seguridad, cumplimiento e identidad",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar ciberseguridad. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/describe-concepts-of-security-compliance-identity/",
+        "skills": [
+          "ciberseguridad"
+        ],
+        "hours": 1.6166666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Descripción de conceptos de seguridad y cumplimiento",
+            "Descripción de los conceptos de identidad"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.describe-capabilities-of-microsoft-security-solutions",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Introducción a las soluciones de seguridad de Microsoft",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar ciberseguridad. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/describe-capabilities-of-microsoft-security-solutions/",
+        "skills": [
+          "ciberseguridad"
+        ],
+        "hours": 3.816666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Descripción de Microsoft Security Copilot",
+            "Descripción de los servicios principales de seguridad de la infraestructura en Azure",
+            "Describir las funcionalidades de administración de seguridad de Azure",
+            "Descripción de las funcionalidades de seguridad de Microsoft Sentinel",
+            "Descripción de la protección contra amenazas con Microsoft Defender XDR"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.secure-networking-infrastructure",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "technology",
+        "title": "Introducción a la infraestructura de red segura con la seguridad de red de Azure",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar ciberseguridad. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/secure-networking-infrastructure/",
+        "skills": [
+          "ciberseguridad"
+        ],
+        "hours": 1.2666666666666666,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a Azure Firewall",
+            "Introducción a Azure Firewall Manager"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.configure-manage-products-inventory-d365-finance-ops",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "logistics",
+        "title": "Configurar y gestionar productos e inventario en Dynamics 365 Supply Chain Management",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar inventarios. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/configure-manage-products-inventory-dyn365-supply-chain-mgmt/",
+        "skills": [
+          "inventarios"
+        ],
+        "hours": 7.766666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a Dynamics 365 Supply Chain Management",
+            "Introducción a la gestión de inventario en Dynamics 365 Supply Chain Management",
+            "Trabajar con operaciones de gestión de inventario en Dynamics 365 Supply Chain Management",
+            "Configurar y trabajar con operaciones de salida mediante la gestión de inventario en Dynamics 365 Supply Chain Management",
+            "Configurar y trabajar con operaciones de entrada mediante la gestión de inventario en Dynamics 365 Supply Chain Management",
+            "Configurar y trabajar con control de inventario en Dynamics 365 Supply Chain Management",
+            "Crear una lista de materiales en Dynamics 365 Supply Chain Management"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.manage-fixed-assets",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "logistics",
+        "title": "Administración de activos fijos e inventario",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar inventarios. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/manage-fixed-assets/",
+        "skills": [
+          "inventarios"
+        ],
+        "hours": 4.933333333333334,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Configurar la gestión de activos fijos en Dynamics 365 Finance",
+            "Configurar y adquirir activos fijos en Dynamics 365 Finance",
+            "Administrar activos fijos en Dynamics 365 Finance",
+            "Trabajar con amortización y eliminación de activos fijos en Dynamics 365 Finance"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.get-started-inventory-management",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "logistics",
+        "title": "Introducción a la gestión de inventario en Microsoft Dynamics 365 Business Central",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar inventarios. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-inventory-management/",
+        "skills": [
+          "inventarios"
+        ],
+        "hours": 1.8666666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Crear artículos en Dynamics 365 Business Central",
+            "Ajustar inventario en Dynamics 365 Business Central"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.work-with-inventory-visibility",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "logistics",
+        "title": "Trabajar con Visibilidad de inventario en Dynamics 365 Supply Chain Management",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar inventarios. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/work-with-inventory-visibility/",
+        "skills": [
+          "inventarios"
+        ],
+        "hours": 3.9,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción al servicio de visibilidad de inventario para Dynamics 365 Supply Chain Management",
+            "Configurar Visibilidad de inventario en Dynamics 365 Supply Chain Management",
+            "Usar Visibilidad de inventario en Dynamics 365 Supply Chain Management"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.work-powershell-providers-powershell-drives-windows-powershell",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "logistics",
+        "title": "Trabajo con proveedores de PowerShell y unidades de PowerShell en Windows PowerShell",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar compras. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/work-powershell-providers-powershell-drives-windows-powershell/",
+        "skills": [
+          "compras"
+        ],
+        "hours": 1.2166666666666666,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Conexión con almacenes de datos mediante proveedores de PowerShell",
+            "Uso de unidades de PowerShell en PowerShell"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.configure-sales-purchasing-business-central",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "logistics",
+        "title": "Configuración de ventas y compras en Business Central",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar compras. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/configure-sales-purchasing-business-central/",
+        "skills": [
+          "compras"
+        ],
+        "hours": 5.933333333333334,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Configurar Comercio en Microsoft Dynamics 365 Business Central",
+            "Trabajar con datos maestros de Comercio en Microsoft Dynamics 365 Business Central",
+            "Introducción a la gestión de almacenes en Dynamics 365 Business Central",
+            "Controlar el inventario en múltiples ubicaciones en Dynamics 365 Business Central",
+            "Configurar precios de compra y descuentos en Dynamics 365 Business Central",
+            "Administrar precios de ventas en Dynamics 365 Business Central",
+            "Configurar descuentos para sus clientes en Dynamics 365 Business Central"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.process-sales-purchasing-business-central",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "logistics",
+        "title": "Procesar ventas y compras en Business Central",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar compras. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/process-sales-purchasing-business-central/",
+        "skills": [
+          "compras"
+        ],
+        "hours": 12.066666666666666,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Conceptos básicos de la interfaz de usuario en Dynamics 365 Business Central",
+            "Personalizar la interfaz de usuario de Microsoft Dynamics 365 Business Central",
+            "Buscar, filtrar, ordenar y seleccionar datos en Business Central",
+            "Crear documentos de compra en Dynamics 365 Business Central",
+            "Recibir y facturar artículos en Dynamics 365 Business Central",
+            "Procesamiento de facturas de proveedor en Dynamics 365 Business Central",
+            "Registro de facturas de anticipo para pedidos de venta y compra en Dynamics 365 Business Central",
+            "Crear documentos de ventas en Dynamics 365 Business Central",
+            "Enviar y facturar artículos en Dynamics 365 Business Central",
+            "Facturación a clientes en Dynamics 365 Business Central"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.get-started-cost-accounting-supply-chains-dyn365-finance",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "finance",
+        "title": "Introducción a la contabilidad de costes para las cadenas de suministro en Dynamics 365 Finance",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar contabilidad de costos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/get-started-cost-accounting-supply-chains-dyn365-finance/",
+        "skills": [
+          "contabilidad de costos"
+        ],
+        "hours": 1.4166666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a la contabilidad de costes en Dynamics 365 Finance"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.use-cost-accounting-dynamics-365-business-central",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "finance",
+        "title": "Usar la contabilidad de costes en Microsoft Dynamics 365 Business Central",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar contabilidad de costos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/use-cost-accounting-dynamics-365-business-central/",
+        "skills": [
+          "contabilidad de costos"
+        ],
+        "hours": 3.05,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a la contabilidad de costes en Dynamics 365 Business Central",
+            "Crear datos maestros de contabilidad de costes en Dynamics 365 Business Central",
+            "Transferir los movimientos de contabilidad a la contabilidad de costes en Dynamics 365 Business Central",
+            "Asignar costes en Dynamics 365 Business Central",
+            "Crear informes de contabilidad de costes en Dynamics 365 Business Central"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.configure-use-general-ledger-dynamics-365-finance-ops",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "finance",
+        "title": "Configurar y usar la contabilidad general en Dynamics 365 Finance",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar contabilidad. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/configure-use-general-ledger-dyn365-finance/",
+        "skills": [
+          "contabilidad"
+        ],
+        "hours": 13.766666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a Dynamics 365 Finance",
+            "Configurar divisas en Dynamics 365 Finance",
+            "Crear calendarios fiscales, ejercicios y periodos en Dynamics 365 Finance",
+            "Introducción a los planes de cuentas en Dynamics 365 Finance",
+            "Configurar un plan de cuentas en Dynamics 365 Finance",
+            "Configurar dimensiones financieras en Dynamics 365 Finance",
+            "Configurar diarios y libros de contabilidad en Dynamics 365 Finance",
+            "Realizar procedimientos diarios de contabilidad general en Dynamics 365 Finance",
+            "Contabilidad de empresas vinculadas en Dynamics 365 Finance",
+            "Configurar las acumulaciones y las asignaciones contables en Dynamics 365 Finance"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.process-customer-vendor-payments-dynamics-365-business-central",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "finance",
+        "title": "Procesar pagos de clientes y a proveedores en Microsoft Dynamics 365 Business Central",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar contabilidad. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/process-customer-vendor-payments-dynamics-365-business-central/",
+        "skills": [
+          "contabilidad"
+        ],
+        "hours": 3.35,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Configurar la administración de efectivo en Dynamics 365 Business Central",
+            "Introducir pagos en el diario de recibos de cobro y el diario de pagos en Dynamics 365 Business Central",
+            "Proponer pagos a proveedores en Dynamics 365 Business Central",
+            "Usar cheques para pagar a proveedores en Dynamics 365 Business Central"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.wwl.introduction-sales-dynamics-365",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "sales",
+        "title": "Introducción a las ventas en Dynamics 365",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar ventas, crm. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/introduction-sales-dynamics-365/",
+        "skills": [
+          "ventas",
+          "crm"
+        ],
+        "hours": 12.583333333333334,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Describir los conceptos básicos de las aplicaciones de interacción con el cliente de Dynamics 365",
+            "Exploración de la generación de leads en Dynamics 365",
+            "Explorar la cualificación de clientes potenciales en Dynamics 365",
+            "Identificar las necesidades de los clientes y explorar las relaciones en Dynamics 365",
+            "Explore cómo negociar términos de trato y abordar las objeciones en Dynamics 365 Sales",
+            "Describir cómo cerrar ofertas de clientes en Dynamics 365",
+            "Describir la administración de cuentas de ventas en Dynamics 365",
+            "Exploración de la previsión, la administración de canalizaciones y el análisis en Dynamics 365 Sales",
+            "Descripción de las funcionalidades compartidas en aplicaciones de interacción con clientes de Dynamics 365"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.sales-accelerator",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "sales",
+        "title": "Configurar y utilizar las capacidades del Acelerador de ventas en Dynamics 365 Sales",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar ventas, crm. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/sales-accelerator/",
+        "skills": [
+          "ventas",
+          "crm"
+        ],
+        "hours": 4.466666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Configurar el Acelerador de ventas de Dynamics 365 Sales",
+            "Crea secuencias de ventas con Sales Insights",
+            "Trabajar con segmentos en el acelerador de ventas de Dynamics 365",
+            "Trabajar con reglas de asignación en el acelerador de Dynamics 365 Sales",
+            "Interactuar con clientes a través de mensajes de texto en Dynamics 365 Sales"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-bizapps.customer-service-hub-cases-slas",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "service",
+        "title": "Administración de casos, cargas de trabajo y compromisos de servicio en Dynamics 365 Customer Service",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar servicio al cliente, crm. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/work-with-cases-in-dynamics-365-for-customer-service/",
+        "skills": [
+          "servicio al cliente",
+          "crm"
+        ],
+        "hours": 4.283333333333333,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Transformación de la entrega de servicios con IA en Dynamics 365",
+            "Gestionar casos con el espacio de trabajo de Copilot Service",
+            "Administre el volumen de trabajo de los casos con las colas de Dynamics 365 Customer Service",
+            "Trabajar con acuerdos de nivel de servicio en Dynamics 365 Customer Service",
+            "Crear y administrar derechos en Microsoft Dynamics 365 Customer Service"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-bizapps.work-with-entitlements-and-slas-dyn365-customer-service",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "service",
+        "title": "Trabajar con derechos y acuerdos de nivel de servicio en Dynamics 365 Customer Service",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar servicio al cliente, crm. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/work-with-entitlements-and-slas-in-microsoft-dynamics-365-for-customer-service/",
+        "skills": [
+          "servicio al cliente",
+          "crm"
+        ],
+        "hours": 1.6166666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Trabajar con acuerdos de nivel de servicio en Dynamics 365 Customer Service",
+            "Crear y administrar derechos en Microsoft Dynamics 365 Customer Service"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.customer-engagement-channels-customer-service",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "service",
+        "title": "Trabajar con canales de involucración de clientes en Dynamics 365 Customer Service",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar servicio al cliente, crm. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/customer-engagement-channels-customer-service/",
+        "skills": [
+          "servicio al cliente",
+          "crm"
+        ],
+        "hours": 2.5,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Soporte técnico a los clientes en canales de interacción en Dynamics 365 Customer Service",
+            "Control de conversaciones en el área de trabajo del servicio Copilot",
+            "Configuración de la ingesta de correo electrónico confiable en Dynamics 365 Customer Service"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-bizapps.work-with-knowledge-management-solutions-dyn365-customer-service",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "service",
+        "title": "Trabajar con la administración de conocimientos en Dynamics 365 Customer Service",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar servicio al cliente, crm. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/work-with-knowledge-management-solutions-in-microsoft-dynamics-365-for-customer-service/",
+        "skills": [
+          "servicio al cliente",
+          "crm"
+        ],
+        "hours": 2.716666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Configuración de la administración de conocimientos en Dynamics 365 Customer Service y centro de contactos",
+            "Buscar y filtrar artículos de conocimientos usando Dynamics 365 Customer Service",
+            "Utilice los artículos de conocimientos para resolver casos de Dynamics 365 Customer Service"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.learn-fundamentals-dynamics-365-projects",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "administration",
+        "title": "Aprender los fundamentos de los proyectos de Dynamics 365",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar gestion de proyectos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/learn-fundamentals-dynamics-365-projects/",
+        "skills": [
+          "gestion de proyectos"
+        ],
+        "hours": 5.816666666666666,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Introducción a cómo convertirse en un profesional de aplicaciones empresariales",
+            "Transformar digitalmente con Dynamics 365",
+            "Familiarizarse con el equipo de proyecto para las implementaciones de Dynamics 365",
+            "Determinar el enfoque de implementación para su proyecto de Dynamics 365",
+            "Descubrir el panorama de Dynamics 365"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.implement-dynamics-365-projects",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "administration",
+        "title": "Implementar proyectos de Dynamics 365",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar gestion de proyectos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/implement-dynamics-365-projects/",
+        "skills": [
+          "gestion de proyectos"
+        ],
+        "hours": 6.466666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Diseñar la implementación de Dynamics 365",
+            "Presentar diseños de aplicaciones empresariales a las partes interesadas",
+            "Documentar su solución de Dynamics 365 para el cliente",
+            "Probar su implementación de Dynamics 365",
+            "Administración del ciclo de vida de las aplicaciones para Dynamics 365"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn-dynamics.create-jobs",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "administration",
+        "title": "Crear proyectos en Microsoft Dynamics 365 Business Central",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar gestion de proyectos. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/create-jobs/",
+        "skills": [
+          "gestion de proyectos"
+        ],
+        "hours": 1.75,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "intermediate",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Crear un nuevo proyecto en Dynamics 365 Business Central",
+            "Configurar líneas de tareas de proyecto en Dynamics 365 Business Central",
+            "Configurar líneas de planificación de proyectos en Dynamics 365 Business Central",
+            "Configurar proyectos en divisa extranjera en Dynamics 365 Business Central"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.mec.pedagogia-digital-a",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "education",
+        "title": "Pedagogía Digital. Nivel A",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar diseno instruccional. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/pedagogia-digital-a/",
+        "skills": [
+          "diseno instruccional"
+        ],
+        "hours": 1.85,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Interacciona con tus estudiantes. Comunicación con Microsoft Teams",
+            "Interacciona con tus estudiantes. Las videollamadas en el aula",
+            "Aprendizaje colaborativo en Teams"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.mec.facilitar-competencia-digital-estudiantes",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "education",
+        "title": "Facilitar la Competencia Digital a los estudiantes. Nivel A",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar diseno instruccional. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/facilitar-competencia-digital-estudiantes/",
+        "skills": [
+          "diseno instruccional"
+        ],
+        "hours": 2.1166666666666667,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Crear un entorno personal de aprendizaje",
+            "¿Cómo trabajan mis estudiantes en Microsoft?",
+            "¡A la caza del tesoro con OneNote y Microsoft Teams!"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
+    },
+    {
+      "source_id": "learn-es:learn.mec.recursos-digitales-a",
+      "provider_id": "microsoft",
+      "reviewed_at": "2026-10-24",
+      "content": {
+        "category": "education",
+        "title": "Recursos Digitales. Nivel A",
+        "provider": "Microsoft Learn",
+        "kind": "course",
+        "instructions": "Ruta en español para trabajar diseno instruccional. Avanza por sus módulos y comprueba las condiciones de los ejercicios en el proveedor.",
+        "url": "https://learn.microsoft.com/es-es/training/paths/recursos-digitales-a/",
+        "skills": [
+          "diseno instruccional"
+        ],
+        "hours": 2.533333333333333,
+        "cost": "free",
+        "sponsored": false,
+        "affiliate": false,
+        "disclosure": "",
+        "details": {
+          "level": "beginner",
+          "languages": [
+            "es"
+          ],
+          "syllabus": [
+            "Búsquedas efectivas con Edge",
+            "Creación de contenidos y recursos digitales",
+            "Comparte contenidos con tus estudiantes"
+          ],
+          "prerequisites": "Revisa los conocimientos previos y los productos necesarios en la ruta oficial antes de comenzar.",
+          "access_notes": "Los contenidos de Microsoft Learn son gratuitos. Los ejercicios pueden requerir una cuenta, licencias o recursos de Azure con coste; consulta sus condiciones antes de activarlos.",
+          "certificate_cost": "none",
+          "certificate_notes": "Completar una ruta de aprendizaje no otorga por sí solo una certificación profesional de Microsoft. Los exámenes y sus condiciones son independientes.",
+          "portfolio_idea": "Documenta un ejercicio de los módulos con datos ficticios y explica qué comprobaste, sin publicar información privada.",
+          "duration_notes": "Duración estimada por el catálogo oficial de Microsoft Learn en español; la práctica adicional puede requerir más tiempo."
+        }
+      }
     }
   ]
 }

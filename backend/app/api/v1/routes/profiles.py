@@ -53,7 +53,7 @@ def market_overview(filters: MarketFilters = Depends(), user=Depends(require_rol
     if filters.dataset == "demo" and settings.environment != "development":
         from app.application.errors import UseCaseError
         raise UseCaseError(status_code=422, detail="La demostración no está disponible en este entorno")
-    return market_radar.report(db, user, filters.model_dump(), local_fixture_mode=False)
+    return market_radar.report(db, user, filters.model_dump(), local_fixture_mode=settings.environment == "development")
 
 
 @router.put("/me/market/participation")

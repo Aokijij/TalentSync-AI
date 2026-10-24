@@ -6,7 +6,7 @@ Published items and attempt snapshots remain immutable; revisions receive new ID
 from copy import deepcopy
 
 from app.domain.services.learning_activities import CASES, activities_for
-from app.domain.services.skills import skill_set
+from app.domain.services.skills import skill_key, skill_set
 
 LEVELS = {"beginner": ("Básico", 10, 20), "intermediate": ("Intermedio", 15, 35), "advanced": ("Avanzado", 20, 50)}
 SOURCES = [
@@ -28,7 +28,7 @@ TRACKS = [
     ("finance", "finance-foundations-v1", "finance", "finance", "conciliacion bancaria", ["contabilidad", "tesoreria"], "Cortes, soportes, diferencias y conciliación"),
     ("inventory", "logistics-foundations-v1", "logistics", "logistics", "inventarios", ["logistica", "gestion de inventarios", "control de inventarios"], "Existencias, reservas, rotación y trazabilidad"),
     ("education", "education-foundations-v1", "education", "education", "evaluacion del aprendizaje", ["pedagogia", "educacion", "formacion"], "Objetivos observables, evidencias y ajustes accesibles"),
-    ("design", "design-foundations-v1", "design", "design", "diseno visual", ["diseno grafico", "comunicacion visual", "accesibilidad"], "Jerarquía, formatos, licencias y accesibilidad"),
+    ("design", "design-foundations-v1", "design", "design", "diseno visual", ["diseno grafico", "comunicacion visual"], "Jerarquía, formatos, licencias y accesibilidad"),
     ("care", "care-foundations-v1", "care", "care", "atencion administrativa en salud", ["atencion al usuario", "gestion de citas"], "Trámites y confidencialidad; no evalúa decisiones clínicas"),
     ("sql", "sql-foundations-v1", "project-sql", "technology", "sql", ["postgresql", "bases de datos"], "Consultas, uniones, agregación y calidad del resultado"),
     ("python", "python-foundations-v1", "technology", "technology", "python", ["programacion en python"], "Colecciones, validación, excepciones y pruebas"),
@@ -310,3 +310,8 @@ def expanded_banks(legacy):
 def related_assessments(resource, banks):
     skills = skill_set(resource.get("skills", []))
     return [key for key, bank in banks.items() if not bank.get("retired") and skills & skill_set([bank["skill"], *bank.get("related_skills", [])])]
+
+
+def course_skills_for(resource, bank):
+    assessed = skill_set([bank["skill"], *bank.get("related_skills", [])])
+    return [skill for skill in resource.get("skills", []) if skill_key(skill) in assessed]

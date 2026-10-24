@@ -9,7 +9,11 @@ from app.application.use_cases.jobs import get_job
 from app.application.use_cases.learning_resources import resources as catalog_resources
 from app.application.use_cases.matching import candidate_match, prepare_scores
 from app.domain.services.career_learning import AREAS, profile_areas
-from app.domain.services.challenge_tracks import SOURCES, related_assessments
+from app.domain.services.challenge_tracks import (
+    SOURCES,
+    course_skills_for,
+    related_assessments,
+)
 from app.domain.services.course_practices import (
     course_practice,
     practice_for_plan,
@@ -152,7 +156,7 @@ def course_challenges(db, user, resource_id):
     related = set(resource.get("assessment_ids", []))
     report = catalog(db, user, "all")
     return {"skills": resource["skills"], "course_level": (resource.get("details") or {}).get("level", "any"),
-            "assessments": [item for item in report["assessments"] if item["id"] in related],
+            "assessments": [{**item, "course_skills": course_skills_for(resource, ASSESSMENTS[item["id"]])} for item in report["assessments"] if item["id"] in related],
             "notice": "Relacionados por habilidades del catálogo. El resultado se comparte entre cursos que desarrollan esa habilidad; no demuestra haber completado el temario de un proveedor."}
 
 

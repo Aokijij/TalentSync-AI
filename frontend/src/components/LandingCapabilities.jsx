@@ -11,7 +11,7 @@ export function LandingCapabilities() {
     <section className="public-differences public-container" aria-labelledby="differences-title"><header className="public-section-heading"><p className="section-kicker">MÁS ALLÁ DE ENCONTRAR UNA VACANTE</p><h2 id="differences-title">Lo que distingue tu recorrido en TalentSync.</h2><p>La búsqueda conecta con preparación, evidencias y seguimiento para que cada decisión tenga más contexto.</p></header><ol>{[
       ["01", "Seguimiento con compromisos de respuesta", "Consulta etapa, historial y plazos. Los atrasos se señalan y los procesos pueden pausarse sin convertir el vencimiento en un rechazo automático."],
       ["02", "Compatibilidad que puedes contrastar", "Revisa motivos y requisitos en lugar de quedarte con un porcentaje. Distingue lo declarado de los fundamentos evaluados; la puntuación no es una probabilidad de contratación."],
-      ["03", "Aprendizaje con resultados separados", "Organiza cursos, resuelve prácticas y conserva sus correcciones. Una práctica, un curso finalizado y un certificado aportado tienen significados distintos."],
+      ["03", "Aprendizaje con resultados separados", "Organiza cursos, practica sus habilidades con retos y conserva tus resultados. Un reto, un curso finalizado y un certificado aportado tienen significados distintos."],
       ["04", "Contrataciones con condiciones claras", "Las ofertas pasan por criterios de calidad. La empresa organiza candidaturas, entrevistas y decisiones; administración revisa organizaciones y el catálogo."],
     ].map(([number, title, text]) => <li key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></li>)}</ol></section>
   </>;

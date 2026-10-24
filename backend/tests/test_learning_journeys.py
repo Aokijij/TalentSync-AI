@@ -2,13 +2,24 @@ import pytest
 from test_api_flows import client, register  # noqa: F401
 
 from app.domain.services.career_learning import EXERCISES
+from app.domain.services.course_practices import course_practice
+from app.domain.services.learning_catalog import LOCAL_RESOURCES
 from app.infrastructure.database.models import LearningPlan
+
+
+def preserve_legacy_plan(test_client, user_id, resource_id):
+    # Emulate an existing plan saved before the internal catalog was retired.
+    resource = next(row for row in LOCAL_RESOURCES if row["id"] == resource_id)
+    with test_client.session_factory() as db:
+        db.add(LearningPlan(user_id=user_id, resource_id=resource_id, status="in_progress", progress={"practice_spec": course_practice(resource)}))
+        db.commit()
 
 
 @pytest.mark.parametrize("area", list(EXERCISES))
 def test_sector_practice_saves_resumes_and_publishes_profile_evidence(client, area):  # noqa: F811
     user, headers = register(client, f"journey-{area}", skills=[])
-    resource = client.get(f"/api/v1/learning/catalog?area={area}", headers=headers).json()["resources"][0]
+    preserve_legacy_plan(client, user["id"], f"practice-{area}-v1")
+    resource = client.get("/api/v1/learning/plans", headers=headers).json()[0]["resource"]
     assert resource["journey"]["scenario"] and len(resource["journey"]["steps"]) == 3
     url = f"/api/v1/learning/plans/{resource['id']}"
     plan = client.put(url, headers=headers, json={"status": "in_progress"}).json()[0]
@@ -37,8 +48,9 @@ def test_sector_practice_saves_resumes_and_publishes_profile_evidence(client, ar
 
 
 def test_journey_rejects_incomplete_cross_user_and_stale_drafts(client):  # noqa: F811
-    _, first = register(client, "journey-owner")
+    user, first = register(client, "journey-owner")
     _, other = register(client, "journey-other")
+    preserve_legacy_plan(client, user["id"], "practice-sales-v1")
     url = "/api/v1/learning/plans/practice-sales-v1"
     plan = client.put(url, headers=first, json={"status": "in_progress"}).json()[0]
     payload = {"version": plan["version"], "answers": {"understand": "short"}, "finish": True}
@@ -53,7 +65,8 @@ def test_journey_rejects_incomplete_cross_user_and_stale_drafts(client):  # noqa
 
 
 def test_revising_published_work_keeps_its_reference_until_candidate_removes_it(client):  # noqa: F811
-    _, headers = register(client, "journey-revision", skills=[])
+    user, headers = register(client, "journey-revision", skills=[])
+    preserve_legacy_plan(client, user["id"], "practice-sales-v1")
     url = "/api/v1/learning/plans/practice-sales-v1"
     plan = client.put(url, headers=headers, json={"status": "in_progress"}).json()[0]
     answers = {key: "Una propuesta completa con hechos del caso, una decisión justificada y un resultado observable." for key in ["understand", "apply", "demonstrate"]}

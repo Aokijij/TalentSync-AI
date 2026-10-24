@@ -1,3 +1,4 @@
+import { skillName } from "../utils/skillNames.js";
 import { useEffect, useState } from "react";
 import { ArrowRight, CheckCircle2, Clock3, ListChecks, Search, SlidersHorizontal, Target } from "lucide-react";
 import { AreaIcon } from "./LearningVisuals.jsx";
@@ -34,6 +35,7 @@ export function ChallengeCatalog({ assessments, areas, busy, attempt, onStart, o
       return <article className={`challenge-card skill-challenge-card ${state.active ? "active" : ""} ${row.id === focusedId ? "is-focused" : ""}`} key={row.id}>
         <header><span className="learning-area-icon"><AreaIcon area={row.category} size={22} /></span><span className="challenge-sector-name">{areas.find((area) => area.id === row.category)?.label || "Habilidades profesionales"}</span><span className="challenge-level" data-level={row.level}>{challengeLevels[row.level] || "Fundamentos"}</span></header>
         <div className="skill-challenge-content"><h3>{title}</h3><p>{row.context}</p></div>
+        <div className="challenge-skill-outcome"><span>Habilidad que practicarás</span><strong>{skillName(row.skill)}</strong></div>
         <div className="skill-challenge-facts"><span><Clock3 size={15} />{row.minutes} min</span><span><ListChecks size={15} />{row.question_count || 5} preguntas</span></div>
         {!!row.topics?.length && <details className="skill-challenge-topics"><summary>Contenidos del reto</summary><ul>{row.topics.map((topic) => <li key={topic}>{topic}</li>)}</ul></details>}
         {row.last_attempt && <div className={`skill-challenge-result ${state.passed ? "is-passed" : ""}`}>{state.active ? <><Clock3 size={15} />Intento en curso</> : state.completed ? <><CheckCircle2 size={15} /><span>{row.last_attempt.score}% · {state.passed ? "Aprobado" : "Por reforzar"}</span></> : <span>Intento anterior vencido</span>}</div>}

@@ -63,3 +63,15 @@ Verificación del 24/10/2026: 239 pruebas frontend, 238 backend y 122 recorridos
 - [x] Certificado compacto, emisor del curso, enlace propio, credencial opcional y acciones coherentes en ambos temas.
 
 Comprobaciones: 301 pruebas backend, 239 frontend, 123 recorridos de interfaz y 36 capturas compartidas en 12 casos aprobados; análisis y compilación aprobados. Ver el registro de revisión y [RETOS_APRENDIZAJE](RETOS_APRENDIZAJE.md). La preparación del catálogo no constituye un despliegue de producción.
+
+
+## Curso resumido, retos por habilidad y ampliación en español
+
+- [x] Cursos sin prácticas complementarias; recursos internos y ficticios retirados de la oferta vigente, con conservación de historial.
+- [x] Tarjetas compactas y detalle del curso desde Mi plan; botón de certificado y nombres de YouTube revisados.
+- [x] Habilidades explícitas en los retos y asignación más precisa al contenido del curso.
+- [x] 32 retos nuevos: 111 formularios con nivel. 59 rutas nuevas en español: 228 fichas editoriales.
+- [x] Filtro de español unificado y guía coherente con Cursos y Retos.
+- [x] Radar de desarrollo recuperado con identificación de demostración y exclusión comprobada en producción.
+
+Validación: 356 pruebas backend, 240 frontend, 124 recorridos funcionales y 36 capturas en 12 casos. Se actualizaron las referencias visuales del panel de componentes tras revisar los cambios de la tarjeta de curso. Informes y límites en `REVISION_PLATAFORMA.md`; entrega sin despliegue.

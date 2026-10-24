@@ -105,3 +105,8 @@ from app.domain.services.sector_challenges import banks as sector_banks
 
 ASSESSMENTS["git-foundations-v1"]["retired"] = True
 ASSESSMENTS.update(sector_banks())
+
+from app.domain.services.professional_challenges import banks as professional_banks
+
+ASSESSMENTS["rest-foundations-v1"]["retired"] = True
+ASSESSMENTS.update(professional_banks())
