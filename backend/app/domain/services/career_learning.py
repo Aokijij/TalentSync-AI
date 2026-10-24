@@ -4,6 +4,10 @@ import re
 from app.domain.services.skills import skill_key
 
 AREAS = {
+    "industry": {"label": "Industria, calidad y seguridad", "terms": ["industrial", "manufactura", "calidad", "seguridad y salud", "produccion"]},
+    "hospitality": {"label": "Turismo y hotelería", "terms": ["turismo", "hoteleria", "hotel", "alojamiento", "recepcion hotelera"]},
+    "agriculture": {"label": "Agricultura y gestión de campo", "terms": ["agricultura", "agricola", "agropecuario", "agronomia", "campo"]},
+    "construction": {"label": "Construcción y gestión de obra", "terms": ["construccion", "obra", "arquitectura", "ingenieria civil"]},
     "general": {"label": "Competencias transversales", "terms": []},
     "technology": {"label": "Tecnología y datos", "terms": ["software", "sistemas", "programador", "developer", "desarrollador", "datos", "python", "java", "sql", "angular", "react", "tecnologia"]},
     "service": {"label": "Servicio al cliente", "terms": ["servicio", "cliente", "call center", "recepcion", "customer"]},

@@ -55,3 +55,10 @@ Los criterios para mantener componentes y textos consistentes están en [DISENO_
 Las pruebas backend `test_course_plan_separation.py` comprueban propiedad, versión, separación de curso/práctica/certificado, privacidad de soluciones y conservación de intentos ante cambios del catálogo. Las familias existentes de cursos, recursos, fuentes y recorridos conservan sus comprobaciones con bases descartables.
 
 La ampliación de `guide-learning.spec.js` incluye 31 retos sintéticos, paginación, búsqueda vacía, niveles, relación con el plan, apertura exacta desde un curso y vuelta al mismo curso. También comprueba el proveedor de solo lectura, enlace del certificado, error con edición conservada, reintento y un solo aviso. Las capturas se guardan en `.local/challenge-paths-review/`. `test_challenge_tracks.py` verifica los esquemas de nivel, soluciones privadas, banco sin mutaciones, historial compartido entre cursos y límites de configuración de producción. Ver [RETOS_APRENDIZAJE](../../RETOS_APRENDIZAJE.md).
+
+
+## Catálogos independientes y ampliación sectorial
+
+La revisión de `guide-learning.spec.js` conserva las cuatro combinaciones de viewport/tema para fichas de curso, retos asignados, certificado con proveedor de solo lectura, fallo/reintento y un único aviso. Añade un catálogo sintético de 79 retos: filtro de sector y nivel, paginación, ausencia de filtros por curso/plan y cambio de pestaña conservando consultas independientes. Las capturas están en `.local/challenge-paths-review/`; los servicios externos permanecen bloqueados.
+
+`test_challenge_tracks.py` cubre los 79 formularios con nivel, formatos y casos originales de los 24 recorridos nuevos, correspondencia por habilidad, metadatos públicos sin soluciones y descubrimiento sin cursos guardados. `test_curated_learning.py` valida las 169 fichas, los 18 proveedores, fechas individuales, idiomas, condiciones y conservación de cambios al importar. Las áreas nuevas tienen retos y formación externa: las pruebas de prácticas guiadas anteriores se parametrizan sobre `EXERCISES`, no sobre todas las áreas del catálogo.

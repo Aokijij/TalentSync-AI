@@ -1,11 +1,11 @@
 import pytest
 from test_api_flows import client, register  # noqa: F401
 
-from app.domain.services.career_learning import AREAS
+from app.domain.services.career_learning import EXERCISES
 from app.infrastructure.database.models import LearningPlan
 
 
-@pytest.mark.parametrize("area", list(AREAS))
+@pytest.mark.parametrize("area", list(EXERCISES))
 def test_sector_practice_saves_resumes_and_publishes_profile_evidence(client, area):  # noqa: F811
     user, headers = register(client, f"journey-{area}", skills=[])
     resource = client.get(f"/api/v1/learning/catalog?area={area}", headers=headers).json()["resources"][0]

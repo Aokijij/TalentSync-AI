@@ -1,6 +1,6 @@
-import { BookOpen, Boxes, BriefcaseBusiness, Calculator, Code2, GraduationCap, Headphones, HeartHandshake, Palette, UsersRound } from "lucide-react";
+import { BookOpen, Boxes, Factory, HardHat, Hotel, Sprout, BriefcaseBusiness, Calculator, Code2, GraduationCap, Headphones, HeartHandshake, Palette, UsersRound } from "lucide-react";
 
-const icons = { general: UsersRound, technology: Code2, service: Headphones, sales: BriefcaseBusiness, administration: BookOpen, finance: Calculator, logistics: Boxes, education: GraduationCap, design: Palette, care: HeartHandshake };
+const icons = { industry: Factory, construction: HardHat, hospitality: Hotel, agriculture: Sprout, general: UsersRound, technology: Code2, service: Headphones, sales: BriefcaseBusiness, administration: BookOpen, finance: Calculator, logistics: Boxes, education: GraduationCap, design: Palette, care: HeartHandshake };
 export function AreaIcon({ area, size = 22 }) { const Icon = icons[area] || BookOpen; return <Icon size={size} aria-hidden="true" />; }
 
 export function LearningOverview({ plans, passport }) {

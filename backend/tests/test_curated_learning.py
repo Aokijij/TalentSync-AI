@@ -119,3 +119,17 @@ def test_rich_course_metadata_has_bounded_strict_schema(details):
     row = curated_learning.catalog()["resources"][0]["content"]
     with pytest.raises(ValidationError):
         ResourceContent(**{**row, "details": details})
+
+
+def test_expanded_official_catalog_preserves_review_dates_and_access_conditions():
+    current = curated_learning.catalog()["resources"]
+    assert len(current) == 169
+    assert {"industry", "hospitality", "agriculture", "construction"} <= {row["content"]["category"] for row in current}
+    additions = [row for row in current if row["provider_id"] == "saylor"]
+    assert len(additions) == 95
+    assert all(row["source"]["reviewed_at"] == "2026-10-24" for row in additions)
+    assert current[0]["source"]["reviewed_at"] == "2026-10-10"
+    assert all(row["content"]["details"]["languages"] == ["en"] for row in additions)
+    assert all("créditos académicos" in row["content"]["details"]["certificate_notes"] for row in additions)
+    from app.application.use_cases.learning_resources import enrich
+    assert any(enrich(row["content"])["assigned_challenges"] for row in additions)

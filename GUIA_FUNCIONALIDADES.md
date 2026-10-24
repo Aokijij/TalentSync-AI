@@ -209,3 +209,12 @@ La duración estimada de selección se muestra separada del próximo compromiso 
 5. Un avance real o la gestión de una nueva fecha de entrevista establece su compromiso correspondiente. Guardar notas, valorar respuestas, abrir perfiles o repetir la misma etapa no reinicia el plazo.
 
 El seguimiento muestra responsable, fecha comprometida, estado del plazo y fecha de pausa prevista. Las pausas se consultan en su propia sección de postulaciones; desde allí puede retomarse con nuevo compromiso o comunicarse una decisión. Las ampliaciones y los avisos se registran en el historial. El incumplimiento se conserva en los indicadores de respuesta incluso si luego se amplía el plazo. Los cierres históricos ya comunicados conservan su resultado.
+
+
+### Explorar retos y elegir formación
+
+En **Mi desarrollo → Retos**, busca la habilidad y filtra por sector y nivel. «Más filtros» permite consultar tu avance u ordenar por las menciones de habilidades en ofertas disponibles. La búsqueda de retos no depende del curso ni de Mi plan. El catálogo muestra 12 tarjetas por página.
+
+En **Cursos y prácticas**, abre «Ver detalle» para consultar el contenido, las condiciones y los **retos asignados al curso**. Desde Mi plan puedes continuar la formación y consultar los mismos resultados de retos compartidos. Si no hay una asignación pertinente, puedes estudiar y aportar el certificado igualmente.
+
+Para **aportar un certificado**, conserva el proveedor indicado, revisa nombre y año y pega el enlace público HTTPS del documento o de su verificación. El identificador de credencial es opcional. Guardar el documento no verifica su autenticidad ni completa retos. La colección editorial ampliada incluye 169 cursos de 18 proveedores; utiliza el filtro de idioma para distinguir la formación en español de la impartida en inglés. Consulta las condiciones actuales en el proveedor antes de inscribirte.

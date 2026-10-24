@@ -26,7 +26,7 @@ def _catalog():
         seen.add(row["source_id"])
         rows.append({"source_id": row["source_id"], "provider_id": row["provider_id"], "content": content,
                      "source": {"provider": row["provider_id"], "id": row["source_id"], "mode": "editorial",
-                                "reviewed_at": payload["reviewed_at"], "reference_url": content["url"],
+                                "reviewed_at": row.get("reviewed_at", payload["reviewed_at"]), "reference_url": content["url"],
                                 "catalog_revision": revision}})
     return {"revision": revision, "reviewed_at": payload["reviewed_at"], "resources": rows,
             "providers": [{"id": key, "name": provider["name"], "url": provider["url"],

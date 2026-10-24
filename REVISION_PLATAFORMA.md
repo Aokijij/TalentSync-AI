@@ -266,3 +266,16 @@ El radar normal, la orientación de demanda y la planificación educativa excluy
 Validación: 239 pruebas frontend, 238 pruebas backend y 122 recorridos de interfaz completos aprobados. ESLint, Ruff y compilación aprobados. La revisión nueva comprueba paginación con 31 retos sintéticos, búsqueda sin resultados, niveles, recorrido curso-reto-curso, proveedor, edición conservada tras fallo, reintento y aviso único, en ambos temas a 360/1280 px y con texto al 200 %. Informes en `.local/challenge-paths-*.log`; capturas en `.local/challenge-paths-review/`. Las pruebas usan API interceptada o bases descartables, sin modificar candidaturas personales ni calendarios. No se requiere migración: las asociaciones se calculan y los intentos usan su copia JSON existente. El funcionamiento y las fuentes se describen en `RETOS_APRENDIZAJE.md`. No se realizó despliegue ni traslado de la base de demostración.
 
 La comparación visual compartida aprueba las 36 capturas en 12 casos, sin modificar las referencias. La revisión manual del formulario ajusta la alineación de proveedor y año, y la jerarquía de la ayuda del catálogo. Frontend y API de trabajo responden con los cambios aplicados.
+
+
+## Catálogos sectoriales y diseño de retos — 24/10/2026
+
+Se separa la exploración de retos del área y de los cursos guardados. Los filtros principales son habilidad, sector y nivel; avance y ordenación quedan desplegables. Las tarjetas eliminan las etiquetas repetidas y los enlaces de búsqueda de cursos, conservan contenidos y resultados y mantienen acciones alineadas. Las fichas de curso y Mi plan muestran sus retos asignados mediante habilidades explícitas y acceso al identificador exacto.
+
+La colección incorpora 48 formularios originales y suma 79 con nivel en 14 áreas, conservando los formatos anteriores sin reemplazo y los historiales. El Git anterior se conserva para intentos iniciados e historial, con sus nuevos formularios como acceso normal. Los sectores nuevos no requieren inventar una práctica por curso. La selección editorial reúne 169 cursos de 18 proveedores, con idiomas y condiciones diferenciadas; las revisiones antiguas conservan su fecha. La importación de trabajo creó 104 fichas y respetó 65 existentes, sin sustituir los recursos manuales.
+
+El certificado presenta emisor de solo lectura, nombre y año agrupados, enlace amplio, código opcional desplegable y acciones de guardar/cancelar en un pie coherente. Se mantienen confirmación al descartar, recuperación de errores y un solo aviso al guardar.
+
+Verificación: **301 pruebas backend**, **239 pruebas frontend** y **123 recorridos de interfaz** aprobados. ESLint, Ruff y compilación aprobados. Las bases de pruebas son descartables y las pruebas de interfaz bloquean servicios externos. Informes: `.local/catalog-complete-api.log`, `.local/catalog-unit.log` y `.local/catalog-all-ui.log`; capturas: `.local/challenge-paths-review/`. La aplicación y las comprobaciones de vida y disponibilidad de la API responden con 200.
+
+La comparación visual independiente aprobó **36 capturas en 12 casos**, sin actualizar referencias (`.local/catalog-visual.log`). Esta entrega no despliega producción, no modifica calendarios y no elimina cuentas ni postulaciones. Las referencias y condiciones del catálogo se documentan en [RETOS_APRENDIZAJE](RETOS_APRENDIZAJE.md).

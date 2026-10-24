@@ -100,3 +100,8 @@ from app.domain.services.challenge_tracks import expanded_banks
 for bank in ASSESSMENTS.values():
     bank["retired"] = bank["category"] != "technology" or bank["skill"] in {"python", "sql", "seguridad de aplicaciones"}
 ASSESSMENTS.update(expanded_banks(ASSESSMENTS))
+
+from app.domain.services.sector_challenges import banks as sector_banks
+
+ASSESSMENTS["git-foundations-v1"]["retired"] = True
+ASSESSMENTS.update(sector_banks())

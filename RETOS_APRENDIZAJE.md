@@ -4,7 +4,7 @@ Revisión: 24 de octubre de 2026. Implementación dentro de TalentSync, sin un p
 
 ## Colección y niveles
 
-Se añaden 31 formularios versionados: básico e intermedio para 14 recorridos, y avanzado para SQL, Excel e inventarios. Cubren comunicación, servicio al cliente, ventas, gestión documental, conciliación bancaria, inventarios, evaluación del aprendizaje, diseño visual, atención administrativa en salud, SQL, Python, seguridad de aplicaciones, Excel y diseño web adaptable. Las versiones anteriores siguen disponibles para historiales e intentos iniciados; los formatos sin reemplazo conservan su acceso.
+La colección reúne 79 formularios con nivel: básico e intermedio para 38 recorridos, y avanzado para SQL, Excel e inventarios. Cubren comunicación, servicio al cliente, ventas, gestión documental, conciliación bancaria, inventarios, evaluación del aprendizaje, diseño visual, atención administrativa en salud, SQL, Python, seguridad de aplicaciones, Excel y diseño web adaptable. La ampliación incorpora JavaScript, TypeScript, React, Git, Linux, redes, análisis de datos, Power BI, uso responsable de IA, proyectos, talento humano, marketing, CRM, emprendimiento, costes, compras, calidad, SST, recepción hotelera, registros agrícolas, control documental de obra, inglés laboral, diseño instruccional y agenda administrativa en salud. Son 48 formularios nuevos con decisiones y casos propios. Las versiones anteriores siguen disponibles para historiales e intentos iniciados; los formatos sin reemplazo conservan su acceso.
 
 | Nivel | Preguntas por intento | Tiempo disponible | Alcance |
 | --- | ---: | ---: | --- |
@@ -31,7 +31,7 @@ El catálogo relaciona las habilidades declaradas de cada curso con la habilidad
 
 La relación no certifica que un reto cubra todo el temario. Si no existe un reto relacionado, se informa sin asignar un ejercicio de otro tema. El candidato puede estudiar y registrar el certificado independientemente. Las prácticas específicas ya guardadas se conservan en un apartado complementario del plan; la redacción administrativa anterior sigue disponible como opción.
 
-El catálogo de retos muestra 12 tarjetas por página, búsqueda por contenido y filtros de nivel, avance y relación con Mi plan. Los retos del curso muestran seis por página. El acceso desde el curso enfoca el identificador exacto del reto, incluso si otros títulos son parecidos. El intento activo conserva un acceso para retomarlo aunque se cambie de filtro.
+El catálogo de retos es independiente de los cursos: muestra 12 tarjetas por página, búsqueda por habilidad/contenido y filtros de sector y nivel. Avance y ordenación se despliegan en «Más filtros»; no se busca por curso ni por pertenencia al plan. El área elegida en cursos no limita los retos. Los retos del curso muestran seis por página. El acceso desde el curso enfoca el identificador exacto del reto, incluso si otros títulos son parecidos. El intento activo conserva un acceso para retomarlo aunque se cambie de filtro.
 
 ## Demanda observada y fuentes
 
@@ -49,3 +49,25 @@ El radar normal, la orientación de demanda y las prioridades educativas excluye
 La configuración de producción rechaza excepciones de desarrollo, sesiones no seguras, origen público HTTP o de bucle local, hosts comodín, CORS HTTP y PostgreSQL sin TLS. Los scripts de creación y actualización incluyen los ajustes seguros sin ejecutarlos en esta entrega. Se conserva la configuración específica de la instalación al actualizar. La comprobación de sintaxis no sustituye un ensayo de despliegue.
 
 Antes de publicar deben configurarse el dominio final, correo externo, callbacks OAuth y almacenamiento, y comprobarse con cuentas autorizadas. La imagen excluye bases SQLite, archivos subidos y credenciales de desarrollo; no se debe trasladar la base de demostración a producción. Esta entrega no elimina cuentas, postulaciones ni calendarios de la instalación de trabajo y no realiza despliegues.
+
+
+## Catálogo editorial ampliado
+
+La selección reúne **169 cursos de 18 proveedores**: 104 incorporaciones revisadas el 24/10/2026, incluidas 95 de Saylor University, además de FAO, OIT, ONUDI, CITB y OpenLearn. Se conserva la fecha de revisión individual de las 65 fichas anteriores; no se presenta su información como comprobada de nuevo. La revisión consulta las páginas públicas y no acredita haber completado los cursos.
+
+Cada ficha conserva idioma, horas orientativas, condiciones de acceso, alcance del documento y fuente. Los cursos de Saylor incorporados están en inglés: el certificado de finalización gratuito se distingue de los exámenes supervisados para solicitar créditos académicos. Las duraciones editoriales de OIT y ONUDI están identificadas como estimaciones. Los contenidos normativos extranjeros no se presentan como habilitación colombiana. No se crean prácticas automáticas para rellenar cursos sin un reto pertinente.
+
+Fuentes principales de la ampliación:
+
+- [Saylor: catálogo](https://www.saylor.org/CourseCatalog) y [condiciones generales](https://support.saylor.org/hc/en-us/articles/23586212781844-FAQ-General); las fichas enlazan al curso individual en `learn.saylor.org`.
+- [FAO: escuelas de campo](https://elearning.fao.org/course/view.php?id=1140&lang=es).
+- [OIT: condiciones de trabajo en agricultura](https://www.itcilo.org/courses/improving-working-and-health-conditions-agriculture).
+- [ONUDI: gestión de calidad](https://www.unido.org/learning-resources/quality-management) y [RCA/CAPA](https://www.unido.org/learning-resources/rca-and-capa).
+- [CITB: cursos de obras temporales](https://www.citb.co.uk/courses-tests/ecourses).
+- [OpenLearn: catálogo oficial](https://www.open.edu/openlearn/free-courses/full-catalogue).
+
+Administración → Formación → Fuentes permite revisar e importar selecciones de hasta 50 cursos por operación. Solo los nuevos se publican si se solicita; la reimportación respeta ediciones y archivos. El límite de recursos administrables se amplía a 1.000 para permitir crecimiento del catálogo. La instalación de trabajo incorporó las 104 fichas nuevas con el importador idempotente existente; se conservaron las 65 fichas previas y los recursos manuales.
+
+La ficha del curso muestra «Retos asignados a este curso» con habilidad, nivel y acceso al reto exacto; Mi plan añade el resultado previo. Las asociaciones usan habilidades explícitas y términos relacionados delimitados, no el título ni únicamente el sector. Un curso de turismo sostenible no recibe por su sector una prueba de recepción hotelera. El catálogo público de retos no incluye identificadores de cursos relacionados ni soluciones.
+
+El formulario de certificado agrupa nombre y año, muestra el emisor en una franja de solo lectura, reserva un campo ancho para el enlace y oculta el código opcional hasta solicitarlo. Guardar y cancelar están en un pie común; un error conserva los datos y descartar una edición requiere confirmación. Las tarjetas de retos tienen acciones alineadas, contenidos desplegables y una presentación adaptada a móvil y ambos temas.

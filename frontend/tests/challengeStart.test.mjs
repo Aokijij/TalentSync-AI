@@ -20,7 +20,7 @@ const render = (attempt) => renderToStaticMarkup(createElement(MemoryRouter, {},
 
 test("starting or resuming an active practice keeps the catalog visible and disables only the other practices", () => {
   const html = render({ id: "active-python", assessment_id: "python", status: "active", started_at: "2026-10-22T15:59:00", expires_at: "2026-10-22T16:09:00", questions: [] });
-  assert.match(html, /Continuar práctica/);
+  assert.match(html, /Continuar reto/);
   assert.match(html, /Práctica de sql/);
   assert.match(html, /Práctica de microservices/);
   assert.equal((html.match(/<button[^>]*id="challenge-start-[^"]+"[^>]*disabled=""/g) || []).length, 2);
@@ -29,7 +29,7 @@ test("starting or resuming an active practice keeps the catalog visible and disa
 test("a locally expired practice does not block starting a different practice", () => {
   const html = render({ id: "expired-python", assessment_id: "python", status: "active", started_at: "2026-10-21T15:59:00Z", expires_at: "2026-10-21T16:09:00Z" });
   assert.equal((html.match(/<button[^>]*id="challenge-start-[^"]+"[^>]*disabled=""/g) || []).length, 0);
-  assert.match(html, /Empezar práctica/);
+  assert.match(html, /Empezar reto/);
 });
 
 test("reviewing a historical result does not replace a newer active catalog attempt", () => {
@@ -37,7 +37,7 @@ test("reviewing a historical result does not replace a newer active catalog atte
   const historical = { id: "old", assessment_id: "python", status: "completed", score: 100, started_at: "2026-10-20T15:59:00Z" };
   assert.equal(latestChallengeAttempt({ id: "python", last_attempt: active }, historical), active);
   const html = renderToStaticMarkup(createElement(ChallengeCatalog, { assessments: [{ ...assessments[0], last_attempt: active }], areas: [], attempt: historical, now, onStart: noop, onReview: noop, onExplore: noop }));
-  assert.match(html, /Continuar práctica/);
+  assert.match(html, /Continuar reto/);
   assert.doesNotMatch(html, /Último resultado/);
 });
 

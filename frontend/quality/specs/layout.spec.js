@@ -116,7 +116,7 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     expect(failures).toEqual([]);
     await testInfo.attach("componentes", { body: await page.screenshot({ fullPage: true, animations: "disabled" }), contentType: "image/png" });
-    await page.getByRole("button", { name: "Empezar práctica", exact: true }).click();
+    await page.getByRole("button", { name: "Empezar reto", exact: true }).click();
     const practice = page.getByRole("region", { name: "Espacio de práctica", exact: true });
     await expect(practice).toBeVisible();
     await expect(page.getByRole("heading", { name: "Practica una habilidad concreta" })).toHaveCount(0);
@@ -132,6 +132,6 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     await practice.getByRole("button", { name: "Entregar respuestas", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Fundamentos aprobados" })).toBeVisible();
     await page.getByRole("button", { name: "Ver mis resultados", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Empezar práctica", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Empezar reto", exact: true })).toBeVisible();
   });
 }

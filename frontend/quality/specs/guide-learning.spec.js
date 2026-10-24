@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Courses share paginated skill challenges and certificate provider · ${width} · ${theme}`, async ({ page }) => {
   const context = await setup(page, { width, theme, rich: true, path: "/aprendizaje#retos" });
   await expect(page.locator(".challenge-card")).toHaveCount(12);
-  await page.locator(".challenge-filter-panel").scrollIntoViewIfNeeded();
+  await page.locator(".challenge-discovery-controls").scrollIntoViewIfNeeded();
   await page.screenshot({ path: `../.local/challenge-paths-review/catalog-${theme}-${width}.png` });
   await page.getByRole("navigation", { name: "Páginas de retos", exact: true }).getByRole("button", { name: /Siguiente/ }).click();
   await expect(page.getByText("Página 2 de 3", { exact: true })).toBeVisible();
@@ -13,12 +13,17 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Co
   await expect(page.getByRole("heading", { name: "No hay retos con estos filtros" })).toBeVisible();
   await page.getByRole("button", { name: "Limpiar filtros", exact: true }).click();
   await page.getByRole("button", { name: "Cursos y prácticas", exact: true }).click();
+  await page.locator(".learning-catalog-grid").getByRole("button", { name: "Ver detalle", exact: true }).click();
+  await expect(page.getByRole("dialog").getByRole("heading", { name: "Retos asignados a este curso", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog").locator(".course-assigned-challenges li")).toHaveCount(3);
+  await page.getByRole("button", { name: "Cerrar detalle del recurso", exact: true }).click();
   await page.locator(".learning-catalog-grid").getByRole("button", { name: "Añadir a mi plan", exact: true }).click();
   await page.getByRole("button", { name: "Abrir Mi plan", exact: true }).click();
   await expect(page.locator(".course-challenge-grid article")).toHaveCount(3);
   await page.locator(".course-challenge-grid").getByRole("link", { name: "Ver reto", exact: true }).first().click();
   await expect(page.locator(".challenge-card")).toHaveCount(1);
-  await expect(page.locator(".challenge-card")).toContainText("En tu plan");
+  await expect(page.locator(".challenge-discovery-controls")).toContainText("Seleccionado desde el curso");
+  await expect(page.locator(".challenge-card")).not.toContainText("En tu plan");
   await page.getByRole("button", { name: "Mi plan", exact: false }).filter({ hasNotText: "Abrir" }).click();
   await expect(page.getByRole("heading", { name: "Continúa con el proveedor" })).toBeVisible();
   await page.getByRole("button", { name: "Aportar certificado", exact: true }).click();
@@ -49,17 +54,17 @@ async function setup(page, { width = 1280, theme = "light", role = "candidate", 
   await page.setViewportSize({ width, height: 950 });
   await page.addInitScript((value) => localStorage.setItem("talentsync_theme", value), theme);
   const errors = [], calls = [], state = { plans: [], courseDone: false, adminCourse: { ...course }, failAdd: false, failCertificate: false, certificateBody: null };
-  state.assessments = rich ? Array.from({ length: 31 }, (_, index) => ({ id: `challenge-${index}`, title: `Excel · reto ${index + 1}`, skill: "excel", category: "administration", level: ["beginner", "intermediate", "advanced"][index % 3], minutes: 35, question_count: 15, topics: ["Fórmulas", "Análisis de tablas"], context: "Interpreta tablas y comprueba los resultados con los datos del caso.", related_course_ids: [course.id] })) : [];
+  state.assessments = rich ? Array.from({ length: rich === "wide" ? 79 : 31 }, (_, index) => ({ id: `challenge-${index}`, title: rich === "wide" ? `Habilidad sectorial ${index + 1}` : `Excel · reto ${index + 1}`, skill: rich === "wide" ? `habilidad ${index + 1}` : "excel", category: rich === "wide" ? ["administration", "technology", "industry", "agriculture"][index % 4] : "administration", level: ["beginner", "intermediate", "advanced"][index % 3], minutes: 35, question_count: 15, topics: ["Fórmulas", "Análisis de tablas"], context: "Interpreta tablas y comprueba los resultados con los datos del caso.", related_course_ids: [course.id] })) : [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.route("**/*", async (route) => {
     const request = route.request(), url = new URL(request.url());
     if (url.hostname !== "127.0.0.1") return route.abort();
     if (!url.pathname.startsWith("/api/")) return route.continue();
     const endpoint = url.pathname.replace("/api/v1", ""), method = request.method(), body = request.postDataJSON();
-    calls.push({ endpoint, method, body });
+    calls.push({ endpoint, method, body, area: url.searchParams.get("area") });
     if (endpoint === "/notifications/unread-count") return route.fulfill({ json: { count: 0 } });
     if (["/organization/me", "/organization/access"].includes(endpoint)) return route.fulfill({ json: { ...organization, role: memberRole } });
-    if (endpoint === "/learning/catalog") return route.fulfill({ json: { resources: [{ ...course, assessment_ids: state.assessments.slice(0, 3).map((row) => row.id) }], areas: [{ id: "administration", label: "Administración" }], assessments: state.assessments } });
+    if (endpoint === "/learning/catalog") return route.fulfill({ json: { resources: [{ ...course, assessment_ids: state.assessments.slice(0, 3).map((row) => row.id), assigned_challenges: state.assessments.slice(0, 3) }], areas: [{ id: "administration", label: "Administración" }, { id: "technology", label: "Tecnología" }, { id: "industry", label: "Industria" }, { id: "agriculture", label: "Agricultura" }], assessments: state.assessments } });
     if (endpoint.endsWith("/challenges")) return route.fulfill({ json: { assessments: state.assessments.slice(0, 3), notice: "Relacionados por habilidades del catálogo." } });
     if (endpoint === "/learning/plans") return route.fulfill({ json: state.plans });
     if (endpoint === `/learning/plans/${course.id}` && method === "PUT") {
@@ -207,4 +212,29 @@ test("Failed addition keeps the course available and emits no success notificati
   context.state.failAdd = false;
   await add.click();
   await expect(page.locator(".feedback-toast")).toHaveCount(1);
+});
+
+
+test("Wide challenge library uses sector and level independently of selected courses", async ({ page }) => {
+  const context = await setup(page, { rich: "wide", path: "/aprendizaje#retos", width: 1280, theme: "dark" });
+  await expect(page.locator(".challenge-total strong")).toHaveText("79");
+  await expect(page.locator(".challenge-card")).toHaveCount(12);
+  await expect(page.getByRole("combobox", { name: "Ordenar retos", exact: true })).not.toBeVisible();
+  await expect(page.getByText("Solo relacionados con Mi plan", { exact: true })).toHaveCount(0);
+  await page.getByRole("combobox", { name: "Sector de los retos", exact: true }).selectOption("industry");
+  await expect(page.locator(".challenge-card")).toHaveCount(12);
+  await expect(page.locator(".challenge-sector-name").first()).toHaveText("Industria");
+  await page.getByRole("navigation", { name: "Páginas de retos", exact: true }).getByRole("button", { name: /Siguiente/ }).click();
+  await expect(page.locator(".challenge-card")).toHaveCount(8);
+  await page.getByRole("combobox", { name: "Nivel", exact: true }).selectOption("beginner");
+  await expect(page.locator(".challenge-card")).toHaveCount(7);
+  await page.getByRole("button", { name: "Cursos y prácticas", exact: true }).click();
+  await expect(page.locator(".learning-catalog-grid")).toBeVisible();
+  await page.getByRole("button", { name: "Retos", exact: true }).click();
+  await expect(page.locator(".challenge-total strong")).toHaveText("79");
+  expect(context.calls.filter((row) => row.endpoint === "/learning/catalog").map((row) => row.area)).toEqual(["all", "recommended", "all"]);
+  await page.locator(".challenge-discovery-controls").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "../.local/challenge-paths-review/wide-catalog.png", fullPage: true });
+  await noOverflow(page);
+  expect(context.errors).toEqual([]);
 });

@@ -52,3 +52,14 @@ Validación posterior: 238 pruebas frontend, 159 pruebas backend de aprendizaje 
 - [x] Estadísticas sin ofertas sintéticas en el recorrido normal, herramientas de desarrollo restringidas y configuración de producción sin excepciones locales.
 
 Verificación del 24/10/2026: 239 pruebas frontend, 238 backend y 122 recorridos de interfaz. ESLint, Ruff, compilación y sintaxis de los scripts de despliegue aprobados. Las comprobaciones de entorno no equivalen a un despliegue: dominio, correo, OAuth, almacenamiento y operación con usuarios autorizados se verifican al preparar la instalación pública. No se han trasladado datos de demostración ni modificado calendarios personales. Ver `RETOS_APRENDIZAJE.md` y `.local/challenge-paths-*.log`.
+
+
+## Ampliación del catálogo y separación de exploración
+
+- [x] Retos independientes del curso y del plan, con filtros por habilidad, sector y nivel y 12 tarjetas por página.
+- [x] Asignaciones mostradas al abrir el curso y desde Mi plan, sin deducirlas por título o sector solamente.
+- [x] 48 formularios nuevos: 79 con nivel en total, 14 áreas y conservación de versiones e intentos.
+- [x] 169 cursos editoriales de 18 proveedores; importación de 104 nuevos conservando las fichas anteriores y sus revisiones.
+- [x] Certificado compacto, emisor del curso, enlace propio, credencial opcional y acciones coherentes en ambos temas.
+
+Comprobaciones: 301 pruebas backend, 239 frontend, 123 recorridos de interfaz y 36 capturas compartidas en 12 casos aprobados; análisis y compilación aprobados. Ver el registro de revisión y [RETOS_APRENDIZAJE](RETOS_APRENDIZAJE.md). La preparación del catálogo no constituye un despliegue de producción.

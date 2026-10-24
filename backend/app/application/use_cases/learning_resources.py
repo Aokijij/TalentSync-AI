@@ -13,7 +13,9 @@ from app.domain.services.sql_challenges import CHALLENGES
 def enrich(resource, private=False):
     from app.domain.services.challenge_tracks import related_assessments
     from app.domain.services.course_practices import public_resource
-    result = {**resource, "availability": availability(resource), "journey": journey_for(resource), "assessment_ids": related_assessments(resource, ASSESSMENTS),
+    assigned = related_assessments(resource, ASSESSMENTS)
+    result = {**resource, "availability": availability(resource), "journey": journey_for(resource), "assessment_ids": assigned,
+              "assigned_challenges": [{"id": key, **{field: ASSESSMENTS[key].get(field) for field in ("title", "skill", "level", "minutes", "question_count", "context")}} for key in assigned],
               "practical_ids": [key for key, bank in CHALLENGES.items() if bank["skill"] in resource["skills"]]}
     return result if private else public_resource(result)
 
@@ -43,8 +45,8 @@ def manage(db, user, payloads=None, resource_id=None, version=None):
             raise UseCaseError(status_code=409, detail="El recurso cambió; actualiza antes de guardar")
         targets = [row]
     else:
-        if len(db.learning.resources()) + len(payloads) > 200:
-            raise UseCaseError(status_code=422, detail="El catálogo admite hasta doscientos recursos administrables")
+        if len(db.learning.resources()) + len(payloads) > 1000:
+            raise UseCaseError(status_code=422, detail="El catálogo admite hasta mil recursos administrables")
         targets = [db.learning.new_resource(id=f"course-{uuid4().hex}") for _ in payloads]
     for row, content in zip(targets, payloads, strict=True):
         source = row.content.get("source") if resource_id else None
@@ -85,8 +87,8 @@ def import_source(db, user, selected, *, namespace="microsoft_learn", publish=Fa
             new.append((key, item))
             identities.add(identity)
             urls.add(url)
-    if len(db.learning.resources()) + len(new) > 200:
-        raise UseCaseError(status_code=422, detail="El catálogo admite hasta doscientos recursos administrables")
+    if len(db.learning.resources()) + len(new) > 1000:
+        raise UseCaseError(status_code=422, detail="El catálogo admite hasta mil recursos administrables")
     for key, item in new:
         row = db.learning.new_resource(id=key)
         row.active = publish
