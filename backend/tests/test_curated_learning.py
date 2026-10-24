@@ -52,7 +52,7 @@ def test_import_defaults_to_drafts_and_publishes_only_new_selected_resources(cli
     visible = client.get("/api/v1/learning/catalog?area=all", headers=candidate).json()["resources"]
     assert first_course["id"] not in {row["id"] for row in visible}
     published = next(row for row in visible if row.get("source", {}).get("id") == second["source_id"])
-    assert published["active"] and published["journey"] and published["details"]["syllabus"]
+    assert published["active"] and published["journey"] is None and published["details"]["syllabus"]
     # Completing a local plan does not issue a provider credential or change skills.
     client.put(f"/api/v1/learning/plans/{published['id']}", headers=candidate, json={"status": "completed"}).raise_for_status()
     assert client.get("/api/v1/profiles/me", headers=candidate).json()["skills"] == ["java"]

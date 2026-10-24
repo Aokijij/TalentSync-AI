@@ -79,7 +79,7 @@ def test_certificate_survives_plan_refresh_and_evidence_skills_are_opt_in(client
     plans = client.get("/api/v1/learning/plans", headers=candidate).json()
     assert plans[0]["certificate"]["name"] == supplied["name"]
     passport = client.get("/api/v1/learning/passport", headers=candidate).json()
-    assert passport["certificates"] and passport["learning_results"]
+    assert passport["certificates"] and passport["course_results"] and not passport["learning_results"]
     evidence = client.get("/api/v1/matching/evidence", headers=candidate).json()[0]
     assert "autenticidad" not in evidence["description"]
     assert client.post(f"/api/v1/matching/evidence/{evidence['id']}/skills", headers=other).status_code == 404

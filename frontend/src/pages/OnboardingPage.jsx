@@ -4,6 +4,7 @@ import { ArrowRight, BriefcaseBusiness, FileUp, MapPin, RotateCcw, Search, Walle
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
+import { PlatformGuide } from "../components/PlatformGuide.jsx";
 import { Autocomplete } from "../components/Autocomplete.jsx";
 import { CurrencyInput } from "../components/CurrencyInput.jsx";
 import { COLOMBIA_LOCATIONS } from "../constants/colombianCities.js";
@@ -53,6 +54,7 @@ export function OnboardingPage() {
     finally { inFlight.current = false; setBusy(false); }
   }
   return <div className="space-y-6 candidate-welcome"><PageHeader kicker="A TU RITMO" title="Empieza por lo que buscas" description="Revisa tus preferencias o explora primero. Tu perfil puede crecer mientras avanzas." />
+    <PlatformGuide role="candidate" compact onNavigate={leave} />
     {loadError && <div className="welcome-alert" role="alert"><p>{loadError}</p><button type="button" className="button-secondary" onClick={() => setRevision((current) => current + 1)}><RotateCcw size={16} />Reintentar</button></div>}
     <div className="welcome-layout"><form onSubmit={submit} className="welcome-panel" aria-busy={loading || busy}><header><span className="public-demo-icon"><Search size={21} /></span><div><h2>Dale dirección a tu búsqueda</h2><p>Todos estos datos son opcionales. Si ya los tienes, los conservamos.</p></div></header>
       {loading && <p role="status">Cargando tus preferencias guardadas…</p>}

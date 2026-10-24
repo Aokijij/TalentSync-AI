@@ -470,10 +470,10 @@ html[data-theme="dark"] .role-company {
 .mfa-code { text-align: center; font-size: 2rem; font-variant-numeric: tabular-nums; letter-spacing: .35em; }
 .navigation-group + .navigation-group { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--sidebar-border); }
 .recommendation-controls, .learning-area-picker { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 1.25rem; }
-.development-overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.development-overview > div { display: flex; align-items: center; gap: 1rem; padding: 1.2rem; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.development-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; }
+.development-overview > div { min-width:0; display: flex; align-items: center; gap: 1rem; padding: 1.2rem; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .development-overview strong { font-size: 2rem; color: var(--accent); line-height: 1; }
-.development-overview span { font-size: .85rem; font-weight: 650; }
+.development-overview span { min-width:0; overflow-wrap:anywhere; font-size: .85rem; font-weight: 650; }
 .development-overview small { display: block; font-size: .7rem; margin-top: .2rem; color: var(--muted); font-weight: 400; }
 .area-tiles { margin-top: 1.25rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
 .area-tiles button { display: flex; align-items: center; gap: .7rem; text-align: left; border: 1px solid var(--line); border-radius: 12px; padding: .8rem; font-size: .75rem; color: var(--muted); transition: background .15s, border-color .15s; }
@@ -505,7 +505,7 @@ progress::-webkit-progress-value { background: var(--accent); border-radius: 10p
 @media (max-width: 640px) {
   .development-overview { gap: .4rem; }
   .development-overview > div { flex-direction: column; align-items: start; gap: .6rem; padding: .7rem; }
-  .development-overview span { font-size: .7rem; }
+  .development-overview span { min-width:0; overflow-wrap:anywhere; font-size: .7rem; }
   .development-overview small { font-size: .6rem; }
   .journey-steps { grid-template-columns: repeat(2, 1fr); }
   .area-tiles { grid-template-columns: repeat(2, 1fr); }

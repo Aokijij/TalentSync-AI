@@ -19,7 +19,7 @@ function FeedbackToast({ notice, onDismiss }) {
   const Icon = { success: CheckCircle2, error: AlertCircle, warning: AlertTriangle, info: Info }[notice.tone];
   return <div className={`feedback-toast ${notice.scope}`} data-tone={notice.tone} role={notice.tone === "error" ? "alert" : "status"}
     onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
-    <Icon size={21} /><div className="feedback-toast-copy"><strong>{notice.title || { success: "Listo", error: "No se pudo completar", warning: "Revisa antes de continuar", info: "Información" }[notice.tone]}</strong><p>{notice.message}</p></div>
+    <Icon size={21} /><div className="feedback-toast-copy"><strong>{notice.title || { success: "Listo", error: "No se pudo completar", warning: "Revisa antes de continuar", info: "Información" }[notice.tone]}</strong><p>{notice.message}</p>{notice.action && <button type="button" className="button-secondary button-sm feedback-action" onClick={() => { onDismiss(notice.id); notice.action.onClick?.(); }}>{notice.action.label}</button>}</div>
     <button type="button" aria-label="Cerrar aviso" onClick={() => onDismiss(notice.id)}><X size={16} /></button>
   </div>;
 }

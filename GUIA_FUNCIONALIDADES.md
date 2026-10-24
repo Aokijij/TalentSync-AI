@@ -13,11 +13,27 @@ TalentSync conecta tres recorridos: el candidato organiza su trayectoria y búsq
 ## Inicio y primeros pasos
 
 - **Inicio público (`/`):** presenta los caminos Busco empleo y Quiero contratar. La demostración con habilidades utiliza datos ficticios y explica requisitos; no realiza un cálculo real de compatibilidad. Una sesión abierta conserva la redirección a su panel.
+- **Funcionalidades por rol:** el inicio permite alternar Candidatos, Empresas y Administración para conocer sus herramientas. Un apartado explica las diferencias del recorrido: seguimiento y plazos, compatibilidad explicada, evidencias de aprendizaje diferenciadas y calidad de las ofertas.
+- **Guía de uso (`/guia`):** disponible desde el menú y las bienvenidas. Presenta ocho temas para candidatos, nueve para responsables de empresa y cuatro para administración; los miembros empresariales ven solo los temas de su permiso. Cada tema explica dónde está la función, cómo usarla, sus límites y un acceso directo. Puedes consultar los temas en cualquier orden sin completar un tutorial obligatorio.
 - **Candidato → Ajustar mi búsqueda (`/bienvenida`):** carga las preferencias guardadas, permite revisarlas o completar después y ofrece acceso directo a Subir CV en el perfil. Solo guarda los campos modificados, combinándolos con una lectura reciente del perfil. Si falla, conserva la edición para reintentar. Explorar sin cambios no escribe datos. Las recomendaciones posteriores corresponden a la respuesta de la API y pueden estar vacías.
 - **Empresa → Guía de publicación (`/empresa/bienvenida`):** consulta correo, solicitud, revisión y requisitos para preparar una oferta. Muestra correcciones y respuesta administrativa cuando existen. Presentar la solicitud no equivale a estar verificada. Las organizaciones exentas de verificación obligatoria se identifican sin atribuirles una aprobación administrativa.
 - El registro empresarial sin una configuración de autenticador pendiente conduce a la bienvenida; las invitaciones y el requisito de autenticador conservan su recorrido previo. Los entrevistadores mantienen su acceso a procesos asignados.
 
 Estas entradas reutilizan perfil, verificación y formulario de ofertas existentes. No analizan repositorios por iniciar sesión ni generan resultados de selección simulados.
+
+## Cursos, prácticas y certificados por separado
+
+**Dónde:** candidato → Mi desarrollo → Cursos y prácticas, Mi plan y Mis resultados.
+
+1. Revisa el temario, proveedor, acceso y condiciones de certificación antes de añadir un recurso. **Añadir a Mi plan** guarda un seguimiento personal; no te inscribe en el proveedor. Aparece un único aviso con acceso a Mi plan.
+2. En **Gestionar curso**, abre la formación en el proveedor. **Ya terminé el curso** registra una finalización declarada por ti, sin nota ni acreditación automática de habilidades.
+3. Si administración asoció una práctica, se explica su relación con el temario y puedes resolverla por separado. Un curso sin asociación no recibe un ejercicio genérico. Entregar una práctica no termina el curso ni genera el certificado del proveedor.
+4. Si el proveedor entrega un certificado y las condiciones del recurso lo contemplan, puedes aportar su enlace sin tener que aprobar una práctica de TalentSync. El documento se identifica como aportado, sin validar su autenticidad.
+5. **Mis resultados** separa Prácticas, Cursos, Certificados y Fundamentos, con búsqueda y ocho registros por página. Una práctica puede tener nota y correcciones; un curso terminado por ti y un certificado aportado no reciben una nota inventada. Las evaluaciones de fundamentos conservan su alcance y vigencia.
+
+Los intentos existentes conservan su ejercicio e historial. Editar la asociación del catálogo no cambia las preguntas de un intento ya iniciado. Las asociaciones se aplican a planes nuevos o a un nuevo intento cuando corresponda.
+
+**Administración → Catálogo educativo:** al crear o editar un curso, en el paso de contenido puedes dejarlo sin práctica, asociar una del catálogo o redactar una para su temario. La asociación requiere explicar su relación con el curso. El catálogo permite revisar el caso y las soluciones antes de elegir; la redacción propia incluye un procedimiento ordenado, un cálculo y relaciones entre conceptos. Las soluciones pertenecen a administración y no se envían al candidato antes de entregar. Los recursos importados quedan sin asociación automática hasta su revisión.
 
 ## Novedad: comparar vacantes antes de postularse
 

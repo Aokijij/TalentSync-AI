@@ -44,7 +44,16 @@ def legacy_practice(resource):
     return {"lab_title": case[0], "lab_scenario": case[1], "activities": activities_for(key)}
 
 
-def course_practice(resource):
+def course_practice(resource, *, topic_id=None):
+    if resource.get("url") and topic_id is None:
+        binding = resource.get("practice") or {}
+        if binding.get("mode") == "custom":
+            return authored_practice(resource, binding)
+        if binding.get("mode") != "template":
+            return None
+        selected = course_practice({**resource, "details": {**(resource.get("details") or {}), "level": binding.get("level", "beginner")}}, topic_id=binding.get("template_id"))
+        selected["binding"] = {"mode": "template", "rationale": binding.get("rationale", ""), "course_title": resource.get("title"), "resource_version": resource.get("version")}
+        return selected
     if not resource.get("url") and resource.get("kind") != "course":
         return legacy_practice(resource)
     details = resource.get("details") or {}
@@ -53,7 +62,7 @@ def course_practice(resource):
     title_text = _text(resource.get("title", ""))
     syllabus_text = _text(" ".join(details.get("syllabus") or []))
     secondary = _text(" ".join([*(resource.get("skills") or []), resource.get("instructions", "")]))
-    topic = next((item for text in (title_text, syllabus_text, secondary) for item in TOPICS if any(re.search(r"(?<!\w)" + re.escape(token.strip().rstrip("*")) + ("" if token.endswith("*") else r"(?!\w)"), text) for token in item[1])), None)
+    topic = next((item for item in TOPICS if item[0] == topic_id), None) if topic_id else next((item for text in (title_text, syllabus_text, secondary) for item in TOPICS if any(re.search(r"(?<!\w)" + re.escape(token.strip().rstrip("*")) + ("" if token.endswith("*") else r"(?!\w)"), text) for token in item[1])), None)
     raw_level = details.get("level", "any")
     level = raw_level if raw_level in {"beginner", "intermediate", "advanced"} else "beginner"
     rank = {"beginner": 0, "intermediate": 1, "advanced": 2}[level]
@@ -106,10 +115,35 @@ def practice_for_plan(resource, progress):
     if progress.get("practice_spec"):
         return deepcopy(progress["practice_spec"])
     # Do not reinterpret answers already saved with the previous sector bank.
-    if progress.get("activity_answers") or progress.get("activity_feedback"):
+    if progress.get("activity_answers") or progress.get("activity_feedback") or progress.get("answers") or progress.get("published"):
         return legacy_practice(resource)
     return course_practice(resource)
 
 
 def public_practice(practice):
+    if practice is None:
+        return None
     return {**practice, "activities": [public_activity(item) for item in practice["activities"]]}
+
+
+def authored_practice(resource, binding):
+    draft = binding["draft"]
+    steps, meanings = draft["steps"], draft["meanings"]
+    order = [*range(1, len(steps)), 0]
+    choices = [*meanings[1:], meanings[0]]
+    return {"lab_title": draft["title"], "lab_scenario": draft["scenario"],
+            "binding": {"mode": "custom", "rationale": binding["rationale"], "course_title": resource.get("title"), "resource_version": resource.get("version")},
+            "activities": [
+                {"id": "sequence", "type": "order", "prompt": "Ordena los pasos del caso.", "choices": [steps[index] for index in order], "answer": [order.index(index) for index in range(len(steps))], "feedback": " → ".join(steps)},
+                {"id": "calculation", "type": "number", "prompt": draft["calculation_prompt"], "choices": [], "answer": draft["calculation_answer"], "feedback": draft["calculation_feedback"]},
+                {"id": "connections", "type": "matching", "prompt": "Relaciona los conceptos con su significado.", "terms": draft["terms"], "choices": choices, "answer": [choices.index(item) for item in meanings], "feedback": "; ".join(f"{term}: {meaning}" for term, meaning in zip(draft["terms"], meanings, strict=True))},
+            ]}
+
+
+def practice_templates():
+    return [{"id": row[0], "title": row[2]} for row in TOPICS]
+
+
+def public_resource(resource):
+    binding = resource.get("practice") or {}
+    return {**resource, "practice": {key: binding[key] for key in ("mode", "template_id", "level", "rationale") if key in binding}}

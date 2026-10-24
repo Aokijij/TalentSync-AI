@@ -22,39 +22,18 @@ def course(**changes):
             "details": {"level": "beginner", "syllabus": ["Tipos de columna", "Quitar duplicados"]}, **changes}
 
 
-def test_practice_uses_course_subject_and_syllabus_before_broad_skills():
-    practice = course_practice(course())
-    assert practice["adaptation"]["topic"] == "data-cleaning"
-    assert "Tipo de datos" in practice["activities"][2]["terms"]
-    assert "solicitudes" not in practice["lab_title"]
-    firewall = course_practice(course(title="Introducción a Azure Firewall", skills=["azure", "python"]))
-    assert firewall["adaptation"]["topic"] == "firewall"
-    assert "Regla de red" in firewall["activities"][2]["terms"]
-    syllabus = course_practice(course(title="Taller de herramientas", details={"level": "intermediate", "syllabus": ["Fórmulas en Excel"]}))
-    assert syllabus["adaptation"]["topic"] == "excel"
-    unknown = course_practice(course(title="Cultura digital", skills=[], details={}, instructions="Conoce el área"))
-    assert unknown["adaptation"]["mode"] == "area_transfer"  # "digital" must not match Git.
-
-
-def test_level_changes_reasoning_and_duration_changes_extent_without_hiding_unknowns():
-    short = course_practice(course())
-    long = course_practice(course(hours=8))
-    advanced = course_practice(course(details={"level": "advanced"}))
-    assert len(short["activities"][0]["choices"]) == 4
-    assert len(long["activities"][0]["choices"]) == 6
-    assert len(long["activities"][2]["terms"]) == 5
-    assert short["activities"][1]["prompt"] != long["activities"][1]["prompt"]
-    assert "ambos problemas" in advanced["activities"][1]["prompt"]
-    assert short["adaptation"]["minutes"] < long["adaptation"]["minutes"]
-    assert short["adaptation"]["minutes"] < advanced["adaptation"]["minutes"]
-    unknown = course_practice(course(details={"level": "any"}, hours=None))
-    assert unknown["adaptation"]["source_level"] == "any" and unknown["adaptation"]["source_hours"] is None
-
+def test_practice_requires_explicit_reviewed_association_instead_of_inferred_subject():
+    assert course_practice(course()) is None
+    binding = {"mode": "template", "template_id": "excel", "level": "beginner", "rationale": "El temario revisado desarrolla fórmulas y referencias."}
+    practice = course_practice(course(title="Curso de Python", practice=binding))
+    assert practice["adaptation"]["topic"] == "excel"
+    assert "Referencia absoluta" in practice["activities"][2]["terms"]
+    assert practice["binding"]["rationale"] == binding["rationale"]
 
 @pytest.mark.parametrize("topic", TOPICS, ids=[row[0] for row in TOPICS])
 @pytest.mark.parametrize("level", ["beginner", "intermediate", "advanced"])
 def test_adaptive_tasks_are_solvable_and_never_publish_answers(topic, level):
-    practice = course_practice(course(title=topic[1][0].rstrip("*"), hours=8, details={"level": level}))
+    practice = course_practice(course(title=topic[1][0].rstrip("*"), hours=8, details={"level": level}), topic_id=topic[0])
     for item in practice["activities"]:
         assert evaluate(item, item["answer"])
     public = public_practice(practice)
@@ -67,7 +46,7 @@ def test_legacy_saved_answers_keep_their_original_questions():
     progress = {"activity_answers": {"calculation": "7"}}
     practice = practice_for_plan(source, progress)
     assert practice["activities"] == activities_for("technology")
-    snapshot = course_practice(source)
+    snapshot = course_practice(source, topic_id="data-cleaning")
     progress = {"practice_spec": snapshot}
     changed = course(title="Azure Firewall", hours=8, details={"level": "advanced"})
     assert practice_for_plan(changed, progress) == snapshot
@@ -79,7 +58,7 @@ def test_legacy_saved_answers_keep_their_original_questions():
 def test_plan_pins_private_tasks_across_editorial_changes_and_grades_that_snapshot(client):
     admin = administrator(client)
     _, candidate = register(client, "adaptive-plan", skills=[])
-    response = client.post("/api/v1/admin/learning/resources", headers=admin, json=content(title="Curso Excel", hours=1, details={"level": "beginner"}))
+    response = client.post("/api/v1/admin/learning/resources", headers=admin, json=content(title="Curso Excel", hours=1, details={"level": "beginner"}, practice={"mode": "template", "template_id": "excel", "level": "beginner", "rationale": "El temario revisado trabaja fórmulas y hojas de cálculo."}))
     assert response.status_code == 201, response.text
     source = next(row for row in response.json() if row["title"] == "Curso Excel")
     base = f"/api/v1/learning/plans/{source['id']}"
@@ -91,7 +70,7 @@ def test_plan_pins_private_tasks_across_editorial_changes_and_grades_that_snapsh
         row = db.query(LearningPlan).filter_by(resource_id=source["id"]).one()
         snapshot = deepcopy(row.progress["practice_spec"])
         source_row = db.get(LearningResource, source["id"])
-        source_row.content = {**source_row.content, "title": "Azure Firewall", "hours": 8, "details": {"level": "advanced"}}
+        source_row.content = {**source_row.content, "title": "Azure Firewall", "hours": 8, "details": {"level": "advanced"}, "practice": {"mode": "template", "template_id": "firewall", "level": "advanced", "rationale": "Se revisaron las actividades contra el nuevo temario."}}
         db.commit()
     refreshed = client.get("/api/v1/learning/plans", headers=candidate).json()[0]
     assert refreshed["resource"]["journey"]["activities"] == created["resource"]["journey"]["activities"]

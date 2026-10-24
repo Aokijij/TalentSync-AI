@@ -35,6 +35,7 @@ const LocalMailboxPage = lazyNamed(() => import("../pages/LocalMailboxPage.jsx")
 const OnboardingPage = lazyNamed(() => import("../pages/OnboardingPage.jsx"), "OnboardingPage");
 const LandingPage = lazyNamed(() => import("../pages/LandingPage.jsx"), "LandingPage");
 const CompanyWelcomePage = lazyNamed(() => import("../pages/CompanyWelcomePage.jsx"), "CompanyWelcomePage");
+const PlatformGuidePage = lazyNamed(() => import("../pages/PlatformGuidePage.jsx"), "PlatformGuidePage");
 const OrganizationPage = lazyNamed(() => import("../pages/OrganizationWorkspace.jsx"), "OrganizationWorkspace");
 const VerificationQueuePage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "VerificationQueuePage");
 const InvitationPage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "InvitationPage");
@@ -125,6 +126,7 @@ export function AppRoutes() {
         }
       >
         <Route path="/seguridad" element={<SecurityPage />} />
+        <Route path="/guia" element={<PlatformGuidePage />} />
         <Route path="/confianza" element={<RequireRole roles={["candidate", "company"]}><TrustPage /></RequireRole>} />
         <Route path="/admin/ecosistema" element={<RequireRole roles={["admin"]}><EcosystemPage /></RequireRole>} />
         <Route path="/admin/modelos" element={<RequireRole roles={["admin"]}><ModelPage /></RequireRole>} />

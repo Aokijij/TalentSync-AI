@@ -47,3 +47,9 @@ Los criterios para mantener componentes y textos consistentes están en [DISENO_
 ## Landing y bienvenida por rol
 
 `entry.spec.js` monta `AppRoutes` con los componentes y permisos de navegación reales, autenticación sintética y todas las peticiones externas bloqueadas. Revisa landing, bienvenida de candidato y de empresa a 360/1280 px, ambos temas y texto al 200 %. Incluye conservación de datos tras un fallo, lectura reciente antes de reemplazar el perfil, continuar sin guardar, acceso al control de CV y separación de revisión, aprobación, exención y suspensión. Las capturas se guardan en `.local/entry-review/`; no se incluyen en el sitio publicado. Las pruebas backend de API, organizaciones, calidad y perfil utilizan bases descartables.
+
+## Guía completa y aprendizaje independiente
+
+`guide-learning.spec.js` usa las rutas y componentes reales con API sintética. Comprueba la guía por rol y permisos del entrevistador, los apartados públicos de funcionalidades, un único aviso al añadir recursos, error y reintento, el seguimiento manual de un curso sin práctica asociada y las categorías, búsqueda y paginación de resultados. Revisa 360/1280 px, ambos temas y texto al 200 %. El recorrido administrativo permite revisar una práctica del catálogo y redactar otra, comprobando el contenido enviado y un solo aviso de guardado. Las capturas están en `.local/learning-guide-review/`.
+
+Las pruebas backend `test_course_plan_separation.py` comprueban propiedad, versión, separación de curso/práctica/certificado, privacidad de soluciones y conservación de intentos ante cambios del catálogo. Las familias existentes de cursos, recursos, fuentes y recorridos conservan sus comprobaciones con bases descartables.

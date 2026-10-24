@@ -7,5 +7,5 @@ export function LearningOverview({ plans, passport }) {
   const active = plans.filter((row) => row.status !== "completed").length;
   const published = passport?.practice_evidence?.length || 0;
   const validated = passport?.assessments.filter((row) => row.valid).length || 0;
-  return <div className="development-overview">{[[active, "Prácticas en marcha", "Avanza a tu ritmo"], [published, "Trabajos publicados", "Evidencias en tu perfil"], [validated, "Evaluaciones vigentes", "Fundamentos acreditados"]].map(([count, label, detail]) => <div key={label}><strong>{count}</strong><span>{label}<small>{detail}</small></span></div>)}</div>;
+  return <div className="development-overview">{[[active, "Recursos en marcha", "Avanza a tu ritmo"], [published, "Trabajos publicados", "Evidencias en tu perfil"], [validated, "Evaluaciones vigentes", "Fundamentos acreditados"]].map(([count, label, detail]) => <div key={label}><strong>{count}</strong><span>{label}<small>{detail}</small></span></div>)}</div>;
 }

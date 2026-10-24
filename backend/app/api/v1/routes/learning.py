@@ -170,6 +170,11 @@ class PlanUpdate(BaseModel):
     status: Literal["in_progress", "completed"] = "in_progress"
 
 
+class CourseProgress(BaseModel):
+    version: StrictInt = Field(ge=1)
+    completed: bool
+
+
 Answer = StrictInt | StrictFloat | Annotated[StrictStr, Field(max_length=100)] | Annotated[list[StrictInt], Field(max_length=10)]
 
 
@@ -194,6 +199,21 @@ def catalog(area: str = "recommended", user=Depends(candidate), db=Depends(get_u
 @router.get("/admin/learning/resources")
 def admin_resources(user=Depends(admin), db=Depends(get_unit_of_work)):
     return learning_resources.manage(db, user)
+
+
+@router.get("/admin/learning/practice-templates")
+def practice_templates(user=Depends(admin)):
+    from app.domain.services.course_practices import practice_templates
+    return practice_templates()
+
+
+@router.get("/admin/learning/practice-templates/{template_id}")
+def preview_practice_template(template_id: str, level: Literal["beginner", "intermediate", "advanced"] = "beginner", user=Depends(admin)):
+    from app.application.errors import UseCaseError
+    from app.domain.services.course_practices import course_practice, practice_templates
+    if template_id not in {row["id"] for row in practice_templates()}:
+        raise UseCaseError(status_code=404, detail="Práctica no encontrada")
+    return course_practice({"url": "https://example.com/course", "title": "Vista de revisión administrativa", "hours": 1, "details": {"level": level}}, topic_id=template_id)
 
 
 @router.post("/admin/learning/resources", status_code=201)
@@ -224,6 +244,11 @@ def plans(user=Depends(candidate), db=Depends(get_unit_of_work)):
 @router.put("/learning/plans/{resource_id}")
 def update_plan(resource_id: str, payload: PlanUpdate, user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.plans(db, user, resource_id, payload.status)
+
+
+@router.patch("/learning/plans/{resource_id}/course")
+def update_course(resource_id: str, payload: CourseProgress, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.save_course_progress(db, user, resource_id, payload.version, payload.completed)
 
 
 @router.post("/learning/assessments/{assessment_id}/start")

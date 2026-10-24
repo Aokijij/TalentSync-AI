@@ -32,3 +32,13 @@ Comandos de interfaz: `npm run lint`, `npm test`, `npm run build`, `npm run qual
 Los informes privados están en `.local/entry-*.log` y las capturas nuevas, en `.local/entry-review/`. Las pruebas de interfaz interceptan las API y bloquean servicios externos; las pruebas backend usan bases aisladas. Estas comprobaciones se ejecutan sin decisiones sobre candidaturas reales, conexiones externas o escrituras en calendarios personales.
 
 La validación cubre los recorridos descritos y los controles compartidos. No acredita conformidad completa de accesibilidad, rendimiento a escala ni operación de producción. Esta entrega no despliega servicios ni modifica bases de trabajo o migraciones.
+
+## Ampliación de guía y aprendizaje
+
+- [x] Guía por funciones desde bienvenida y menú, con pasos, límites, accesos directos y temas filtrados por permisos de equipo.
+- [x] Inicio público con funcionalidades por rol y diferencias del recorrido basadas en comportamiento implementado.
+- [x] Curso, práctica opcional y certificado independientes. El catálogo permite asociar actividades revisadas o redactar otras; los intentos conservan sus preguntas y soluciones privadas.
+- [x] Resultados por categorías, búsqueda y paginación; sin calificaciones para finalizaciones declaradas o certificados aportados.
+- [x] Un único aviso al añadir un recurso, con acceso a Mi plan y recuperación tras errores.
+
+Validación posterior: 238 pruebas frontend, 159 pruebas backend de aprendizaje y fuentes, 118 recorridos completos de interfaz y 36 capturas compartidas en 12 casos. ESLint, Ruff y compilación aprobados. Referencias visuales sin cambios. Ver `REVISION_PLATAFORMA.md` y `.local/learning-guide-*.log`. Esta ampliación añade endpoints de seguimiento y edición del catálogo, utiliza los campos JSON existentes y conserva pendiente el paso de producción.

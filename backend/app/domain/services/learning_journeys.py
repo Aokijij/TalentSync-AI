@@ -28,7 +28,10 @@ def journey_for(resource):
     if resource.get("url"):
         scenario = f"Revisa el temario de «{resource['title']}» y trabaja un caso de tu área: {scenario}"
     from app.domain.services.course_practices import course_practice, public_practice
-    return {**public_practice(course_practice(resource)), "title": title, "scenario": scenario, "outcome": outcome,
+    practice = public_practice(course_practice(resource))
+    if practice is None:
+        return None
+    return {**practice, "title": title, "scenario": scenario, "outcome": outcome,
             "steps": [{"id": key, "title": label, "prompt": prompt} for key, label, prompt in zip(
                 ["understand", "apply", "demonstrate"], ["Comprende el caso", "Toma decisiones", "Muestra tu resultado"], prompts, strict=True)],
             "criteria": ["Responde al problema planteado", "Justifica decisiones con hechos del caso", "Presenta un resultado que otra persona pueda revisar"],

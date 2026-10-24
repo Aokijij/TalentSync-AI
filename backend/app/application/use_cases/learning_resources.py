@@ -10,28 +10,30 @@ from app.domain.services.learning_journeys import journey_for
 from app.domain.services.sql_challenges import CHALLENGES
 
 
-def enrich(resource):
-    return {**resource, "availability": availability(resource), "journey": journey_for(resource), "assessment_ids": [key for key, bank in ASSESSMENTS.items() if bank["skill"] in resource["skills"]],
-            "practical_ids": [key for key, bank in CHALLENGES.items() if bank["skill"] in resource["skills"]]}
+def enrich(resource, private=False):
+    from app.domain.services.course_practices import public_resource
+    result = {**resource, "availability": availability(resource), "journey": journey_for(resource), "assessment_ids": [key for key, bank in ASSESSMENTS.items() if bank["skill"] in resource["skills"]],
+              "practical_ids": [key for key, bank in CHALLENGES.items() if bank["skill"] in resource["skills"]]}
+    return result if private else public_resource(result)
 
 
-def resources(db, include_inactive=False):
+def resources(db, include_inactive=False, private=False):
     managed = db.learning.resources()
     managed_urls = {row.content.get("url", "").rstrip("/") for row in managed
                     if row.content.get("url") and (row.active or row.content.get("_published_once"))}
     # Keep legacy IDs available to existing plans, while preventing their older
     # reference cards from duplicating or reviving an administrable course.
     originals = [enrich({**row, "active": not row.get("url") or row["url"].rstrip("/") not in managed_urls,
-                         "affiliate": False, "cost": "free"}) for row in LOCAL_RESOURCES]
+                         "affiliate": False, "cost": "free"}, private=private) for row in LOCAL_RESOURCES]
     return [row for row in originals if include_inactive or row["active"]] + [
         enrich({**{key: value for key, value in row.content.items() if key != "_published_once"},
-                "id": row.id, "active": row.active, "version": row.version})
+                "id": row.id, "active": row.active, "version": row.version}, private=private)
         for row in managed if include_inactive or row.active]
 
 
 def manage(db, user, payloads=None, resource_id=None, version=None):
     if payloads is None:
-        return resources(db, include_inactive=True)
+        return resources(db, include_inactive=True, private=True)
     if resource_id:
         row = db.learning.resource(resource_id)
         if row is None:
@@ -46,6 +48,7 @@ def manage(db, user, payloads=None, resource_id=None, version=None):
     for row, content in zip(targets, payloads, strict=True):
         source = row.content.get("source") if resource_id else None
         previous_details = row.content.get("details") if resource_id else None
+        previous_practice = row.content.get("practice") if resource_id else None
         published_before = (row.active or row.content.get("_published_once", False)) if resource_id else False
         row.active = content["active"]
         row.content = {key: value for key, value in content.items() if key not in {"active", "version"}}
@@ -53,6 +56,8 @@ def manage(db, user, payloads=None, resource_id=None, version=None):
             row.content["source"] = source
         if previous_details and content.get("details") is None:
             row.content["details"] = previous_details
+        if previous_practice and content.get("practice") is None:
+            row.content["practice"] = previous_practice
         if published_before or row.active:
             row.content["_published_once"] = True
         row.updated_at = datetime.utcnow()
@@ -60,7 +65,7 @@ def manage(db, user, payloads=None, resource_id=None, version=None):
     record_event(db, "learning.catalog_updated", "catalog", None, actor_user_id=user.id,
                  details={"source": "manual", "status": "updated" if resource_id else "created"})
     db.commit()
-    return resources(db, include_inactive=True)
+    return resources(db, include_inactive=True, private=True)
 
 
 def import_source(db, user, selected, *, namespace="microsoft_learn", publish=False):
@@ -93,4 +98,4 @@ def import_source(db, user, selected, *, namespace="microsoft_learn", publish=Fa
     record_event(db, "learning.catalog_updated", "catalog", None, actor_user_id=user.id,
                  details={"source": namespace, "status": "imported_active" if publish else "imported_draft"})
     db.commit()
-    return {"resources": resources(db, include_inactive=True), "created": len(new), "existing": len(targets) - len(new)}
+    return {"resources": resources(db, include_inactive=True, private=True), "created": len(new), "existing": len(targets) - len(new)}

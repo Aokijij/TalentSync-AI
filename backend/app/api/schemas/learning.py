@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.api.schemas.course_practice import PracticeBinding
 from app.domain.services.skills import normalize_skills
 
 
@@ -43,6 +44,7 @@ class CourseDetails(BaseModel):
 
 
 class ResourceContent(BaseModel):
+    practice: PracticeBinding | None = None
     category: Literal["general", "technology", "service", "sales", "administration", "finance", "logistics", "education", "design", "care"] = "general"
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=3, max_length=160)

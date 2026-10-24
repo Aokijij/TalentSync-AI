@@ -22,6 +22,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
 const links = [
+  { to: "/guia", label: "Guía de uso", icon: BookOpen, roles: ["candidate", "company", "admin"] },
   { to: "/admin/aprendizaje", label: "Catálogo educativo", icon: BookOpen, roles: ["admin"] },
   { to: "/admin/modelos", label: "Motor e integraciones", icon: Network, roles: ["admin"] },
   { to: "/confianza", label: "Confianza e incidencias", icon: Flag, roles: ["candidate", "company"] },
@@ -120,7 +121,7 @@ const navigationOrder = ["/candidato", "/empresa", "/admin", "/recomendaciones",
 
 function Navigation({ linksForRole, unreadNotifications, onNavigate, role }) {
   const Container = role ? "nav" : "div";
-  const groups = role === "company" ? [["Contratación", ["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"]], ["Organización", ["/empresa/perfil", "/empresa/equipo", "/confianza"]], ["Tu cuenta", ["/notificaciones", "/seguridad"]]] : role === "admin" ? [["Supervisión", ["/admin", "/admin/verificaciones", "/admin/ecosistema", "/vacantes"]], ["Plataforma", ["/admin/modelos", "/admin/aprendizaje", "/administracion"]], ["Tu cuenta", ["/seguridad"]]] : [["Oportunidades", ["/candidato", "/recomendaciones", "/vacantes", "/postulaciones"]], ["Tu trayectoria", ["/aprendizaje", "/perfil"]], ["Tu cuenta", ["/notificaciones", "/confianza", "/seguridad"]]];
+  const groups = role === "company" ? [["Contratación", ["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"]], ["Organización", ["/empresa/perfil", "/empresa/equipo", "/confianza"]], ["Tu cuenta", ["/notificaciones", "/seguridad", "/guia"]]] : role === "admin" ? [["Supervisión", ["/admin", "/admin/verificaciones", "/admin/ecosistema", "/vacantes"]], ["Plataforma", ["/admin/modelos", "/admin/aprendizaje", "/administracion"]], ["Tu cuenta", ["/seguridad", "/guia"]]] : [["Oportunidades", ["/candidato", "/recomendaciones", "/vacantes", "/postulaciones"]], ["Tu trayectoria", ["/aprendizaje", "/perfil"]], ["Tu cuenta", ["/notificaciones", "/confianza", "/seguridad", "/guia"]]];
   return (
     <Container className="space-y-1" aria-label={role ? "Navegación principal" : undefined}>
       {role ? groups.map(([label, routes]) => { const group = linksForRole.filter((link) => routes.includes(link.to)); return group.length ? <div key={label} className="navigation-group"><p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--sidebar-muted)]">{label}</p><Navigation linksForRole={group} unreadNotifications={unreadNotifications} onNavigate={onNavigate} /></div> : null; }) : linksForRole.map(({ to, label, icon: Icon }) => (
@@ -185,7 +186,7 @@ export function AppLayout() {
     return () => { cancelAnimationFrame(focus); media.removeEventListener("change", resize); node.close(); document.body.style.overflow = overflow; if (menuTrigger.current?.isConnected) menuTrigger.current.focus(); };
   }, [menuOpen]);
   const copy = roleCopy[user.role] ?? roleCopy.candidate;
-  const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.active !== false || ["/empresa/equipo", "/seguridad"].includes(link.to)) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"))
+  const visibleLinks = links.filter((link) => link.roles.includes(user.role) && (organization?.active !== false || ["/empresa/equipo", "/seguridad"].includes(link.to)) && (organization?.role !== "interviewer" || ["/seguridad", "/empresa/equipo", "/notificaciones", "/guia"].includes(link.to)) && (organization?.role !== "recruiter" || link.to !== "/empresa/perfil"))
     .map((link) => organization?.role === "interviewer" && link.to === "/empresa/equipo" ? { ...link, label: "Mis entrevistas" } : link)
     .sort((left, right) => navigationOrder.indexOf(left.to) - navigationOrder.indexOf(right.to));
 
@@ -236,7 +237,7 @@ export function AppLayout() {
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   }
-  if (organization?.role === "interviewer" && !["/empresa/equipo", "/notificaciones", "/seguridad"].includes(location.pathname) && !location.pathname.startsWith("/procesos/")) return <Navigate to="/empresa/equipo" replace />;
+  if (organization?.role === "interviewer" && !["/empresa/equipo", "/notificaciones", "/seguridad", "/guia"].includes(location.pathname) && !location.pathname.startsWith("/procesos/")) return <Navigate to="/empresa/equipo" replace />;
 
   return (
     <div
