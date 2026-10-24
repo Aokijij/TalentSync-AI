@@ -1,11 +1,55 @@
 import { test, expect } from "@playwright/test";
 
+for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Courses share paginated skill challenges and certificate provider · ${width} · ${theme}`, async ({ page }) => {
+  const context = await setup(page, { width, theme, rich: true, path: "/aprendizaje#retos" });
+  await expect(page.locator(".challenge-card")).toHaveCount(12);
+  await page.locator(".challenge-filter-panel").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `../.local/challenge-paths-review/catalog-${theme}-${width}.png` });
+  await page.getByRole("navigation", { name: "Páginas de retos", exact: true }).getByRole("button", { name: /Siguiente/ }).click();
+  await expect(page.getByText("Página 2 de 3", { exact: true })).toBeVisible();
+  await page.getByRole("combobox", { name: "Nivel", exact: true }).selectOption("advanced");
+  await expect(page.locator(".challenge-card")).toHaveCount(10);
+  await page.getByLabel("Buscar retos", { exact: true }).fill("no existe");
+  await expect(page.getByRole("heading", { name: "No hay retos con estos filtros" })).toBeVisible();
+  await page.getByRole("button", { name: "Limpiar filtros", exact: true }).click();
+  await page.getByRole("button", { name: "Cursos y prácticas", exact: true }).click();
+  await page.locator(".learning-catalog-grid").getByRole("button", { name: "Añadir a mi plan", exact: true }).click();
+  await page.getByRole("button", { name: "Abrir Mi plan", exact: true }).click();
+  await expect(page.locator(".course-challenge-grid article")).toHaveCount(3);
+  await page.locator(".course-challenge-grid").getByRole("link", { name: "Ver reto", exact: true }).first().click();
+  await expect(page.locator(".challenge-card")).toHaveCount(1);
+  await expect(page.locator(".challenge-card")).toContainText("En tu plan");
+  await page.getByRole("button", { name: "Mi plan", exact: false }).filter({ hasNotText: "Abrir" }).click();
+  await expect(page.getByRole("heading", { name: "Continúa con el proveedor" })).toBeVisible();
+  await page.getByRole("button", { name: "Aportar certificado", exact: true }).click();
+  await expect(page.getByLabel("Proveedor o entidad emisora", { exact: true })).toHaveValue(course.provider);
+  await expect(page.getByLabel("Proveedor o entidad emisora", { exact: true })).toHaveAttribute("readonly", "");
+  await page.getByLabel("Enlace del certificado", { exact: true }).fill("https://example.com/my-certificate");
+  await page.getByRole("checkbox", { name: /Confirmo que/ }).check();
+  await page.screenshot({ path: `../.local/challenge-paths-review/certificate-${theme}-${width}.png`, fullPage: true });
+  context.state.failCertificate = true;
+  await page.getByRole("button", { name: "Guardar certificado", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("El documento no pudo guardarse");
+  await expect(page.getByLabel("Enlace del certificado", { exact: true })).toHaveValue("https://example.com/my-certificate");
+  context.state.failCertificate = false;
+  await page.getByRole("button", { name: "Guardar certificado", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Ver certificado", exact: true })).toHaveAttribute("href", "https://example.com/my-certificate");
+  await expect(page.locator(".feedback-toast").filter({ hasText: "Certificado guardado" })).toHaveCount(1);
+  expect(context.state.certificateBody.credential_url).toBe("https://example.com/my-certificate");
+  expect(context.state.certificateBody).not.toHaveProperty("issuer");
+  await noOverflow(page);
+  await page.screenshot({ path: `../.local/challenge-paths-review/course-${theme}-${width}.png`, fullPage: true });
+  await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; }); await noOverflow(page);
+  expect(context.errors).toEqual([]);
+});
+
 const course = { id: "course-review", version: 1, title: "Curso de hojas de cálculo", provider: "Proveedor de revisión", category: "administration", kind: "course", hours: 2, cost: "free", active: true, url: "https://example.com/course", skills: ["excel"], instructions: "Organiza tablas y revisa los datos del temario con ejercicios del proveedor.", journey: null, practice: { mode: "none" }, details: { certificate_cost: "free", level: "beginner", languages: ["Español"], syllabus: [], access_notes: "Consulta las condiciones del proveedor", certificate_notes: "Documento emitido por el proveedor", prerequisites: "", duration_notes: "" } };
 const organization = { id: 41, name: "Empresa de revisión", active: true, role: "owner", verification_status: "verified", verification_required: true };
-async function setup(page, { width = 1280, theme = "light", role = "candidate", path = "/aprendizaje", memberRole = "owner" } = {}) {
+async function setup(page, { width = 1280, theme = "light", role = "candidate", path = "/aprendizaje", memberRole = "owner", rich = false } = {}) {
   await page.setViewportSize({ width, height: 950 });
   await page.addInitScript((value) => localStorage.setItem("talentsync_theme", value), theme);
-  const errors = [], calls = [], state = { plans: [], courseDone: false, adminCourse: { ...course }, failAdd: false };
+  const errors = [], calls = [], state = { plans: [], courseDone: false, adminCourse: { ...course }, failAdd: false, failCertificate: false, certificateBody: null };
+  state.assessments = rich ? Array.from({ length: 31 }, (_, index) => ({ id: `challenge-${index}`, title: `Excel · reto ${index + 1}`, skill: "excel", category: "administration", level: ["beginner", "intermediate", "advanced"][index % 3], minutes: 35, question_count: 15, topics: ["Fórmulas", "Análisis de tablas"], context: "Interpreta tablas y comprueba los resultados con los datos del caso.", related_course_ids: [course.id] })) : [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.route("**/*", async (route) => {
     const request = route.request(), url = new URL(request.url());
@@ -15,13 +59,15 @@ async function setup(page, { width = 1280, theme = "light", role = "candidate", 
     calls.push({ endpoint, method, body });
     if (endpoint === "/notifications/unread-count") return route.fulfill({ json: { count: 0 } });
     if (["/organization/me", "/organization/access"].includes(endpoint)) return route.fulfill({ json: { ...organization, role: memberRole } });
-    if (endpoint === "/learning/catalog") return route.fulfill({ json: { resources: [course], areas: [{ id: "administration", label: "Administración" }], assessments: [] } });
+    if (endpoint === "/learning/catalog") return route.fulfill({ json: { resources: [{ ...course, assessment_ids: state.assessments.slice(0, 3).map((row) => row.id) }], areas: [{ id: "administration", label: "Administración" }], assessments: state.assessments } });
+    if (endpoint.endsWith("/challenges")) return route.fulfill({ json: { assessments: state.assessments.slice(0, 3), notice: "Relacionados por habilidades del catálogo." } });
     if (endpoint === "/learning/plans") return route.fulfill({ json: state.plans });
     if (endpoint === `/learning/plans/${course.id}` && method === "PUT") {
       if (state.failAdd) return route.fulfill({ status: 503, json: { detail: "No se pudo añadir el curso de revisión." } });
-      state.plans = [{ id: 1, resource: course, version: 1, status: "in_progress", progress: { course_tracking: true, course_completed: false } }];
+      state.plans = [{ id: 1, resource: { ...course, assessment_ids: state.assessments.slice(0, 3).map((row) => row.id) }, version: 1, status: "in_progress", progress: { course_tracking: true, course_completed: false } }];
       return route.fulfill({ json: state.plans });
     }
+    if (endpoint === `/learning/plans/${course.id}/certificate`) { state.certificateBody = body; if (state.failCertificate) return route.fulfill({ status: 503, json: { detail: "El documento no pudo guardarse. Reintenta." } }); const certificate = { name: body.name, issuer: course.provider, year: body.year, url: body.credential_url }; state.plans[0].certificate = certificate; return route.fulfill({ json: { certificate, message: "Certificado guardado" } }); }
     if (endpoint === `/learning/plans/${course.id}/course`) {
       state.courseDone = body.completed;
       state.plans = state.plans.map((row) => ({ ...row, version: row.version + 1, status: body.completed ? "completed" : "in_progress", progress: { ...row.progress, course_completed: body.completed } }));
@@ -59,8 +105,8 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Co
   await expect(page.locator(".feedback-toast")).toContainText("Añadido a Mi plan");
   await expect(page.locator(".learning-published")).toHaveCount(0);
   await page.getByRole("button", { name: "Abrir Mi plan", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "1. Estudia el curso", exact: true })).toBeVisible();
-  await expect(page.getByText("No hay una práctica asociada a este curso.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Continúa con el proveedor", exact: true })).toBeVisible();
+  await expect(page.getByText("Todavía no hay retos para las habilidades de este curso.", { exact: false })).toBeVisible();
   await expect(page.getByRole("button", { name: "Aportar certificado", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Ya terminé el curso", exact: true }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Confirmar finalización", exact: true }).click();
@@ -76,7 +122,7 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Co
   await expect(page.locator(".result-record-score")).toHaveCount(0);
   await page.getByRole("tab", { name: "Certificados (1)", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Excel básico", exact: true })).toBeVisible();
-  await page.getByRole("tab", { name: "Fundamentos (1)", exact: true }).click();
+  await page.getByRole("tab", { name: "Retos (1)", exact: true }).click();
   await expect(page.locator(".result-record-score")).toHaveText("60%");
   await noOverflow(page);
   await page.screenshot({ path: `../.local/learning-guide-review/results-${theme}-${width}.png`, fullPage: true });

@@ -13,15 +13,16 @@ def test_each_assessment_has_public_questions_and_scoped_credential(client, asse
     bank = ASSESSMENTS[assessment_id]
     _, headers = register(client, "assessment-candidate", skills=[])
     catalog = client.get("/api/v1/learning/catalog?area=all", headers=headers).json()
-    assert any(row["id"] == assessment_id for row in catalog["assessments"])
+    assert any(row["id"] == assessment_id for row in catalog["assessments"]) == (not bank.get("retired", False))
     attempt = client.post(f"/api/v1/learning/assessments/{assessment_id}/start", headers=headers).json()
-    assert len(attempt["questions"]) == 5
-    assert all({"id", "prompt", "choices"} <= set(question) <= {"id", "prompt", "choices", "type", "terms"} for question in attempt["questions"])
-    answers = {question["id"]: question["answer"] for question in bank["questions"]}
+    assert len(attempt["questions"]) == bank.get("question_count", 5)
+    assert all({"id", "prompt", "choices"} <= set(question) and not {"answer", "feedback"} & set(question) for question in attempt["questions"])
+    with client.session_factory() as db:
+        answers = {question["id"]: question["answer"] for question in db.get(AssessmentAttempt, attempt["id"]).snapshot}
     result = client.post(f"/api/v1/learning/attempts/{attempt['id']}/submit", headers=headers, json={"answers": answers})
     assert result.status_code == 200 and result.json()["passed"] and result.json()["score"] == 100
     passport = client.get("/api/v1/learning/passport", headers=headers).json()["assessments"]
-    assert passport[0]["skill"] == bank["skill"] and passport[0]["level"] == "fundamentals" and passport[0]["valid"]
+    assert passport[0]["skill"] == bank["skill"] and passport[0]["level"] == bank.get("level", "fundamentals") and passport[0]["valid"]
 
 
 @pytest.mark.parametrize("invalid", [-1, 3, True, "1", 1.5])

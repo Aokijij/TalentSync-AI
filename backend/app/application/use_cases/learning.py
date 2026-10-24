@@ -9,6 +9,7 @@ from app.application.use_cases.jobs import get_job
 from app.application.use_cases.learning_resources import resources as catalog_resources
 from app.application.use_cases.matching import candidate_match, prepare_scores
 from app.domain.services.career_learning import AREAS, profile_areas
+from app.domain.services.challenge_tracks import SOURCES, related_assessments
 from app.domain.services.course_practices import (
     course_practice,
     practice_for_plan,
@@ -63,12 +64,15 @@ def catalog(db, user, area="recommended"):
     def attempt_summary(key):
         row = latest.get(key)
         return {field: getattr(row, field) for field in ("id", "status", "started_at", "expires_at", "score", "passed")} if row else None
+    from app.domain.services.market_radar import synthetic_job
+    demand = Counter(skill for job in db.jobs.active() if not synthetic_job(job) for skill in skill_set(job.skills))
     return {"resources": visible,
-            "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "last_attempt": attempt_summary(key), "relevance_reason": "Practica una habilidad que declaraste en tu perfil." if skill_set([row["skill"]]) & skill_set(user.profile.skills or []) else "Relacionada con el área que estás explorando.", "level": "fundamentals", "category": row["category"], "formats": sorted({q.get("type", "choice") for q in row["questions"]}), "context": row.get("context", "Resuelve cinco decisiones sobre esta habilidad y revisa la explicación al entregar.")}
-                            for key, row in ASSESSMENTS.items() if row["category"] in selected],
+            "assessments": [{"id": key, "title": row["title"], "skill": row["skill"], "minutes": row["minutes"], "last_attempt": attempt_summary(key), "relevance_reason": "Practica una habilidad que declaraste en tu perfil." if skill_set([row["skill"]]) & skill_set(user.profile.skills or []) else "Relacionada con el área que estás explorando.", "level": row.get("level", "fundamentals"), "category": row["category"], "formats": sorted({q.get("type", "choice") for q in row["questions"]}), "context": row.get("context", "Resuelve tareas concretas de esta habilidad."), "question_count": row.get("question_count", len(row["questions"])), "topics": list(dict.fromkeys(q.get("topic", "Fundamentos") for q in row["questions"])), "scope": row.get("scope"), "source_ids": row.get("source_ids", []), "demand_count": sum(demand[skill] for skill in skill_set([row["skill"], *row.get("related_skills", [])])), "related_course_ids": [resource["id"] for resource in available if key in resource.get("assessment_ids", [])]}
+                            for key, row in ASSESSMENTS.items() if row["category"] in selected and (not row.get("retired") or latest.get(key) and latest[key].status == "active")],
+            "challenge_sources": SOURCES, "challenge_demand_note": "Menciones de habilidades en las ofertas activas disponibles, excluyendo demostraciones identificables. Una oferta puede mencionar varias habilidades relacionadas; no representa todo el mercado colombiano.",
             "areas": [{"id": key, "label": row["label"]} for key, row in AREAS.items()],
             "recommended_areas": recommended, "selected_area": area,
-            "plan_limit": 3, "external_catalogs_enabled": False, "notice": "Sugerencias ordenadas por habilidades, funciones, experiencia y contexto del CV. Las coincidencias se explican en cada recurso. Puedes explorar otra área. Las prácticas locales no son certificaciones profesionales; los cursos externos requieren revisión y validación independientes."}
+            "plan_limit": 3, "external_catalogs_enabled": False, "notice": "Sugerencias ordenadas por habilidades, funciones, experiencia y contexto del CV. Las coincidencias se explican en cada recurso. Puedes explorar otra área. Los retos de TalentSync no son certificaciones profesionales; los cursos externos requieren revisión independiente."}
 
 
 def opportunities(db, user, job_id, nlp):
@@ -137,6 +141,19 @@ def _plan_resource(resource, progress):
     from app.domain.services.learning_journeys import journey_for
     base = resource.get("journey") or journey_for({**resource, "url": None})
     return {**public_resource(resource), "journey": {**base, **public_practice(practice)}}
+
+
+def course_challenges(db, user, resource_id):
+    if db.learning.plan(user.id, resource_id) is None:
+        raise UseCaseError(status_code=404, detail="Recurso no encontrado en tu plan")
+    resource = next((item for item in catalog_resources(db, include_inactive=True) if item["id"] == resource_id), None)
+    if resource is None:
+        raise UseCaseError(status_code=404, detail="Recurso no disponible")
+    related = set(resource.get("assessment_ids", []))
+    report = catalog(db, user, "all")
+    return {"skills": resource["skills"], "course_level": (resource.get("details") or {}).get("level", "any"),
+            "assessments": [item for item in report["assessments"] if item["id"] in related],
+            "notice": "Relacionados por habilidades del catálogo. El resultado se comparte entre cursos que desarrollan esa habilidad; no demuestra haber completado el temario de un proveedor."}
 
 
 def save_course_progress(db, user, resource_id, version, completed):
@@ -307,7 +324,8 @@ def add_plan_skills(db, user, resource_id):
 def public_attempt(row):
     result = {"id": row.id, "assessment_id": row.assessment_id, "title": (ASSESSMENTS.get(row.assessment_id) or CHALLENGES.get(row.assessment_id) or {}).get("title", row.skill), "skill": row.skill, "version": row.version, "started_at": row.started_at,
               "expires_at": row.expires_at, "status": row.status, "score": row.score, "passed": row.passed, "feedback": row.feedback,
-              "valid_until": row.valid_until, "level": "fundamentals"}
+              "valid_until": row.valid_until, "level": (ASSESSMENTS.get(row.assessment_id) or {}).get("level", "fundamentals"), "question_count": len(row.snapshot),
+              "topic_results": [{"topic": topic, "correct": sum(bool(item["correct"]) for item in row.feedback if item.get("topic", "Fundamentos") == topic), "total": sum(item.get("topic", "Fundamentos") == topic for item in row.feedback)} for topic in dict.fromkeys(item.get("topic", "Fundamentos") for item in row.feedback or [])]}
     if row.status == "active":
         result["questions"] = [public_activity(item) for item in row.snapshot]
     return result
@@ -323,8 +341,21 @@ def start_assessment(db, user, assessment_id):
         return public_attempt(attempts[0])
     if attempts and attempts[0].started_at > now - timedelta(days=1):
         raise UseCaseError(status_code=429, detail="Puedes realizar un nuevo intento después de 24 horas")
-    snapshot = [dict(row) for row in bank["questions"]]
-    random.SystemRandom().shuffle(snapshot)
+    from copy import deepcopy
+    rng = random.SystemRandom()
+    by_id = {item["id"]: item for item in bank["questions"]}
+    snapshot = [deepcopy(by_id[key]) for section in bank.get("selection", []) for key in rng.sample(section["ids"], section["count"])] if bank.get("selection") else deepcopy(bank["questions"])
+    # Remap solutions when shuffling choices. Matching answers map one index per
+    # term; order answers map the ordered choice indices. Never mutate the bank.
+    for item in snapshot if bank.get("selection") else []:
+        choices = item.get("choices", [])
+        if not choices:
+            continue
+        order = list(range(len(choices))); rng.shuffle(order)
+        item["choices"] = [choices[index] for index in order]
+        answer = item["answer"]
+        item["answer"] = [order.index(index) for index in answer] if isinstance(answer, list) else order.index(answer)
+    rng.shuffle(snapshot)
     attempt_id = uuid5(NAMESPACE_URL, f"talentsync:{user.id}:{assessment_id}:{now.date().isoformat()}").hex
     row = db.learning.new_attempt(id=attempt_id, user_id=user.id, assessment_id=assessment_id, skill=bank["skill"], version=bank["version"],
                                  snapshot=snapshot, started_at=now, expires_at=now + timedelta(minutes=bank["minutes"]), status="active", feedback=[])
@@ -352,14 +383,14 @@ def submit_assessment(db, user, attempt_id, answers):
     correct = sum(grades.values())
     row.score = round(correct / len(row.snapshot) * 100, 2)
     row.passed = row.score >= 80
-    row.feedback = [{"question_id": item["id"], "correct": grades[item["id"]], "prompt": item["prompt"], "submitted": answers[item["id"]], "message": item["feedback"]} for item in row.snapshot]
+    row.feedback = [{"question_id": item["id"], "correct": grades[item["id"]], "prompt": item["prompt"], "topic": item.get("topic", "Fundamentos"), "context": item.get("context"), "submitted": answers[item["id"]], "message": item["feedback"]} for item in row.snapshot]
     row.valid_until = now + timedelta(days=180) if row.passed else None
     if row.passed:
         grant_fundamentals(db, user, row, now)
     record_event(db, "assessment.completed", "profile", user.profile.id, actor_user_id=user.id, details={"assessment_id": row.assessment_id, "result": "passed" if row.passed else "not_passed", "version": row.version})
     db.commit()
     result = public_attempt(row)
-    result["improvement_resources"] = [resource for resource in catalog_resources(db) if skill_set([row.skill]) & skill_set(resource["skills"])][:4] if correct < len(row.snapshot) else []
+    result["improvement_resources"] = [resource for resource in catalog_resources(db) if row.assessment_id in related_assessments(resource, ASSESSMENTS) or skill_set([row.skill]) & skill_set(resource["skills"])][:4] if correct < len(row.snapshot) else []
     return result
 
 

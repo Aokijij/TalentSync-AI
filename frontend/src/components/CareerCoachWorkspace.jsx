@@ -98,7 +98,7 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
         {tab === "guidance" && <CareerCoach guidance={profile.cv_guidance} onEdit={onEdit} onStartWriting={startWriting} />}
         {tab === "writing" && <>
           <h3>Dale más fuerza a tu experiencia</h3><p>La IA reorganiza y desarrolla tus responsabilidades, conservando los hechos que ya escribiste. Puedes añadir un resultado real para hacerlas más concretas.</p>
-          <p className="coach-help">IA local, sin cobros por API. La propuesta es un borrador: revísala antes de usarla.</p>
+          <p className="coach-help">La propuesta es un borrador generado a partir de tus datos. Revísala antes de usarla.</p>
           {!data && <p role="status">Cargando tus experiencias…</p>}
           {data && !data.experiences.length && <div className="coach-empty"><PencilLine size={28} /><h4>Empieza con una experiencia</h4><p>Puede ser un empleo, una práctica o una colaboración real. Escribe una frase sobre lo que hiciste y te ayudaremos a presentarla.</p><button type="button" className="button-primary" onClick={() => onEdit("profile-experiences")}>Añadir mi experiencia<ArrowRight size={15} /></button></div>}
           {!!data?.experiences.length && <form className="coach-form" onSubmit={(event) => { event.preventDefault(); act(async () => { const { data: response } = await api.post("/profiles/me/coach/writing/generate", { experience_index: Number(index), source_version: data.source_version, style, result }, { timeout: 100000 }); setProposalId(response.id); setMessage("Revisa la propuesta. Tu perfil sigue igual hasta que decidas usarla."); }); }}>

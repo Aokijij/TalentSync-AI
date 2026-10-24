@@ -106,6 +106,6 @@ def assessment_banks():
 
 def practice_resources():
     return [{"id": f"practice-{area}-v1", "category": area, "title": title + ": práctica guiada", "skills": [skill], "hours": 1,
-             "provider": "TalentSync · práctica local", "kind": "project", "sponsored": False,
+             "provider": "TalentSync · práctica", "kind": "project", "sponsored": False,
              "instructions": f"{context} 1. Describe un caso ficticio de tu área. 2. Explica tres decisiones y sus motivos. 3. Define un resultado observable y cómo comprobarlo. 4. Guarda tu trabajo como evidencia y contrasta tus decisiones en la microprueba."}
             for area, (title, skill, context, _) in EXERCISES.items()]

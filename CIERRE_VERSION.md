@@ -42,3 +42,13 @@ La validación cubre los recorridos descritos y los controles compartidos. No ac
 - [x] Un único aviso al añadir un recurso, con acceso a Mi plan y recuperación tras errores.
 
 Validación posterior: 238 pruebas frontend, 159 pruebas backend de aprendizaje y fuentes, 118 recorridos completos de interfaz y 36 capturas compartidas en 12 casos. ESLint, Ruff y compilación aprobados. Referencias visuales sin cambios. Ver `REVISION_PLATAFORMA.md` y `.local/learning-guide-*.log`. Esta ampliación añade endpoints de seguimiento y edición del catálogo, utiliza los campos JSON existentes y conserva pendiente el paso de producción.
+
+## Retos por habilidad, Mi plan y certificados
+
+- [x] 31 retos versionados con niveles y 10/15/20 preguntas; esquemas de selección, soluciones privadas y conservación de intentos.
+- [x] Relación de cursos y retos por habilidades, con resultado compartido entre cursos y avance de formación independiente.
+- [x] Catálogo paginado con búsqueda, nivel, avance, relación con Mi plan y acceso al intento activo.
+- [x] Diseño de planes y certificado con proveedor, enlace del documento, guardado, error y reintento.
+- [x] Estadísticas sin ofertas sintéticas en el recorrido normal, herramientas de desarrollo restringidas y configuración de producción sin excepciones locales.
+
+Verificación del 24/10/2026: 239 pruebas frontend, 238 backend y 122 recorridos de interfaz. ESLint, Ruff, compilación y sintaxis de los scripts de despliegue aprobados. Las comprobaciones de entorno no equivalen a un despliegue: dominio, correo, OAuth, almacenamiento y operación con usuarios autorizados se verifican al preparar la instalación pública. No se han trasladado datos de demostración ni modificado calendarios personales. Ver `RETOS_APRENDIZAJE.md` y `.local/challenge-paths-*.log`.

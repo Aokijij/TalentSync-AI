@@ -25,7 +25,7 @@ def assess_legacy_quality(job, comparable_jobs):
     tokens = set(re.findall(r"\w+", job.title.lower())) - {"senior", "junior", "developer", "desarrollador", "de", "a", "sr", "jr"}
     peers = [row.salary for row in comparable_jobs if row.id != job.id and row.salary and row.sector == job.sector and row.modality == job.modality and tokens & set(re.findall(r"\w+", row.title.lower()))]
     salary_reference = {"source": "local_active_vacancies", "sample_size": len(peers), "currency": "COP", "median": round(median(peers), 2) if len(peers) >= 5 else None,
-                        "notice": "Muestra de esta base local; no representa el mercado laboral ni usa datos salariales en tiempo real."}
+                        "notice": "Muestra de ofertas disponibles en TalentSync; no representa el mercado laboral ni usa datos salariales en tiempo real."}
     if job.salary and len(peers) >= 5 and job.salary < median(peers) * .65:
         issues.append({"code": "salary_below_local_reference", "message": "El salario queda por debajo del 65% de la mediana de ofertas comparables de esta base. Revisa experiencia, jornada y alcance antes de modificarlo."})
     requirements = getattr(job, "skill_requirements", []) or []
@@ -53,4 +53,4 @@ def assess_legacy_quality(job, comparable_jobs):
     return {"issues": issues, "checks": checks, "completeness": completeness,
             "next_actions": pending, "readiness": "Revisión completa" if not pending else "Información clave pendiente" if any(row["priority"] == "Alta" for row in pending) else "Detalles por mejorar",
             "salary_reference": salary_reference, "blind_hiring": job.blind_hiring,
-            "notice": "Orientación basada en reglas y datos locales; requiere revisión humana."}
+            "notice": "Orientación basada en reglas y ofertas disponibles; requiere revisión humana."}

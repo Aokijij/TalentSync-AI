@@ -23,12 +23,12 @@ test("starting or resuming an active practice keeps the catalog visible and disa
   assert.match(html, /Continuar práctica/);
   assert.match(html, /Práctica de sql/);
   assert.match(html, /Práctica de microservices/);
-  assert.equal((html.match(/disabled=""/g) || []).length, 2);
+  assert.equal((html.match(/<button[^>]*id="challenge-start-[^"]+"[^>]*disabled=""/g) || []).length, 2);
 });
 
 test("a locally expired practice does not block starting a different practice", () => {
   const html = render({ id: "expired-python", assessment_id: "python", status: "active", started_at: "2026-10-21T15:59:00Z", expires_at: "2026-10-21T16:09:00Z" });
-  assert.equal((html.match(/disabled=""/g) || []).length, 0);
+  assert.equal((html.match(/<button[^>]*id="challenge-start-[^"]+"[^>]*disabled=""/g) || []).length, 0);
   assert.match(html, /Empezar práctica/);
 });
 

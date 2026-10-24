@@ -11,8 +11,9 @@ from app.domain.services.sql_challenges import CHALLENGES
 
 
 def enrich(resource, private=False):
+    from app.domain.services.challenge_tracks import related_assessments
     from app.domain.services.course_practices import public_resource
-    result = {**resource, "availability": availability(resource), "journey": journey_for(resource), "assessment_ids": [key for key, bank in ASSESSMENTS.items() if bank["skill"] in resource["skills"]],
+    result = {**resource, "availability": availability(resource), "journey": journey_for(resource), "assessment_ids": related_assessments(resource, ASSESSMENTS),
               "practical_ids": [key for key, bank in CHALLENGES.items() if bank["skill"] in resource["skills"]]}
     return result if private else public_resource(result)
 

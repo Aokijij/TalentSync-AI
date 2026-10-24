@@ -118,13 +118,13 @@ def test_corporate_review_login_skips_platform_mfa(corporate, monkeypatch):
     assert corporate.get("/api/v1/admin/stats").status_code == 403
 
 
-def test_external_certificate_needs_completed_owned_plan_and_proof(client):
+def test_external_certificate_needs_owned_plan_and_proof_without_local_exercise(client):
     _, headers = register(client, "external-certificate", skills=["python"])
     endpoint = "/api/v1/learning/plans/microsoft-data-analytics/certificate"
     payload = {"name": "Certificado de análisis", "credential_url": "https://example.com/credentials/test", "year": datetime.utcnow().year, "has_certificate": True}
     assert client.post(endpoint, headers=headers, json=payload).status_code == 404
     assert client.put("/api/v1/learning/plans/microsoft-data-analytics", headers=headers, json={"status": "in_progress"}).status_code == 200
-    assert client.post(endpoint, headers=headers, json=payload).status_code == 409
+    assert client.post(endpoint, headers=headers, json=payload).status_code == 200
     assert client.put("/api/v1/learning/plans/microsoft-data-analytics", headers=headers, json={"status": "completed"}).status_code == 200
     assert client.post(endpoint, headers=headers, json={**payload, "has_certificate": False}).status_code == 422
     assert client.post(endpoint, headers=headers, json={**payload, "credential_url": "http://127.0.0.1/proof"}).status_code == 422

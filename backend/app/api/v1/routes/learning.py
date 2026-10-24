@@ -251,6 +251,11 @@ def update_course(resource_id: str, payload: CourseProgress, user=Depends(candid
     return cases.save_course_progress(db, user, resource_id, payload.version, payload.completed)
 
 
+@router.get("/learning/plans/{resource_id}/challenges")
+def course_challenges(resource_id: str, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.course_challenges(db, user, resource_id)
+
+
 @router.post("/learning/assessments/{assessment_id}/start")
 def start(assessment_id: str, user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.start_assessment(db, user, assessment_id)

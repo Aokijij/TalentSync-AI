@@ -158,4 +158,5 @@ def vacancy_advice(db, user, job_id):
 
 
 def radar(db, user, search="", sector="", location=""):
-    return demand_report(owner_profile(user), db.jobs.active(), resources(db), search, sector, location)
+    from app.domain.services.market_radar import synthetic_job
+    return demand_report(owner_profile(user), [job for job in db.jobs.active() if not synthetic_job(job)], resources(db), search, sector, location)

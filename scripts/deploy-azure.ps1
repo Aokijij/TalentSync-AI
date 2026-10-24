@@ -129,6 +129,17 @@ if (-not $environment) {
 }
 
 $app = Get-AzJson containerapp show --name $appName --resource-group $ResourceGroup
+$productionHost = "$appName.$($environment.properties.defaultDomain)"
+$productionOrigin = "https://$productionHost"
+$productionHosts = ConvertTo-Json -InputObject @($productionHost) -Compress
+$productionCors = ConvertTo-Json -InputObject @($productionOrigin) -Compress
+if ($IsWindows -and $azExecutable.EndsWith('.cmd', [StringComparison]::OrdinalIgnoreCase)) {
+    $productionHosts = $productionHosts.Replace('"', '\"')
+    $productionCors = $productionCors.Replace('"', '\"')
+}
+$productionDefaults = @("SESSION_AUTH_ENABLED=true", "SESSION_COOKIE_SECURE=true", "COMPANY_MFA_REQUIRED=true",
+    "LOCAL_MAIL_ENABLED=false", "LOCAL_ADMIN_REVIEW_ENABLED=false", "LOCAL_MFA_REVIEW_ENABLED=false",
+    "PUBLIC_APP_URL=$productionOrigin", "ALLOWED_HOSTS=$productionHosts", "CORS_ORIGINS=$productionCors")
 if (-not $app) {
     $credentials = Invoke-AzJson acr credential show --name $registryName
     $registryPassword = $credentials.passwords[0].value
@@ -136,9 +147,9 @@ if (-not $app) {
     $databaseUrl = "postgresql+psycopg://${PostgresAdmin}:${encodedPassword}@${postgresName}.postgres.database.azure.com:5432/${databaseName}?sslmode=require"
     $minimumReplicas = if ($ScaleToZero) { 0 } else { 1 }
     $storageUrl = "https://${storageName}.blob.core.windows.net"
-    $app = Invoke-AzJson containerapp create --name $appName --resource-group $ResourceGroup --environment $environmentName --image $image --registry-server $registry.loginServer --registry-username $credentials.username --registry-password $registryPassword --target-port 8000 --ingress external --min-replicas $minimumReplicas --max-replicas 3 --cpu 1.0 --memory 2Gi --system-assigned --secrets "database-url=$databaseUrl" "secret-key=$SecretKey" --env-vars "ENVIRONMENT=production" "DATABASE_URL=secretref:database-url" "SECRET_KEY=secretref:secret-key" "CV_PARSER=pypdf" "CV_OCR_ENABLED=false" "AZURE_STORAGE_ACCOUNT_URL=$storageUrl" "AZURE_STORAGE_CONTAINER=$containerName"
+    $app = Invoke-AzJson containerapp create --name $appName --resource-group $ResourceGroup --environment $environmentName --image $image --registry-server $registry.loginServer --registry-username $credentials.username --registry-password $registryPassword --target-port 8000 --ingress external --min-replicas $minimumReplicas --max-replicas 3 --cpu 1.0 --memory 2Gi --system-assigned --secrets "database-url=$databaseUrl" "secret-key=$SecretKey" --env-vars @productionDefaults "ENVIRONMENT=production" "DATABASE_URL=secretref:database-url" "SECRET_KEY=secretref:secret-key" "CV_PARSER=pypdf" "CV_OCR_ENABLED=false" "AZURE_STORAGE_ACCOUNT_URL=$storageUrl" "AZURE_STORAGE_CONTAINER=$containerName"
 } else {
-    $app = Invoke-AzJson containerapp update --name $appName --resource-group $ResourceGroup --image $image
+    throw "La aplicación ya existe. Usa scripts/update-production.ps1 para preservar su configuración y verificar la recuperación."
 }
 
 $principalId = $app.identity.principalId

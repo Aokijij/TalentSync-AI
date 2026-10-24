@@ -114,7 +114,7 @@ export function AppRoutes() {
       <Route path="/empresa/registro" element={<RegisterPage key="company" />} />
       <Route path="/recuperar-acceso" element={<AccountActionPage recover />} />
       <Route path="/cuenta/confirmar" element={<AccountActionPage />} />
-      <Route path="/desarrollo/correos" element={<LocalMailboxPage />} />
+      {import.meta.env.DEV && <Route path="/desarrollo/correos" element={<LocalMailboxPage />} />}
       <Route path="/equipo/invitacion" element={<InvitationPage />} />
       <Route path="/" element={<PublicHome />} />
 

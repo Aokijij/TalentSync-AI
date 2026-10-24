@@ -37,21 +37,31 @@ try {
     $imageTag = "$revision-$(Get-Date -Format yyyyMMddHHmmss)"
     $image = "$($registryInfo.loginServer)/talentsync:$imageTag"
     $url = "https://$($app.properties.configuration.ingress.fqdn)"
+    $currentEnvironment = @($app.properties.template.containers[0].env)
+    $publicOrigin = $currentEnvironment | Where-Object { $_.name -eq 'PUBLIC_APP_URL' } | Select-Object -First 1
+    $publicOrigin = if ($FrontendOrigin) { $FrontendOrigin.TrimEnd('/') } elseif ($publicOrigin -and $publicOrigin.PSObject.Properties['value']) { $publicOrigin.value } else { $url }
+    if ($publicOrigin -notmatch '^https://[A-Za-z0-9.-]+(?::443)?$') { throw 'Configura PUBLIC_APP_URL con el origen HTTPS de la plataforma antes de actualizar.' }
+    $hosts = @($app.properties.configuration.ingress.fqdn)
+    if ($app.properties.configuration.ingress.PSObject.Properties['customDomains']) { $hosts += @($app.properties.configuration.ingress.customDomains | ForEach-Object { $_.name }) }
+    $hostsJson = ConvertTo-Json -InputObject @($hosts | Select-Object -Unique) -Compress
+    if ($IsWindows -and $azExecutable.EndsWith('.cmd', [StringComparison]::OrdinalIgnoreCase)) { $hostsJson = $hostsJson.Replace('"', '\"') }
+    $productionSettings = @('ENVIRONMENT=production', 'SESSION_AUTH_ENABLED=true', 'SESSION_COOKIE_SECURE=true', 'COMPANY_MFA_REQUIRED=true',
+        'LOCAL_MAIL_ENABLED=false', 'LOCAL_ADMIN_REVIEW_ENABLED=false', 'LOCAL_MFA_REVIEW_ENABLED=false', "PUBLIC_APP_URL=$publicOrigin", "ALLOWED_HOSTS=$hostsJson")
     $corsArgument = $null
-    if ($FrontendOrigin) {
-        $FrontendOrigin = $FrontendOrigin.TrimEnd('/')
-        $origins = @($url, $FrontendOrigin)
+    if ($publicOrigin) {
+        $origins = @($url, $publicOrigin)
         $existingCors = $app.properties.template.containers[0].env | Where-Object { $_.name -eq 'CORS_ORIGINS' }
         if ($existingCors -and $existingCors.PSObject.Properties['value']) {
             $origins += @($existingCors.value | ConvertFrom-Json)
         }
+        if (@($origins | Where-Object { $_ -notmatch '^https://[A-Za-z0-9.-]+(?::443)?$' }).Count) { throw 'Los orígenes CORS de producción deben ser HTTPS explícitos; retira los orígenes de desarrollo antes de actualizar.' }
         $corsJson = ConvertTo-Json -InputObject @($origins | Select-Object -Unique) -Compress
         # az.cmd uses legacy Windows argument passing: retain JSON quotation marks.
         if ($IsWindows -and $azExecutable.EndsWith('.cmd', [StringComparison]::OrdinalIgnoreCase)) {
             $corsJson = $corsJson.Replace('"', '\"')
         }
         $corsArgument = "CORS_ORIGINS=$corsJson"
-        Write-Host "Frontend permitido: $FrontendOrigin"
+        Write-Host "Frontend permitido: $publicOrigin"
     }
 
     Write-Host "Versión: $revision; anterior: $previousRevision"
@@ -64,7 +74,8 @@ try {
         $updateArguments = @('containerapp', 'update', '--name', $ContainerApp, '--resource-group', $ResourceGroup,
             '--image', $image, '--revision-suffix', "git-$revision-$(Get-Date -Format yyyyMMddHHmmss)",
             '--only-show-errors', '--output', 'none')
-        if ($corsArgument) { $updateArguments += @('--set-env-vars', $corsArgument) }
+        if ($corsArgument) { $productionSettings += $corsArgument }
+        $updateArguments += @('--set-env-vars') + $productionSettings
         & $azExecutable @updateArguments
         if ($LASTEXITCODE -ne 0) { throw 'Falló la actualización. Revisa el estado de las revisiones antes de reintentar.' }
         for ($attempt = 1; $attempt -le 24; $attempt++) {

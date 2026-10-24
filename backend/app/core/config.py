@@ -145,6 +145,26 @@ class Settings(BaseSettings):
         return self
 
     @model_validator(mode="after")
+    def safe_production_configuration(self):
+        if self.environment.casefold() != "production":
+            return self
+        if self.local_mail_enabled or self.local_admin_review_enabled or self.local_mfa_review_enabled:
+            raise ValueError("Producción requiere desactivar el correo y las excepciones de desarrollo")
+        origin = urlsplit(self.public_app_url)
+        if origin.scheme != "https" or not origin.hostname or origin.hostname in {"localhost", "127.0.0.1", "::1"} or origin.username or origin.password or origin.path or origin.query or origin.fragment:
+            raise ValueError("Producción requiere PUBLIC_APP_URL como origen HTTPS público sin ruta")
+        if not self.session_auth_enabled or not self.session_cookie_secure or not self.company_mfa_required:
+            raise ValueError("Producción requiere sesiones seguras y protección de acceso empresarial")
+        if not self.allowed_hosts or "*" in self.allowed_hosts or any(host in {"localhost", "127.0.0.1"} for host in self.allowed_hosts):
+            raise ValueError("Producción requiere hosts explícitos")
+        if not self.cors_origins or any(urlsplit(value).scheme != "https" or urlsplit(value).hostname in {"localhost", "127.0.0.1", "::1"} for value in self.cors_origins):
+            raise ValueError("Producción requiere orígenes CORS HTTPS explícitos")
+        database = urlsplit(self.database_url)
+        if database.scheme not in {"postgresql", "postgresql+psycopg"} or not database.hostname or parse_qs(database.query).get("sslmode") not in [["require"], ["verify-full"]]:
+            raise ValueError("Producción requiere PostgreSQL con TLS")
+        return self
+
+    @model_validator(mode="after")
     def safe_staging_configuration(self):
         if self.environment.casefold() != "staging":
             return self

@@ -55,17 +55,17 @@ ASSESSMENTS.update({
 })
 
 LOCAL_RESOURCES = [
-    {"id": "project-sql", "title": "Construye un informe de pedidos", "skills": ["sql"], "hours": 3, "provider": "TalentSync · proyecto local", "kind": "project", "sponsored": False,
+    {"id": "project-sql", "title": "Construye un informe de pedidos", "skills": ["sql"], "hours": 3, "provider": "TalentSync · proyecto", "kind": "project", "sponsored": False,
      "instructions": "Diseña tablas clientes y pedidos. Escribe consultas con filtros, agrupaciones y LEFT JOIN. Incluye clientes sin pedidos y demuestra cómo enlazas parámetros. Guarda el SQL y los casos de prueba en un repositorio y añádelo como evidencia."},
-    {"id": "project-python", "title": "Procesa registros con Python y pruebas", "skills": ["python"], "hours": 4, "provider": "TalentSync · proyecto local", "kind": "project", "sponsored": False,
+    {"id": "project-python", "title": "Procesa registros con Python y pruebas", "skills": ["python"], "hours": 4, "provider": "TalentSync · proyecto", "kind": "project", "sponsored": False,
      "instructions": "Procesa una lista de ventas con datos faltantes y calcula totales. Separa lectura, validación y cálculo. Escribe pruebas de entradas vacías, tipos incorrectos y duplicados. Publica el proyecto si quieres y registra la evidencia."},
-    {"id": "project-microservices", "title": "Diseña un flujo de pedidos resistente a fallos", "skills": ["microservicios"], "hours": 5, "provider": "TalentSync · proyecto local", "kind": "project", "sponsored": False,
+    {"id": "project-microservices", "title": "Diseña un flujo de pedidos resistente a fallos", "skills": ["microservicios"], "hours": 5, "provider": "TalentSync · proyecto", "kind": "project", "sponsored": False,
      "instructions": "Diseña los límites de pedidos y pagos. Documenta contratos, idempotencia, timeouts y recuperación ante fallos. Incluye una secuencia de reintentos y explica cuándo preferirías un monolito modular. Añade un diagrama y casos de prueba como evidencia."},
-    {"id": "project-rest", "title": "Diseña una API de pedidos con permisos", "skills": ["api rest"], "hours": 4, "provider": "TalentSync · proyecto local", "kind": "project", "sponsored": False,
+    {"id": "project-rest", "title": "Diseña una API de pedidos con permisos", "skills": ["api rest"], "hours": 4, "provider": "TalentSync · proyecto", "kind": "project", "sponsored": False,
      "instructions": "Documenta consulta, creación y edición de pedidos. Define validación, permisos por recurso, errores, idempotencia y conflictos de versión. Añade ejemplos de peticiones y casos negativos sin incluir credenciales reales."},
-    {"id": "project-git", "title": "Entrega un cambio revisable con Git", "skills": ["git"], "hours": 2, "provider": "TalentSync · proyecto local", "kind": "project", "sponsored": False,
+    {"id": "project-git", "title": "Entrega un cambio revisable con Git", "skills": ["git"], "hours": 2, "provider": "TalentSync · proyecto", "kind": "project", "sponsored": False,
      "instructions": "En un repositorio de práctica, crea una rama, divide un cambio en commits coherentes, resuelve un conflicto y revierte un commit conservando el historial. Documenta las comprobaciones y excluye secretos del repositorio."},
-    {"id": "project-security", "title": "Revisa la seguridad de una API de práctica", "skills": ["seguridad de aplicaciones"], "hours": 4, "provider": "TalentSync · proyecto local", "kind": "project", "sponsored": False,
+    {"id": "project-security", "title": "Revisa la seguridad de una API de práctica", "skills": ["seguridad de aplicaciones"], "hours": 4, "provider": "TalentSync · proyecto", "kind": "project", "sponsored": False,
      "instructions": "Usa una aplicación ficticia propia. Documenta validación, autorización por recurso, sesiones/CSRF, tratamiento de archivos y protección de logs. Escribe casos negativos con datos sintéticos y explica las correcciones; no pruebes sistemas ajenos."},
 ]
 
@@ -93,3 +93,10 @@ from app.domain.services.career_learning import EXERCISES
 from app.domain.services.learning_activities import mixed_banks
 
 ASSESSMENTS.update(mixed_banks(EXERCISES))
+
+# Keep previous forms addressable for existing attempts and their corrections.
+from app.domain.services.challenge_tracks import expanded_banks
+
+for bank in ASSESSMENTS.values():
+    bank["retired"] = bank["category"] != "technology" or bank["skill"] in {"python", "sql", "seguridad de aplicaciones"}
+ASSESSMENTS.update(expanded_banks(ASSESSMENTS))

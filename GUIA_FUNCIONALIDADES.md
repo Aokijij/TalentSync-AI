@@ -27,9 +27,9 @@ Estas entradas reutilizan perfil, verificación y formulario de ofertas existent
 
 1. Revisa el temario, proveedor, acceso y condiciones de certificación antes de añadir un recurso. **Añadir a Mi plan** guarda un seguimiento personal; no te inscribe en el proveedor. Aparece un único aviso con acceso a Mi plan.
 2. En **Gestionar curso**, abre la formación en el proveedor. **Ya terminé el curso** registra una finalización declarada por ti, sin nota ni acreditación automática de habilidades.
-3. Si administración asoció una práctica, se explica su relación con el temario y puedes resolverla por separado. Un curso sin asociación no recibe un ejercicio genérico. Entregar una práctica no termina el curso ni genera el certificado del proveedor.
+3. Consulta **Retos relacionados con este curso**: se relacionan por habilidades y muestran nivel, duración, preguntas y resultados anteriores. Varios cursos pueden compartir el mismo reto. Si no hay uno disponible, puedes continuar sin resolver otro tema. Las prácticas específicas de planes anteriores se conservan como complemento. Resolver un reto no termina el curso ni genera el certificado del proveedor.
 4. Si el proveedor entrega un certificado y las condiciones del recurso lo contemplan, puedes aportar su enlace sin tener que aprobar una práctica de TalentSync. El documento se identifica como aportado, sin validar su autenticidad.
-5. **Mis resultados** separa Prácticas, Cursos, Certificados y Fundamentos, con búsqueda y ocho registros por página. Una práctica puede tener nota y correcciones; un curso terminado por ti y un certificado aportado no reciben una nota inventada. Las evaluaciones de fundamentos conservan su alcance y vigencia.
+5. **Mis resultados** separa Prácticas, Cursos, Certificados y Retos, con búsqueda y ocho registros por página. Una práctica puede tener nota y correcciones; un curso terminado por ti y un certificado aportado no reciben una nota inventada. Las evaluaciones de fundamentos conservan su alcance y vigencia.
 
 Los intentos existentes conservan su ejercicio e historial. Editar la asociación del catálogo no cambia las preguntas de un intento ya iniciado. Las asociaciones se aplican a planes nuevos o a un nuevo intento cuando corresponda.
 
@@ -104,6 +104,8 @@ Guarda tus notas para continuar después o descárgalas como texto. En una postu
 Las respuestas son privadas: no se muestran a la empresa ni alteran tu compatibilidad. La revisión actual comprueba si los cuatro apartados están completos; no califica tu capacidad ni verifica el contenido de tu respuesta. **Todavía no es un simulador conversacional con repreguntas automáticas.** Ese desarrollo sigue siendo una siguiente etapa.
 
 ## Funciones principales del candidato
+
+Los retos cuentan con niveles básico, intermedio y avanzado según la habilidad. El catálogo admite búsqueda, filtros y 12 tarjetas por página. Desde Mi plan puedes abrir los relacionados con las habilidades de tu curso. Las nuevas evaluaciones tienen 10, 15 o 20 preguntas y muestran correcciones y resultado por contenido; los registros previos conservan su alcance. Consulta [Retos y aprendizaje](RETOS_APRENDIZAJE.md) para conocer cobertura, niveles y fuentes.
 
 **Cómo se realiza un reto:** al pulsar **Empezar práctica** o **Continuar práctica**, el catálogo se sustituye por un espacio de trabajo dedicado, situado al principio de la página. Incluye la pregunta actual, opciones con selección visible, tiempo restante y navegación entre preguntas. Al continuar un intento se recupera el borrador y se abre la primera pregunta pendiente; si todas están respondidas, se abre la revisión.
 

@@ -8,7 +8,8 @@ from app.domain.services.skills import skill_key, skill_set
 
 def report(db):
     now = datetime.utcnow()
-    jobs = [job for job in db.jobs.active() if not job.expires_at or job.expires_at > now]
+    from app.domain.services.market_radar import synthetic_job
+    jobs = [job for job in db.jobs.active() if not synthetic_job(job) and (not job.expires_at or job.expires_at > now)]
     demand, companies = Counter(), defaultdict(set)
     for job in jobs:
         for key in {skill_key(row["skill"]) for row in requirements_for(job)}:
