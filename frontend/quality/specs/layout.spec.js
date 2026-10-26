@@ -15,6 +15,9 @@ for (const role of ["candidate", "company", "admin"]) for (const theme of ["ligh
     await page.goto(`/quality/?role=${role}&theme=${theme}`);
     await expect(page.getByRole("heading", { name: "Prepara tu próxima oportunidad", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "CV por vacante" })).toBeVisible();
+    const cursorFailures = await page.locator('button, a[href], summary, select, [role="button"], [role="tab"], [role="switch"]')
+      .evaluateAll((nodes) => nodes.filter((node) => node.getClientRects().length && !node.matches(':disabled,[aria-disabled="true"]') && getComputedStyle(node).cursor !== "pointer").map((node) => ({ tag: node.tagName, text: node.textContent.trim().slice(0, 60), cursor: getComputedStyle(node).cursor })));
+    expect(cursorFailures).toEqual([]);
     await page.getByRole("button", { name: "Continuar al diseño" }).click();
     await expect(page.getByRole("button", { name: "Guardar versión del CV", exact: true })).toBeVisible();
     await page.getByRole("button", { name: /Versiones \(0\)/ }).click();

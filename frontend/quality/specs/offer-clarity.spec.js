@@ -8,6 +8,7 @@ const matches = [job, external].map((row) => ({ id: row.id, job_id: row.id, matc
 for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Clarity levels agree across recommendations, vacancies and detail · ${width} · ${theme}`, async ({ page }) => {
   const errors = []; page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width, height: 950 });
+  await page.addInitScript((value) => localStorage.setItem("talentsync_theme", value), theme);
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url()), path = url.pathname.replace("/api/v1", "");
     if (url.hostname !== "127.0.0.1") return route.abort();
@@ -20,18 +21,44 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Cl
     if (path === "/account/privacy") return route.fulfill({ json: { personalize_recommendations: false } });
     if (path === "/profiles/me") return route.fulfill({ json: { skills: ["excel"], experiences: [], preferences: {} } });
     if (path === "/matching/preferences") return route.fulfill({ json: {} });
-    if (["/applications/me", "/personalization/feedback", "/matching/evidence"].includes(path)) return route.fulfill({ json: [] });
+    if (path.startsWith("/learning/jobs/")) return route.fulfill({ json: { gaps: [{ skill: "excel" }], resources: [{ id: "course-review", title: "Curso de hojas de cálculo", provider: "Proveedor de revisión", skills: ["excel"], targeted_skills: ["excel"], hours: 2, cost: "free", url: "https://example.com/course" }] } });
+    if (["/applications/me", "/personalization/feedback", "/matching/evidence", "/learning/plans"].includes(path)) return route.fulfill({ json: [] });
     return route.fulfill({ status: 404, json: { detail: "Ruta no prevista en esta revisión" } });
   });
   for (const path of ["/recomendaciones", "/vacantes", "/vacantes/71"]) {
     await page.goto(`/quality/?entry=1&signed=candidate&theme=${theme}&path=${encodeURIComponent(path)}`);
     await expect(page.getByLabel("Nivel B de claridad: Buena", { exact: true })).toHaveCount(1);
     await expect(page.getByText(/Claridad de oferta \d+%/)).toHaveCount(0);
-    const guide = page.locator(".offer-clarity-guide");
-    await guide.locator("summary").click();
-    await expect(guide.locator("li")).toHaveCount(4);
-    await expect(guide).toContainText("75–89 puntos");
-    await expect(guide).toContainText("no garantiza aparecer primero");
+    if (path === "/recomendaciones") {
+      const recommendation = page.locator(".recommendation-card").first();
+      await expect(recommendation.getByRole("button", { name: "Postularme", exact: true })).toHaveCSS("cursor", "pointer");
+      await expect(recommendation.getByRole("link", { name: "Ver detalle", exact: true })).toHaveCSS("cursor", "pointer");
+      await recommendation.getByRole("button", { name: "Ver compatibilidad y formación", exact: true }).click();
+      const disclosure = recommendation.locator(".vacancy-learning-disclosure");
+      const counter = disclosure.locator(".vacancy-resource-count");
+      await expect(counter).toHaveText("1 recurso");
+      await expect(counter).toHaveCSS("cursor", "pointer");
+      await expect(disclosure.locator("summary svg").last()).toHaveCSS("cursor", "pointer");
+      await counter.click();
+      await expect(disclosure).toHaveAttribute("open", "");
+      await expect(disclosure.getByRole("heading", { name: "Curso de hojas de cálculo", exact: true })).toBeVisible();
+      await disclosure.locator(".vacancy-learning-chevron").click();
+      await expect(disclosure).not.toHaveAttribute("open", "");
+    }
+    if (path === "/vacantes/71") {
+      await expect(page.locator(".offer-clarity-guide")).toHaveCount(0);
+      const current = page.locator(".offer-clarity-current");
+      await expect(current.locator(".offer-clarity-letter")).toHaveText("B");
+      await expect(current).toContainText("Información clara del cargo, con algunos detalles por completar.");
+      await expect(current).not.toContainText("Excelente");
+      await current.screenshot({ path: `../.local/pointer-clarity-review/current-${theme}-${width}.png` });
+    } else {
+      const guide = page.locator(".offer-clarity-guide");
+      await guide.locator("summary").click();
+      await expect(guide.locator("li")).toHaveCount(4);
+      await expect(guide).toContainText("75–89 puntos");
+      await expect(guide).toContainText("no garantiza aparecer primero");
+    }
     if (path === "/vacantes") {
       await expect(page.locator(".vacancy-card").filter({ hasText: "Analista externo" }).locator(".offer-clarity-badge")).toHaveCount(0);
       await page.screenshot({ path: `../.local/course-completion-review/clarity-${theme}-${width}.png`, fullPage: true });

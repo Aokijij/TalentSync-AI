@@ -38,7 +38,11 @@ for (const width of [360, 1440]) for (const theme of ["light", "dark"]) test(`Na
   await page.getByRole("button", { name: "Salarios", exact: true }).click();
   await expect(page.getByText("Mediana", { exact: true })).toBeVisible();
   await testInfo.attach("radar-nacional", { body: await page.screenshot({ fullPage: true, animations: "disabled" }), contentType: "image/png" });
-  await page.getByRole("button", { name: "Usar mi perfil", exact: true }).click();
+  const shortcut = page.getByRole("button", { name: "Usar mi perfil", exact: true });
+  await expect(shortcut).toHaveCSS("cursor", "pointer");
+  await expect(shortcut.locator("strong")).toHaveCSS("cursor", "pointer");
+  await expect(shortcut.locator("svg").first()).toHaveCSS("cursor", "pointer");
+  await shortcut.locator("strong").click();
   await expect(scope).toHaveValue("city");
   await expect(page.getByRole("combobox", { name: "Ciudad", exact: true })).toHaveValue("Medellín");
   await expect(page.locator(".market-scope")).toHaveText("Medellín");

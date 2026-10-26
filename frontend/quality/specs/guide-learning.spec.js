@@ -301,6 +301,10 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Fi
   await expect(page.getByText("Ya están incluidas en tu perfil.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Volver al plan", exact: true }).click();
   await expect(page.getByRole("button", { name: "Finalizados 1", exact: true })).toHaveAttribute("aria-pressed", "true");
+  for (const state of ["En marcha 0", "Finalizados 1"]) await expect(page.getByRole("button", { name: state, exact: true })).toHaveCSS("cursor", "pointer");
+  await page.getByRole("button", { name: "En marcha 0", exact: true }).locator("span").click();
+  await expect(page.getByRole("heading", { name: "Organiza tu siguiente aprendizaje", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Finalizados 1", exact: true }).locator("strong").click();
   await expect(page.locator(".plan-resource-grid")).toContainText("Formación finalizada sin certificado anunciado");
   while (await page.getByRole("button", { name: "Cerrar aviso", exact: true }).count()) await page.getByRole("button", { name: "Cerrar aviso", exact: true }).first().click();
   await page.locator(".plan-state-switch").screenshot({ path: `../.local/course-completion-review/plan-switch-${theme}-${width}.png` });

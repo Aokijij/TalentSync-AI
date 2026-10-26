@@ -2,7 +2,7 @@ import { CredentialRequirementsSummary } from "../components/CredentialSummary.j
 import { EDUCATION_LEVELS } from "../constants/educationLevels.js";
 import { skillLevels, skillKey } from "../utils/skillLevels.js";
 import { AdminVacancyActions } from "../components/AdminVacancyActions.jsx";
-import { OfferClarityBadge, OfferClarityGuide } from "../components/OfferClarity.jsx";
+import { OfferClaritySummary } from "../components/OfferClarity.jsx";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -178,8 +178,7 @@ function JobDetailContent({ jobId }) {
       </section>
       <section className="job-detail-grid grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="surface-card space-y-6 p-6">
-          <OfferClarityBadge job={job} />
-          {job.source_kind !== "external" && <OfferClarityGuide quality={job.quality_summary} />}
+          <OfferClaritySummary job={job} />
           <OfferConditions job={job} />
           {job.source_kind === "external" ? (
             <div>

@@ -1,0 +1,16 @@
+/* Shared cues also cover controls supplied by individual workspaces. */
+:where(button, a[href], summary, select, input[type="button"], input[type="submit"], input[type="reset"], input[type="checkbox"], input[type="radio"], input[type="file"], [role="button"], [role="tab"], [role="switch"], [role="option"], [role="menuitem"], [role="checkbox"], [role="radio"]):not(:disabled):not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+/* Text, badges and SVG paths belong to the same clickable target. */
+:where(button, a[href], summary, [role="button"], [role="tab"], [role="switch"], [role="option"], [role="menuitem"], [role="checkbox"], [role="radio"]) :where(span, strong, small, b, em, i, img, svg, svg *) {
+  cursor: inherit;
+}
+
+label:has(input:is([type="checkbox"], [type="radio"], [type="file"]):enabled) { cursor: pointer; }
+:root :is(button, select, input):disabled,
+:root [aria-disabled="true"],
+label:has(input:is([type="checkbox"], [type="radio"], [type="file"]):disabled) { cursor: not-allowed; }
+::file-selector-button { cursor: pointer; }
+:disabled::file-selector-button { cursor: not-allowed; }
