@@ -1,3 +1,4 @@
+import { OfferClarityBadge, OfferClarityGuide } from "../components/OfferClarity.jsx";
 import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
 import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
 import { RequirementSupport } from "../components/RequirementSupport.jsx";
@@ -137,7 +138,7 @@ export function RecommendationsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="recommendations-page min-w-0 space-y-6">
       {refreshingMatches && <p role="status" className="text-sm text-[var(--muted)]">Actualizando compatibilidades… Puedes seguir usando la plataforma.</p>}
       {matchLoadError && <p role="alert" className="surface-card p-4 text-[var(--error)]">{matchLoadError} <button className="underline" onClick={retryMatches}>Reintentar</button></p>}
       <PageHeader
@@ -146,6 +147,7 @@ export function RecommendationsPage() {
         description="Cada vacante muestra compatibilidad, habilidades coincidentes y una guía para mejorar."
       />
 
+      <OfferClarityGuide quality={jobs.find((job) => job.source_kind !== "external" && job.quality_summary?.rating_scale)?.quality_summary} />
       <RecommendationControls interests={interests} jobs={jobs} onSaved={() => { setPage(1); return load(false); }} respectPreferences={respectPreferences} onRespectChange={(value) => { setRespectPreferences(value); setPage(1); }} excludedCount={enriched.filter((item) => !meetsRequiredPreferences(item)).length} />
       <SearchPreferences data={preferences} onSaved={async (next) => { setPreferences(next); setPage(1); setError(""); try { const { data } = await getRecommendations(user.id); setRecommendations(data); } catch (failure) { if (failure.code !== "ERR_CANCELED") setError("No pudimos actualizar las recomendaciones. Puedes volver a intentarlo."); } }} />
       <label className="block"><span className="sr-only">Buscar recomendaciones</span><input className="field-control" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por cargo, empresa, ciudad o habilidad" /></label>
@@ -258,7 +260,7 @@ export function RecommendationsPage() {
                           Postulación en {externalPortal(job)}
                         </span>
                       ) : null}
-                      {item.discovery?.quality_score != null && <span className="recommendation-quality" title={item.discovery.notice}>Claridad de oferta {item.discovery.quality_score}%</span>}
+                      <OfferClarityBadge job={job} />
                     </div>
 
                     <p className="mt-1 line-clamp-2 text-sm text-[var(--muted)]">

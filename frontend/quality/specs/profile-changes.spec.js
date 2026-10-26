@@ -21,6 +21,9 @@ for (const width of [360, 1440]) test(`Profile keeps edits after failed save and
   });
   await page.goto(`/quality/?profile=1&theme=${width === 360 ? "light" : "dark"}`);
   await page.getByRole("button", { name: "Editar perfil", exact: true }).click();
+  await expect(page.getByRole("group", { name: "Documentos de tu perfil", exact: true })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Edición de tu perfil", exact: true })).toBeVisible();
+  await page.locator(".profile-toolbar").screenshot({ path: `../.local/course-completion-review/profile-actions-${width}.png` });
   const profession = page.getByRole("textbox", { name: "Título profesional", exact: true });
   await profession.fill("Analista de operaciones");
   await expect(page.getByText("Tienes cambios sin guardar", { exact: true })).toBeVisible();

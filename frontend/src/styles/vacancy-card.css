@@ -39,3 +39,7 @@
 .vacancy-card :is(a,button):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .jobs-market.has-comparison { padding-bottom:190px; }
 @media(max-width:600px) { .vacancy-card { padding:16px; } }
+.jobs-market{min-width:0}.vacancy-search-actions{display:flex;flex-wrap:wrap;gap:.5rem;min-width:0;max-width:100%}.vacancy-search-input{width:min(100%,20rem);min-width:0;flex:1 1 200px}.vacancy-search-actions>button{flex-shrink:0}
+@media(max-width:600px){.vacancy-search-actions{width:100%}.vacancy-search-input{flex-basis:100%}}
+.jobs-market{width:100%;max-width:100%}.jobs-market>*{min-width:0;max-width:100%}.vacancy-page-heading{flex-wrap:wrap;min-width:0;max-width:100%}.vacancy-page-heading>div{min-width:0}.vacancy-page-heading h1{overflow-wrap:anywhere}
+.jobs-market .interest-toggle-container{min-width:0;max-width:100%}.jobs-market .interest-toggle{max-width:100%;white-space:normal}.jobs-market .interest-toggle>span{min-width:0}

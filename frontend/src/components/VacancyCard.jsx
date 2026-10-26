@@ -1,3 +1,4 @@
+import { OfferClarityBadge } from "./OfferClarity.jsx";
 import { ArrowRight, CalendarDays, Check, ExternalLink, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { JobInterestButtons } from "./JobInterests.jsx";
@@ -19,6 +20,7 @@ export function VacancyCard({ interests, comparison, job, match, confidence, app
   return <article className={`ui-card vacancy-card${selected ? " is-compared" : ""}${hasApplication ? " is-applied" : ""}${closedApplication ? " is-closed-application" : ""}`}>
     <header><Link to={`/empresas/${job.company_id}`} className="vacancy-company">{job.company_name || "Empresa"}</Link><span className="vacancy-modality">{{ remote: "Remoto", hybrid: "Híbrido", onsite: "Presencial" }[job.modality] || "Por confirmar"}</span></header>
     <h2><Link to={`/vacantes/${job.id}`} state={{ returnTo }}>{job.title}</Link></h2>
+    <OfferClarityBadge job={job} />
     <div className="vacancy-meta"><span><MapPin size={14} />{[job.location, job.department].filter(Boolean).join(", ") || "Ubicación por confirmar"}</span><span><CalendarDays size={14} />{formatRelativeTime(job.created_at)}</span></div>
     {showMatch && hasMatch && <div className="vacancy-match"><CompatibilityBar value={score} estimated={job.source_kind === "external"} confidence={confidence} compact /></div>}
     <p className="vacancy-description">{job.description}</p>

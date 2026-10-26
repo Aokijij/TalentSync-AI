@@ -24,6 +24,7 @@ const WorkScheduleEditor = await component("WorkScheduleEditor", "WorkScheduleEd
 const ExperienceRequirementEditor = await component("ExperienceRequirementEditor", "ExperienceRequirementEditor");
 const RemoteScopeEditor = await component("RemoteScopeEditor", "RemoteScopeEditor");
 const OfferConditions = await component("OfferConditions", "OfferConditions");
+const { OfferClarityBadge, OfferClarityGuide } = await component("OfferClarity");
 const ProcessStages = await component("ProcessStages", "ProcessStages");
 const EducationRequirementsEditor = await component("EducationRequirementsEditor", "EducationRequirementsEditor");
 const AcademicMatchDetails = await component("AcademicMatchDetails", "AcademicMatchDetails");
@@ -38,6 +39,19 @@ const CredentialMatchDetails = await component("CredentialSummary", "CredentialM
 const CertificationFields = await component("CertificationFields", "CertificationFields");
 const ProfileIdentity = await component("ProfileIdentity", "ProfileIdentity");
 const DatePicker = await component("DatePicker", "DatePicker");
+
+test("offer clarity uses the canonical rating band and excludes external offers", () => {
+  const quality = { score: 82, level: "A", rating: { code: "B", label: "Buena", description: "Información de la publicación" }, rating_scale: [{ code: "B", label: "Buena", minimum: 75, maximum: 89, description: "Completa condiciones" }] };
+  const badge = renderToStaticMarkup(createElement(OfferClarityBadge, { job: { quality_summary: quality } }));
+  assert.match(badge, /Nivel B/);
+  assert.doesNotMatch(badge, /82%|Nivel A/);
+  assert.equal(renderToStaticMarkup(createElement(OfferClarityBadge, { job: { source_kind: "external", quality_summary: quality } })), "");
+  assert.equal(renderToStaticMarkup(createElement(OfferClarityBadge, { job: {} })), "");
+  const guide = renderToStaticMarkup(createElement(OfferClarityGuide, { quality }));
+  assert.match(guide, /75–89 puntos/);
+  assert.match(guide, /compatibilidad cercana/);
+  assert.match(guide, /no garantiza aparecer primero/);
+});
 
 test("unknown course costs are explicit in both card presentations and missing skills do not crash the list", () => {
   for (const compact of [true, false]) {

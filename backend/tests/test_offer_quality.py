@@ -66,8 +66,9 @@ def test_job_list_quality_matches_review_for_guided_and_legacy_offers(client):
     for job in (complete, legacy):
         report = client.get(f"/api/v1/hiring/quality/{job['id']}", headers=owner).json()
         assert offers[job["id"]]["quality_summary"] == {
-            key: report[key] for key in ("score", "level", "can_publish", "rating")
+            key: report[key] for key in ("score", "level", "can_publish", "rating", "rating_scale")
         }
+        assert [level["code"] for level in offers[job["id"]]["quality_summary"]["rating_scale"]] == ["A", "B", "C", "D"]
     assert offers[complete["id"]]["quality_summary"]["score"] == 100
     assert offers[legacy["id"]]["quality_summary"]["score"] < 100
     assert offers[legacy["id"]]["quality_summary"]["can_publish"] is False

@@ -1,4 +1,5 @@
 import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
+import { OfferClarityGuide } from "../components/OfferClarity.jsx";
 import { VacancyCard } from "../components/VacancyCard.jsx";
 import { InterestsToggle } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
@@ -226,7 +227,7 @@ function JobsWorkspace({ user }) {
       {matchLoadError && <p role="alert" className="surface-card p-4 text-[var(--error)]">{matchLoadError} <button className="underline" onClick={retryMatches}>Reintentar</button></p>}
       <section className="surface-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="vacancy-page-heading flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-[var(--radius-lg)] bg-[var(--accent)]/10 text-[var(--accent)]">
               <BriefcaseBusiness size={21} />
             </div>
@@ -238,8 +239,8 @@ function JobsWorkspace({ user }) {
               </p>
             </div>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <label className="relative w-full sm:w-80">
+          <div className="vacancy-search-actions">
+            <label className="vacancy-search-input relative">
               <Search className="absolute left-3 top-3 text-[var(--muted)]" size={18} />
               <input className="field-control input-md !pl-10" placeholder="Cargo, empresa o habilidad" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} />
             </label>
@@ -272,6 +273,7 @@ function JobsWorkspace({ user }) {
         ) : activeFilterCount ? <button type="button" className="mt-4 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setShowFilters(true)}>{activeFilterCount} filtro{activeFilterCount === 1 ? " activo" : "s activos"} · Ver o cambiar</button> : null}
       </section>
 
+      <OfferClarityGuide quality={jobs.find((job) => job.source_kind !== "external" && job.quality_summary?.rating_scale)?.quality_summary} />
       {user?.role === "candidate" && <><div className="discovery-navigation"><nav className="workspace-tabs" aria-label="Colecciones de vacantes">{[["all", "Todas"], ["saved", "Guardadas"], ["hidden", "Ocultas"]].map(([key, label]) => <button key={key} aria-pressed={interestMode === key} onClick={() => { setInterestMode(key); setPage(1); }}>{label}</button>)}</nav><InterestsToggle interests={interests} /></div>{!interests.enabled && interestMode !== "all" && <p className="text-sm text-[var(--muted)]">Activa el uso de tus decisiones con el interruptor para guardar y recuperar vacantes.</p>}</>}
 
       {jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Buscando vacantes disponibles…</p>}

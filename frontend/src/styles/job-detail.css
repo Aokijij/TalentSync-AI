@@ -1,4 +1,6 @@
 .job-detail-sidebar { display:grid; gap:1rem; min-width:0; align-self:start; }
+.job-detail-page{min-width:0;overflow-wrap:anywhere}.job-detail-page>*{min-width:0;max-width:100%}.job-detail-hero-grid,.job-detail-page .job-detail-grid{grid-template-columns:minmax(0,1fr)}.job-detail-hero-grid>*,.job-detail-page .job-detail-grid>*{min-width:0}.job-detail-hero-grid span{min-width:0}.job-detail-hero-grid svg{flex-shrink:0}
+@media(min-width:1024px){.job-detail-hero-grid{grid-template-columns:minmax(0,1fr) 280px}.job-detail-page .job-detail-grid{grid-template-columns:minmax(0,1fr) 320px}}
 .job-requirements-card, .job-apply-card { border:1px solid var(--line); border-radius:1rem; background:var(--surface); padding:1.2rem; }
 .job-requirements-card > header { display:flex; align-items:center; gap:.65rem; padding-bottom:.7rem; }
 .job-requirements-card > header > span { display:grid; place-items:center; width:38px; height:38px; border-radius:.7rem; color:var(--accent); background:color-mix(in srgb,var(--accent) 10%,var(--surface)); }

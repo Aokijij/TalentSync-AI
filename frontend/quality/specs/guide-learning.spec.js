@@ -36,6 +36,10 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Co
   await expect(page.locator(".challenge-card")).not.toContainText("En tu plan");
   await page.getByRole("button", { name: "Mi plan", exact: false }).filter({ hasNotText: "Abrir" }).click();
   await expect(page.getByRole("heading", { name: "Continúa con el proveedor" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aportar certificado", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Ya terminé el curso", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Confirmar finalización", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Has completado esta formación" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Aportar certificado", exact: true })).toHaveClass(/button-primary/);
   await page.getByRole("button", { name: "Aportar certificado", exact: true }).click();
   await expect(page.getByLabel("Proveedor o entidad emisora", { exact: true })).toHaveValue(course.provider);
@@ -61,10 +65,11 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Co
 
 const course = { id: "course-review", version: 1, title: "Curso de hojas de cálculo", provider: "Proveedor de revisión", category: "administration", kind: "course", hours: 2, cost: "free", active: true, url: "https://example.com/course", skills: ["excel"], instructions: "Organiza tablas y revisa los datos del temario con ejercicios del proveedor.", journey: null, practice: { mode: "none" }, details: { certificate_cost: "free", level: "beginner", languages: ["Español"], syllabus: [], access_notes: "Consulta las condiciones del proveedor", certificate_notes: "Documento emitido por el proveedor", prerequisites: "", duration_notes: "" } };
 const organization = { id: 41, name: "Empresa de revisión", active: true, role: "owner", verification_status: "verified", verification_required: true };
-async function setup(page, { width = 1280, theme = "light", role = "candidate", path = "/aprendizaje", memberRole = "owner", rich = false, retiredPlan = false } = {}) {
+async function setup(page, { width = 1280, theme = "light", role = "candidate", path = "/aprendizaje", memberRole = "owner", rich = false, retiredPlan = false, noCertificate = false } = {}) {
   await page.setViewportSize({ width, height: 950 });
+  const activeCourse = { ...course, skills: noCertificate ? ["excel", "sql"] : course.skills, details: { ...course.details, certificate_cost: noCertificate ? "none" : "free" } };
   await page.addInitScript((value) => localStorage.setItem("talentsync_theme", value), theme);
-  const errors = [], calls = [], state = { plans: retiredPlan ? [{ id: 88, version: 1, status: "in_progress", resource: { ...course, id: "retired-course", title: "Formación retirada", provider: "Proveedor ficticio", retired: true, active: false } }] : [], courseDone: false, adminCourse: { ...course }, failAdd: false, failCertificate: false, certificateBody: null };
+  const errors = [], calls = [], state = { remainingSkills: [...activeCourse.skills], failSkills: false, plans: retiredPlan ? [{ id: 88, version: 1, status: "in_progress", resource: { ...course, id: "retired-course", title: "Formación retirada", provider: "Proveedor ficticio", retired: true, active: false } }] : [], courseDone: false, adminCourse: { ...course }, failAdd: false, failCertificate: false, certificateBody: null };
   state.assessments = rich ? Array.from({ length: rich === "wide" ? 79 : 31 }, (_, index) => ({ id: `challenge-${index}`, title: rich === "wide" ? `Habilidad sectorial ${index + 1}` : `Excel · reto ${index + 1}`, skill: rich === "wide" ? `habilidad ${index + 1}` : "excel", category: rich === "wide" ? ["administration", "technology", "industry", "agriculture"][index % 4] : "administration", level: ["beginner", "intermediate", "advanced"][index % 3], minutes: 35, question_count: 15, topics: ["Fórmulas", "Análisis de tablas"], context: "Interpreta tablas y comprueba los resultados con los datos del caso.", related_course_ids: [course.id] })) : [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.route("**/*", async (route) => {
@@ -75,13 +80,20 @@ async function setup(page, { width = 1280, theme = "light", role = "candidate", 
     calls.push({ endpoint, method, body, area: url.searchParams.get("area") });
     if (endpoint === "/notifications/unread-count") return route.fulfill({ json: { count: 0 } });
     if (["/organization/me", "/organization/access"].includes(endpoint)) return route.fulfill({ json: { ...organization, role: memberRole } });
-    if (endpoint === "/learning/catalog") return route.fulfill({ json: { resources: [{ ...course, assessment_ids: state.assessments.slice(0, 3).map((row) => row.id), assigned_challenges: state.assessments.slice(0, 3) }], areas: [{ id: "administration", label: "Administración" }, { id: "technology", label: "Tecnología" }, { id: "industry", label: "Industria" }, { id: "agriculture", label: "Agricultura" }], assessments: state.assessments } });
+    if (endpoint === "/learning/catalog") return route.fulfill({ json: { resources: [{ ...activeCourse, assessment_ids: state.assessments.slice(0, 3).map((row) => row.id), assigned_challenges: state.assessments.slice(0, 3) }], areas: [{ id: "administration", label: "Administración" }, { id: "technology", label: "Tecnología" }, { id: "industry", label: "Industria" }, { id: "agriculture", label: "Agricultura" }], assessments: state.assessments } });
     if (endpoint.endsWith("/challenges")) return route.fulfill({ json: { assessments: state.assessments.slice(0, 3), notice: "Relacionados por habilidades del catálogo." } });
     if (endpoint === "/learning/plans/retired-course" && method === "DELETE") { state.plans = []; return route.fulfill({ json: [] }); }
     if (endpoint === "/learning/plans") return route.fulfill({ json: state.plans });
     if (endpoint === `/learning/plans/${course.id}` && method === "PUT") {
       if (state.failAdd) return route.fulfill({ status: 503, json: { detail: "No se pudo añadir el curso de revisión." } });
-      state.plans = [{ id: 1, resource: { ...course, journey: state.legacyCoursePractice ? { lab_title: "Práctica antigua no relacionada", activities: [] } : null, assessment_ids: state.assessments.slice(0, 3).map((row) => row.id) }, version: 1, status: "in_progress", progress: { course_tracking: true, course_completed: false } }];
+      state.plans = [{ id: 1, resource: { ...activeCourse, journey: state.legacyCoursePractice ? { lab_title: "Práctica antigua no relacionada", activities: [] } : null, assessment_ids: state.assessments.slice(0, 3).map((row) => row.id) }, version: 1, status: "in_progress", progress: { course_tracking: true, course_completed: false }, remaining_skills: [...state.remainingSkills] }];
+      return route.fulfill({ json: state.plans });
+    }
+    if (endpoint === `/learning/plans/${course.id}/skills`) {
+      if (state.failSkills) return route.fulfill({ status: 503, json: { detail: "No pudimos incorporar tus habilidades. Reintenta." } });
+      state.skillBody = body;
+      state.remainingSkills = state.remainingSkills.filter((skill) => !body.skills.includes(skill));
+      state.plans = state.plans.map((row) => ({ ...row, remaining_skills: state.remainingSkills, skills_added: !state.remainingSkills.length }));
       return route.fulfill({ json: state.plans });
     }
     if (endpoint === `/learning/plans/${course.id}/certificate`) { state.certificateBody = body; if (state.failCertificate) return route.fulfill({ status: 503, json: { detail: "El documento no pudo guardarse. Reintenta." } }); const certificate = { name: body.name, issuer: course.provider, year: body.year, url: body.credential_url }; state.plans[0].certificate = certificate; return route.fulfill({ json: { certificate, message: "Certificado guardado" } }); }
@@ -124,16 +136,21 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Co
   await page.getByRole("button", { name: "Abrir Mi plan", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Continúa con el proveedor", exact: true })).toBeVisible();
   await expect(page.getByText("Todavía no hay retos para las habilidades de este curso.", { exact: false })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Aportar certificado", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aportar certificado", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Ya terminé el curso", exact: true }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Confirmar finalización", exact: true }).click();
   await expect(page.getByRole("button", { name: "Retomar curso", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Mis resultados", exact: true }).click();
-  await expect(page.locator(".result-record")).toHaveCount(8);
-  await expect(page.locator(".result-record-score").first()).toHaveText("0%");
-  await page.getByRole("textbox", { name: "Buscar en mis resultados", exact: true }).fill("Práctica de revisión 12");
   await expect(page.locator(".result-record")).toHaveCount(1);
-  await page.getByRole("textbox", { name: "Buscar en mis resultados", exact: true }).fill("");
+  await expect(page.getByRole("tab", { name: /^Prácticas/ })).toHaveCount(0);
+  const history = page.locator(".legacy-learning-history");
+  await expect(history).not.toHaveAttribute("open", "");
+  await history.locator("summary").first().click();
+  await expect(history.locator(".legacy-result-record")).toHaveCount(8);
+  await expect(history.locator(".legacy-result-record strong").first()).toHaveText("0%");
+  await page.getByRole("textbox", { name: "Buscar en el historial", exact: true }).fill("Práctica de revisión 12");
+  await expect(history.locator(".legacy-result-record")).toHaveCount(1);
+  await history.locator("summary").first().click();
   await page.getByRole("tab", { name: "Cursos (1)", exact: true }).click();
   await expect(page.locator(".result-record")).toContainText("Finalizado por ti");
   await expect(page.locator(".result-record-score")).toHaveCount(0);
@@ -248,5 +265,52 @@ test("A retired course can leave the plan without opening practices or certifica
   await page.getByRole("alertdialog").getByRole("button", { name: "Retirar recurso", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Organiza tu siguiente aprendizaje", exact: true })).toBeVisible();
   expect(context.calls.filter((row) => row.method === "DELETE")).toHaveLength(1);
+  expect(context.errors).toEqual([]);
+});
+
+for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Finished course without certificate claims selected skills and preserves them on resume · ${width} · ${theme}`, async ({ page }) => {
+  const context = await setup(page, { width, theme, noCertificate: true });
+  await page.getByRole("button", { name: "Añadir a mi plan", exact: true }).click();
+  await page.getByRole("button", { name: "Abrir Mi plan", exact: true }).click();
+  await expect(page.locator(".external-certificate")).toHaveCount(0);
+  await expect(page.locator(".course-skill-claim")).toHaveCount(0);
+  await page.getByRole("button", { name: "Ya terminé el curso", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Confirmar finalización", exact: true }).click();
+  await expect(page.locator(".course-finish-banner")).toContainText("Este curso no anuncia certificado");
+  await expect(page.locator(".external-certificate")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Añadir a mi perfil", exact: true })).toBeDisabled();
+  await page.getByRole("checkbox", { name: "Excel", exact: true }).check();
+  context.state.failSkills = true;
+  await page.getByRole("button", { name: "Añadir a mi perfil", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Añadir habilidades", exact: true }).click();
+  await expect(page.locator(".course-skill-claim").getByRole("alert")).toContainText("No pudimos incorporar");
+  await expect(page.getByRole("checkbox", { name: "Excel", exact: true })).toBeChecked();
+  context.state.failSkills = false;
+  await page.getByRole("button", { name: "Añadir a mi perfil", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Añadir habilidades", exact: true }).click();
+  await expect(page.locator(".feedback-toast").filter({ hasText: "Habilidades añadidas" })).toHaveCount(1);
+  await expect(page.getByRole("checkbox", { name: "Excel", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("checkbox", { name: "SQL", exact: true })).toBeVisible();
+  expect(context.state.skillBody).toEqual({ skills: ["excel"], confirm: true });
+  await page.screenshot({ path: `../.local/course-completion-review/finished-${theme}-${width}.png`, fullPage: true });
+  await noOverflow(page);
+  await page.getByRole("checkbox", { name: "SQL", exact: true }).check();
+  await page.getByRole("button", { name: "Añadir a mi perfil", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Añadir habilidades", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Tus habilidades ya están en el perfil", exact: true })).toBeVisible();
+  await expect(page.getByText("Ya están incluidas en tu perfil.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Volver al plan", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Finalizados 1", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".plan-resource-grid")).toContainText("Formación finalizada sin certificado anunciado");
+  while (await page.getByRole("button", { name: "Cerrar aviso", exact: true }).count()) await page.getByRole("button", { name: "Cerrar aviso", exact: true }).first().click();
+  await page.locator(".plan-state-switch").screenshot({ path: `../.local/course-completion-review/plan-switch-${theme}-${width}.png` });
+  await page.locator(".plan-resource-grid").screenshot({ path: `../.local/course-completion-review/plan-cards-${theme}-${width}.png` });
+  await page.getByRole("button", { name: "Revisar curso finalizado", exact: true }).click();
+  await page.getByRole("button", { name: "Retomar curso", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Retomar curso", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Continúa con el proveedor", exact: true })).toBeVisible();
+  await expect(page.locator(".course-skill-claim")).toHaveCount(0);
+  expect(context.state.remainingSkills).toEqual([]);
+  await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; }); await noOverflow(page);
   expect(context.errors).toEqual([]);
 });

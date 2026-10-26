@@ -1,4 +1,5 @@
 .recommendation-results { min-width:0; }
+.recommendations-page{min-width:0}.recommendations-page>*,.offer-clarity-guide li>div{min-width:0}.recommendations-page .recommendation-preferences label{min-width:0;overflow-wrap:anywhere}.recommendations-page .recommendation-preferences input[type=checkbox]{flex-shrink:0}
 .recommendation-results .recommendation-list-heading { border:0; padding:.25rem 0 1rem; gap:1rem; }
 .recommendation-results .recommendation-list-topline { flex-wrap:wrap; justify-content:space-between; }
 .recommendation-list-topline h2 { font-size:1rem; }

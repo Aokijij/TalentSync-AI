@@ -125,3 +125,9 @@ class ExternalCertificate(BaseModel):
     @classmethod
     def credential_link(cls, value):
         return ResourceContent.public_https(value)
+
+
+class CourseSkillsClaim(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    skills: list[Annotated[str, Field(min_length=1, max_length=100)]] = Field(min_length=1, max_length=20)
+    confirm: Literal[True]

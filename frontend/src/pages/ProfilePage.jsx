@@ -1,3 +1,4 @@
+import "../styles/profile-course-flow.css";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { InlineNotice } from "../components/ui/Panel.jsx";
 import { ProfileFormFeedback, SectionFieldIssues } from "../components/ProfileFormFeedback.jsx";
@@ -265,6 +266,7 @@ export function ProfilePage() {
       <section className="profile-toolbar print-hidden">
         <ProfileCompletionRing profile={profile} variant="summary" onReview={() => setCompletionOpen(true)} />
           <div className="profile-toolbar-actions">
+            <div className="profile-document-actions" role="group" aria-label="Documentos de tu perfil">
             <label id="profile-cv" className="button-secondary cursor-pointer hover-lift pressed focus-ring" role="button" tabIndex={uploadingCv ? -1 : 0} aria-disabled={uploadingCv || savingProfile} onKeyDown={(event) => { if (!uploadingCv && ["Enter", " "].includes(event.key)) { event.preventDefault(); event.currentTarget.querySelector("input").click(); } }}>
               <Upload size={16} />
               {uploadingCv ? "Analizando CV…" : "Subir CV"}
@@ -284,6 +286,8 @@ export function ProfilePage() {
               <Download size={16} />
               Diseñar y exportar
             </button>
+            </div>
+            <div className="profile-edit-controls" role="group" aria-label="Edición de tu perfil">
             <button
               className="profile-edit-action focus-ring"
               type="button"
@@ -296,6 +300,7 @@ export function ProfilePage() {
               {savingProfile ? "Procesando…" : editing ? "Guardar cambios" : "Editar perfil"}
             </button>
             {editing && <button className="button-secondary" type="button" disabled={savingProfile || uploadingCv} onClick={cancelEditing}>Cancelar edición</button>}
+            </div>
           </div>
       </section>
       {dirty && <InlineNotice tone="warning" title="Tienes cambios sin guardar">Pulsa Guardar cambios para conservar las ediciones del perfil.</InlineNotice>}

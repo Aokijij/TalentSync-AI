@@ -133,7 +133,7 @@ def plans(db, user, resource_id=None, status=None):
         db.commit()
     return [{"id": row.id, "resource": _plan_resource(resources.get(row.resource_id), row.progress or {}), "status": row.status, "created_at": row.created_at, "completed_at": row.completed_at,
              "version": row.version, "certificate": next((item for item in user.profile.certifications or [] if item.get("resource_id") == row.resource_id), None),
-             "skills_added": skill_set(resources.get(row.resource_id, {}).get("skills", [])) <= skill_set(user.profile.skills or []), "progress": {**{key: value for key, value in (row.progress or {}).items() if key != "practice_spec"}, "activity_feedback": (row.progress or {}).get("activity_feedback", []) if row.status == "completed" or (row.progress or {}).get("submitted") else [], "published": bool((row.progress or {}).get("published")) and any(item.get("id") == (row.progress or {}).get("evidence_id") for item in user.profile.evidence or [])}} for row in db.learning.plans(user.id)]
+             "skills_added": skill_set(resources.get(row.resource_id, {}).get("skills", [])) <= skill_set(user.profile.skills or []), "remaining_skills": [skill for skill in resources.get(row.resource_id, {}).get("skills", []) if skill_set([skill]) - skill_set(user.profile.skills or [])], "progress": {**{key: value for key, value in (row.progress or {}).items() if key != "practice_spec"}, "activity_feedback": (row.progress or {}).get("activity_feedback", []) if row.status == "completed" or (row.progress or {}).get("submitted") else [], "published": bool((row.progress or {}).get("published")) and any(item.get("id") == (row.progress or {}).get("evidence_id") for item in user.profile.evidence or [])}} for row in db.learning.plans(user.id)]
 
 
 def _plan_resource(resource, progress):
@@ -308,18 +308,32 @@ def save_journey(db, user, resource_id, payload):
     return plans(db, user)
 
 
-def add_plan_skills(db, user, resource_id):
+def add_plan_skills(db, user, resource_id, payload=None, nlp=None):
     row = db.learning.plan(user.id, resource_id)
     resource = next((item for item in catalog_resources(db, include_inactive=True) if item["id"] == resource_id), None)
     if row is None or resource is None:
         raise UseCaseError(status_code=404, detail="Recurso no encontrado en tu plan")
-    if row.status != "completed" and not (row.progress or {}).get("submitted"):
-        raise UseCaseError(status_code=409, detail="Finaliza el intento antes de incorporar sus habilidades")
     db.learning.lock_owner(user.id)
-    skills = normalize_skills([*(user.profile.skills or []), *resource["skills"]])
+    db.refresh(row)
+    db.refresh(user.profile)
+    if resource.get("url"):
+        if not (row.progress or {}).get("course_completed") or row.status != "completed":
+            raise UseCaseError(status_code=409, detail="Marca el curso como finalizado antes de añadir sus habilidades")
+        if resource.get("retired") or not payload or not payload.get("confirm"):
+            raise UseCaseError(status_code=422, detail="Selecciona y confirma las habilidades que aprendiste en este curso")
+        claimed = normalize_skills(payload["skills"])
+        if not claimed or not skill_set(claimed) <= skill_set(resource["skills"]):
+            raise UseCaseError(status_code=422, detail="Selecciona únicamente habilidades que desarrolla este curso")
+    else:
+        if row.status != "completed" and not (row.progress or {}).get("submitted"):
+            raise UseCaseError(status_code=409, detail="Finaliza el intento antes de incorporar sus habilidades")
+        claimed = resource["skills"]
+    skills = normalize_skills([*(user.profile.skills or []), *claimed])
     if len(skills) > 100:
         raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cien habilidades")
     user.profile.skills, user.profile.updated_at = skills, datetime.utcnow()
+    if nlp is not None:
+        user.profile.embedding = nlp.embed(" ".join(filter(None, [user.profile.profession, user.profile.experience, " ".join(skills)])))
     record_event(db, "learning.skills_added", "profile", user.profile.id, actor_user_id=user.id, details={"source": "declared"})
     db.commit()
     return plans(db, user)
@@ -450,6 +464,11 @@ def register_external_certificate(db, user, resource_id, payload):
     resource = next((row for row in catalog_resources(db, include_inactive=True) if row["id"] == resource_id), None)
     if plan is None or resource is None or not resource.get("url"):
         raise UseCaseError(status_code=404, detail="Plan de formación externa no encontrado")
+    db.learning.lock_owner(user.id)
+    db.refresh(plan)
+    db.refresh(user.profile)
+    if not (plan.progress or {}).get("course_completed") or plan.status != "completed":
+        raise UseCaseError(status_code=409, detail="Marca el curso como finalizado antes de aportar su certificado")
     if (resource.get("details") or {}).get("certificate_cost") == "none" and not any(item.get("resource_id") == resource_id for item in user.profile.certifications or []):
         raise UseCaseError(status_code=422, detail="Este recurso es para aprendizaje sin certificado anunciado")
     if payload["year"] > datetime.utcnow().year:

@@ -14,6 +14,7 @@ from app.api.deps import (
     require_roles,
 )
 from app.api.schemas.learning import (
+    CourseSkillsClaim,
     ExternalCertificate,
     ResourceContent,
     ResourceImport,
@@ -272,8 +273,8 @@ def submit(attempt_id: str, payload: Submission, user=Depends(candidate), db=Dep
 
 
 @router.post("/learning/plans/{resource_id}/skills")
-def add_plan_skills(resource_id: str, user=Depends(candidate), db=Depends(get_unit_of_work)):
-    return cases.add_plan_skills(db, user, resource_id)
+def add_plan_skills(resource_id: str, payload: CourseSkillsClaim | None = None, user=Depends(candidate), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis)):
+    return cases.add_plan_skills(db, user, resource_id, payload.model_dump() if payload else None, nlp=nlp)
 
 
 @router.get("/learning/passport")

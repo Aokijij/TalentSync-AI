@@ -1,23 +1,24 @@
 import { useState } from "react";
-import { Award, ArrowRight, ArrowUpRight, BookOpenCheck, CalendarDays, ClipboardCheck, FlaskConical } from "lucide-react";
+import { Award, ArrowRight, ArrowUpRight, BookOpenCheck, CalendarDays, ClipboardCheck, Archive } from "lucide-react";
 import { Link } from "react-router-dom";
 import { WorkspaceTabs } from "./ui/Panel.jsx";
 import { Pagination } from "./Pagination.jsx";
 import "../styles/learning-revision.css";
+import "../styles/course-flow.css";
 import { challengeLevels } from "../utils/challengeCatalog.js";
 
 const keyText = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 function dateText(value) { if (!value) return "Fecha sin registrar"; const text = /(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`; const time = Date.parse(text); return Number.isFinite(time) ? new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", year: "numeric", timeZone: "America/Bogota" }).format(time) : "Fecha sin registrar"; }
 export function LearningResults({ passport, onReview, plans = [], onOpenPractice }) {
   const practices = passport.learning_results || [], courses = passport.course_results || [], certificates = passport.certificates || [], assessments = passport.assessments || [];
-  const groups = { practices, courses, certificates, assessments };
-  const [tab, setTab] = useState(practices.length ? "practices" : assessments.length ? "assessments" : courses.length ? "courses" : certificates.length ? "certificates" : "practices");
+  const groups = { courses, certificates, assessments };
+  const [tab, setTab] = useState(assessments.length ? "assessments" : courses.length ? "courses" : "certificates");
   const [query, setQuery] = useState(""), [page, setPage] = useState(1);
   const rows = groups[tab].filter((row) => keyText([row.title, row.name, row.provider, row.issuer, row.skill, ...(row.skills || [])].join(" ")).includes(keyText(query.trim())));
   const pages = Math.max(1, Math.ceil(rows.length / 8)), safePage = Math.min(page, pages);
   return <section className="learning-results-v2 space-y-5" aria-label="Resultados de aprendizaje">
-    <header className="results-page-heading"><div><p className="section-kicker">TU PROGRESO, CON CONTEXTO</p><h2>Mis resultados</h2><p>Cada actividad conserva su alcance: práctica, formación terminada por ti, documento aportado o reto de habilidades.</p></div><Link className="button-secondary button-sm" to="/perfil#evidencias">Ver mi perfil<ArrowUpRight size={15} /></Link></header>
-    <WorkspaceTabs id="learning-results" label="Tipos de resultados" value={tab} onChange={(value) => { setTab(value); setPage(1); }} items={[["practices", `Prácticas (${practices.length})`, FlaskConical], ["courses", `Cursos (${courses.length})`, BookOpenCheck], ["certificates", `Certificados (${certificates.length})`, Award], ["assessments", `Retos (${assessments.length})`, ClipboardCheck]]} />
+    <header className="results-page-heading"><div><p className="section-kicker">TU PROGRESO, CON CONTEXTO</p><h2>Mis resultados</h2><p>Consulta tu formación finalizada, los certificados que aportaste y los resultados de tus retos.</p></div><Link className="button-secondary button-sm" to="/perfil#evidencias">Ver mi perfil<ArrowUpRight size={15} /></Link></header>
+    <WorkspaceTabs id="learning-results" label="Tipos de resultados" value={tab} onChange={(value) => { setTab(value); setPage(1); }} items={[["courses", `Cursos (${courses.length})`, BookOpenCheck], ["certificates", `Certificados (${certificates.length})`, Award], ["assessments", `Retos (${assessments.length})`, ClipboardCheck]]} />
     <div role="tabpanel" id={`learning-results-panel-${tab}`} aria-labelledby={`learning-results-tab-${tab}`}>
       <div className="results-toolbar"><label>Buscar en mis resultados<input className="field-control mt-2" value={query} maxLength={160} placeholder="Busca por recurso, habilidad o emisor" onChange={(event) => { setQuery(event.target.value); setPage(1); }} /></label><p>{rows.length} {rows.length === 1 ? "registro" : "registros"}</p></div>
       <p className="results-kind-description">{({ practices: "La puntuación corresponde al ejercicio de TalentSync, no a la finalización del curso ni a un certificado del proveedor.", courses: "Formación que marcaste como finalizada. El avance es una declaración tuya y no incluye una nota de práctica.", certificates: "Documentos aportados por ti. TalentSync no valida su autenticidad ni los convierte en evaluaciones de habilidades.", assessments: "Cada resultado corresponde al nivel y las actividades indicadas. Revisa su fecha de vigencia y alcance." })[tab]}</p>
@@ -39,7 +40,15 @@ export function LearningResults({ passport, onReview, plans = [], onOpenPractice
       {!rows.length && <div className="learning-empty"><BookOpenCheck size={28} /><h3>{query ? "No hay resultados con esta búsqueda" : "Todavía no hay registros en esta sección"}</h3><p>{query ? "Prueba otro recurso, habilidad o emisor." : "Tu actividad aparecerá aquí cuando la registres. Puedes seguir aprendiendo a tu ritmo."}</p></div>}
       <Pagination page={safePage} pages={pages} total={rows.length} pageSize={8} onChange={setPage} label="Páginas de mis resultados" />
     </div>
+    {!!practices.length && <LegacyLearningHistory rows={practices} />}
     {!!passport.practice_evidence?.length && !practices.length && <aside className="results-scope-note"><strong>También tienes trabajos publicados en tu perfil</strong><p>Son evidencias declaradas y se consultan aparte de las evaluaciones.</p><Link className="button-secondary button-sm" to="/perfil#evidencias">Ver evidencias<ArrowUpRight size={14} /></Link></aside>}
     <details className="result-scope"><summary>Qué significan estos resultados</summary><p className="mt-2">{passport.notice}</p></details>
   </section>;
+}
+
+function LegacyLearningHistory({ rows }) {
+  const [query, setQuery] = useState(""), [page, setPage] = useState(1);
+  const filtered = rows.filter((row) => keyText([row.title, row.provider].join(" ")).includes(keyText(query.trim())));
+  const pages = Math.max(1, Math.ceil(filtered.length / 8)), safePage = Math.min(page, pages);
+  return <details className="legacy-learning-history"><summary><Archive size={17} />Historial de actividades anteriores ({rows.length})</summary><p>Conservamos tus intentos anteriores para consulta. Los cursos actuales se relacionan con retos por habilidad; estas actividades ya no forman parte de su recorrido.</p><label>Buscar en el historial<input className="field-control mt-2" value={query} placeholder="Busca una actividad anterior" onChange={(event) => { setQuery(event.target.value); setPage(1); }} /></label><div className="results-record-grid">{filtered.slice((safePage - 1) * 8, safePage * 8).map((row, index) => <article className="legacy-result-record" key={row.id || index}><header><span>Intento {row.attempt_number || 1}</span>{row.score != null && <strong>{row.score}%</strong>}</header><h3>{row.title}</h3><small>{dateText(row.completed_at || row.started_at)} · Registro anterior</small>{!!row.feedback?.length && <details className="result-record-feedback"><summary>Ver correcciones ({row.feedback.length})</summary>{row.feedback.map((item) => <div key={item.question_id}><strong>{item.correct ? "Bien resuelto" : "Por reforzar"}</strong><p>{item.prompt}</p><small>{item.message}</small></div>)}</details>}</article>)}</div>{!filtered.length && <p>No hay actividades anteriores con esta búsqueda.</p>}<Pagination page={safePage} pages={pages} total={filtered.length} pageSize={8} onChange={setPage} label="Páginas del historial anterior" /></details>;
 }

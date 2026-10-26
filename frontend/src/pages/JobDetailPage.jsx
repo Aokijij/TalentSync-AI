@@ -2,6 +2,7 @@ import { CredentialRequirementsSummary } from "../components/CredentialSummary.j
 import { EDUCATION_LEVELS } from "../constants/educationLevels.js";
 import { skillLevels, skillKey } from "../utils/skillLevels.js";
 import { AdminVacancyActions } from "../components/AdminVacancyActions.jsx";
+import { OfferClarityBadge, OfferClarityGuide } from "../components/OfferClarity.jsx";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -104,7 +105,7 @@ function JobDetailContent({ jobId }) {
   const displayedSkills = [...new Map([...(job.skill_requirements || []).map((row) => row.skill), ...(job.skills || [])].map((skill) => [skillKey(skill), skill])).values()];
   const minimumLevels = Object.fromEntries((job.skill_requirements || []).map((row) => [skillKey(row.skill), row.level]));
   return (
-    <div className="space-y-6">
+    <div className="job-detail-page min-w-0 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3"><Link
         to={user?.role === "company" ? "/empresa/vacantes" : (routeLocation.state?.returnTo || "/vacantes")}
         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
@@ -116,7 +117,7 @@ function JobDetailContent({ jobId }) {
       {user?.role === "admin" && <AdminVacancyActions job={job} onChanged={setJob} />}
       <section className="surface-card p-6">
         {matchError && <div className="vacancy-match-notice" role="status"><p>{matchError}</p><button type="button" onClick={async () => { setMatchError(""); try { setMatch((await api.post(`/jobs/${jobId}/match`, {}, { __quiet: true })).data); } catch (failure) { setMatchError(getApiErrorMessage(failure, "La compatibilidad aún no está disponible.")); } }}>Volver a calcular</button></div>}
-        <div className={match ? "grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]" : "block"}>
+        <div className={match ? "job-detail-hero-grid grid items-start gap-6" : "block"}>
           <div>
             {user?.role === "candidate" || user?.role === "admin" ? (
               <Link className="text-sm font-semibold text-[var(--accent)] hover:underline" to={`/empresas/${job.company_id}`}>
@@ -177,6 +178,8 @@ function JobDetailContent({ jobId }) {
       </section>
       <section className="job-detail-grid grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="surface-card space-y-6 p-6">
+          <OfferClarityBadge job={job} />
+          {job.source_kind !== "external" && <OfferClarityGuide quality={job.quality_summary} />}
           <OfferConditions job={job} />
           {job.source_kind === "external" ? (
             <div>

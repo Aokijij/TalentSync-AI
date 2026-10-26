@@ -34,11 +34,12 @@ def test_course_without_reviewed_practice_has_independent_progress_and_certifica
     assert plan["resource"]["journey"] is None
     assert client.patch(base + "/journey", headers=candidate, json={"version": plan["version"], "finish": True}).status_code == 409
     certificate = {"name": "Certificado que expidió el proveedor", "credential_url": "https://example.com/credential", "year": datetime.utcnow().year, "has_certificate": True}
-    assert client.post(base + "/certificate", headers=candidate, json=certificate).status_code == 200
+    assert client.post(base + "/certificate", headers=candidate, json=certificate).status_code == 409
     assert client.patch(base + "/course", headers=other, json={"version": plan["version"], "completed": True}).status_code == 404
     done = client.patch(base + "/course", headers=candidate, json={"version": plan["version"], "completed": True})
     assert done.status_code == 200, done.text
     assert done.json()[0]["progress"]["course_completed"] is True
+    assert client.post(base + "/certificate", headers=candidate, json=certificate).status_code == 200
     assert client.patch(base + "/course", headers=candidate, json={"version": plan["version"], "completed": False}).status_code == 409
     passport = client.get("/api/v1/learning/passport", headers=candidate).json()
     assert passport["learning_results"] == [] and len(passport["course_results"]) == 1
@@ -46,6 +47,35 @@ def test_course_without_reviewed_practice_has_independent_progress_and_certifica
     assert client.get("/api/v1/profiles/me", headers=candidate).json()["skills"] == []
     with client.session_factory() as db:
         assert db.query(LearningPlan).filter_by(user_id=user["id"]).one().progress["practice_spec"] is None
+
+
+def test_completed_course_claims_only_selected_skills_without_a_certificate(client):
+    source = create(client, administrator(client), skills=["Python", "SQL"], details={"certificate_cost": "none"})
+    _, candidate = register(client, "completed-skills", skills=["excel"])
+    _, other = register(client, "completed-skills-other")
+    base = f"/api/v1/learning/plans/{source['id']}"
+    plan = client.put(base, headers=candidate, json={}).json()[0]
+    claim = {"skills": ["Python"], "confirm": True}
+    assert client.post(base + "/skills", headers=other, json=claim).status_code == 404
+    assert client.post(base + "/skills", headers=candidate, json=claim).status_code == 409
+    done = client.patch(base + "/course", headers=candidate, json={"version": plan["version"], "completed": True}).json()[0]
+    assert client.post(base + "/skills", headers=candidate).status_code == 422
+    assert client.post(base + "/skills", headers=candidate, json={"skills": ["Python"], "confirm": False}).status_code == 422
+    assert client.post(base + "/skills", headers=candidate, json={"skills": ["inventada"], "confirm": True}).status_code == 422
+    assert client.post(base + "/skills", headers=candidate, json={"skills": [], "confirm": True}).status_code == 422
+    response = client.post(base + "/skills", headers=candidate, json=claim)
+    assert response.status_code == 200, response.text
+    assert response.json()[0]["remaining_skills"] == ["sql"]
+    assert response.json()[0]["skills_added"] is False
+    assert client.post(base + "/skills", headers=candidate, json=claim).status_code == 200
+    profile = client.get("/api/v1/profiles/me", headers=candidate).json()
+    assert set(profile["skills"]) == {"excel", "python"}
+    passport = client.get("/api/v1/learning/passport", headers=candidate).json()
+    assert passport["certificates"] == [] and passport["assessments"] == []
+    assert len(passport["course_results"]) == 1 and passport["learning_results"] == []
+    assert client.patch(base + "/course", headers=candidate, json={"version": done["version"], "completed": False}).status_code == 200
+    assert client.post(base + "/skills", headers=candidate, json={"skills": ["SQL"], "confirm": True}).status_code == 409
+    assert set(client.get("/api/v1/profiles/me", headers=candidate).json()["skills"]) == {"excel", "python"}
 
 
 def test_authored_practice_solutions_are_private_and_course_progress_survives_submissions(client):
