@@ -1,7 +1,8 @@
+import { GuestOnly } from "../components/GuestOnly.jsx";
 import { invitationPath, registrationDestination } from "../utils/accessNavigation.js";
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Link, Navigate, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useId, useState } from "react";
 import { AuthFrame } from "../components/AuthFrame.jsx";
 import { AccessProviders } from "../components/AccessProviders.jsx";
@@ -10,11 +11,12 @@ import { getApiErrorMessage } from "../api/client.js";
 
 export function RegisterPage() {
   const fieldPrefix = useId();
-  const location = useLocation(), navigate = useNavigate(), [params] = useSearchParams();
+  const location = useLocation(), [params] = useSearchParams();
   const invitation = params.get("invitation"), company = location.pathname.startsWith("/empresa"), role = company ? "company" : "candidate";
   const { register: createAccount, accessOptions } = useAuth();
   const { register, trigger, getValues, watch, formState: { errors } } = useForm({ defaultValues: { name: "", email: "", profession: "", skills: "", password: "", confirm_password: "" } });
   const [isSubmitting, setSubmitting] = useState(false);
+  const [destination, setDestination] = useState(null);
   const [step, setStep] = useState(0), [error, setError] = useState(""), [showPassword, setShowPassword] = useState(false);
   const steps = ["Tu cuenta", company ? invitation ? "Tu invitación" : "Tu empresa" : "Tu perfil", "Seguridad", "Confirmar"];
   const values = watch();
@@ -30,11 +32,11 @@ export function RegisterPage() {
     try {
       await createAccount({ name: data.name.trim(), email: data.email.trim(), password: data.password, role,
         ...(company ? invitation ? { invitation_token: invitation } : { company_name: data.company_name.trim(), nit: data.nit.trim(), company_description: data.company_description } : { profession: data.profession, skills: data.skills.split(",").map((skill) => skill.trim()).filter(Boolean) }) });
-      navigate(registrationDestination({ company, invitation, accessOptions }));
+      setDestination(registrationDestination({ company, invitation, accessOptions }));
     } catch (failure) { setError(getApiErrorMessage(failure, "No fue posible crear la cuenta. Revisa tus datos e inténtalo de nuevo.")); }
     finally { setSubmitting(false); }
   }
-  return <AuthFrame company={company} registering>
+  return <GuestOnly busy={isSubmitting} destination={destination}><AuthFrame company={company} registering>
     <div className="flex items-center justify-between gap-3"><span className="access-portal-tag">{company ? invitation ? "Unirse al equipo" : "Registrar mi empresa" : "Registro de candidato"}</span><Link className="text-sm text-[var(--accent)]" state={company && invitation ? { from: invitationPath(invitation) } : undefined} to={company ? "/empresa/login" : "/login"}>Ya tengo cuenta</Link></div>
     <h2 className="mt-5 text-3xl font-bold">{company ? invitation ? "Crea tu acceso al equipo" : "Construye tu espacio de contratación" : "Comienza tu próximo capítulo"}</h2>
     <p className="mt-2 text-sm text-[var(--muted)]">{!company && accessOptions.providers?.some((provider) => provider.enabled) ? "Continúa con tu cuenta de confianza o regístrate con tu correo." : "Cuatro pasos breves. Puedes volver y ajustar tus datos antes de confirmar."}</p>
@@ -50,5 +52,5 @@ export function RegisterPage() {
       <div className="flex gap-3">{step > 0 && <button type="button" className="button-secondary" disabled={isSubmitting} onClick={() => { setStep(step - 1); setError(""); }}><ArrowLeft size={17} />Atrás</button>}<button className="button-primary flex-1" disabled={isSubmitting}>{isSubmitting ? "Creando cuenta…" : step === 3 ? "Confirmar y crear cuenta" : "Continuar"}<ArrowRight size={17} /></button></div>
     </form>
     <div className="access-switch"><span>{company ? "¿Buscas empleo?" : "¿Representas a una empresa?"}</span><Link to={company ? "/registro" : "/empresa/registro"}>{company ? "Crear perfil de candidato" : "Registrar una empresa"}</Link></div>
-  </AuthFrame>;
+  </AuthFrame></GuestOnly>;
 }

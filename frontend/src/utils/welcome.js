@@ -1,11 +1,14 @@
 import { COLOMBIA_LOCATIONS } from "../constants/colombianCities.js";
 
 export function welcomePreferences(profile = {}) {
-  return { profession: profile.profession || "", city: profile.location || "", modality: profile.preferred_modality || "", salary: profile.desired_salary == null ? "" : String(profile.desired_salary) };
+  return { profession: profile.profession || "", city: profile.location || "", modality: profile.preferred_modality || "", salary: profile.desired_salary == null ? "" : String(profile.desired_salary), sector: profile.preferred_sector || "", availability: profile.availability || "" };
 }
 const cityKey = (value) => value.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
 export function welcomeChanges(initial, values) {
   const changes = {};
+  for (const [key, field] of [["sector", "preferred_sector"], ["availability", "availability"]]) {
+    if (values[key] !== initial[key]) changes[field] = values[key] || null;
+  }
   if (values.profession.trim() !== initial.profession.trim()) changes.profession = values.profession.trim() || null;
   if (values.modality !== initial.modality) changes.preferred_modality = values.modality || null;
   if (values.salary !== initial.salary) {

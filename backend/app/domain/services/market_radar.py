@@ -21,6 +21,9 @@ FAMILIES = {"software": "Tecnología y desarrollo", "data": "Datos y analítica"
 
 def families_for(title):
     text = fold(title)
+    # Profiles use occupational titles; degrees in PROFESSION_GROUPS use -ía.
+    text = re.sub(r"\bingenier[oa]s?\b", "ingenieria", text)
+    text = re.sub(r"\btecnolog[oa]s?\b", "tecnologia", text)
     found = {key for key, terms in ROLE_FAMILIES.items() if any(term in text for term in terms)}
     found.update(key for key, terms in PROFESSION_GROUPS.items() if any(fold(term) in text for term in terms))
     return found

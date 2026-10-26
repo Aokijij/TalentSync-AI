@@ -1,4 +1,4 @@
-import { requiresAuthenticator } from "../utils/accountAccess.js";
+import { accountHome, requiresAuthenticator } from "../utils/accountAccess.js";
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
@@ -25,6 +25,7 @@ const JobDetailPage = lazyNamed(() => import("../pages/JobDetailPage.jsx"), "Job
 const JobsPage = lazyNamed(() => import("../pages/JobsPage.jsx"), "JobsPage");
 const LoginPage = lazyNamed(() => import("../pages/LoginPage.jsx"), "LoginPage");
 const SocialAccessPage = lazyNamed(() => import("../pages/SocialAccessPage.jsx"), "SocialAccessPage");
+const SocialRegistrationPage = lazyNamed(() => import("../pages/SocialRegistrationPage.jsx"), "SocialRegistrationPage");
 const NotificationsPage = lazyNamed(() => import("../pages/NotificationsPage.jsx"), "NotificationsPage");
 const ProfilePage = lazyNamed(() => import("../pages/ProfilePage.jsx"), "ProfilePage");
 const RecommendationsPage = lazyNamed(() => import("../pages/RecommendationsPage.jsx"), "RecommendationsPage");
@@ -79,22 +80,26 @@ function RequireAuth({ children }) {
     );
     return <Navigate to={adminArea ? "/acceso-administracion" : location.pathname.startsWith("/empresa") ? "/empresa/login" : "/login"} state={{ from: location.pathname + location.search }} replace />;
   }
+  if (user.registration_pending && location.pathname !== "/completar-cuenta") return <Navigate to="/completar-cuenta" replace />;
   if (requiresAuthenticator(user, accessOptions) && location.pathname !== "/seguridad") return <Navigate to="/seguridad" replace />;
   return children;
 }
 
 function HomeRedirect() {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role === "company") return <Navigate to="/empresa" replace />;
-  if (user.role === "admin") return <Navigate to="/admin" replace />;
-  return <Navigate to="/candidato" replace />;
+  const { user, accessOptions } = useAuth();
+  return <Navigate to={accountHome(user, accessOptions)} replace />;
 }
 
 function PublicHome() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return <SessionLoading />;
   return user ? <HomeRedirect /> : <LandingPage />;
 }
+
+function SessionLoading() {
+  return <div role="status" className="grid min-h-screen place-items-center text-[var(--muted)]">Validando tu sesión…</div>;
+}
+
 
 function RequireRole({ roles, children }) {
   const { user } = useAuth();
@@ -112,6 +117,7 @@ export function AppRoutes() {
       <Route path="/registro" element={<RegisterPage key="candidate" />} />
       <Route path="/empresa/login" element={<LoginPage key="company" />} />
       <Route path="/empresa/registro" element={<RegisterPage key="company" />} />
+      <Route path="/completar-cuenta" element={<RequireAuth><SocialRegistrationPage /></RequireAuth>} />
       <Route path="/recuperar-acceso" element={<AccountActionPage recover />} />
       <Route path="/cuenta/confirmar" element={<AccountActionPage />} />
       {import.meta.env.DEV && <Route path="/desarrollo/correos" element={<LocalMailboxPage />} />}
@@ -140,6 +146,7 @@ export function AppRoutes() {
         <Route path="/empresa/equipo" element={<RequireRole roles={["company"]}><OrganizationPage /></RequireRole>} />
         <Route path="/admin/verificaciones" element={<RequireRole roles={["admin"]}><VerificationQueuePage /></RequireRole>} />
         <Route path="/bienvenida" element={<RequireRole roles={["candidate"]}><OnboardingPage /></RequireRole>} />
+        <Route path="/preferencias" element={<RequireRole roles={["candidate"]}><OnboardingPage adjusting /></RequireRole>} />
         <Route path="/empresa/bienvenida" element={<RequireRole roles={["company"]}><CompanyWelcomePage /></RequireRole>} />
         <Route
           path="/candidato"

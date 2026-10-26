@@ -12,6 +12,7 @@ class User(Protocol):
     email: str
     password_hash: str
     role: UserRole
+    registration_pending: bool
     created_at: datetime
     profile: Profile | None
     applications: list["Application"]

@@ -52,6 +52,7 @@ class User(Base):
         Enum(UserRole), default=UserRole.CANDIDATE, nullable=False
     )
     email_verified: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    registration_pending: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
     mfa_secret: Mapped[str | None] = mapped_column(Text)
     mfa_enabled: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
     mfa_last_counter: Mapped[int | None] = mapped_column(Integer)

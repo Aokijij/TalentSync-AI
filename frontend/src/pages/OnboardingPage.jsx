@@ -4,16 +4,11 @@ import { ArrowRight, BriefcaseBusiness, FileUp, MapPin, RotateCcw, Search, Walle
 import { api, getApiErrorMessage } from "../api/client.js";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { PageHeader } from "../components/PageHeader.jsx";
-import { PlatformGuide } from "../components/PlatformGuide.jsx";
-import { Autocomplete } from "../components/Autocomplete.jsx";
-import { CurrencyInput } from "../components/CurrencyInput.jsx";
-import { COLOMBIA_LOCATIONS } from "../constants/colombianCities.js";
-import { OCCUPATIONS } from "../constants/occupations.js";
+import { WorkPreferenceFields } from "../components/WorkPreferenceFields.jsx";
 import { welcomeChanges, welcomePreferences } from "../utils/welcome.js";
 import "../styles/welcome.css";
 
-const cities = [...new Set(Object.values(COLOMBIA_LOCATIONS).flat())].sort((a, b) => a.localeCompare(b, "es"));
-export function OnboardingPage() {
+export function OnboardingPage({ adjusting = false }) {
   const navigate = useNavigate(), { confirm } = useFeedback();
   const [profile, setProfile] = useState(null), [values, setValues] = useState(welcomePreferences());
   const [loadError, setLoadError] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [revision, setRevision] = useState(0);
@@ -43,29 +38,26 @@ export function OnboardingPage() {
     let changes;
     try { changes = welcomeChanges(initial, values); }
     catch (failure) { setError(failure.message); return; }
-    if (!Object.keys(changes).length) { navigate("/recomendaciones"); return; }
+    if (!Object.keys(changes).length) { navigate("/recomendaciones", { replace: !adjusting }); return; }
     inFlight.current = true; setBusy(true); setError("");
     try {
       // The endpoint replaces the profile: merge only edited preferences into a fresh read.
       const { data } = await api.get("/profiles/me");
       await api.put("/profiles/me", { ...data, ...changes }, { __successMessage: "Preferencias guardadas. Ya puedes explorar tus oportunidades." });
-      navigate("/recomendaciones");
+      navigate("/recomendaciones", { replace: !adjusting });
     } catch (failure) { setError(getApiErrorMessage(failure, "No pudimos guardar tus preferencias. Tus cambios siguen aquí.")); }
     finally { inFlight.current = false; setBusy(false); }
   }
-  return <div className="space-y-6 candidate-welcome"><PageHeader kicker="A TU RITMO" title="Empieza por lo que buscas" description="Revisa tus preferencias o explora primero. Tu perfil puede crecer mientras avanzas." />
-    <PlatformGuide role="candidate" compact onNavigate={leave} />
+  return <div className={`space-y-6 candidate-welcome${adjusting ? " search-settings" : ""}`}><PageHeader kicker={adjusting ? "TUS PREFERENCIAS" : "A TU RITMO"} title={adjusting ? "Ajusta tu búsqueda" : "Empieza por lo que buscas"} description={adjusting ? "Actualiza tus preferencias laborales en un solo lugar. Son las mismas que verás en Mi perfil." : "Revisa tus preferencias o explora primero. Tu perfil puede crecer mientras avanzas."} />
+    {!adjusting && <section className="welcome-guide-link"><div><h2>Conoce lo que puedes hacer en TalentSync</h2><p>Consulta la guía cuando necesites ayuda con una función o un resultado.</p></div><button type="button" className="button-secondary" onClick={() => leave("/guia")}>Abrir guía completa<ArrowRight size={16} /></button></section>}
     {loadError && <div className="welcome-alert" role="alert"><p>{loadError}</p><button type="button" className="button-secondary" onClick={() => setRevision((current) => current + 1)}><RotateCcw size={16} />Reintentar</button></div>}
-    <div className="welcome-layout"><form onSubmit={submit} className="welcome-panel" aria-busy={loading || busy}><header><span className="public-demo-icon"><Search size={21} /></span><div><h2>Dale dirección a tu búsqueda</h2><p>Todos estos datos son opcionales. Si ya los tienes, los conservamos.</p></div></header>
+    <div className="welcome-layout"><form onSubmit={submit} className="welcome-panel" aria-busy={loading || busy}><header><span className="public-demo-icon"><Search size={21} /></span><div><h2>{adjusting ? "Preferencias laborales" : "Dale dirección a tu búsqueda"}</h2><p>Todos estos datos son opcionales. Si ya los tienes, los conservamos.</p></div></header>
       {loading && <p role="status">Cargando tus preferencias guardadas…</p>}
       <fieldset className="welcome-fields" disabled={loading || busy || !profile}>
-        <label>Cargo o área de interés<input className="field-control" aria-label="Cargo o área de interés" aria-describedby="welcome-profession-help" list="welcome-occupations" maxLength={160} placeholder="Indica el cargo o área que quieres explorar" value={values.profession} onChange={(event) => change("profession", event.target.value)} /><datalist id="welcome-occupations">{OCCUPATIONS.map((value) => <option key={value} value={value} />)}</datalist><small id="welcome-profession-help">Puedes usar tu profesión actual o el cargo al que quieres orientar tu búsqueda.</small></label>
-        <div><Autocomplete label="Ciudad" options={cities} value={values.city} onChange={(value) => change("city", value)} maxLength={160} placeholder="Busca y elige tu ciudad" aria-describedby="welcome-city-help" /><small id="welcome-city-help">Elige una ciudad del catálogo; podrás ampliar tu búsqueda después.</small></div>
-        <label>Modalidad<select aria-label="Modalidad" className="field-control" value={values.modality} onChange={(event) => change("modality", event.target.value)}><option value="">Sin preferencia definida</option><option value="remote">Remoto</option><option value="hybrid">Híbrido</option><option value="onsite">Presencial</option>{values.modality && !["remote", "hybrid", "onsite"].includes(values.modality) && <option value={values.modality}>Preferencia guardada: {values.modality}</option>}</select></label>
-        <label>Aspiración mensual en COP<CurrencyInput aria-label="Aspiración mensual en COP" value={values.salary} onChange={(value) => change("salary", value)} maxLength={18} placeholder="Indica el importe mensual que buscas" aria-describedby="welcome-salary-help" /><small id="welcome-salary-help">Déjala vacía si prefieres definirla más adelante.</small></label>
+        <WorkPreferenceFields includeCareer value={{ profession: values.profession, location: values.city, preferred_modality: values.modality, desired_salary: values.salary, preferred_sector: values.sector, availability: values.availability }} onChange={(key, value) => change(({ location: "city", preferred_modality: "modality", desired_salary: "salary", preferred_sector: "sector" })[key] || key, value)} />
       </fieldset>
       {error && <p className="welcome-error" role="alert">{error}</p>}
-      <div className="welcome-actions"><button type="submit" className="button-primary" disabled={loading || busy || !profile}>{busy ? "Guardando preferencias…" : dirty ? "Guardar y ver oportunidades" : "Ver oportunidades"}<ArrowRight size={17} /></button><button type="button" className="button-secondary" disabled={busy} onClick={() => leave("/vacantes")}>Completar después</button></div>
-    </form><aside className="welcome-aside"><section className="welcome-panel"><FileUp size={26} className="text-[var(--accent)]" /><h2>{profile?.cv_filename ? "Tu hoja de vida ya está guardada" : "¿Ya tienes una hoja de vida?"}</h2><p>{profile?.cv_filename ? "Puedes revisar su información y actualizarla desde tu perfil." : "Sube tu PDF desde el perfil y revisa la información extraída antes de guardarla. También puedes completarlo manualmente."}</p><button type="button" className="button-secondary mt-4" disabled={busy} onClick={() => leave("/perfil#profile-cv")}>{profile?.cv_filename ? "Revisar mi hoja de vida" : "Ir a subir mi CV"}<ArrowRight size={16} /></button><small>Acceder con Google o GitHub no analiza tus repositorios ni completa automáticamente tu trayectoria.</small></section><section className="welcome-panel"><h2>Información útil, paso a paso</h2><ul className="welcome-summary">{[[BriefcaseBusiness, "Tu dirección", values.profession || "Puedes empezar sin elegir un cargo"], [MapPin, "Tu ubicación", values.city || "La defines cuando quieras"], [Wallet, "Tus expectativas", values.salary ? `${Number(values.salary).toLocaleString("es-CO")} COP al mes` : "El salario sigue siendo opcional"]].map(([Icon, title, detail]) => <li key={title}><Icon size={19} /><div><strong>{title}</strong><span>{detail}</span></div></li>)}</ul><p className="mt-4">Las recomendaciones usan la información disponible. Completar un dato aporta contexto; no garantiza un porcentaje mayor ni una contratación.</p></section></aside></div>
+      <div className="welcome-actions"><button type="submit" className="button-primary" disabled={loading || busy || !profile}>{busy ? "Guardando preferencias…" : dirty ? adjusting ? "Guardar preferencias" : "Guardar y ver oportunidades" : "Ver oportunidades"}<ArrowRight size={17} /></button><button type="button" className="button-secondary" disabled={busy} onClick={() => leave(adjusting ? "/candidato" : "/vacantes")}>{adjusting ? "Cancelar" : "Completar después"}</button></div>
+    </form><aside className="welcome-aside">{adjusting ? <section className="welcome-panel"><Search size={25} className="text-[var(--accent)]" /><h2>Tu búsqueda, con contexto</h2><p>Estos datos actualizan tu perfil y se utilizan al recomendar oportunidades. Cambiarlos no modifica tus postulaciones.</p><p>En Recomendaciones puedes elegir qué condiciones son imprescindibles.</p><button type="button" className="button-secondary mt-4" disabled={busy} onClick={() => leave("/perfil#preferencias")}>Ver preferencias en mi perfil<ArrowRight size={16} /></button></section> : <section className="welcome-panel"><FileUp size={26} className="text-[var(--accent)]" /><h2>{profile?.cv_filename ? "Tu hoja de vida ya está guardada" : "¿Ya tienes una hoja de vida?"}</h2><p>{profile?.cv_filename ? "Puedes revisar su información y actualizarla desde tu perfil." : "Sube tu PDF desde el perfil y revisa la información extraída antes de guardarla. También puedes completarlo manualmente."}</p><button type="button" className="button-secondary mt-4" disabled={busy} onClick={() => leave("/perfil#profile-cv")}>{profile?.cv_filename ? "Revisar mi hoja de vida" : "Ir a subir mi CV"}<ArrowRight size={16} /></button><small>Acceder con Google o GitHub no analiza tus repositorios ni completa automáticamente tu trayectoria.</small></section>}<section className="welcome-panel"><h2>Información útil, paso a paso</h2><ul className="welcome-summary">{[[BriefcaseBusiness, "Tu dirección", values.profession || "Puedes empezar sin elegir un cargo"], [MapPin, "Tu ubicación", values.city || "La defines cuando quieras"], [Wallet, "Tus expectativas", values.salary ? `${Number(values.salary).toLocaleString("es-CO")} COP al mes` : "El salario sigue siendo opcional"]].map(([Icon, title, detail]) => <li key={title}><Icon size={19} /><div><strong>{title}</strong><span>{detail}</span></div></li>)}</ul><p className="mt-4">Las recomendaciones usan la información disponible. Completar un dato aporta contexto; no garantiza un porcentaje mayor ni una contratación.</p></section></aside></div>
   </div>;
 }

@@ -24,6 +24,7 @@ for (const width of [360, 1440]) for (const theme of ["light", "dark"]) test(`Na
   await page.goto(`/quality/?radar=1&theme=${theme}`);
   const scope = page.getByRole("combobox", { name: "Ubicación", exact: true });
   await expect(scope).toHaveValue("city");
+  await expect(page.getByRole("combobox", { name: "Área profesional", exact: true })).toHaveValue("software");
   await expect(page.getByRole("combobox", { name: "Ciudad", exact: true })).toHaveValue("Medellín");
   await testInfo.attach("radar-filtros-ciudad", { body: await page.locator(".market-filters").screenshot({ animations: "disabled" }), contentType: "image/png" });
   await scope.selectOption("country");
@@ -44,6 +45,7 @@ for (const width of [360, 1440]) for (const theme of ["light", "dark"]) test(`Na
   await expect(shortcut.locator("svg").first()).toHaveCSS("cursor", "pointer");
   await shortcut.locator("strong").click();
   await expect(scope).toHaveValue("city");
+  await expect(page.getByRole("combobox", { name: "Área profesional", exact: true })).toHaveValue("software");
   await expect(page.getByRole("combobox", { name: "Ciudad", exact: true })).toHaveValue("Medellín");
   await expect(page.locator(".market-scope")).toHaveText("Medellín");
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

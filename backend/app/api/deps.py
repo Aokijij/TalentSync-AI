@@ -64,6 +64,13 @@ def get_public_learning_catalog():
     return PublicLearningCatalog()
 
 
+def _registration_access(request, user):
+    if user.registration_pending and request.url.path not in {
+        "/api/v1/auth/me", "/api/v1/auth/social/registration", "/api/v1/auth/session/logout",
+    }:
+        raise HTTPException(status_code=403, detail="Confirma tu nombre y profesión para completar tu registro")
+
+
 def get_current_user(
     request: Request, token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
@@ -72,6 +79,7 @@ def get_current_user(
         user, session = resolve_session(SqlAlchemyUnitOfWork(db), browser_token,
             csrf=request.headers.get("X-CSRF-Token"), mutation=request.method not in {"GET", "HEAD", "OPTIONS"})
         request.state.account_session = session
+        _registration_access(request, user)
         if user.role == UserRole.ADMIN:
             corporate = get_corporate_configuration()
             if session.authentication_method in PROVIDERS:
@@ -107,6 +115,7 @@ def get_current_user(
         )
     if user.role == UserRole.ADMIN and settings.admin_sso_required:
         raise HTTPException(status_code=401, detail="Se requiere una sesión corporativa")
+    _registration_access(request, user)
     authorize_request(SqlAlchemyUnitOfWork(db), user, request.url.path, request.method)
     return user
 

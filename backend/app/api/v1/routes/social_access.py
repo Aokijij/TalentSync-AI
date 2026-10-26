@@ -7,10 +7,12 @@ from fastapi.responses import RedirectResponse
 from app.api.deps import (
     get_account_security,
     get_social_identity_provider,
+    get_text_analysis,
     get_unit_of_work,
     require_roles,
 )
 from app.api.schemas.account import MfaCode, SocialAccountRequest
+from app.api.schemas.auth import SocialRegistrationRequest, UserResponse
 from app.api.v1.routes.account import _origin, _session, set_session_cookies
 from app.application.errors import UseCaseError
 from app.application.use_cases import social_access as cases
@@ -60,7 +62,9 @@ def callback(request: Request, provider: str, state: str = Query(default="", max
         logger.warning("Social callback failed: provider=%s reason=%s status=%s",
                        provider if provider in {"google", "github", "linkedin"} else "unknown", reason, error.status_code)
     failure = urlencode({"status": status, "provider": provider if provider in {"google", "github"} else "unknown", "reason": reason})
-    destination = "/seguridad?social=linked" if status == "linked" else "/bienvenida" if status == "new" else "/candidato" if status == "ok" else f"/acceso-social?{failure}"
+    destination = ("/seguridad?social=linked" if status == "linked" else
+                   "/completar-cuenta" if result and result.get("registration_pending") else
+                   "/bienvenida" if status == "new" else "/candidato" if status == "ok" else f"/acceso-social?{failure}")
     response = RedirectResponse(f"{settings.public_app_url.rstrip('/')}{destination}", status_code=303)
     response.delete_cookie("talentsync_oauth_browser", path="/")
     response.headers["Cache-Control"] = "no-store"
@@ -75,6 +79,14 @@ def callback(request: Request, provider: str, state: str = Query(default="", max
             response.delete_cookie("talentsync_social_mfa", path="/")
             set_session_cookies(response, result)
     return response
+
+
+@router.post("/auth/social/registration", response_model=UserResponse)
+@limiter.limit("20/hour")
+def registration(request: Request, payload: SocialRegistrationRequest,
+                 user=Depends(candidate), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis)):
+    _origin(request)
+    return cases.complete_registration(db, user, payload.model_dump(), nlp)
 
 
 @router.get("/account/social-identities")

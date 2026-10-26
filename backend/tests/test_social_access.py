@@ -83,12 +83,15 @@ def test_new_account_cookie_session_returning_identity_and_deletion(social):
         assert row.state_hash == token_digest(state) and row.browser_hash == token_digest(binding)
         assert len(row.verifier_cipher) > 100
     response = callback(social, state)
-    assert response.status_code == 303 and response.headers["location"].endswith("/bienvenida")
+    assert response.status_code == 303 and response.headers["location"].endswith("/completar-cuenta")
     assert response.headers["cache-control"] == "no-store"
     assert "social@example.com" not in response.headers["location"]
     assert social.cookies.get("talentsync_oauth_browser") is None
     me = social.get("/api/v1/auth/me").json()
     assert me["role"] == "candidate" and me["email_verified"] is True
+    assert me["registration_pending"] is True
+    assert social.get("/api/v1/profiles/me").status_code == 403
+    assert social.post("/api/v1/auth/social/registration", headers=csrf(social), json={"name": "Persona Social", "profession": "Ingeniero de Sistemas", "confirmed": True}).status_code == 200
     assert social.get("/api/v1/profiles/me").json()["skills"] == []
     assert social.put("/api/v1/account/privacy", headers=csrf(social), json={"share_evidence": False, "notify_new_skills": False, "personalize_recommendations": False}).status_code == 200
     social.cookies.set("talentsync_oauth_browser", binding, domain="testserver.local", path="/")
@@ -169,8 +172,32 @@ def test_social_login_preserves_mfa_and_consumes_pending_challenge(social):
         assert db.query(UserSession).count() == 2
 
 
+@pytest.mark.parametrize("provider", ["google", "github"])
+def test_social_registration_requires_confirmation_and_personal_data(social, provider):
+    assert callback(social, start(social, provider), provider).headers["location"].endswith("/completar-cuenta")
+    assert social.get("/api/v1/auth/me").json()["registration_pending"] is True
+    with social.session_factory() as db:
+        assert SqlAlchemyUnitOfWork(db).users.candidates_with_profiles() == []
+    assert social.put("/api/v1/profiles/me", headers=csrf(social), json={}).status_code == 403
+    assert callback(social, start(social, provider), provider).headers["location"].endswith("/completar-cuenta")
+    payload = {"name": "Ana María O’Neill", "profession": "  Ingeniera de Sistemas  ", "confirmed": True}
+    assert social.post("/api/v1/auth/social/registration", json=payload).status_code == 403
+    assert social.post("/api/v1/auth/social/registration", headers={**csrf(social), "Origin": "https://attacker.invalid"}, json=payload).status_code == 403
+    for name in ["dev_123", "12345", "x", "https://alias.test", "😀😀"]:
+        assert social.post("/api/v1/auth/social/registration", headers=csrf(social), json={**payload, "name": name}).status_code == 422
+    assert social.post("/api/v1/auth/social/registration", headers=csrf(social), json={**payload, "confirmed": False}).status_code == 422
+    response = social.post("/api/v1/auth/social/registration", headers=csrf(social), json=payload)
+    assert response.status_code == 200, response.text
+    assert response.json()["name"] == payload["name"] and response.json()["registration_pending"] is False
+    assert social.get("/api/v1/profiles/me").json()["profession"] == "Ingeniera de Sistemas"
+    assert social.post("/api/v1/auth/social/registration", headers=csrf(social), json=payload).status_code == 409
+    assert callback(social, start(social, provider), provider).headers["location"].endswith("/candidato")
+    assert social.get("/api/v1/auth/me").json()["name"] == payload["name"]
+
+
 def test_returning_subject_does_not_overwrite_email(social):
     callback(social, start(social))
+    assert social.post("/api/v1/auth/social/registration", headers=csrf(social), json={"name": "Persona social", "profession": "Analista", "confirmed": True}).status_code == 200
     social.social_provider.exchange = lambda *args: {"subject": "immutable-123", "email": "changed@example.com", "name": "Cambio"}
     assert callback(social, start(social)).headers["location"].endswith("/candidato")
     assert social.get("/api/v1/auth/me").json()["email"] == "social@example.com"

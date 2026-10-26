@@ -71,5 +71,26 @@ class UserResponse(BaseModel):
     role: UserRole
     email_verified: bool = False
     mfa_enabled: bool = False
+    registration_pending: bool = False
 
     model_config = {"from_attributes": True}
+
+
+class SocialRegistrationRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    profession: str = Field(min_length=2, max_length=160)
+    confirmed: bool
+
+    @field_validator("name", "profession", mode="before")
+    @classmethod
+    def clean_text(cls, value):
+        return " ".join(value.split()) if isinstance(value, str) else value
+
+    @field_validator("name")
+    @classmethod
+    def personal_name(cls, value):
+        import unicodedata
+        if (sum(char.isalpha() for char in value) < 2
+                or any(not (char.isalpha() or char in " '-’." or unicodedata.category(char).startswith("M")) for char in value)):
+            raise ValueError("Escribe tu nombre, sin números, usuarios de redes ni símbolos")
+        return value

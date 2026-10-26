@@ -1,0 +1,14 @@
+.company-settings-page{width:100%;min-width:0}
+.company-settings-page .company-settings-form{width:100%;max-width:none;margin-inline:0;box-shadow:none}
+.company-settings-form fieldset{min-width:0}
+.company-settings-form .company-profile-cover{min-height:230px}
+.company-settings-form .company-profile-cover>div{position:relative;min-height:inherit}
+.company-settings-form .company-profile-cover>div>div:first-child{min-width:0}
+.company-settings-form .company-profile-cover>div>div:first-child>div:first-child{width:88px;height:88px}
+.company-settings-form .company-profile-cover>div>div:first-child>div:last-child{min-width:0;overflow-wrap:anywhere}
+.company-settings-form .company-profile-cover .button-secondary{min-height:42px;gap:.55rem;backdrop-filter:blur(8px)}
+.company-settings-form label:has(input[type=file]):focus-within{outline:3px solid white;outline-offset:3px}
+.company-settings-form label:has(input[type=file]:disabled){opacity:.6;cursor:not-allowed}
+.company-settings-form input,.company-settings-form textarea{font-weight:400}
+@media(min-width:1200px){.company-settings-form>.p-6{padding:2rem 2.5rem}.company-settings-form .company-profile-cover>div{padding-inline:2.5rem}}
+@media(max-width:640px){.company-settings-form .company-profile-cover{min-height:310px}.company-settings-form .company-profile-cover .button-secondary{font-size:.78rem}.company-settings-form button[type=submit]{width:100%}}

@@ -1,7 +1,8 @@
+import { GuestOnly } from "../components/GuestOnly.jsx";
 import { invitationTokenFromPath, loginDestination } from "../utils/accessNavigation.js";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useId, useState } from "react";
 import { useAuth } from "../hooks/useAuth.js";
 import { AuthFrame } from "../components/AuthFrame.jsx";
@@ -15,7 +16,8 @@ export function LoginPage() {
   const [erasure, setErasure] = useState(() => { try { return JSON.parse(sessionStorage.getItem("talentsync_account_erasure") || "null"); } catch { return null; } });
   const { register, handleSubmit, resetField, formState: { errors, isSubmitting } } = useForm();
   const { login, accessOptions } = useAuth();
-  const navigate = useNavigate(), location = useLocation();
+  const location = useLocation();
+  const [destination, setDestination] = useState(null);
   const company = location.pathname.startsWith("/empresa"), portal = company ? "company" : "candidate";
   const invitation = company ? invitationTokenFromPath(location.state?.from) : null;
   const [credentials, setCredentials] = useState(null), [showPassword, setShowPassword] = useState(false), [error, setError] = useState(""), [verifying, setVerifying] = useState(false);
@@ -25,10 +27,10 @@ export function LoginPage() {
       const user = await login(values.email, values.password, { code, remember: values.remember, portal });
       if (user.mfa_required) { setCredentials({ ...values }); resetField("password"); return; }
       setCredentials(null);
-      navigate(loginDestination({ company, from: location.state?.from, user, accessOptions }), { replace: true });
+      setDestination(loginDestination({ company, from: location.state?.from, user, accessOptions }));
     } catch (failure) { setError(getApiErrorMessage(failure, "No pudimos validar este acceso. Revisa tu cuenta y el portal seleccionado.")); }
   }
-  return <AuthFrame company={company}>
+  return <GuestOnly busy={isSubmitting || verifying} destination={destination}><AuthFrame company={company}>
     {erasure && <InlineNotice title="Cuenta eliminada" onDismiss={() => { sessionStorage.removeItem("talentsync_account_erasure"); setErasure(null); }}>{erasure.message}<small className="mt-2 block break-all">Comprobante: {erasure.receipt}</small></InlineNotice>}
     {credentials ? <MfaChallenge email={credentials.email} busy={verifying} error={error} onBack={() => { setCredentials(null); setError(""); }} onVerify={async (code) => { setVerifying(true); await authenticate(credentials, code); setVerifying(false); }} /> : <>
       <div className="access-portal-tag">{company ? "Acceso de empresa" : "Acceso de candidato"}</div>
@@ -45,5 +47,5 @@ export function LoginPage() {
       <p className="mt-6 text-sm">{company ? "¿Tu empresa aún no tiene cuenta?" : "¿Es tu primera vez aquí?"} <Link className="font-bold text-[var(--accent)]" to={company ? `/empresa/registro${invitation ? `?invitation=${encodeURIComponent(invitation)}` : ""}` : "/registro"}>{company ? invitation ? "Crear cuenta para el equipo" : "Registrar mi empresa" : "Crear mi perfil"}</Link></p>
       <div className="access-switch"><span>{company ? "¿Buscas empleo?" : "¿Quieres contratar?"}</span><Link to={company ? "/login" : "/empresa/login"}>{company ? "Ir al acceso de candidato" : "Ir al acceso de empresa"}<ArrowRight size={16} /></Link></div>
     </>}
-  </AuthFrame>;
+  </AuthFrame></GuestOnly>;
 }

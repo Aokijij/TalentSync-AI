@@ -58,7 +58,7 @@ def test_github_requires_primary_verified_email_and_sends_verifier(verified):
     assert len(calls) == 3
 
 
-@pytest.mark.parametrize("fault", [None, "nonce", "audience", "expired", "issuer", "unverified", "signature", "multiple_audiences", "authorized_party"])
+@pytest.mark.parametrize("fault", [None, "nonce", "audience", "expired", "issuer", "unverified", "signature", "multiple_audiences", "authorized_party", "future_small", "future_large"])
 def test_google_verifies_signature_claims_nonce_and_email(fault):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     other_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
@@ -69,7 +69,9 @@ def test_google_verifies_signature_claims_nonce_and_email(fault):
     if fault == "nonce": claims["nonce"] = "other"
     if fault == "audience": claims["aud"] = "other-id"
     if fault == "issuer": claims["iss"] = "https://attacker.invalid"
-    if fault == "expired": claims["exp"] = int(time.time()) - 1
+    if fault == "expired": claims["exp"] = int(time.time()) - 31
+    if fault == "future_small": claims["iat"] = int(time.time()) + 2
+    if fault == "future_large": claims["iat"] = int(time.time()) + 90
     if fault == "unverified": claims["email_verified"] = False
     if fault == "multiple_audiences": claims["aud"] = ["google-id", "other-client"]
     if fault == "authorized_party": claims["azp"] = "other-client"
@@ -81,7 +83,7 @@ def test_google_verifies_signature_claims_nonce_and_email(fault):
         assert request.url.host == "www.googleapis.com"
         return httpx.Response(200, json={"keys": [public]})
     adapter = SocialIdentityProvider(configuration(), httpx.MockTransport(handle))
-    if fault:
+    if fault and fault != "future_small":
         with pytest.raises(UseCaseError) as error:
             adapter.exchange("google", "code", "verifier", "nonce")
         assert error.value.status_code == 502 and token not in error.value.detail

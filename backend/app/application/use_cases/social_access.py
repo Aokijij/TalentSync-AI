@@ -78,7 +78,7 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
         if db.users.find_by_email(identity_data["email"]):
             raise UseCaseError(status_code=409, detail="Ya existe una cuenta con este correo. Ingresa con su método original.")
         user = db.users.new(name=identity_data["name"], email=identity_data["email"],
-            role=UserRole.CANDIDATE, email_verified=True,
+            role=UserRole.CANDIDATE, email_verified=True, registration_pending=True,
             password_hash=security.hash_password(secrets.token_urlsafe(48)))
         db.add(user)
         db.flush()
@@ -92,7 +92,26 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
             expires_at=datetime.utcnow() + timedelta(minutes=5)))
         db.commit()
         return {"pending": pending, "mfa_required": True}
-    return {**issue_session(db, user, user_agent=user_agent, authentication_method=provider, mfa_review=mfa_review), "created": created}
+    return {**issue_session(db, user, user_agent=user_agent, authentication_method=provider, mfa_review=mfa_review), "created": created,
+            "registration_pending": user.registration_pending}
+
+
+def complete_registration(db, user, payload, nlp):
+    if not user.registration_pending:
+        raise UseCaseError(status_code=409, detail="Tu registro ya está completo")
+    if not payload["confirmed"]:
+        raise UseCaseError(status_code=422, detail="Confirma que estos datos corresponden a tu perfil")
+    db.profiles.lock_owner(user.id)
+    db.refresh(user)
+    if not user.registration_pending:
+        raise UseCaseError(status_code=409, detail="Tu registro ya está completo")
+    user.name = payload["name"]
+    user.profile.profession = payload["profession"]
+    user.profile.embedding = nlp.embed(payload["profession"])
+    user.registration_pending = False
+    record_event(db, "account.registration_completed", "user", user.id, actor_user_id=user.id)
+    db.commit()
+    return user
 
 
 def _reauthenticate(db, user, session, credentials, security, *, mfa_review=False):

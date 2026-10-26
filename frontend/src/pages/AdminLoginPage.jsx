@@ -1,7 +1,7 @@
+import { GuestOnly } from "../components/GuestOnly.jsx";
 import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Navigate, useNavigate } from "react-router-dom";
 
 import { AuthFrame } from "../components/AuthFrame.jsx";
 import { useAuth } from "../hooks/useAuth.js";
@@ -10,8 +10,8 @@ import { MfaChallenge } from "../components/MfaChallenge.jsx";
 
 export function AdminLoginPage() {
   const fieldPrefix = useId();
-  const { user, login, accessOptions } = useAuth();
-  const navigate = useNavigate();
+  const { login, accessOptions } = useAuth();
+  const [destination, setDestination] = useState(null);
   const [error, setError] = useState("");
   const [mfaRequired, setMfaRequired] = useState(false);
   const [credentials, setCredentials] = useState(null), [verifying, setVerifying] = useState(false);
@@ -24,14 +24,13 @@ export function AdminLoginPage() {
     formState: { errors, isSubmitting },
   } = useForm();
 
-  if (user) return <Navigate to={user.role === "admin" ? "/admin" : "/"} replace />;
 
   async function onSubmit(values) {
     setError("");
     try {
       const result = await login(values.email, values.password, { admin: true, code: values.code });
       if (result.mfa_required) { setCredentials(values); setMfaRequired(true); return; }
-      navigate(accessOptions.mode !== "session" || accessOptions.admin_mfa_required === false || result.mfa_enabled ? "/admin" : "/seguridad", { replace: true });
+      setDestination(accessOptions.mode !== "session" || accessOptions.admin_mfa_required === false || result.mfa_enabled ? "/admin" : "/seguridad");
     } catch {
       setError("No fue posible validar el acceso administrativo.");
     }
@@ -43,7 +42,7 @@ export function AdminLoginPage() {
   }
 
   return (
-    <AuthFrame admin>
+    <GuestOnly busy={isSubmitting || verifying} destination={destination}><AuthFrame admin>
           <div className="auth-form">
             {mfaRequired ? <MfaChallenge email={credentials.email} error={error} busy={verifying} onBack={() => { setCredentials(null); setMfaRequired(false); setError(""); }} onVerify={async (code) => { setVerifying(true); await onSubmit({ ...credentials, code }); setVerifying(false); }} /> : <>
             <p className="section-kicker">Administración</p>
@@ -89,6 +88,6 @@ export function AdminLoginPage() {
             </form>}
             </>}
           </div>
-    </AuthFrame>
+    </AuthFrame></GuestOnly>
   );
 }

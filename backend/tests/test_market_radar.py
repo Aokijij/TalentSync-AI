@@ -7,6 +7,7 @@ import pytest
 from test_api_flows import client, company_account, create_job, register  # noqa: F401
 
 from app.domain.services.market_radar import (
+    families_for,
     market_report,
     peer_report,
     salary_report,
@@ -16,6 +17,15 @@ from app.infrastructure.database.models import Job, Profile, User
 
 NOW = datetime(2026, 10, 14)
 FILTERS = {"family": "software", "level": "junior", "location": "Medellín", "sector": "", "modality": "", "search": ""}
+
+
+@pytest.mark.parametrize("title,family", [
+    ("Ingeniero de Sistemas", "software"), ("Ingeniera de Sistemas", "software"),
+    ("Ingeniero Industrial", "industrial"), ("Ingeniera Civil", "civil"),
+    ("Tecnólogo en Sistemas", "software"), ("Profesión sin clasificar", None),
+])
+def test_profile_occupational_titles_map_to_market_area(title, family):
+    assert (family in families_for(title)) if family else not families_for(title)
 
 
 def own():
@@ -109,7 +119,7 @@ def test_national_pay_and_peer_statistics_still_require_a_comparable_area_and_le
 
 
 def test_national_api_clears_city_and_profile_shortcut_restores_it(client):
-    viewer, headers = register(client, "national-viewer", profession="Desarrollador Python")
+    viewer, headers = register(client, "national-viewer", profession="Ingeniero de Sistemas")
     _, company = company_account(client, "national-company")
     offers = [create_job(client, company) for _ in range(2)]
     with client.session_factory() as db:
@@ -133,6 +143,7 @@ def test_national_api_clears_city_and_profile_shortcut_restores_it(client):
     local = client.get(path, headers=headers, params={**FILTERS, "location_scope": "city"}).json()
     assert local["demand"]["sample"] == 1 and local["peers"]["status"] == "insufficient_data"
     personalized = client.get(path, headers=headers, params={"personalized": True, "location_scope": "country"}).json()
+    assert personalized["filters"]["family"] == "software"
     assert personalized["filters"]["location_scope"] == "city" and personalized["filters"]["location"] == "Medellín"
     assert client.get(path, headers=headers, params={"location_scope": "unknown"}).status_code == 422
 

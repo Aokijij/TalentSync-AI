@@ -6,7 +6,7 @@ test("welcome preserves saved preferences and produces no write for unchanged va
   const values = welcomePreferences({ profession: "Analista", location: "Medellín", preferred_modality: "onsite", desired_salary: 2500000 });
   assert.equal(values.modality, "onsite");
   assert.deepEqual(welcomeChanges(values, { ...values }), {});
-  assert.deepEqual(welcomePreferences(), { profession: "", city: "", modality: "", salary: "" });
+  assert.deepEqual(welcomePreferences(), { profession: "", city: "", modality: "", salary: "", sector: "", availability: "" });
 });
 test("welcome changes only edited fields, normalizes city and clears department on removing location", () => {
   const initial = welcomePreferences({ profession: "Analista", location: "Bogotá", preferred_modality: "hybrid", desired_salary: 2500000 });

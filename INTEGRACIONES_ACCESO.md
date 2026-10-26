@@ -1,5 +1,38 @@
 # Activar acceso social, Google Calendar y correo
 
+## Revisión del acceso y las preferencias · 26 de octubre de 2026
+
+- Google: la validación del ID token permite 30 segundos de desfase entre relojes.
+  Se observó una diferencia de aproximadamente medio segundo con `time.google.com`;
+  la tolerancia anterior era cero. Se siguen validando firma, emisor, audiencia,
+  nonce, fechas y correo verificado. Referencia: [tolerancia de reloj en PyJWT](https://pyjwt.readthedocs.io/en/latest/usage.html).
+- Las cuentas nuevas creadas mediante Google o GitHub deben confirmar su nombre
+  profesional, profesión o cargo de interés y la correspondencia de estos datos
+  en `/completar-cuenta`. El nombre admite caracteres internacionales y rechaza
+  números y símbolos de alias. Esto recoge una declaración de identidad, no una
+  verificación documental del nombre.
+- La API bloquea el acceso al resto de funcionalidades mientras el registro esté
+  pendiente y excluye esas cuentas de la búsqueda de candidatos. El estado persiste
+  entre sesiones. La migración `0052_social_registration` deja todas las cuentas
+  existentes como completadas; no obliga a repetir el registro al vincular un proveedor.
+- Login y registro redirigen a las personas con sesión hacia su propio espacio.
+  El formulario que está completando un acceso conserva su destino de bienvenida,
+  invitación o segundo factor. La navegación final reemplaza la entrada del historial.
+- «Ajustar mi búsqueda» abre `/preferencias`, con los mismos controles de modalidad,
+  salario, sector y disponibilidad de Mi perfil. La bienvenida presenta un acceso
+  breve a la guía. Al guardar se consulta el perfil más reciente y se modifican
+  únicamente los campos editados.
+- «Usar mi perfil» reconoce los títulos ocupacionales de ingeniería y tecnología
+  además de los nombres de sus carreras. El editor de empresa ocupa el ancho
+  disponible y conserva su adaptación a móvil.
+
+Validación de esta revisión: pruebas aisladas del servidor y del navegador,
+incluidos registro pendiente, CSRF/origen, retorno del proveedor, cuentas existentes,
+navegación con Atrás, guardado tras errores y adaptación con texto al 200 %.
+La migración se ensayó sobre registros sintéticos y se aplicó al entorno de trabajo
+con copia previa y comprobación de conservación de registros. No se completó una
+nueva autorización externa real durante esta revisión.
+
 ## Estado actual
 
 El acceso de candidatos muestra Google y GitHub para registro, inicio de sesión y

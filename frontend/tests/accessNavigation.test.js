@@ -1,6 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { invitationPath, invitationTokenFromPath, loginDestination, registrationDestination } from "../src/utils/accessNavigation.js";
+import { accountHome } from "../src/utils/accountAccess.js";
+
+test("authenticated entry prioritizes incomplete registration, MFA and the user's own role", () => {
+  assert.equal(accountHome(null), "/login");
+  assert.equal(accountHome({ role: "candidate", registration_pending: true }), "/completar-cuenta");
+  assert.equal(accountHome({ role: "company" }, { mode: "session", company_mfa_required: true }), "/seguridad");
+  assert.equal(accountHome({ role: "admin" }, { mode: "session", admin_mfa_required: true }), "/seguridad");
+  for (const [role, path] of [["candidate", "/candidato"], ["company", "/empresa"], ["admin", "/admin"]]) assert.equal(accountHome({ role, mfa_enabled: true }), path);
+});
 
 test("invited registration returns to acceptance with or without MFA", () => {
   const args = { company: true, invitation: "test-token+with/slash", accessOptions: { mode: "session", company_mfa_required: false } };

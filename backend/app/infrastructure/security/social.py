@@ -123,6 +123,7 @@ class SocialIdentityProvider:
                                and row.get("use", "sig") == "sig" and row.get("alg", "RS256") == "RS256")
                     user = jwt.decode(id_token, jwt.PyJWK.from_dict(key).key, algorithms=["RS256"],
                                       audience=params["client_id"], issuer=metadata["issuers"],
+                                      leeway=30,  # Small issuer/server drift, including subsecond rounding.
                                       options={"require": ["exp", "iat", "iss", "aud", "sub", "nonce"]})
                     if not hmac.compare_digest(str(user["nonce"]), nonce):
                         raise ValueError("Unverified identity")

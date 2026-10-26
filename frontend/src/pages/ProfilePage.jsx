@@ -41,10 +41,9 @@ import {
   UserRound,
 } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
-import { CurrencyInput } from "../components/CurrencyInput.jsx";
+import { WorkPreferenceFields } from "../components/WorkPreferenceFields.jsx";
 import "../styles/profile-page.css";
 import { ProfileCompletionRing, getProfileCompletion } from "../components/ProfileCompletionRing.jsx";
-import { JOB_SECTORS } from "../constants/jobSectors.js";
 import { getResumePalette } from "../constants/resumePalettes.js";
 import { useAuth } from "../hooks/useAuth.js";
 
@@ -380,68 +379,7 @@ export function ProfilePage() {
             </Section>
             <div id="preferencias" className="scroll-mt-44"><Section icon={BriefcaseBusiness} title="Preferencias laborales">
               {editing ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="text-sm font-semibold text-[var(--muted)]">
-                    Sector profesional
-                    <select
-                      className="field-control mt-1"
-                      value={profile.preferred_sector || ""}
-                      onChange={(event) =>
-                        update("preferred_sector", event.target.value)
-                      }
-                    >
-                      <option value="">Seleccionar</option>
-                      {JOB_SECTORS.map((sector) => (
-                        <option key={sector} value={sector}>
-                          {sector}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="text-sm font-semibold text-[var(--muted)]">
-                    Disponibilidad
-                    <select
-                      className="field-control mt-1"
-                      value={profile.availability || ""}
-                      onChange={(event) =>
-                        update("availability", event.target.value)
-                      }
-                    >
-                      <option value="">Seleccionar</option>
-                      {Object.entries(availabilityLabels).map(
-                        ([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                  </label>
-                  <label className="text-sm font-semibold text-[var(--muted)]">
-                    Modalidad
-                    <select
-                      className="field-control mt-1"
-                      value={profile.preferred_modality || ""}
-                      onChange={(event) =>
-                        update("preferred_modality", event.target.value)
-                      }
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="remote">Remoto</option>
-                      <option value="hybrid">Híbrido</option>
-                      <option value="onsite">Presencial</option>
-                    </select>
-                  </label>
-                  <label className="text-sm font-semibold text-[var(--muted)]">
-                    Aspiración salarial
-                    <CurrencyInput
-                      className="field-control mt-1"
-                      value={profile.desired_salary || ""}
-                      onChange={(value) => update("desired_salary", value)}
-                      placeholder="Indica el importe mensual en COP"
-                    />
-                  </label>
-                </div>
+                <WorkPreferenceFields value={profile} onChange={update} />
               ) : (
                 <div className="grid gap-3 text-sm sm:grid-cols-2">
                   <p>
