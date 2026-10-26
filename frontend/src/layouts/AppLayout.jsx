@@ -1,19 +1,8 @@
 import { CompanyAccessNotice } from "../components/CompanyAccessNotice.jsx";
 import { useEffect, useRef, useState } from "react";
-import {
-  Bell,
-  BriefcaseBusiness,
-  Building2,
-  FileCheck2,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  ShieldCheck,
-  Sparkles,
-  UserRound,
-  X,
-  BookOpen, BadgeCheck, HeartPulse, Network, Settings2, UsersRound, Search, Flag, LockKeyhole,
-} from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
+import { navigationLinks as links } from "../constants/navigation.js";
+import "../styles/navigation.css";
 import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { api } from "../api/client.js";
@@ -21,92 +10,6 @@ import { BrandLogo } from "../components/brand/BrandLogo.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
 
-const links = [
-  { to: "/guia", label: "Guía de uso", icon: BookOpen, roles: ["candidate", "company", "admin"] },
-  { to: "/admin/aprendizaje", label: "Catálogo educativo", icon: BookOpen, roles: ["admin"] },
-  { to: "/admin/modelos", label: "Motor e integraciones", icon: Network, roles: ["admin"] },
-  { to: "/confianza", label: "Confianza e incidencias", icon: Flag, roles: ["candidate", "company"] },
-  { to: "/admin/ecosistema", label: "Salud del ecosistema", icon: HeartPulse, roles: ["admin"] },
-  { to: "/empresa/calidad", label: "Calidad de ofertas", icon: BadgeCheck, roles: ["company"] },
-  { to: "/aprendizaje", label: "Mi desarrollo", icon: BookOpen, roles: ["candidate"] },
-  { to: "/empresa/equipo", label: "Organización y equipo", icon: UsersRound, roles: ["company"] },
-  { to: "/admin/verificaciones", label: "Verificar empresas", icon: ShieldCheck, roles: ["admin"] },
-  { to: "/seguridad", label: "Seguridad de cuenta", icon: LockKeyhole, roles: ["candidate", "company", "admin"] },
-  { to: "/admin", label: "Inicio", icon: LayoutDashboard, roles: ["admin"] },
-  {
-    to: "/administracion",
-    label: "Gestionar plataforma",
-    icon: Settings2,
-    roles: ["admin"],
-  },
-  {
-    to: "/candidato",
-    label: "Inicio",
-    icon: LayoutDashboard,
-    roles: ["candidate"],
-  },
-  {
-    to: "/recomendaciones",
-    label: "Recomendaciones",
-    icon: Sparkles,
-    roles: ["candidate"],
-  },
-  {
-    to: "/vacantes",
-    label: "Explorar vacantes",
-    icon: BriefcaseBusiness,
-    roles: ["candidate", "admin"],
-  },
-  {
-    to: "/postulaciones",
-    label: "Postulaciones",
-    icon: FileCheck2,
-    roles: ["candidate"],
-  },
-  { to: "/perfil", label: "Mi perfil", icon: UserRound, roles: ["candidate"] },
-  {
-    to: "/notificaciones",
-    label: "Notificaciones",
-    icon: Bell,
-    roles: ["candidate"],
-  },
-  {
-    to: "/empresa",
-    label: "Inicio",
-    icon: LayoutDashboard,
-    roles: ["company"],
-  },
-  {
-    to: "/empresa/vacantes",
-    label: "Mis vacantes",
-    icon: BriefcaseBusiness,
-    roles: ["company"],
-  },
-  {
-    to: "/empresa/talento",
-    label: "Buscar talento",
-    icon: Search,
-    roles: ["company"],
-  },
-  {
-    to: "/empresa/postulaciones",
-    label: "Postulaciones",
-    icon: FileCheck2,
-    roles: ["company"],
-  },
-  {
-    to: "/empresa/perfil",
-    label: "Perfil empresa",
-    icon: Building2,
-    roles: ["company"],
-  },
-  {
-    to: "/notificaciones",
-    label: "Notificaciones",
-    icon: Bell,
-    roles: ["company"],
-  },
-];
 
 const roleCopy = {
   candidate: {
@@ -124,31 +27,23 @@ function Navigation({ linksForRole, unreadNotifications, onNavigate, role }) {
   const groups = role === "company" ? [["Contratación", ["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"]], ["Organización", ["/empresa/perfil", "/empresa/equipo", "/confianza"]], ["Tu cuenta", ["/notificaciones", "/seguridad", "/guia"]]] : role === "admin" ? [["Supervisión", ["/admin", "/admin/verificaciones", "/admin/ecosistema", "/vacantes"]], ["Plataforma", ["/admin/modelos", "/admin/aprendizaje", "/administracion"]], ["Tu cuenta", ["/seguridad", "/guia"]]] : [["Oportunidades", ["/candidato", "/recomendaciones", "/vacantes", "/postulaciones"]], ["Tu trayectoria", ["/aprendizaje", "/perfil"]], ["Tu cuenta", ["/notificaciones", "/confianza", "/seguridad", "/guia"]]];
   return (
     <Container className="space-y-1" aria-label={role ? "Navegación principal" : undefined}>
-      {role ? groups.map(([label, routes]) => { const group = linksForRole.filter((link) => routes.includes(link.to)); return group.length ? <div key={label} className="navigation-group"><p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--sidebar-muted)]">{label}</p><Navigation linksForRole={group} unreadNotifications={unreadNotifications} onNavigate={onNavigate} /></div> : null; }) : linksForRole.map(({ to, label, icon: Icon }) => (
+      {role ? groups.map(([label, routes]) => { const group = routes.map((to) => linksForRole.find((link) => link.to === to)).filter(Boolean); return group.length ? <div key={label} className="navigation-group app-nav-group"><p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--sidebar-muted)]">{label}</p><Navigation linksForRole={group} unreadNotifications={unreadNotifications} onNavigate={onNavigate} /></div> : null; }) : linksForRole.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
-          end
+          end={["/candidato", "/empresa", "/admin"].includes(to)}
           onClick={onNavigate}
           className={({ isActive }) =>
-            `flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors focus-ring ${
-              isActive
-                ? "bg-white text-[var(--sidebar)]"
-                : "text-[var(--sidebar-ink)] hover:bg-white/10 hover:text-white"
-            }`
+            `app-nav-link focus-ring ${isActive ? "is-active" : ""}`
           }
         >
-          {({ isActive }) => (
+          {() => (
             <>
-              <Icon
-                size={18}
-                strokeWidth={isActive ? 2.4 : 1.9}
-                aria-hidden="true"
-              />
-              <span>{label}</span>
+              <span className="app-nav-icon"><Icon size={19} strokeWidth={1.9} aria-hidden="true" /></span>
+              <span className="app-nav-label">{label}</span>
               {to === "/notificaciones" && unreadNotifications > 0 ? (
                 <span
-                  className={`ml-auto rounded-full px-2 py-0.5 text-xs font-bold ${isActive ? "bg-sky-100 text-sky-900" : "bg-sky-400 text-sky-950"}`}
+                  className="app-nav-count"
                 >
                   {unreadNotifications > 99 ? "99+" : unreadNotifications}
                 </span>
@@ -307,7 +202,7 @@ function Brand({ copy, user, displayName }) {
   return (
     <div>
       <BrandLogo className="px-2" tone="inverse" />
-      <div className="mt-7 rounded-xl border border-white/15 bg-black/10 px-3 py-3">
+      <div className="app-nav-account mt-7 rounded-xl border border-white/15 bg-black/10 px-3 py-3">
         <p className="truncate text-sm font-bold text-white">
           {displayName || user.name}
         </p>
@@ -319,12 +214,12 @@ function Brand({ copy, user, displayName }) {
 
 function SidebarFooter({ logout }) {
   return (
-    <div className="mt-auto space-y-1 pt-6">
-      <ThemeToggle />
+    <div className="app-sidebar-footer mt-auto space-y-1 pt-6">
+      <ThemeToggle className="app-nav-utility" />
       <button
         type="button"
         onClick={logout}
-        className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-[var(--sidebar-ink)] transition-colors hover:bg-white/10 hover:text-white focus-ring"
+        className="app-nav-utility focus-ring"
       >
         <LogOut size={18} aria-hidden="true" />
         Cerrar sesión

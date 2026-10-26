@@ -173,8 +173,8 @@ test("Landing explains roles and guide limits interviewer actions", async ({ pag
   await expect(page.getByRole("heading", { name: "Publicar formación", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Lo que distingue tu recorrido en TalentSync.", exact: true })).toBeVisible();
   await setup(page, { role: "company", memberRole: "interviewer", path: "/guia", width: 360 });
-  await expect(page.getByRole("button", { name: /Preparar y evaluar entrevistas/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Preparar una oferta clara/ })).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Tema de la guía", exact: true })).toHaveValue("interviews");
+  await expect(page.getByRole("option", { name: "Preparar una oferta clara", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Abrir menú", exact: true }).click();
   await expect(page.getByRole("link", { name: "Guía de uso", exact: true })).toHaveCount(1);
   await page.getByRole("dialog", { name: "Navegación principal", exact: true }).getByRole("button", { name: "Cerrar menú", exact: true }).click();
@@ -184,7 +184,7 @@ test("Landing explains roles and guide limits interviewer actions", async ({ pag
 test("Candidate guide opens topics without changing preferences", async ({ page }) => {
   const context = await setup(page, { role: "candidate", path: "/guia", width: 1280 });
   const topics = page.getByRole("navigation", { name: "Temas de la guía", exact: true });
-  await expect(topics.getByRole("button")).toHaveCount(8);
+  await expect(topics.getByRole("button")).toHaveCount(15);
   await topics.getByRole("button", { name: /Cursos y Mi plan/ }).click();
   await expect(page.getByRole("heading", { name: "Cursos y Mi plan", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Abrir Cursos", exact: true })).toHaveAttribute("href", "/aprendizaje#cursos");
@@ -234,7 +234,7 @@ test("Wide challenge library uses sector and level independently of selected cou
   const context = await setup(page, { rich: "wide", path: "/aprendizaje#retos", width: 1280, theme: "dark" });
   await expect(page.locator(".challenge-total strong")).toHaveText("79");
   await expect(page.locator(".challenge-card")).toHaveCount(12);
-  await expect(page.getByRole("combobox", { name: "Ordenar retos", exact: true })).not.toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Ordenar retos", exact: true })).toBeVisible();
   await expect(page.getByText("Solo relacionados con Mi plan", { exact: true })).toHaveCount(0);
   await page.getByRole("combobox", { name: "Sector de los retos", exact: true }).selectOption("industry");
   await expect(page.locator(".challenge-card")).toHaveCount(12);
@@ -243,6 +243,12 @@ test("Wide challenge library uses sector and level independently of selected cou
   await expect(page.locator(".challenge-card")).toHaveCount(8);
   await page.getByRole("combobox", { name: "Nivel", exact: true }).selectOption("beginner");
   await expect(page.locator(".challenge-card")).toHaveCount(7);
+  await page.getByRole("button", { name: "Quitar filtro: Industria", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Nivel", exact: true })).toHaveValue("beginner");
+  await expect(page.getByRole("combobox", { name: "Sector de los retos", exact: true })).toHaveValue("");
+  await expect(page.locator(".challenge-card")).toHaveCount(12);
+  await page.getByRole("button", { name: "Limpiar filtros", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Nivel", exact: true })).toHaveValue("");
   await page.getByRole("button", { name: "Cursos", exact: true }).click();
   await expect(page.locator(".learning-catalog-grid")).toBeVisible();
   await page.getByRole("button", { name: "Retos", exact: true }).click();

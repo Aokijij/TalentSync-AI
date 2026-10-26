@@ -52,13 +52,8 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Cl
       await expect(current).toContainText("Información clara del cargo, con algunos detalles por completar.");
       await expect(current).not.toContainText("Excelente");
       await current.screenshot({ path: `../.local/pointer-clarity-review/current-${theme}-${width}.png` });
-    } else {
-      const guide = page.locator(".offer-clarity-guide");
-      await guide.locator("summary").click();
-      await expect(guide.locator("li")).toHaveCount(4);
-      await expect(guide).toContainText("75–89 puntos");
-      await expect(guide).toContainText("no garantiza aparecer primero");
     }
+    await expect(page.locator(".offer-clarity-guide")).toHaveCount(0);
     if (path === "/vacantes") {
       await expect(page.locator(".vacancy-card").filter({ hasText: "Analista externo" }).locator(".offer-clarity-badge")).toHaveCount(0);
       await page.screenshot({ path: `../.local/course-completion-review/clarity-${theme}-${width}.png`, fullPage: true });

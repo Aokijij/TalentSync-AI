@@ -1,4 +1,4 @@
-import { OfferClarityBadge, OfferClarityGuide } from "../components/OfferClarity.jsx";
+import { OfferClarityBadge } from "../components/OfferClarity.jsx";
 import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
 import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
 import { RequirementSupport } from "../components/RequirementSupport.jsx";
@@ -147,7 +147,6 @@ export function RecommendationsPage() {
         description="Cada vacante muestra compatibilidad, habilidades coincidentes y una guía para mejorar."
       />
 
-      <OfferClarityGuide quality={jobs.find((job) => job.source_kind !== "external" && job.quality_summary?.rating_scale)?.quality_summary} />
       <RecommendationControls interests={interests} jobs={jobs} onSaved={() => { setPage(1); return load(false); }} respectPreferences={respectPreferences} onRespectChange={(value) => { setRespectPreferences(value); setPage(1); }} excludedCount={enriched.filter((item) => !meetsRequiredPreferences(item)).length} />
       <SearchPreferences data={preferences} onSaved={async (next) => { setPreferences(next); setPage(1); setError(""); try { const { data } = await getRecommendations(user.id); setRecommendations(data); } catch (failure) { if (failure.code !== "ERR_CANCELED") setError("No pudimos actualizar las recomendaciones. Puedes volver a intentarlo."); } }} />
       <label className="block"><span className="sr-only">Buscar recomendaciones</span><input className="field-control" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por cargo, empresa, ciudad o habilidad" /></label>

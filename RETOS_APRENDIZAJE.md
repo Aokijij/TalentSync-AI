@@ -107,3 +107,15 @@ La política de cursor se centraliza en `interaction.css`: botones, enlaces, pes
 El detalle de una vacante muestra una sola tarjeta de claridad: letra destacada, nombre del nivel y una frase sobre esa publicación. Ya no repite la escala completa en ese detalle. La letra sigue procediendo de `quality_summary.rating`; la explicación general se conserva en las vistas de exploración. Las ofertas externas siguen sin recibir nivel propio de TalentSync.
 
 Verificación: 242 pruebas de frontend aprobadas; 56 recorridos cubren formación, radar, cursores por rol, disposición adaptable y recomendaciones/detalle. Se compararon las 36 capturas compartidas sin cambiar las referencias, con cuatro comprobaciones adicionales del nivel y los desplegables en ambos temas. ESLint y compilación de producción correctos. La revisión no cambia estados, datos ni notificaciones de cuentas reales.
+
+## Guía, navegación y filtros — 26/10/2026
+
+La guía completa distingue 15 temas para candidatos, 11 para propietarios de empresa y 6 para administración. Reclutadores y entrevistadores ven los temas permitidos; un entrevistador conserva únicamente entrevistas y seguridad. Incluye búsqueda por contenido, grupos temáticos, selección de tema adaptada a móvil, ubicación de cada herramienta, explicaciones, pasos de uso y límites. El resumen público de funcionalidades mantiene su selección breve para no convertir la portada en un manual.
+
+Se explican por separado compatibilidad y preferencias, claridad de las ofertas, comparación de hasta tres vacantes, consentimiento para guardar u ocultar, versiones de CV, procesos y plazos, notificaciones, Calendar, cursos, habilidades declaradas, certificados y resultados. El bloque general de niveles se retira de Recomendaciones y Explorar vacantes; su explicación queda en la guía. Los indicadores propios de cada oferta conservan su significado.
+
+La navegación usa iconos diferentes por función, tanto en los menús de cada rol como en los temas de la guía. Se agrupan accesos, se distingue el destino activo y se conservan los permisos y el menú de teclado móvil. Seguridad unifica tamaños, iconos, acciones secundarias y acciones de desconexión o eliminación; mantiene las comprobaciones de identidad y las confirmaciones. El enlace de retorno deja de ocupar todo el ancho en escritorio. El diseño se adapta al ancho disponible, incluido texto ampliado al 200 %.
+
+Los filtros de retos muestran búsqueda, sector, nivel, avance y orden sin desplegar opciones adicionales. Los filtros aplicados pueden retirarse por separado o limpiarse juntos; la paginación vuelve a la primera página al cambiarlos. No cambia la selección por habilidades ni el sistema de evaluación.
+
+Validación: 244 pruebas de frontend y 154 recorridos de interfaz aprobados. La comprobación visual comparó 36 capturas compartidas sin actualizar referencias y repitió los 16 recorridos de guía, navegación y Seguridad en ambos temas y tamaños. ESLint, compilación de producción y comprobación del diff correctos. Los ensayos de seguridad usan respuestas simuladas y no desvinculan cuentas ni solicitan descargas o eliminaciones reales.

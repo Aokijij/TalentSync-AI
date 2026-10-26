@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle2, Mail, Pencil, Send } from "lucide-react";
+import { ArrowRight, CheckCircle2, Mail, Pencil, Send, X } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { InlineNotice } from "./ui/Panel.jsx";
 import "../styles/security-access.css";
@@ -34,7 +34,7 @@ export function SecurityEmailPanel({ user, localMail = false }) {
       <div><h3>Elige tu nuevo correo</h3><p>El cambio se completa al confirmar el enlace que recibirás.</p></div>
       <label>Nuevo correo<input className="field-control" name="email" required type="email" autoComplete="email" placeholder="Introduce la dirección de correo" maxLength={255} disabled={busy} /></label>
       <label>Contraseña actual<input className="field-control" name="password" required type="password" autoComplete="current-password" disabled={busy} /></label>
-      <footer><button type="button" className="button-secondary" disabled={busy} onClick={() => { setEditing(false); setError(""); }}>Cancelar</button><button disabled={busy} className="button-primary">{busy ? "Solicitando…" : "Enviar enlace de confirmación"}<ArrowRight size={16} aria-hidden="true" /></button></footer>
+      <footer><button type="button" className="button-secondary" disabled={busy} onClick={() => { setEditing(false); setError(""); }}><X size={16} aria-hidden="true" />Cancelar</button><button disabled={busy} className="button-primary">{busy ? "Solicitando…" : "Enviar enlace de confirmación"}<ArrowRight size={16} aria-hidden="true" /></button></footer>
     </form>}
     {localMail && <details className="security-mail-development"><summary>Correo de prueba</summary><p>En este entorno los mensajes se guardan en la bandeja local.</p><Link to="/desarrollo/correos">Abrir bandeja local <ArrowRight size={14} /></Link></details>}
   </section>;

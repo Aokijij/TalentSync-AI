@@ -24,7 +24,7 @@ const WorkScheduleEditor = await component("WorkScheduleEditor", "WorkScheduleEd
 const ExperienceRequirementEditor = await component("ExperienceRequirementEditor", "ExperienceRequirementEditor");
 const RemoteScopeEditor = await component("RemoteScopeEditor", "RemoteScopeEditor");
 const OfferConditions = await component("OfferConditions", "OfferConditions");
-const { OfferClarityBadge, OfferClarityGuide, OfferClaritySummary } = await component("OfferClarity");
+const { OfferClarityBadge, OfferClaritySummary } = await component("OfferClarity");
 const ProcessStages = await component("ProcessStages", "ProcessStages");
 const EducationRequirementsEditor = await component("EducationRequirementsEditor", "EducationRequirementsEditor");
 const AcademicMatchDetails = await component("AcademicMatchDetails", "AcademicMatchDetails");
@@ -47,10 +47,7 @@ test("offer clarity uses the canonical rating band and excludes external offers"
   assert.doesNotMatch(badge, /82%|Nivel A/);
   assert.equal(renderToStaticMarkup(createElement(OfferClarityBadge, { job: { source_kind: "external", quality_summary: quality } })), "");
   assert.equal(renderToStaticMarkup(createElement(OfferClarityBadge, { job: {} })), "");
-  const guide = renderToStaticMarkup(createElement(OfferClarityGuide, { quality }));
-  assert.match(guide, /75–89 puntos/);
-  assert.match(guide, /compatibilidad cercana/);
-  assert.match(guide, /no garantiza aparecer primero/);
+
 });
 
 test("a vacancy explains only its own clarity level in a compact summary", () => {

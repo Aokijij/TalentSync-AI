@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, getApiErrorMessage } from "../api/client.js";
-import { CheckCircle2, Link2, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Link2, ShieldCheck, Unlink, X } from "lucide-react";
 import { ProviderIcon } from "./ProviderIcon.jsx";
 import "../styles/social-access.css";
 
@@ -48,7 +48,7 @@ export function SocialAccounts({ user, providers = [], onSessionsChanged, mfaRev
       const configuration = providers.find((row) => row.id === provider), enabled = configuration?.enabled;
       return <div className={`social-account-row ${linked ? "is-connected" : ""}`} key={provider}>
         <span className="social-account-icon"><ProviderIcon provider={provider} /></span><div className="social-account-description"><h3>{label}{linked && <span><CheckCircle2 size={13} aria-hidden="true" />Conectada</span>}</h3><p>{linked ? "Puedes usar esta cuenta para iniciar sesión." : enabled ? "Conecta tu cuenta para entrar sin recordar otra contraseña." : configuration?.reason || "Este proveedor todavía no está disponible."}</p></div>
-        <button type="button" className="button-secondary" disabled={busy || (!linked && !enabled)} onClick={() => { setSelection({ provider, unlink: linked }); setError(""); setMessage(""); }}>{!linked && <Link2 size={16} aria-hidden="true" />}{linked ? `Desvincular ${label}` : `Vincular ${label}`}</button>
+        <button type="button" className={`button-secondary ${linked ? "security-disconnect-action" : ""}`} disabled={busy || (!linked && !enabled)} onClick={() => { setSelection({ provider, unlink: linked }); setError(""); setMessage(""); }}>{linked ? <Unlink size={16} aria-hidden="true" /> : <Link2 size={16} aria-hidden="true" />}{linked ? `Desvincular ${label}` : `Vincular ${label}`}</button>
       </div>;
     })}
     {selection && <form key={`${selection.provider}:${selection.unlink}`} onSubmit={submit} className="space-y-3 rounded-xl border border-[var(--line)] p-4">
@@ -56,7 +56,7 @@ export function SocialAccounts({ user, providers = [], onSessionsChanged, mfaRev
       <p className="text-sm text-[var(--muted)]">{selection.unlink ? "Confirma tu contraseña para conservar el acceso por correo. Cerraremos las demás sesiones y cancelaremos los accesos sociales pendientes." : "Confirma tu acceso a TalentSync. Después elegirás la cuenta en el proveedor; la autorización vence en diez minutos."}</p>
       <label className="block text-sm">Contraseña actual de TalentSync<input name="password" className="field-control mt-1" required type="password" autoComplete="current-password" maxLength={72} /></label>
       {user.mfa_enabled && !mfaReview && <label className="block text-sm">Código de autenticación o recuperación<input name="code" className="field-control mt-1" required minLength={6} maxLength={128} autoComplete="one-time-code" /></label>}
-      <div className="flex flex-wrap gap-3"><button disabled={busy} className="button-primary">{busy ? "Validando…" : selection.unlink ? "Confirmar desvinculación" : "Continuar al proveedor"}</button><button type="button" className="button-secondary" disabled={busy} onClick={() => setSelection(null)}>Cancelar</button></div>
+      <div className="flex flex-wrap gap-3"><button disabled={busy} className={selection.unlink ? "button-danger" : "button-primary"}>{busy ? "Validando…" : selection.unlink ? "Confirmar desvinculación" : "Continuar al proveedor"}</button><button type="button" className="button-secondary" disabled={busy} onClick={() => setSelection(null)}><X size={16} aria-hidden="true" />Cancelar</button></div>
     </form>}
     <details className="social-password-help"><summary>¿Necesitas una contraseña de TalentSync?</summary><p>Si creaste tu cuenta con Google o GitHub, puedes establecer una desde <Link className="text-[var(--accent)]" to="/recuperar-acceso">Recuperar acceso</Link>. La necesitarás para gestionar las vinculaciones.</p></details>
   </section>;

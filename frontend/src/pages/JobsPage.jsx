@@ -1,5 +1,4 @@
 import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
-import { OfferClarityGuide } from "../components/OfferClarity.jsx";
 import { VacancyCard } from "../components/VacancyCard.jsx";
 import { InterestsToggle } from "../components/JobInterests.jsx";
 import { useJobInterests } from "../hooks/useJobInterests.js";
@@ -273,7 +272,6 @@ function JobsWorkspace({ user }) {
         ) : activeFilterCount ? <button type="button" className="mt-4 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setShowFilters(true)}>{activeFilterCount} filtro{activeFilterCount === 1 ? " activo" : "s activos"} · Ver o cambiar</button> : null}
       </section>
 
-      <OfferClarityGuide quality={jobs.find((job) => job.source_kind !== "external" && job.quality_summary?.rating_scale)?.quality_summary} />
       {user?.role === "candidate" && <><div className="discovery-navigation"><nav className="workspace-tabs" aria-label="Colecciones de vacantes">{[["all", "Todas"], ["saved", "Guardadas"], ["hidden", "Ocultas"]].map(([key, label]) => <button key={key} aria-pressed={interestMode === key} onClick={() => { setInterestMode(key); setPage(1); }}>{label}</button>)}</nav><InterestsToggle interests={interests} /></div>{!interests.enabled && interestMode !== "all" && <p className="text-sm text-[var(--muted)]">Activa el uso de tus decisiones con el interruptor para guardar y recuperar vacantes.</p>}</>}
 
       {jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Buscando vacantes disponibles…</p>}
