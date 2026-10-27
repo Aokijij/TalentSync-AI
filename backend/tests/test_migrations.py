@@ -2,6 +2,7 @@ from io import StringIO
 from pathlib import Path
 
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, inspect, text
 
 from alembic import command
@@ -35,6 +36,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
             "mail_delivery_events", "calendar_connections", "calendar_events", "file_erasure_tasks",
         }
         profile_columns = {column["name"] for column in schema.get_columns("profiles")}
+        assert "registration_pending" in {column["name"] for column in schema.get_columns("users")}
         assert "authentication_authority" in {column["name"] for column in schema.get_columns("user_sessions")}
         assert {"department", "photo_filename", "resume_style", "resume_color", "languages"} <= profile_columns
         assert {
@@ -62,7 +64,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment", "interview_evaluations", "interview_details"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0051_response_followup"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == ScriptDirectory.from_config(migration_config()).get_current_head()
         command.check(migration_config())
     finally:
         engine.dispose()

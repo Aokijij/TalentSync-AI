@@ -79,8 +79,12 @@ def test_local_journey_connects_all_roles_with_sessions_and_mfa(browser):
         request(browser, "PUT", "/personalization/feedback", json={"job_id": job["id"], "interested": True})
         opportunity = request(browser, "GET", f"/learning/jobs/{job['id']}")
         assert [row["key"] for row in opportunity["gaps"]] == ["sql"]
-        request(browser, "PUT", "/learning/plans/project-sql", json={"status": "completed"})
-        assert "sql" not in request(browser, "GET", "/profiles/me")["skills"]
+        catalog = request(browser, "GET", "/learning/catalog?area=all")
+        course = next(row for row in catalog["resources"] if row["id"] == "microsoft-data-analytics")
+        plan_path = f"/learning/plans/{course['id']}"
+        plan = next(row for row in request(browser, "PUT", plan_path, json={}) if row["resource"]["id"] == course["id"])
+        request(browser, "PATCH", plan_path + "/course", json={"version": plan["version"], "completed": True})
+        assert request(browser, "GET", "/profiles/me")["skills"] == ["python"]
 
         ranking = request(company, "GET", f"/recommendations/jobs/{job['id']}/candidates")
         assert ranking[0]["identity_hidden"] and candidate["name"] not in str(ranking)

@@ -25,8 +25,9 @@ ROLE = "talentsync_rehearsal_app"
 def run(command, *, env=None, cwd=None):
     # pg_ctl's daemon inherits pipe handles on Windows, preventing communicate()
     # from seeing EOF even after pg_ctl exits. A file does not wait for that EOF.
-    with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as output:
-        result = subprocess.run(command, env=env, cwd=cwd, stdout=output, stderr=output, check=False, timeout=300,
+    child_env = {**(os.environ if env is None else env), "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    with tempfile.TemporaryFile(mode="w+", encoding="utf-8", errors="replace") as output:
+        result = subprocess.run(command, env=child_env, cwd=cwd, stdout=output, stderr=output, check=False, timeout=300,
                                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
         output.seek(0)
         content = output.read()

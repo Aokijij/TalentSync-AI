@@ -1,4 +1,5 @@
 import importlib.util
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -68,3 +69,8 @@ def test_process_failure_never_echoes_driver_credentials_or_sql(rehearsal, monke
     with pytest.raises(RuntimeError) as error:
         rehearsal.run(["fake-process"])
     assert "PRIVATE" not in str(error.value) and "TOKEN" not in str(error.value)
+
+
+def test_subprocess_output_keeps_spanish_text_under_windows_defaults(rehearsal):
+    output = rehearsal.run([sys.executable, "-c", "print('Evaluaci\\u00f3n completada')"], env={"PYTHONIOENCODING": "cp1252"})
+    assert "Evaluaci\u00f3n completada" in output

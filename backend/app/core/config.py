@@ -1,9 +1,17 @@
 import os
+import re
 from functools import lru_cache
 from typing import Literal
 from urllib.parse import parse_qs, urlsplit
 
-from pydantic import EmailStr, Field, TypeAdapter, field_validator, model_validator
+from pydantic import (
+    EmailStr,
+    Field,
+    SecretStr,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -79,6 +87,11 @@ class Settings(BaseSettings):
     static_dir: str | None = None
     azure_storage_account_url: str | None = None
     azure_storage_container: str = "cvs"
+    r2_endpoint_url: str = ""
+    r2_bucket: str = ""
+    r2_region: Literal["auto"] = "auto"
+    r2_access_key_id: SecretStr = SecretStr("")
+    r2_secret_access_key: SecretStr = SecretStr("")
     jooble_api_key: str | None = None
     jooble_api_base_url: str = "https://co.jooble.org/api"
     jooble_timeout_seconds: float = 20
@@ -142,6 +155,29 @@ class Settings(BaseSettings):
             raise ValueError("TURN requiere un secreto compartido de al menos 32 caracteres")
         if self.webrtc_relay_only and not self.webrtc_turn_urls:
             raise ValueError("El modo relay requiere un servidor TURN configurado")
+        return self
+
+    @model_validator(mode="after")
+    def valid_private_storage(self):
+        values = (self.r2_endpoint_url, self.r2_bucket, self.r2_access_key_id.get_secret_value(), self.r2_secret_access_key.get_secret_value())
+        if not any(values):
+            return self
+        if not all(values) or any(any(char.isspace() for char in value) for value in values):
+            raise ValueError("R2 requiere endpoint, bucket y las dos credenciales S3 completos")
+        try:
+            endpoint = urlsplit(self.r2_endpoint_url)
+            valid = (endpoint.scheme == "https" and endpoint.hostname
+                     and re.fullmatch(r"[a-f0-9]{32}(?:\.(?:eu|us|fedramp))?\.r2\.cloudflarestorage\.com", endpoint.hostname)
+                     and not endpoint.username and not endpoint.password and endpoint.port in {None, 443}
+                     and endpoint.path in {"", "/"} and not endpoint.query and not endpoint.fragment)
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ValueError("R2 requiere el endpoint S3 HTTPS de tu cuenta, sin bucket ni parámetros")
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,61}[a-z0-9]", self.r2_bucket):
+            raise ValueError("El bucket R2 debe tener entre 3 y 63 caracteres: minúsculas, números y guiones")
+        if self.azure_storage_account_url:
+            raise ValueError("Selecciona un solo almacenamiento privado: R2 o Azure")
         return self
 
     @model_validator(mode="after")

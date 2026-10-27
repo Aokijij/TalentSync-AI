@@ -13,13 +13,14 @@ cryptography==50.0.1
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 python-multipart==0.0.32
-pypdf==6.19.0
+pypdf==6.21.2
 reportlab==4.4.9
-Pillow==12.3.0
+Pillow==13.0.0
 openpyxl==3.1.5
 numpy==2.2.1
 scikit-learn==1.6.0
 slowapi==0.1.8
 azure-identity==1.25.1
 azure-storage-blob==12.27.1
+boto3==1.43.119
 urllib3==2.8.0

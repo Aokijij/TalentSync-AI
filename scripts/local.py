@@ -146,7 +146,8 @@ def prepare_environment(*, testing=False):
                                                            "OAUTH_WORKSPACE_CLIENT_ID", "OAUTH_WORKSPACE_CLIENT_SECRET",
                                                            "OAUTH_ENTRA_CLIENT_ID", "OAUTH_ENTRA_CLIENT_SECRET")},
                    "SESSION_COOKIE_SECURE": "false", "PUBLIC_APP_URL": "http://127.0.0.1:5173",
-                   "AZURE_STORAGE_ACCOUNT_URL": "", "JSEARCH_API_KEY": "", "ADZUNA_APP_ID": "",
+                   "AZURE_STORAGE_ACCOUNT_URL": "", "R2_ENDPOINT_URL": "", "R2_BUCKET": "", "R2_REGION": "auto",
+                   "R2_ACCESS_KEY_ID": "", "R2_SECRET_ACCESS_KEY": "", "JSEARCH_API_KEY": "", "ADZUNA_APP_ID": "",
                    "ADZUNA_APP_KEY": "", "JOOBLE_API_KEY": "", "STATIC_DIR": ""})
     if not testing:
         values.update(integration_overrides(LOCAL / "integrations.env"))
