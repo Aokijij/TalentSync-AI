@@ -1,4 +1,5 @@
 # ruff: noqa: F811
+from io import BytesIO
 from types import SimpleNamespace as Row
 
 import pytest
@@ -32,7 +33,7 @@ def test_cv_import_keeps_manual_levels_and_records_uncertain_defaults(client):
     with client.session_factory() as session:
         stored = session.get(User, user["id"])
         stored.profile.preferences = {"skill_levels": {"python": "expert"}}
-        profile = profiles.upload_cv(None, stored, SqlAlchemyUnitOfWork(session), nlp=nlp, resumes=Row(extract=lambda *_: ("sample.pdf", "Python básico; SQL avanzado; Git")))
+        profile = profiles.upload_cv(Row(file=BytesIO(b"synthetic-cv")), stored, SqlAlchemyUnitOfWork(session), nlp=nlp, resumes=Row(extract=lambda *_: ("sample.pdf", "Python básico; SQL avanzado; Git")))
         assert profile.skill_levels == {"python": "expert", "sql": "advanced", "git": "learning"}
         assert profile.skill_level_sources["git"]["source"] == "default"
         assert profile.skill_level_sources["sql"]["source"] == "cv_explicit"

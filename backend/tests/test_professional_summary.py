@@ -47,7 +47,7 @@ def test_cv_import_does_not_replace_a_custom_summary(client):
         experiences=[{"role": "Desarrollador", "company": "Organización", "description": "Desarrollé interfaces", "start_year": "2020", "end_year": "2023"}], educations=[], certifications=[], embedding=[1], skill_context=[]))
     with client.session_factory() as session:
         stored = session.get(User, user["id"])
-        updated = profiles.upload_cv(None, stored, SqlAlchemyUnitOfWork(session), nlp=nlp, resumes=Row(extract=lambda *_: ("sample.pdf", "React y JavaScript")))
+        updated = profiles.upload_cv(Row(file=BytesIO(b"synthetic-cv")), stored, SqlAlchemyUnitOfWork(session), nlp=nlp, resumes=Row(extract=lambda *_: ("sample.pdf", "React y JavaScript")))
         assert updated.experience == TEXT and updated.summary_mode == "custom" and updated.experiences
 
 

@@ -1209,9 +1209,14 @@ class TextProcessor:
         )
         from app.infrastructure.nlp.cv_sections import sections
         education_block = sections(visual).get("education")
+        if not education_block or not any(degree_pattern.match(line.strip()) for line in education_block.splitlines()):
+            # Legacy text layers can emit the education heading before the
+            # page header and its study records later. Recover those records
+            # outside the bounded employment timeline, never from job duties.
+            education_block = visual.replace(experience_block, "") if experience_block else visual
         lines = [
             re.sub(r"\s+", " ", line).strip(" .")
-            for line in (education_block if education_block is not None else visual).splitlines()
+            for line in education_block.splitlines()
             if line.strip()
         ]
         educations = []
@@ -1371,21 +1376,20 @@ class TextProcessor:
             for source in re.split(r"\n\s*(?:PYPDF FALLBACK|COORDINATE EXPERIENCE LAYOUT)\s*\n", text)
             if source.strip()
         ]
-        semantic_experiences: list[dict] = []
         semantic_educations: list[dict] = []
-        experiences: list[dict] = []
         educations: list[dict] = []
         certifications: list[dict] = []
-        visual_experiences: list[dict] = []
         visual_educations: list[dict] = []
         heading_experiences, heading_educations = [], []
+        preferred_experiences = []
         for source in sources:
             source = self._resume_reading_order(source)
-            heading_experiences.extend(self._extract_heading_records(source, "experience"))
+            source_heading = self._extract_heading_records(source, "experience")
+            heading_experiences.extend(source_heading)
             heading_educations.extend(self._extract_heading_records(source, "education"))
-            semantic_experiences.extend(self._extract_semantic_experiences(source))
+            source_semantic = self._extract_semantic_experiences(source)
             semantic_educations.extend(self._extract_semantic_educations(source))
-            experiences.extend(self._extract_structured_experiences(source))
+            source_structured = self._extract_structured_experiences(source)
             source_educations, source_certifications = (
                 self._extract_education_and_courses(source)
             )
@@ -1394,8 +1398,8 @@ class TextProcessor:
             source_visual_experiences, source_visual_educations = (
                 self._extract_visual_timeline(source)
             )
-            visual_experiences.extend(source_visual_experiences)
             visual_educations.extend(source_visual_educations)
+            preferred_experiences.extend(source_heading or source_semantic or source_visual_experiences or source_structured)
 
         invalid_prefixes = (
             "funciones",
@@ -1406,7 +1410,7 @@ class TextProcessor:
         )
         merged_experiences = [
             item
-            for item in (heading_experiences or semantic_experiences or experiences or visual_experiences)
+            for item in (heading_experiences or preferred_experiences)
             if self.fold_text(str(item.get("company", "")))
             and not self.fold_text(str(item.get("company", ""))).startswith(
                 invalid_prefixes
