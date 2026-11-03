@@ -17,8 +17,8 @@ function Signal({ signalKey, label, value, weight, description, color }) {
   const safe = Math.max(0, Math.min(100, Number(value ?? 0)));
   return (
     <div className="match-signal" onMouseEnter={() => setHelpOpen(true)} onMouseLeave={() => setHelpOpen(false)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setHelpOpen(false); }}>
-      <div className="flex items-end justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0 flex-1 basis-40">
           <div className="match-signal-label"><p className="text-sm font-bold text-[var(--ink-strong)]">{label}</p><button type="button" className="match-help-trigger" aria-label={`Cómo mejorar: ${label}`} aria-expanded={helpOpen} aria-describedby={helpOpen ? helpId : undefined} onFocus={(event) => { if (event.currentTarget.matches(":focus-visible")) setHelpOpen(true); }} onClick={() => setHelpOpen(!helpOpen)} onKeyDown={(event) => { if (event.key === "Escape") { setHelpOpen(false); event.stopPropagation(); } }}><CircleHelp size={15} aria-hidden="true" /></button></div>
           <p className="mt-0.5 text-xs text-[var(--muted)]">{description}</p>
         </div>

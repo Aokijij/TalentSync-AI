@@ -7,6 +7,8 @@
 .recommendation-results .recommendation-count { border:0; padding:0; background:transparent; gap:.5rem; }
 .recommendation-count strong { font-size:1.4rem; }
 .recommendation-count small { display:none; }
+.recommendation-card-details>* { min-width:0; }
+@media(max-width:1023px) { .recommendation-card-details { grid-template-columns:minmax(0,1fr); } }
 .recommendation-results .recommendation-filterbar { padding:1rem; border:1px solid var(--line); background:var(--surface); border-radius:.85rem; gap:1rem; }
 .recommendation-filterbar .filter-field { font-size:.72rem; }
 .recommendation-filterbar .field-control { min-height:40px; font-size:.8rem; border-radius:.6rem; }
