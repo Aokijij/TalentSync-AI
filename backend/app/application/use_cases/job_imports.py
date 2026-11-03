@@ -727,7 +727,7 @@ def _infer_sector(text: str) -> str:
 def _board_preview(payload, db, catalog):
     from app.application.errors import CatalogProviderError
     from app.application.use_cases.integration_observations import record
-    provider = "greenhouse" if catalog.provider == "greenhouse" else "lever"
+    provider = catalog.provider if catalog.provider in {"greenhouse", "ashby"} else "lever"
     try:
         jobs, scanned = catalog.preview(keywords=payload.keywords.strip(), location=payload.location.strip())
     except CatalogProviderError as failure:

@@ -122,6 +122,14 @@ HEADINGS = (
 
 
 def sections_for(text):
+    # Normalize heading variants used by employer feeds before classifying
+    # sections. The following paragraph and its source wording are preserved.
+    aliases = {
+        "what we’re looking for": "Requirements", "what we're looking for": "Requirements",
+        "we are looking for a person who has": "Requirements", "required": "Requirements",
+        "you’ll be responsible for": "Responsibilities", "you'll be responsible for": "Responsibilities",
+    }
+    text = "\n".join(aliases.get(line.strip().casefold().rstrip(":"), line) for line in text.splitlines())
     # Recover common headings in old flattened imports without rewriting sentences.
     text = re.sub(r"(?im)[ \t]*sectores laborales\s*:.*$", "", text)
     markers = r"Requisitos|Requerimientos|Perfil|Conocimientos|Nivel educativo|Nivel de educación|Otras habilidades|Habilidades técnicas|Habilidades interpersonales|Responsabilidades|Funciones|Beneficios|Condiciones|Modalidad|Ubicación|Horario|Jornada|Salario|What You'll Do|What We Look For|Nice-to-Have|Interview Process|About the Role|Lo que ofrecemos"

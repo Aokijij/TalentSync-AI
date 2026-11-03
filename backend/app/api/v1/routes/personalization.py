@@ -53,7 +53,7 @@ def status(user=Depends(admin), db=Depends(get_unit_of_work), nlp=Depends(get_te
         resend=settings.resend_enabled, learn=bool(settings.learn_enabled and settings.learn_tenant_id and settings.learn_client_id and settings.learn_client_secret), github_projects=settings.github_project_analysis_enabled,
         youtube=bool(settings.youtube_learning_enabled and settings.youtube_api_key), public_learning=settings.public_learning_refresh_enabled, observations=observations(db), health_reports=health_observations(db),
         codewars=settings.codewars_enabled,
-        catalog_providers={"jsearch": bool(settings.jsearch_api_key), "adzuna": bool(settings.adzuna_app_id and settings.adzuna_app_key), "jooble": bool(settings.jooble_api_key), "greenhouse": True, "lever": True, "getonboard": True},
+        catalog_providers={"jsearch": bool(settings.jsearch_api_key), "adzuna": bool(settings.adzuna_app_id and settings.adzuna_app_key), "jooble": bool(settings.jooble_api_key), "greenhouse": True, "lever": True, "ashby": True, "getonboard": True},
         providers={key: gateway.configured(key) for key in ("google", "github", "linkedin", "workspace", "entra")},
         catalog=bool(settings.jsearch_api_key or settings.jooble_api_key or settings.adzuna_app_id and settings.adzuna_app_key))
     result["mfa_review_active"] = settings.mfa_review_active

@@ -6,6 +6,7 @@ La postulación continúa en el portal original. TalentSync conserva atribución
 
 - **JSearch / OpenWeb Ninja:** descubre ofertas de portales colombianos mediante la clave privada ya configurada. La paginación usa el cursor de la fuente. La presencia en el agregador exige una comprobación adicional del anuncio original.
 - **Greenhouse y Lever:** APIs públicas de las empresas. Se conservan los encabezados y listas del anuncio. Lever consulta hasta 1.000 publicaciones por portal y la vista previa selecciona hasta 100 coincidencias; el tamaño máximo de respuesta es 16 MB.
+- **Ashby:** API pública de publicaciones de Addi y Nu, con fecha, funciones, requisitos y ubicaciones originales. La vigencia se confirma por pertenencia del ID exacto al portal publicado.
 - **Get on Board:** API pública documentada, sin clave. Se expanden empresa, habilidades, ciudades, regiones y contrato. Se incluyen ubicaciones explícitas de Colombia o regiones remotas que contienen Colombia; decir solo «remoto» no acredita elegibilidad.
 - **CSV/Excel autorizado:** permite actualizar por origen e ID, con deduplicación adicional por URL y empresa/cargo/ubicación.
 

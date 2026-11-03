@@ -92,7 +92,7 @@ La compatibilidad relaciona **habilidades, contexto profesional y requisitos de 
 | :--- | :--- |
 | **Identidad** | Acceso y vinculación con Google, GitHub y LinkedIn; opciones corporativas de Microsoft. |
 | **Agenda** | Google Calendar para sincronizar entrevistas autorizadas. |
-| **Oportunidades** | JSearch, Get on Board y bolsas de empleo de Greenhouse y Lever; importación de catálogos. |
+| **Oportunidades** | JSearch, Get on Board y bolsas de empleo de Greenhouse, Lever y Ashby; importación de catálogos. |
 | **Aprendizaje y evidencias** | Recursos de Microsoft Learn y YouTube, proyectos de GitHub y actividad de Codewars. |
 | **Correo** | Plantillas transaccionales compartidas para Gmail autorizado, SMTP y Resend. |
 

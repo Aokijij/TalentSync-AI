@@ -3,7 +3,7 @@ from datetime import datetime
 
 from app.application.errors import UseCaseError
 
-PROVIDERS = {"youtube", "microsoft_learn", "sena", "sapiencia", "jsearch", "adzuna", "jooble", "greenhouse", "lever", "getonboard", "external_jobs", "mail", "calendar", "social_google", "social_github", "social_linkedin", "sso_workspace", "sso_entra", "github_projects", "codewars"}
+PROVIDERS = {"youtube", "microsoft_learn", "sena", "sapiencia", "jsearch", "adzuna", "jooble", "greenhouse", "lever", "ashby", "getonboard", "external_jobs", "mail", "calendar", "social_google", "social_github", "social_linkedin", "sso_workspace", "sso_entra", "github_projects", "codewars"}
 ERRORS = {"rate_limit": "Se alcanzó la cuota o el límite de consultas.", "provider_error": "La última operación no pudo completarse. Revisa la fuente desde su sección.", "partial": "La actualización fue parcial; se conservaron los últimos datos disponibles."}
 
 

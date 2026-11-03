@@ -4,7 +4,7 @@ import unicodedata
 from urllib.parse import urlsplit, urlunsplit
 
 import sqlalchemy as sa
-from alembic import op
+from alembic import context, op
 
 revision = "0056_training_record_dedup"
 down_revision = "0055_external_job_content"
@@ -50,6 +50,9 @@ def _unique(rows):
 
 
 def upgrade():
+    if context.is_offline_mode():
+        op.execute("-- Training JSON reconciliation requires an online alembic upgrade.")
+        return
     profiles = sa.table("profiles", sa.column("id", sa.Integer()), sa.column("certifications", sa.JSON()), sa.column("evidence", sa.JSON()))
     connection = op.get_bind()
     for row in connection.execute(sa.select(profiles)).mappings().all():

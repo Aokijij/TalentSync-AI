@@ -58,7 +58,7 @@ def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog
     for key, configured in sources.items():
         if key != "jsearch" and not configured:
             continue
-        name = {"jsearch": "JSearch", "jooble": "Jooble", "adzuna": "Adzuna", "greenhouse": "Greenhouse", "lever": "Lever", "getonboard": "Get on Board"}[key]
+        name = {"jsearch": "JSearch", "jooble": "Jooble", "adzuna": "Adzuna", "greenhouse": "Greenhouse", "lever": "Lever", "ashby": "Ashby", "getonboard": "Get on Board"}[key]
         add(key, "Vacantes externas · " + name, "configured" if configured else "local_manual", "Fuente disponible para consulta editorial. Se comprueba la vigencia antes de recomendar." if configured else "Agregador opcional sin activar. Puedes consultar portales originales o importar un archivo autorizado desde Administración.", "Revisar vigencia, duplicados y el resultado de la sincronización.", configured=bool(configured), enabled=bool(configured), action_url="/administracion", action_label="Revisar vacantes")
     add("external_jobs", "Vigencia de vacantes externas", "configured", "Comprobación de la fuente original y vencimiento. Una respuesta HTTP correcta por sí sola no acredita que la oferta siga abierta.", "Revisar las ofertas sin confirmar desde Administración. Solo se recomiendan las comprobadas recientemente.", configured=True, action_url="/administracion", action_label="Revisar vacantes externas")
     for key, name, configured in [("youtube", "YouTube", youtube), ("microsoft_learn", "Microsoft Learn", learn)]:

@@ -57,7 +57,9 @@ def test_certificate_links_and_evidence_are_saved_together(client):
         response = client.post(f"/api/v1/matching/evidence/{later['id']}/skills", headers=headers)
         assert response.status_code == 200, response.text
     saved = client.get("/api/v1/profiles/me", headers=headers).json()["certifications"]
-    assert len(saved) == 2 and saved[-1]["url"] == payload["url"]
+    assert len(saved) == 1 and saved[-1]["url"] == payload["url"]
+    assert later["id"] == evidence["id"]
+    assert len(client.get("/api/v1/matching/evidence", headers=headers).json()) == 1
     for url in ["javascript:alert(1)", "http://credentials.example.org/123", "https://user:secret@credentials.example.org/123"]:
         assert client.put("/api/v1/profiles/me", headers=headers, json={"certifications": [{"name": "Curso", "url": url}]}).status_code == 422
         assert client.post("/api/v1/matching/evidence", headers=headers, json={**payload, "url": url}).status_code == 422

@@ -10,6 +10,8 @@
 .challenge-skill-outcome{display:grid;gap:.25rem;padding:.65rem .8rem;background:var(--surface-subtle);border-radius:8px;font-size:.8rem;border:1px solid var(--line)}.challenge-skill-outcome>span{font-size:.68rem;color:var(--muted)}.challenge-skill-outcome>strong{text-transform:none;font-weight:650}.course-discovery-card .course-discovery-description{font-size:.8rem;line-height:1.7;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.course-discovery-card .course-card-body{display:grid;gap:.9rem}.course-discovery-card .course-card-meta{flex-wrap:wrap}.course-discovery-card .course-target-skills{padding-top:.75rem;border-top:1px solid var(--line)}.course-discovery-card .ui-panel-actions{margin-top:auto}.certificate-v4 .certificate-add-action{display:inline-flex;align-items:center;gap:.6rem;padding:.75rem 1rem;min-height:44px;font-size:.84rem;font-weight:650;border-radius:9px;box-shadow:0 2px 5px #0000000a}.course-details-action{display:inline-flex;gap:.5rem;align-items:center;justify-content:center}
 
 .youtube-studio>header { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:1.1rem; align-items:center; padding:1.6rem; background:var(--surface-subtle); border-bottom:1px solid var(--line); }
+.youtube-studio { min-width:0; overflow-wrap:anywhere; }
+.youtube-studio button { white-space:normal; }
 .youtube-studio-symbol { display:grid; place-items:center; width:58px; height:58px; border-radius:16px; color:#ef4444; background:color-mix(in srgb,#ef4444 10%,var(--surface)); }
 .youtube-studio>header h2 { margin-top:.35rem; font-size:1.3rem; line-height:1.35; }
 .youtube-studio>header p:not(.section-kicker) { color:var(--muted); margin-top:.4rem; font-size:.85rem; }

@@ -84,6 +84,7 @@ class CatalogRefreshService:
                 db.commit()
                 boards = set()
                 boards.update({"https://job-boards.greenhouse.io/agencywithin", "https://job-boards.greenhouse.io/goodsservices"})
+                boards.update({"https://jobs.ashbyhq.com/addi", "https://jobs.ashbyhq.com/nubank"})
                 for job in jobs:
                     try:
                         reference = ats_reference(job.external_url)

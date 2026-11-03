@@ -72,6 +72,26 @@ def test_native_ats_checks_use_exact_fixed_endpoint_and_job_id():
     assert JobAvailability(HTTP(payload={"id": 123, "title": "Analista"}, final="https://another.example/job")).check("https://boards.greenhouse.io/acme/jobs/123").state == "unknown"
 
 
+def test_ashby_checks_exact_listed_identity_and_never_infers_colombia_from_remote():
+    identifier = "12345678-1234-1234-1234-123456789abc"
+    url = f"https://jobs.ashbyhq.com/acme/{identifier}"
+    posting = {"id": identifier, "title": "Analista", "jobUrl": url, "isListed": True,
+               "location": "Remote", "isRemote": True, "workplaceType": "Remote", "employmentType": "FullTime",
+               "publishedAt": "2026-11-01T12:00:00Z", "descriptionHtml": "<h2>What you will do</h2><p>Analyze data and prepare useful reports for the finance team and business users.</p><h2>What we’re looking for</h2><p>Professional experience with SQL, Python and Excel for preparing business reports.</p>"}
+    http = HTTP(payload={"jobs": [posting]})
+    assert JobAvailability(http).check(url).state == "verified"
+    assert http.calls == ["https://api.ashbyhq.com/posting-api/job-board/acme"]
+    assert JobAvailability(HTTP(payload={"jobs": [{**posting, "isListed": False}]})).check(url).state == "closed"
+    catalog = EmployerBoardCatalog("https://jobs.ashbyhq.com/acme", http)
+    assert catalog.preview(location="Colombia")[0] == []
+    posting["address"] = {"postalAddress": {"addressCountry": "CO"}}
+    jobs, _ = catalog.preview(location="Colombia")
+    assert len(jobs) == 1 and jobs[0].employment_type == "full_time"
+    from app.domain.services.external_job_content import extract_content
+    content, _, _, _ = extract_content(jobs[0].title, jobs[0].description)
+    assert content["admission"]["clarity_passed"]
+
+
 @pytest.mark.parametrize("url", ["http://example.com/job", "https://user:pass@example.com/job", "https://example.com:8080/job", "https://metadata.google.internal/job", "https://example.com\\@127.0.0.1/job"])
 def test_public_url_rejects_unsafe_destinations(url):
     with pytest.raises(ValueError):

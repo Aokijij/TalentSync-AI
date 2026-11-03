@@ -3,7 +3,6 @@ import json
 import re
 import unicodedata
 from datetime import datetime, timezone
-from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
 from app.application.errors import CatalogProviderError
@@ -22,27 +21,9 @@ def board_reference(url):
         return "greenhouse", board
     if parsed.hostname in {"jobs.lever.co", "jobs.eu.lever.co"}:
         return "lever_eu" if parsed.hostname == "jobs.eu.lever.co" else "lever", board
-    raise ValueError("Usa un portal público de Greenhouse o Lever")
-
-
-class TextOnly(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.parts, self.hidden = [], 0
-
-    def handle_starttag(self, tag, attrs):
-        if tag in {"script", "style"}:
-            self.hidden += 1
-        if tag in {"p", "li", "br", "div", "h2", "h3"}:
-            self.parts.append("\n")
-
-    def handle_endtag(self, tag):
-        if tag in {"script", "style"}:
-            self.hidden = max(0, self.hidden - 1)
-
-    def handle_data(self, text):
-        if not self.hidden:
-            self.parts.append(text)
+    if parsed.hostname == "jobs.ashbyhq.com":
+        return "ashby", board
+    raise ValueError("Usa un portal público de Greenhouse, Lever o Ashby")
 
 
 def plain(value):
@@ -70,6 +51,8 @@ def published_date(row, provider):
             return value.astimezone(timezone.utc).replace(tzinfo=None)
         if provider != "greenhouse" and row.get("createdAt"):
             return datetime.fromtimestamp(float(row["createdAt"]) / 1000, timezone.utc).replace(tzinfo=None)
+        if provider == "ashby" and row.get("publishedAt"):
+            return datetime.fromisoformat(row["publishedAt"].replace("Z", "+00:00")).astimezone(timezone.utc).replace(tzinfo=None)
     except (ValueError, TypeError, OverflowError, OSError):
         pass
     return None
@@ -80,10 +63,10 @@ class EmployerBoardCatalog:
         self.provider, self.board = board_reference(board_url)
         self.board_url = public_url(board_url)
         self.http = http or PublicHTTP(timeout=20, max_bytes=16_000_000)
-        self.source_name = "Greenhouse" if self.provider == "greenhouse" else "Lever"
+        self.source_name = {"greenhouse": "Greenhouse", "ashby": "Ashby"}.get(self.provider, "Lever")
 
     def preview(self, *, keywords="", location="Colombia"):
-        endpoint = (f"https://boards-api.greenhouse.io/v1/boards/{self.board}/jobs?content=true" if self.provider == "greenhouse" else
+        endpoint = (f"https://api.ashbyhq.com/posting-api/job-board/{self.board}" if self.provider == "ashby" else f"https://boards-api.greenhouse.io/v1/boards/{self.board}/jobs?content=true" if self.provider == "greenhouse" else
                     f"https://api{'.eu' if self.provider == 'lever_eu' else ''}.lever.co/v0/postings/{self.board}?mode=json&limit=1000")
         try:
             response = self.http.get(endpoint)
@@ -100,7 +83,17 @@ class EmployerBoardCatalog:
             for row in rows:
                 if not isinstance(row, dict):
                     continue
-                if self.provider == "greenhouse":
+                if self.provider == "ashby":
+                    if not row.get("isListed"):
+                        continue
+                    title, url = row.get("title"), row.get("jobUrl")
+                    places = [{"location": row.get("location", ""), "address": (row.get("address") or {}).get("postalAddress", {})}, *(row.get("secondaryLocations") or [])]
+                    published_places = [str(item.get("location") or "") + (", Colombia" if str((item.get("address") or {}).get("addressCountry", "")).casefold() in {"co", "col", "colombia"} else "") for item in places]
+                    place = next((item for item in published_places if "colombia" in folded(item)), published_places[0])
+                    description = plain(row.get("descriptionHtml") or row.get("descriptionPlain"))
+                    contract = {"FullTime": "full_time", "PartTime": "part_time", "Intern": "internship", "Contract": "contract", "Temporary": "temporary"}.get(row.get("employmentType"), "")
+                    remote = row.get("workplaceType") == "Remote"
+                elif self.provider == "greenhouse":
                     title, url = row.get("title"), row.get("absolute_url")
                     place = (row.get("location") or {}).get("name", "")
                     description = plain(row.get("content"))
@@ -114,9 +107,13 @@ class EmployerBoardCatalog:
                     contract, remote = category.get("commitment", ""), row.get("workplaceType") == "remote"
                 if not isinstance(title, str) or not isinstance(place, str) or not isinstance(url, str):
                     continue
-                reference = ats_reference(url)
-                if not reference or reference[:2] != (self.provider, self.board) or reference[2] != str(row.get("id")):
-                    continue
+                if self.provider == "ashby":
+                    if not url.startswith(f"https://jobs.ashbyhq.com/{self.board}/") or urlsplit(url).path.strip("/").split("/") != [self.board, str(row.get("id"))]:
+                        continue
+                else:
+                    reference = ats_reference(url)
+                    if not reference or reference[:2] != (self.provider, self.board) or reference[2] != str(row.get("id")):
+                        continue
                 # Explicit locations only: "remote" alone never means eligible in Colombia.
                 if location and folded(location) not in folded(place):
                     continue
@@ -124,7 +121,7 @@ class EmployerBoardCatalog:
                     continue
                 if not contract and re.search(r"\b(?:intern|internship|practicante|pasante)\b", folded(title)):
                     contract = "internship"
-                company = row.get("company_name") if self.provider == "greenhouse" else self.board
+                company = row.get("company_name") if self.provider == "greenhouse" else {"addi": "Addi", "nubank": "Nu"}.get(self.board, self.board)
                 jobs.append(CatalogJob(external_id=str(row["id"]), title=title[:180], company=company or self.board,
                     location=place[:120], description=description[:20_000], employment_type=contract,
                     salary=monthly_cop(description), url=url, company_url=self.board_url, remote=remote,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
 import "../styles/external-catalog.css";
@@ -6,6 +6,13 @@ import "../styles/external-catalog.css";
 export function ExternalCatalogPanel({ onChanged }) {
   const [status, setStatus] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false);
   const [keywords, setKeywords] = useState("servicio al cliente, administración, ventas, tecnología");
+  const changed = useRef(onChanged), previousRun = useRef("idle");
+  useEffect(() => { changed.current = onChanged; }, [onChanged]);
+  useEffect(() => {
+    const current = status?.run?.state;
+    if (previousRun.current === "running" && current === "completed") changed.current?.();
+    previousRun.current = current;
+  }, [status?.run?.state]);
   const load = useCallback(async () => {
     try { setStatus((await api.get("/admin/jobs/catalog-status")).data); setError(""); }
     catch (failure) { setError(getApiErrorMessage(failure)); }

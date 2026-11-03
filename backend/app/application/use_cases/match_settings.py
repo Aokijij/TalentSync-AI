@@ -6,7 +6,7 @@ from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import match_current_candidate
 from app.domain.services.credential_links import certificate_url
 from app.domain.services.skills import normalize_skills
-from app.domain.services.training_records import unique_training
+from app.domain.services.training_records import training_keys, unique_training
 from app.domain.services.work_preferences import effective_preferences
 
 
@@ -45,20 +45,26 @@ def preferences(db, user, payload=None):
 
 
 def evidence(db, user, payload=None, *, analysis=None):
+    if payload is not None:
+        db.profiles.lock_owner(user.id)
+        db.refresh(user.profile)
     items = user.profile.evidence or []
     if payload is not None:
-        if len(items) >= 50:
+        previous = next((row for row in items if row.get("kind") in {"certificate", "training"} and payload["kind"] in {"certificate", "training"} and training_keys(row) & training_keys(payload)), None)
+        if previous is None and len(items) >= 50:
             raise UseCaseError(status_code=422, detail="Puedes registrar hasta 50 evidencias")
-        item = {**payload, "id": uuid4().hex, "created_at": datetime.utcnow().isoformat(), "verified": False}
+        item = {**payload, "id": previous["id"] if previous else uuid4().hex, "created_at": previous.get("created_at") if previous else datetime.utcnow().isoformat(), "verified": False}
+        if previous:
+            item["add_to_profile"] = previous.get("add_to_profile", False) or payload.get("add_to_profile", False)
         if analysis is not None:
             item["analysis"] = analysis
-        if payload.get("add_to_profile"):
+        if item.get("add_to_profile"):
             add_certificate(user.profile, item)
             skills = normalize_skills([*(user.profile.skills or []), *payload["skills"]])
             if len(skills) > 100:
                 raise UseCaseError(status_code=422, detail="Tu perfil admite hasta cien habilidades")
             user.profile.skills = skills
-        user.profile.evidence = [*items, item]
+        user.profile.evidence = [item if row["id"] == item["id"] else row for row in items] if previous else [*items, item]
         user.profile.updated_at = datetime.utcnow()
         record_event(db, "profile.evidence_added", "profile", user.profile.id, actor_user_id=user.id, details={"source": payload["kind"]})
         db.commit()

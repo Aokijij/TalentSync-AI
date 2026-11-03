@@ -104,6 +104,16 @@ class JobAvailability:
                     return Availability("unknown", "unconfirmed")
                 return Availability("verified", "source_api", posting=value)
             parsed = urlsplit(url)
+            if parsed.hostname == "jobs.ashbyhq.com" and re.fullmatch(r"/[a-zA-Z0-9_-]{1,80}/[a-fA-F0-9-]{36}/?", parsed.path):
+                board, identifier = parsed.path.strip("/").split("/")
+                response = self.http.get(f"https://api.ashbyhq.com/posting-api/job-board/{board}")
+                if response.status != 200:
+                    return Availability("unavailable", "source_unavailable")
+                jobs = json.loads(response.body).get("jobs")
+                if not isinstance(jobs, list):
+                    return Availability("unknown", "unconfirmed")
+                posting = next((item for item in jobs if item.get("id") == identifier and item.get("isListed") and item.get("title") and _identity(item.get("jobUrl", "")) == _identity(url)), None)
+                return Availability("verified", "source_api", posting=posting) if posting else Availability("closed", "source_removed")
             if parsed.hostname in {"www.getonbrd.com", "getonbrd.com"} and re.fullmatch(r"/jobs/[a-zA-Z0-9_-]+", parsed.path):
                 slug = parsed.path.rsplit("/", 1)[-1]
                 response = self.http.get("https://www.getonbrd.com/api/v0/jobs/" + slug)

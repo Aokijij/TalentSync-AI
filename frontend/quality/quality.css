@@ -1,5 +1,5 @@
 body { margin:0; background:var(--canvas); color:var(--ink); }
-.quality-shell { box-sizing:border-box; max-width:1240px; margin:auto; padding:24px; display:grid; gap:24px; background:var(--canvas); }
+.quality-shell { box-sizing:border-box; max-width:1240px; margin:auto; padding:24px; display:grid; grid-template-columns:minmax(0,1fr); gap:24px; background:var(--canvas); }
 .quality-label { margin:0; color:var(--muted); font-size:12px; }
 .quality-course-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
 .quality-preparation { min-width:0; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
