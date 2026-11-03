@@ -3,3 +3,4 @@
 .app-sidebar .app-nav-account{margin-top:1.3rem;border-color:var(--sidebar-border);border-radius:10px;padding:.75rem}.app-sidebar-footer{margin-top:auto;padding-top:1rem}.app-sidebar .app-nav-utility{display:flex;align-items:center;gap:.75rem;width:100%;min-height:44px;padding:.6rem .8rem;border:1px solid transparent;border-radius:9px;color:var(--sidebar-muted);font-size:.78rem;font-weight:550}.app-sidebar .app-nav-utility:hover{color:var(--sidebar-ink);background:color-mix(in srgb,var(--sidebar-ink) 8%,transparent)}.app-sidebar :is(.app-nav-link,.app-nav-utility):focus-visible{outline:2px solid var(--sidebar-ink);outline-offset:2px}
 @media(max-width:1023px){.app-sidebar .app-nav-link{min-height:46px}.app-nav-group>p{font-size:.62rem}}
 .app-nav-label{overflow-wrap:anywhere}
+.app-mobile-header{gap:8px;padding-inline:16px}.app-mobile-header>div:first-child{flex:1;min-width:0}.app-mobile-header>div:last-child{flex:none}

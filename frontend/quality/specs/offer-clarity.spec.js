@@ -58,8 +58,11 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Cl
       await expect(page.locator(".vacancy-card").filter({ hasText: "Analista externo" }).locator(".offer-clarity-badge")).toHaveCount(0);
       await page.screenshot({ path: `../.local/course-completion-review/clarity-${theme}-${width}.png`, fullPage: true });
     }
-    await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
-    const geometry = await page.evaluate(() => ({ overflow: document.documentElement.scrollWidth - innerWidth, elements: [...document.querySelectorAll("main *")].filter((node) => node.getBoundingClientRect().right > innerWidth + 1).slice(0, 12).map((node) => ({ tag: node.tagName, class: String(node.className), width: Math.round(node.getBoundingClientRect().width) })) }));
+    await page.evaluate(async () => {
+      document.documentElement.style.fontSize = "200%";
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    });
+    const geometry = await page.evaluate(() => ({ overflow: document.documentElement.scrollWidth - innerWidth, elements: [...document.querySelectorAll("body *")].filter((node) => node.getBoundingClientRect().right > innerWidth + 1).slice(0, 12).map((node) => ({ tag: node.tagName, class: String(node.className), width: Math.round(node.getBoundingClientRect().width) })) }));
     expect(geometry.overflow, JSON.stringify({ path, ...geometry })).toBeLessThanOrEqual(1);
   }
   expect(errors).toEqual([]);

@@ -151,7 +151,7 @@ export function AppLayout() {
         <SidebarFooter logout={logout} />
       </aside>
 
-      <header className="sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-[var(--line)] bg-[var(--canvas)]/95 px-4 backdrop-blur lg:hidden">
+      <header className="app-mobile-header sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-[var(--line)] bg-[var(--canvas)]/95 px-4 backdrop-blur lg:hidden">
         <BrandLogo size="sm" subtitle={copy.label} />
         <div className="flex gap-2">
           <ThemeToggle compact />

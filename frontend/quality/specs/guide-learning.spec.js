@@ -59,7 +59,7 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Co
   expect(context.state.certificateBody).not.toHaveProperty("issuer");
   await noOverflow(page);
   await page.screenshot({ path: `../.local/challenge-paths-review/course-${theme}-${width}.png`, fullPage: true });
-  await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; }); await noOverflow(page);
+  await zoomText(page); await noOverflow(page);
   expect(context.errors).toEqual([]);
 });
 
@@ -128,6 +128,13 @@ async function noOverflow(page) {
   expect(result.overflow, JSON.stringify(result.elements)).toBeLessThanOrEqual(1);
 }
 
+async function zoomText(page) {
+  await page.evaluate(async () => {
+    document.documentElement.style.fontSize = "200%";
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+}
+
 for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Course tracking and separate results · ${width} · ${theme}`, async ({ page }) => {
   const context = await setup(page, { width, theme });
   await page.getByRole("button", { name: "Añadir a mi plan", exact: true }).click();
@@ -161,7 +168,7 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Co
   await expect(page.locator(".result-record-score")).toHaveText("60%");
   await noOverflow(page);
   await page.screenshot({ path: `../.local/learning-guide-review/results-${theme}-${width}.png`, fullPage: true });
-  await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; }); await noOverflow(page);
+  await zoomText(page); await noOverflow(page);
   expect(context.calls.filter((row) => row.endpoint.endsWith("/journey"))).toEqual([]);
   expect(context.errors).toEqual([]);
 });
@@ -323,6 +330,6 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Fi
   await expect(page.getByRole("heading", { name: "Continúa con el proveedor", exact: true })).toBeVisible();
   await expect(page.locator(".course-skill-claim")).toHaveCount(0);
   expect(context.state.remainingSkills).toEqual([]);
-  await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; }); await noOverflow(page);
+  await zoomText(page); await noOverflow(page);
   expect(context.errors).toEqual([]);
 });
