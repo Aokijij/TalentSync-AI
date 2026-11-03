@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import and_, or_, update
+from sqlalchemy import and_, func, or_, update
 from sqlalchemy.exc import IntegrityError
 
 from app.domain.services.mail_webhooks import EVENTS
@@ -18,6 +18,23 @@ from app.infrastructure.database.models import (
 class AccountRepository:
     def __init__(self, session):
         self.session = session
+
+    def integration_history(self):
+        from app.infrastructure.database.models import CalendarConnection, CalendarEvent
+        result = {}
+        def add(key, date, operation):
+            if date:
+                stamp = date.isoformat() + "Z"
+                result[key] = {"last_success_at": stamp, "last_attempt_at": stamp, "last_error": "", "operation": operation}
+        add("mail", self.session.query(func.max(MailMessage.sent_at)).filter(MailMessage.transport_status == "accepted").scalar(), "mail_accepted")
+        for provider in ("google", "github", "workspace", "entra"):
+            date = self.session.query(func.max(UserSession.created_at)).filter(UserSession.authentication_method == provider).scalar()
+            identity_date = self.session.query(func.max(SocialIdentity.created_at)).filter(SocialIdentity.provider == provider).scalar()
+            add(("sso_" if provider in {"workspace", "entra"} else "social_") + provider, max(filter(None, (date, identity_date)), default=None), "identity_exchange")
+        connected = self.session.query(func.max(CalendarConnection.connected_at)).scalar()
+        synced = self.session.query(func.max(CalendarEvent.last_synced_at)).scalar()
+        add("calendar", max(filter(None, (connected, synced)), default=None), "calendar_sync" if synced and (not connected or synced >= connected) else "calendar_connect")
+        return result
 
     def new_session(self, **values):
         return UserSession(**values)

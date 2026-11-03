@@ -65,7 +65,8 @@ def extract_entities(text, *, model_path=None, python_path=None, timeout=None):
             "SYSTEMROOT", "WINDIR", "PATH", "TEMP", "TMP", "USERPROFILE", "LOCALAPPDATA"}}
         env.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", HF_HUB_DISABLE_TELEMETRY="1",
                    TOKENIZERS_PARALLELISM="false", PYTHONIOENCODING="utf-8", PYTHONUTF8="1")
-        output = subprocess.run([str(python.resolve()), str(Path(__file__).with_name("cv_entity_worker.py")), str(folder.resolve())],
+        # Resolving a POSIX venv's python symlink bypasses its isolated packages.
+        output = subprocess.run([str(python.absolute()), str(Path(__file__).with_name("cv_entity_worker.py")), str(folder.resolve())],
                                 input=json.dumps({"text": text[:MAX_CHARS]}, ensure_ascii=False), text=True, encoding="utf-8",
                                 capture_output=True, timeout=timeout or settings.cv_entity_timeout_seconds, env=env,
                                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0, check=True)

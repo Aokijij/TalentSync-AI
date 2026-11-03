@@ -34,4 +34,4 @@ async def resend_event(request: Request, db=Depends(get_unit_of_work)):
 def delivery_status(page: int = Query(default=1, ge=1), user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work)):
     total, rows = db.accounts.mail_status_page((page - 1) * 20, 20)
     return {"page": page, "page_size": 20, "total": total, "items": [{"id": row.id, "queue_state": row.delivery_state, "transport_status": row.transport_status, "attempts": row.attempts, "created_at": row.created_at, "accepted_at": row.sent_at, "event_at": row.provider_event_at, "failure_kind": row.failure_kind} for row in rows],
-            "note": "Aceptado por el transporte no significa entregado. SMTP sin eventos del proveedor no confirma entrega ni lectura."}
+            "note": "Aceptado por el transporte no significa entregado. SMTP y Gmail sin eventos de entrega no confirman recepción ni lectura."}

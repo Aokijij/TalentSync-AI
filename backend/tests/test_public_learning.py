@@ -56,7 +56,7 @@ def test_parsers_use_visible_modality_keep_unknown_cupos_and_skip_untrusted_link
     assert parse_sena_observation(DETAIL)["status"] == "open"
     assert parse_sena_observation(DETAIL.replace("Código: 123", ""))["status"] == "unknown"
     calls = parse_sapiencia(CALLS)
-    assert len(calls) == 2 and {row["status"] for row in calls} == {"open", "closed"}
+    assert len(calls) == 3 and {row["status"] for row in calls} == {"open", "closed"}
     assert all("Medellín" in row["region"] for row in calls)
     assert parse_sapiencia(CALLS)[0]["id"] == calls[0]["id"]
 
@@ -153,7 +153,7 @@ def test_refresh_preserves_editorial_content_and_handles_provider_outage(client)
     _, candidate = register(client, "local-calls-reader", skills=["excel"])
     count = len(calls)
     saved = client.get("/api/v1/learning/opportunities", headers=candidate).json()
-    assert len(saved["items"]) == 2 and saved["fetched_at"]
+    assert len(saved["items"]) == 3 and saved["fetched_at"]
     assert len(calls) == count
 
 

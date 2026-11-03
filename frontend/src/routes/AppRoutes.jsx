@@ -32,9 +32,10 @@ const RecommendationsPage = lazyNamed(() => import("../pages/RecommendationsPage
 const RegisterPage = lazyNamed(() => import("../pages/RegisterPage.jsx"), "RegisterPage");
 const SecurityPage = lazyNamed(() => import("../pages/SecurityPage.jsx"), "SecurityPage");
 const AccountActionPage = lazyNamed(() => import("../pages/AccountActionPage.jsx"), "AccountActionPage");
-const LocalMailboxPage = lazyNamed(() => import("../pages/LocalMailboxPage.jsx"), "LocalMailboxPage");
+const LocalMailboxPage = import.meta.env.DEV ? lazyNamed(() => import("../pages/LocalMailboxPage.jsx"), "LocalMailboxPage") : null;
 const OnboardingPage = lazyNamed(() => import("../pages/OnboardingPage.jsx"), "OnboardingPage");
 const LandingPage = lazyNamed(() => import("../pages/LandingPage.jsx"), "LandingPage");
+const LegalPage = lazyNamed(() => import("../pages/LegalPage.jsx"), "LegalPage");
 const CompanyWelcomePage = lazyNamed(() => import("../pages/CompanyWelcomePage.jsx"), "CompanyWelcomePage");
 const PlatformGuidePage = lazyNamed(() => import("../pages/PlatformGuidePage.jsx"), "PlatformGuidePage");
 const OrganizationPage = lazyNamed(() => import("../pages/OrganizationWorkspace.jsx"), "OrganizationWorkspace");
@@ -123,6 +124,10 @@ export function AppRoutes() {
       {import.meta.env.DEV && <Route path="/desarrollo/correos" element={<LocalMailboxPage />} />}
       <Route path="/equipo/invitacion" element={<InvitationPage />} />
       <Route path="/" element={<PublicHome />} />
+      <Route path="/candidatos" element={<LandingPage />} />
+      <Route path="/empresas" element={<LandingPage role="company" />} />
+      <Route path="/privacidad" element={<LegalPage />} />
+      <Route path="/terminos" element={<LegalPage kind="terms" />} />
 
       <Route
         element={

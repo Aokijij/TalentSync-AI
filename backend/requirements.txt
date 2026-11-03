@@ -1,3 +1,3 @@
 -r requirements-lite.txt
-docling[easyocr]==2.125.0
-pandas==2.2.3
+# Install OCR separately with requirements-ocr.txt and CV_DOCLING_PYTHON.
+# Docling's Pillow constraint must not replace the PDF/export runtime's Pillow.

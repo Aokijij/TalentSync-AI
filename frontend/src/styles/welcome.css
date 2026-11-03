@@ -105,3 +105,11 @@
 .welcome-step-copy a { margin-top:.8rem; }
 @media(max-width:900px) { .public-hero { gap:2rem; padding-block:3rem; } .welcome-layout { grid-template-columns:1fr; } .welcome-aside { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:700px) { .public-container { width:calc(100% - 2rem); } .public-how-link { display:none; } .public-header { padding-block:1rem; } .public-header nav { gap:.5rem; } .public-header .button-secondary { font-size:.75rem; padding:.6rem .7rem; } .public-header nav>a svg { display:none; } .public-hero,.public-process { grid-template-columns:1fr; gap:2rem; } .public-hero { padding-block:2.5rem; } .public-hero h1 { font-size:2.7rem; } .public-lead { font-size:1rem; } .public-hero-actions>a { flex:1 1 150px; } .public-demo,.public-path { padding:1.25rem; } .public-path-grid,.welcome-aside { grid-template-columns:1fr; } .public-path h3 { font-size:1.4rem; } .public-paths { padding-block:2.5rem; } .public-process { padding-block:2.5rem; } .welcome-panel { padding:1.25rem; } .welcome-actions>* { flex:1 1 150px; } .welcome-checklist>li { gap:.75rem; } }
+
+.candidate-welcome :is(.welcome-actions,.welcome-guide-link,.welcome-aside) :is(.button-primary,.button-secondary) { min-height:46px; border-radius:12px; padding:.8rem 1.1rem; font-size:.84rem; font-weight:650; display:inline-flex; align-items:center; justify-content:center; gap:.65rem; transition:background .18s,border-color .18s,box-shadow .18s; }
+.candidate-welcome .welcome-actions .button-primary { min-width:0; max-width:100%; white-space:normal; overflow-wrap:anywhere; flex:1 1 220px; box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 15%,transparent); }
+.candidate-welcome .welcome-actions .button-secondary { flex:0 1 auto; background:var(--surface); }
+.candidate-welcome .welcome-aside .button-secondary { width:100%; margin-top:1.1rem; background:var(--surface-subtle); }
+.welcome-guide-link { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1.25rem 1.5rem; border:1px solid var(--line); border-radius:16px; background:var(--surface); }
+.welcome-guide-link p { margin-top:.3rem; color:var(--muted); font-size:.8rem; }
+@media(max-width:600px) { .welcome-guide-link { align-items:stretch; flex-direction:column; } .candidate-welcome .welcome-actions .button-secondary { flex:1 1 160px; } }

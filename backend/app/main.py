@@ -30,7 +30,15 @@ async def lifespan(app: FastAPI):
     education_task = None
     calendar_task = None
     account_task = None
+    vacancy_task = None
+    health_task = None
     stop_event = asyncio.Event()
+    if settings.integration_health_checks_enabled:
+        from app.infrastructure.integration_health import periodic_integration_health
+        health_task = asyncio.create_task(periodic_integration_health(stop_event))
+    if settings.external_job_checks_enabled:
+        from app.infrastructure.vacancy_scheduler import periodic_vacancy_checks
+        vacancy_task = asyncio.create_task(periodic_vacancy_checks(stop_event))
     if settings.match_model_path:
         from app.infrastructure.nlp.matching_encoder import matching_encoder
         await asyncio.to_thread(matching_encoder)
@@ -40,7 +48,7 @@ async def lifespan(app: FastAPI):
     if settings.calendar_sync_enabled:
         from app.infrastructure.calendar_scheduler import periodic_calendar
         calendar_task = asyncio.create_task(periodic_calendar(stop_event))
-    if settings.smtp_enabled or settings.resend_enabled:
+    if settings.smtp_enabled or settings.resend_enabled or settings.gmail_mail_enabled:
         from app.infrastructure.mail_scheduler import periodic_mail
         mail_task = asyncio.create_task(periodic_mail(stop_event))
     if settings.model_maintenance_enabled:
@@ -60,6 +68,8 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         stop_event.set()
+        if health_task:
+            await health_task
         if task:
             await task
         if workflow_task:
@@ -74,6 +84,8 @@ async def lifespan(app: FastAPI):
             await calendar_task
         if account_task:
             await account_task
+        if vacancy_task:
+            await vacancy_task
 
 
 def create_app() -> FastAPI:

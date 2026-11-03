@@ -39,6 +39,19 @@ def test_explicit_resend_only_future_outbox_and_webhook_configuration(monkeypatc
     assert testing["RESEND_WEBHOOK_SECRET"] == ""
 
 
+def test_gmail_requires_explicit_opt_in_and_never_leaks_into_tests(monkeypatch, tmp_path):
+    commands = local_commands(monkeypatch, tmp_path)
+    write_config(tmp_path, "INTEGRATIONS_ENABLED=true\nINTEGRATION_MAIL_TRANSPORT=gmail\nGMAIL_MAIL_CLIENT_ID=synthetic.apps.googleusercontent.com\nGMAIL_MAIL_CLIENT_SECRET=PRIVATE-CLIENT\nGMAIL_MAIL_REFRESH_TOKEN=PRIVATE-REFRESH\nGMAIL_MAIL_SENDER=sender@example.com\n")
+    env = commands.prepare_environment()
+    assert env["GMAIL_MAIL_ENABLED"] == "true"
+    assert env["LOCAL_MAIL_ENABLED"] == env["SMTP_ENABLED"] == env["RESEND_ENABLED"] == "false"
+    assert commands.integration_status(env)["mail"] == "gmail"
+    assert "PRIVATE" not in json.dumps(commands.integration_status(env))
+    testing = commands.prepare_environment(testing=True)
+    assert testing["GMAIL_MAIL_ENABLED"] == "false" and testing["GMAIL_MAIL_REFRESH_TOKEN"] == ""
+    assert testing["GMAIL_MAIL_CLIENT_SECRET"] == ""
+
+
 def test_https_origin_and_calendar_opt_in(monkeypatch, tmp_path):
     commands = local_commands(monkeypatch, tmp_path)
     write_config(tmp_path, "INTEGRATIONS_ENABLED=true\nPUBLIC_APP_URL=https://localhost:5173\nCALENDAR_SYNC_ENABLED=true\nCALENDAR_GOOGLE_CLIENT_ID=calendar-id\nCALENDAR_GOOGLE_CLIENT_SECRET=calendar-secret\nINTEGRATION_MAIL_TRANSPORT=smtp\nSMTP_HOST=smtp.example.com\nSMTP_FROM=accounts@example.com\n")
@@ -59,6 +72,7 @@ def test_https_origin_and_calendar_opt_in(monkeypatch, tmp_path):
     "INTEGRATIONS_ENABLED=true\nPUBLIC_APP_URL=https://user:password@localhost",
     "INTEGRATIONS_ENABLED=true\nINTEGRATION_MAIL_TRANSPORT=resend\nRESEND_API_KEY=re_private\nRESEND_FROM=onboarding@resend.dev",
     "INTEGRATIONS_ENABLED=true\nINTEGRATION_MAIL_TRANSPORT=smtp",
+    "INTEGRATIONS_ENABLED=true\nINTEGRATION_MAIL_TRANSPORT=gmail",
 ])
 def test_invalid_private_configuration_never_leaks_secrets(monkeypatch, tmp_path, content):
     commands = local_commands(monkeypatch, tmp_path)

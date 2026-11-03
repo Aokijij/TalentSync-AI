@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useLayoutEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
@@ -13,8 +13,13 @@ import { loadAppFont } from "./utils/fontLoading.js";
 
 loadAppFont(document);
 
+function StartupBoundary({ children }) {
+  useLayoutEffect(() => { document.documentElement.removeAttribute("data-app-route"); document.title = "TalentSync"; }, []);
+  return children;
+}
+
 createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  <React.StrictMode><StartupBoundary>
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
@@ -22,5 +27,5 @@ createRoot(document.getElementById("root")).render(
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
-  </React.StrictMode>,
+  </StartupBoundary></React.StrictMode>,
 );

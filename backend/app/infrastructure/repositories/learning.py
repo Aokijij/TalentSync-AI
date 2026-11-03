@@ -22,6 +22,28 @@ class LearningRepository:
     def source_snapshot(self, key):
         return self.session.get(LearningSourceSnapshot, key)
 
+    def record_integration(self, provider, now, error_code, error_text, operation):
+        """Atomic upsert: concurrent first operations must not roll back a sent mail."""
+        from sqlalchemy import func
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+        dialect = self.session.get_bind().dialect.name
+        insert = pg_insert if dialect == "postgresql" else sqlite_insert
+        key, stamp = "integration:" + provider, now.isoformat() + "Z"
+        table = LearningSourceSnapshot
+        content = {"last_success_at": None if error_code else stamp, "error_code": error_code, "operation": operation}
+        statement = insert(table).values(id=key, content=content, fetched_at=now, attempted_at=now, error=error_text)
+        last_success = table.content["last_success_at"].as_string() if error_code else stamp
+        json_object = func.json_build_object if dialect == "postgresql" else func.json_object
+        statement = statement.on_conflict_do_update(index_elements=[table.id],
+            set_={"content": json_object("last_success_at", last_success, "error_code", error_code, "operation", operation),
+                  "attempted_at": now, "fetched_at": table.fetched_at if error_code else now, "error": error_text},
+            where=table.attempted_at <= now)
+        self.session.execute(statement)
+        for row in list(self.session.identity_map.values()):
+            if isinstance(row, LearningSourceSnapshot) and row.id == key:
+                self.session.expire(row)
+
     def new_source_snapshot(self, **values):
         return LearningSourceSnapshot(**values)
 

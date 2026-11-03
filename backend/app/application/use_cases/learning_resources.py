@@ -71,7 +71,18 @@ def manage(db, user, payloads=None, resource_id=None, version=None):
     else:
         if len(db.learning.resources()) + len(payloads) > 1000:
             raise UseCaseError(status_code=422, detail="El catálogo admite hasta mil recursos administrables")
-        targets = [db.learning.new_resource(id=f"course-{uuid4().hex}") for _ in payloads]
+        from app.domain.services.training_records import training_text
+        def course_key(value):
+            return (str(value.get("url") or "").rstrip("/"), training_text(value.get("title")), training_text(value.get("provider")))
+        existing = {course_key(row.content): row for row in db.learning.resources()}
+        targets = []
+        for payload in payloads:
+            key = course_key(payload)
+            target = existing.get(key)
+            if target is None:
+                target = db.learning.new_resource(id=f"course-{uuid4().hex}")
+                existing[key] = target
+            targets.append(target)
     for row, content in zip(targets, payloads, strict=True):
         source = row.content.get("source") if resource_id else None
         previous_details = row.content.get("details") if resource_id else None

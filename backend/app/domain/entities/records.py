@@ -13,6 +13,7 @@ class User(Protocol):
     password_hash: str
     role: UserRole
     registration_pending: bool
+    legal_acceptance: dict
     created_at: datetime
     profile: Profile | None
     applications: list["Application"]
@@ -88,6 +89,8 @@ class CompanyFollower(Protocol):
 
 
 class Job(Protocol):
+    external_published_at: datetime | None
+    external_content: dict | None
     quality_details: dict | None
     quality_revision: int
     id: int
@@ -117,6 +120,11 @@ class Job(Protocol):
     external_url: str | None
     expires_at: datetime | None
     last_seen_at: datetime | None
+    external_check_state: str
+    external_checked_at: datetime | None
+    external_verified_at: datetime | None
+    external_check_reason: str
+    external_next_check_at: datetime | None
     company: Company
     applications: list["Application"]
     recommendations: list["Recommendation"]

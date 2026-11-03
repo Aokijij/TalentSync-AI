@@ -1,0 +1,10 @@
+.registration-consent { min-width:0; padding:1.2rem; border:1px solid var(--line); border-radius:16px; background:var(--surface-subtle); }
+.registration-consent legend { display:flex; align-items:center; gap:.5rem; padding-inline:.4rem; font-size:.9rem; font-weight:700; color:var(--ink-strong); }
+.registration-consent>p { font-size:.79rem; line-height:1.75; color:var(--muted); margin-bottom:1rem; }
+.registration-consent>label { display:flex; align-items:flex-start; gap:.75rem; padding:1rem; border:1px solid var(--line); background:var(--surface); border-radius:10px; font-size:.82rem; font-weight:400; line-height:1.8; }
+.registration-consent>label+label { margin-top:.7rem; }
+.registration-consent>label:has(:checked) { border-color:var(--accent); }
+.registration-consent input { flex:none; width:18px; height:18px; margin-top:.25rem; accent-color:var(--accent); }
+.registration-consent label a { display:flex; width:fit-content; align-items:center; gap:.4rem; margin-top:.4rem; color:var(--accent); font-weight:650; text-decoration:underline; text-underline-offset:3px; }
+.registration-consent>small { display:block; font-size:.72rem; line-height:1.8; margin-top:.9rem; color:var(--muted); }
+.registration-consent>.registration-consent-error { margin:1rem 0 0; color:var(--error); }

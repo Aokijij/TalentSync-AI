@@ -162,11 +162,11 @@ def parse_sapiencia(html):
             continue
         heading = next(node.all("h3"), None)
         title = heading.text() if heading else node.attrs.get("data-titulo", "")
-        if not any(word in fold(title) for word in ("estud-ia", "estudia", "oracle", "medellinglish", "@medellin")):
+        if not title.strip():
             continue
         url = urljoin(SAPIENCIA, node.attrs.get("href", ""))
         parsed = urlsplit(url)
-        if parsed.scheme != "https" or parsed.netloc not in {"sapiencia.gov.co", "arrobamedellin.edu.co", "www.arrobamedellin.edu.co"}:
+        if parsed.scheme != "https" or parsed.netloc not in {"sapiencia.gov.co", "www.sapiencia.gov.co", "arrobamedellin.edu.co", "www.arrobamedellin.edu.co", "medellinestain.com", "www.medellinestain.com"}:
             continue
         state = fold(node.attrs.get("data-estado", ""))
         from hashlib import sha256
@@ -178,7 +178,7 @@ def parse_sapiencia(html):
                      "notes": "Convocatoria o directorio de formación; no es un curso añadido al plan. Revisa elegibilidad, modalidad, fechas y cupos en la fuente."})
     if not rows:
         raise ValueError("Sapiencia page structure changed")
-    return rows[:20]
+    return rows[:100]
 
 
 class PublicLearningCatalog:

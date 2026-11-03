@@ -12,7 +12,7 @@ from app.domain.services.requirement_analysis import (
 )
 from app.domain.services.work_preferences import effective_preferences, location_fit
 
-MATCH_VERSION = "contextual-match-v11"
+MATCH_VERSION = "contextual-match-v14"
 
 
 def weighted_coverage(profile, job):
@@ -29,6 +29,10 @@ def input_version(profile, job, text_method="lexical-hashing-v1"):
                (getattr(job, "quality_details", None) or {}).get("experience_years"),
                (getattr(profile, "preferences", None) or {}).get("cv_skill_context", []), (getattr(profile, "preferences", None) or {}).get("writing_contexts", []), date.today().strftime("%Y-%m")]
     details = getattr(job, "quality_details", None) or {}
+    payload.append({"cv_mention_decisions": (getattr(profile, "preferences", None) or {}).get("cv_mention_decisions", {}),
+                    "summary_mode": (getattr(profile, "preferences", None) or {}).get("professional_summary_mode")})
+    if getattr(job, "source_kind", "internal") == "external":
+        payload.append({"external_content": getattr(job, "external_content", None)})
     if getattr(job, "required_study_fields", None) or getattr(job, "required_education_level", None):
         from app.domain.services.academic_fields import catalog, catalog_fingerprint
         payload.append({"academic_catalog": catalog()["version"], "academic_catalog_sha256": catalog_fingerprint(), "education_field_policy": details.get("education_field_policy", "related"), "academic_policy": "record-comparison-v1"})

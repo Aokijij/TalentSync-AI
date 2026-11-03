@@ -37,6 +37,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         }
         profile_columns = {column["name"] for column in schema.get_columns("profiles")}
         assert "registration_pending" in {column["name"] for column in schema.get_columns("users")}
+        assert "legal_acceptance" in {column["name"] for column in schema.get_columns("users")}
         assert "authentication_authority" in {column["name"] for column in schema.get_columns("user_sessions")}
         assert {"department", "photo_filename", "resume_style", "resume_color", "languages"} <= profile_columns
         assert {

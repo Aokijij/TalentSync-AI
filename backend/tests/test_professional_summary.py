@@ -78,7 +78,9 @@ def test_generation_uses_saved_profile_and_preserves_it_when_generator_is_unavai
     before = client.get("/api/v1/profiles/me", headers=headers).json()
     client.app.dependency_overrides[get_career_writer] = lambda: None
     response = client.post("/api/v1/profiles/me/summary/generate", headers=headers, json={})
-    assert response.status_code == 503
+    assert response.status_code == 200
+    assert response.json()["method"] == "structured-profile"
+    assert "react" in response.json()["text"].lower()
     assert client.get("/api/v1/profiles/me", headers=headers).json() == before
     observed = []
     class Writer:

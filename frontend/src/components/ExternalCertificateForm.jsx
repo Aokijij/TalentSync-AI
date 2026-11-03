@@ -11,7 +11,6 @@ export function ExternalCertificateForm({ plan, onChanged }) {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState(""), [saved, setSaved] = useState(null), [dirty, setDirty] = useState(false);
   const certificate = saved || plan.certificate, provider = plan.resource?.provider;
   if (!plan.resource?.url || !plan.progress?.course_completed || plan.status !== "completed") return null;
-  if (!certificate && plan.resource.details?.certificate_cost === "none") return <section className="certificate-panel"><header><Award size={24} /><div><h3>Formación sin certificado anunciado</h3><p>Consulta en {provider} si dispone de otras opciones de acreditación.</p></div></header></section>;
   async function close() {
     if (!dirty || await confirm({ title: "Descartar cambios del certificado", description: "Los datos que todavía no guardaste se perderán.", confirmLabel: "Descartar cambios", destructive: true })) { setOpen(false); setDirty(false); setError(""); }
   }

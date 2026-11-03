@@ -1,421 +1,147 @@
 <p align="center">
-  <img src="frontend/public/brand/talentsync-mark.png" alt="Logo de TalentSync AI" width="112" />
+  <img src="frontend/public/brand/talentsync-mark.svg" alt="TalentSync AI" width="88" />
 </p>
 
-# TalentSync AI
+<h1 align="center">TalentSync AI</h1>
+<p align="center"><strong>Talento que conecta. Oportunidades que impulsan.</strong></p>
+<p align="center">Empleo, selección y desarrollo profesional en un mismo recorrido.</p>
 
-TalentSync AI es una plataforma de selección laboral para candidatos, empresas y administradores. Centraliza la hoja de vida, las vacantes, las postulaciones y el seguimiento de cada proceso. También calcula una compatibilidad explicable entre el perfil y la vacante para ayudar a ordenar oportunidades y candidatos; el resultado sirve como apoyo y no reemplaza la evaluación de la empresa.
+<p align="center">
+  <a href="https://talentsync-ai.pages.dev">Conocer TalentSync</a> ·
+  <a href="#tres-roles-un-mismo-propósito">Explorar los roles</a> ·
+  <a href="#compatibilidad-con-explicaciones">Cómo funciona</a> ·
+  <a href="#tecnología-y-arquitectura">Tecnología</a>
+</p>
 
-Las funcionalidades nuevas de la rama `codex/desarrollo-funcionalidades-local`
-se desarrollaron y verificaron únicamente en local. Consulta el
-[cierre y transición a integraciones](LOCAL_HANDOFF.md), el
-[inventario por rol](FEATURES_LOCAL.md) y los [comandos de desarrollo](DEVELOPMENT.md).
-No se han publicado estos cambios en las direcciones indicadas abajo.
+<p align="center">
+  <a href="https://github.com/Aokijij/TalentSync-AI/actions/workflows/ci.yml"><img src="https://github.com/Aokijij/TalentSync-AI/actions/workflows/ci.yml/badge.svg" alt="Estado de las validaciones" /></a>
+  <img src="https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white" alt="React 19" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL" />
+</p>
 
-## Aplicación publicada
+<p align="center"><img src=".github/assets/platform-overview.svg" alt="Candidatos, empresas y administración conectados por un proceso con contexto, seguimiento y decisiones humanas" width="100%" /></p>
 
-- Frontend: [https://talentsync-ai.pages.dev](https://talentsync-ai.pages.dev)
-- Estado de la API: [https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io/health](https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io/health)
+## El siguiente paso necesita contexto
 
-El frontend se publica en Cloudflare Pages. La API, PostgreSQL y el almacenamiento privado de archivos se ejecutan en Azure.
+Buscar empleo implica más que enviar una hoja de vida. Contratar requiere más que acumular candidaturas. **TalentSync AI conecta ambos recorridos**: reúne la trayectoria profesional, explica la afinidad con las vacantes y permite seguir cada proceso con información compartida y permisos definidos.
 
-## Qué puede hacer cada rol
+El candidato puede entender sus oportunidades y prepararse para ellas. La empresa puede revisar talento, coordinar a su equipo y comunicar avances. La administración dispone de herramientas para gestionar la plataforma y supervisar su operación.
 
-### Candidato
+## Tres roles, un mismo propósito
 
-- Completar su perfil profesional y registrar idiomas con nivel.
-- Cargar una hoja de vida en PDF y corregir la información extraída.
-- Elegir estilo, fotografía y paleta de colores para la vista previa del CV.
-- Explorar vacantes con filtros progresivos por ubicación, modalidad, contrato, sector, rango salarial y fecha de publicación.
-- Consultar cuánto tiempo lleva publicada cada oportunidad y recibir recomendaciones ordenadas por compatibilidad.
-- Definir el porcentaje mínimo para sus recomendaciones y avisos.
-- Responder las preguntas de preselección que una empresa haya configurado antes de postularse.
-- Consultar postulaciones, empresas seguidas y notificaciones organizadas por categoría.
-- Exportar la hoja de vida con el nombre `Nombre - HV - TalentSync.pdf`.
+| | Candidatos | Empresas | Administración |
+| :--- | :--- | :--- | :--- |
+| **Propósito** | Encontrar oportunidades y avanzar profesionalmente. | Construir equipos con un proceso organizado. | Mantener una plataforma confiable y ordenada. |
+| **Espacio propio** | Perfil, hoja de vida, vacantes, aprendizaje y postulaciones. | Organización, ofertas, talento, equipo y selección. | Usuarios, organizaciones, catálogos y operación. |
+| **Identidad** | Azul: claridad y proyección. | Violeta: colaboración y construcción de equipos. | Ámbar: supervisión y criterio. |
 
-### Empresa
+### Para quienes buscan su siguiente oportunidad
 
-- Crear un perfil público con logo, portada, propósito, cultura y beneficios.
-- Publicar vacantes con modalidad, contrato, ubicación, habilidades, idiomas y preguntas opcionales de preselección. Las opciones se valoran individualmente y las respuestas abiertas se revisan de forma manual.
-- Buscar talento por vacante, nombre, profesión o habilidad; la lista de perfiles para invitar permite elegir compatibilidades desde 40%.
-- Revisar candidatos en una tabla paginada y comparar únicamente los cinco perfiles y habilidades más relevantes.
-- Invitar candidatos compatibles y revisar tanto el porcentaje base como el ajuste privado de preselección.
-- Preparar cambios de etapa y confirmarlos antes de enviar notificaciones.
-- Marcar una vacante como cubierta cuando el cupo esté completo.
-- Reabrir una vacante con el mismo proceso o crear uno nuevo sin perder el historial.
+- **Un perfil con trayectoria.** Experiencia, formación, habilidades, idiomas, certificaciones y evidencias en un mismo lugar.
+- **Hoja de vida con control.** Importación de PDF con revisión de los datos extraídos, versiones guardadas, personalización y exportación.
+- **Búsqueda con contexto.** Filtros de ubicación, modalidad, sector, contrato y salario; comparación de ofertas y recomendaciones explicadas.
+- **Postulaciones con seguimiento.** Preparación de la candidatura, respuestas de preselección, etapas, compromisos de respuesta e historial.
+- **Preparación y aprendizaje.** Orientación profesional, cursos, planes y retos relacionados con habilidades que se quieren reforzar.
+- **Entrevistas organizadas.** Agenda, indicaciones y conexión opcional con Google Calendar.
 
-### Administración
+### Para quienes construyen equipos
 
-- Acceder desde una dirección independiente.
-- Consultar métricas de la plataforma.
-- Gestionar usuarios, empresas y vacantes según los permisos del rol.
-- Importar catálogos autorizados de vacantes desde CSV o Excel. La plataforma conserva la fuente y el enlace original, actualiza ofertas repetidas mediante su ID externo y oculta automáticamente las que hayan vencido.
+- **Identidad empresarial.** Perfil público con propósito, cultura, beneficios e imagen de la organización.
+- **Vacantes claras.** Requisitos, condiciones, habilidades, idiomas y preguntas de preselección configurables.
+- **Talento relevante.** Búsqueda y comparación de perfiles, explicación de compatibilidad e invitaciones a candidatos.
+- **Selección en equipo.** Bandeja de candidaturas, tablero de procesos, etapas, notas internas y permisos de colaboración.
+- **Entrevistas y decisiones.** Asignación de participantes, programación, evaluaciones y comunicación de avances.
+- **Continuidad del proceso.** Cierre y reapertura de vacantes con conservación del historial según la opción elegida.
 
-### Catálogos externos de vacantes
+### Para quienes cuidan la plataforma
 
-La consola administrativa incluye una plantilla descargable para cargar hasta 2.000 ofertas por archivo. Cada fila debe identificar la fuente, un ID externo estable, la empresa, el cargo, la descripción, los requisitos, el sector y el enlace de la publicación original. También admite salario, ubicación, modalidad, contrato, habilidades, beneficios, idiomas y fechas de publicación y vencimiento.
+- **Acceso independiente** y controles según el rol administrativo.
+- **Gestión de usuarios, empresas y vacantes**, junto con revisión de organizaciones e incidencias.
+- **Catálogos de empleo y formación**, con importación, revisión y atribución de las fuentes externas.
+- **Visibilidad operativa** de integraciones, entregas de correo y tareas de mantenimiento.
 
-Las habilidades y los beneficios se separan con `|`; los idiomas se escriben como `idioma:nivel`, por ejemplo `inglés:B2|español:NATIVE`. Las ofertas importadas aparecen señaladas como externas y el candidato continúa la postulación en el sitio de origen. Solo deben cargarse fuentes que permitan reutilizar y mostrar sus publicaciones; este mecanismo no autoriza copiar datos de terceros sin permiso.
+## De la oportunidad al siguiente paso
 
-#### Sincronización con JSearch
-
-JSearch es la fuente activa porque entrega descripciones amplias, requisitos y datos de la empresa. Permite buscar en Colombia y añadir ofertas internacionales cuando son remotas. Los adaptadores de Adzuna y Jooble se conservan para compatibilidad, pero no participan en la actualización automática ni aparecen en la consola operativa. TalentSync conserva la atribución, el enlace y el ID externo para actualizar cada oferta sin duplicarla.
-
-La sincronización automática se ejecuta una vez al día. Solo publica ofertas de hasta 60 días de antigüedad en las que se identifiquen al menos tres habilidades; las demás se descartan. Las fuentes externas muestran una compatibilidad estimada y una confianza de datos. Cuanto más breve sea la descripción, más conservador es el porcentaje.
-
-Registra JSearch directamente en [OpenWeb Ninja](https://www.openwebninja.com/api/jsearch). Adzuna requiere los dos valores entregados por su portal: `app_id` y `app_key`. Guarda todas las credenciales exclusivamente en el backend:
-
-```dotenv
-JSEARCH_API_KEY=clave_privada
-ADZUNA_APP_ID=identificador_privado
-ADZUNA_APP_KEY=clave_privada
-JOOBLE_API_KEY=clave_regional_de_colombia
-PERIODIC_MAINTENANCE_ENABLED=true
-PERIODIC_MAINTENANCE_INTERVAL_HOURS=24
-CATALOG_MAX_AGE_DAYS=60
-CATALOG_MIN_SKILLS=3
+```mermaid
+flowchart LR
+    A[Perfil profesional] --> B[Oportunidades con contexto]
+    B --> C[Preparación y postulación]
+    C --> D[Selección e entrevistas]
+    D --> E[Decisión y seguimiento]
+    B --> F[Aprendizaje y desarrollo]
+    F --> A
 ```
 
-Ninguna clave utiliza el prefijo `VITE_` y nunca debe guardarse en Git. JSearch reemplaza las fuentes complementarias en el ciclo automático cuando está configurado, para priorizar información completa y controlar la cuota mensual.
+Cada rol participa desde su propio espacio. La empresa conserva las decisiones de selección; el candidato puede revisar lo que comparte y seguir sus procesos.
 
-## Cómo funciona la compatibilidad
+## Compatibilidad con explicaciones
 
-El backend usa la misma función para la vista del candidato y para el ranking de la empresa. Así evita que un mismo perfil muestre porcentajes distintos para la misma vacante.
+La compatibilidad relaciona **habilidades, contexto profesional y requisitos de la vacante**. Cuando corresponde, incorpora idiomas, formación, experiencia y las condiciones declaradas. Las explicaciones permiten contrastar coincidencias, brechas y requisitos que necesitan revisión.
 
-Sin requisitos de idioma:
+- Las vistas del candidato y de la empresa comparten las reglas del motor.
+- La falta de información se distingue de un requisito cumplido.
+- Las ofertas externas incluyen señales sobre la calidad y confianza de sus datos.
+- Las respuestas de preselección pueden aportar un ajuste privado para la empresa; las respuestas abiertas requieren revisión humana.
+
+**El porcentaje es una orientación, no una probabilidad de contratación ni una certificación de competencias.** La extracción de un CV se puede corregir y las evidencias de aprendizaje conservan su origen y alcance.
+
+## Conexiones que acompañan el recorrido
+
+| Área | Integraciones contempladas en el código |
+| :--- | :--- |
+| **Identidad** | Acceso y vinculación con Google, GitHub y LinkedIn; opciones corporativas de Microsoft. |
+| **Agenda** | Google Calendar para sincronizar entrevistas autorizadas. |
+| **Oportunidades** | JSearch, Get on Board y bolsas de empleo de Greenhouse y Lever; importación de catálogos. |
+| **Aprendizaje y evidencias** | Recursos de Microsoft Learn y YouTube, proyectos de GitHub y actividad de Codewars. |
+| **Correo** | Plantillas transaccionales compartidas para Gmail autorizado, SMTP y Resend. |
+
+La disponibilidad depende de la configuración, autorización y condiciones de cada proveedor. Las vacantes externas conservan su procedencia y la postulación continúa en el sitio de origen.
+
+## Confianza desde el diseño
+
+- Autorización por rol y separación entre información personal, datos compartidos y notas internas de selección.
+- Herramientas de seguridad de cuenta, verificación y autenticación adicional según el acceso.
+- Consentimiento de registro y documentos de privacidad y términos accesibles desde la plataforma.
+- Exportación de datos y solicitud de eliminación de cuenta.
+- Descarga autorizada de archivos y almacenamiento privado de documentos.
+- Interfaz adaptable a móvil y escritorio, con temas claro y oscuro y controles de accesibilidad.
+
+[Política de privacidad](https://talentsync-ai.pages.dev/privacidad) · [Términos de uso](https://talentsync-ai.pages.dev/terminos)
+
+## Tecnología y arquitectura
+
+| Capa | Base tecnológica | Responsabilidad |
+| :--- | :--- | :--- |
+| **Experiencia web** | React 19 · Vite · Tailwind CSS · React Router | Interfaces y recorridos de cada rol. |
+| **API** | FastAPI · Pydantic | Contratos HTTP, validación y acceso a las funciones. |
+| **Aplicación y dominio** | Python | Casos de uso, compatibilidad y reglas del negocio. |
+| **Persistencia** | SQLAlchemy · Alembic · PostgreSQL | Datos y evolución del esquema; SQLite en pruebas aisladas. |
+| **Documentos** | pypdf · ReportLab · Docling/OCR opcional | Lectura, revisión y generación de hojas de vida. |
+| **Calidad** | pytest · Node Test Runner · ESLint · Playwright · GitHub Actions | Pruebas de reglas, API, interfaz y regresión visual. |
+
+El backend separa dominio, aplicación, infraestructura y API. El frontend organiza componentes, páginas, rutas y servicios alrededor de los recorridos de producto.
 
 ```text
-compatibilidad = 60% habilidades requeridas + 40% contexto profesional
+backend/     API, reglas de negocio, migraciones y pruebas
+frontend/    Aplicación web, identidad visual y pruebas de interfaz
+scripts/     Herramientas de desarrollo y operación
+infra/       Configuración de infraestructura y guías operativas
+docs/        Referencias técnicas de desarrollo, diseño y evaluación
 ```
 
-Cuando la vacante exige idiomas:
+<details>
+<summary><strong>Referencias para quienes mantienen el proyecto</strong></summary>
 
-```text
-compatibilidad = 60% habilidades + 30% contexto profesional + 10% nivel de idioma
-```
+- [Desarrollo y comprobaciones](docs/DEVELOPMENT.md)
+- [Criterios de interfaz](docs/DESIGN.md)
+- [Evaluación del motor y los recorridos](docs/EVALUATION.md)
+- [Pruebas de interfaz y regresión visual](frontend/quality/README.md)
+- [Operación del backend](infra/production/AWS.md)
+- [Integraciones](infra/production/INTEGRATIONS.md)
 
-El contexto profesional combina similitud de texto con profesión, cargos, responsabilidades y formación. Los niveles de idioma se comparan de forma ordinal desde A1 hasta C2 y nativo. El porcentaje es orientativo: depende de la información registrada y no certifica competencias.
+</details>
 
-En ofertas externas sin información completa, las habilidades pesan 70% y el contexto 30%. El resultado se reduce según la confianza calculada a partir de la cantidad de habilidades y la extensión de la descripción. Así una coincidencia basada en un fragmento corto no se presenta con la misma certeza que una vacante creada dentro de TalentSync.
+---
 
-Las preguntas de preselección no alteran el porcentaje público que ve el candidato. Las preguntas con opciones pueden aportar o restar puntos según la valoración configurada para cada respuesta; el ajuste privado se limita a 20 puntos y solo puede consultarlo la empresa. Las respuestas abiertas no se califican automáticamente porque requieren la revisión del equipo de selección.
-
-## Arquitectura
-
-| Capa | Tecnologías y responsabilidad |
-| --- | --- |
-| Frontend | React 19, React Router, Vite 6, Tailwind CSS, Axios y React Hook Form |
-| API | FastAPI, Pydantic y Uvicorn |
-| Dominio | Reglas de matching, habilidades, estados y contratos |
-| Aplicación | Casos de uso para autenticación, perfiles, vacantes, postulaciones y recomendaciones |
-| Persistencia | SQLAlchemy, Alembic y PostgreSQL; SQLite para pruebas aisladas |
-| Seguridad | JWT, bcrypt, autorización por rol y limitación de solicitudes |
-| Procesamiento de CV | pypdf en la imagen ligera; Docling y EasyOCR en la instalación completa |
-| Producción | Cloudflare Pages, Azure Container Apps, PostgreSQL Flexible Server y Blob Storage |
-
-El backend mantiene separadas las reglas de negocio, los casos de uso, la infraestructura y las rutas HTTP. El frontend divide pantallas, componentes, contextos, hooks y acceso a la API. Esta separación permite probar las reglas sin depender de la interfaz.
-
-```text
-backend/
-  app/
-    domain/              Entidades, contratos y reglas de matching
-    application/         Casos de uso y puertos de servicios
-    infrastructure/      Base de datos, repositorios, seguridad y NLP
-    api/                  Rutas, esquemas y dependencias HTTP
-    core/                 Configuración y limitación de solicitudes
-  alembic/               Migraciones versionadas
-  scripts/               Herramientas de administración
-  tests/                 Pruebas de dominio, infraestructura y API
-
-frontend/
-  public/brand/          Logo y recursos de identidad
-  src/
-    api/                 Cliente Axios y tratamiento de errores
-    components/          Controles reutilizables
-    constants/           Idiomas, sectores, ciudades y paletas
-    contexts/            Autenticación y tema
-    hooks/               Lógica reutilizable
-    layouts/             Navegación por rol
-    pages/               Pantallas de candidato, empresa y administración
-    routes/              Rutas y protección de acceso
-    styles/              Estilos globales
-  tests/                 Pruebas de utilidades de interfaz
-
-scripts/                 Desarrollo y despliegue desde PowerShell
-```
-
-## Requisitos para desarrollo
-
-- Python 3.12 o 3.13.
-- Node.js 22 y npm.
-- Git.
-- PostgreSQL para un entorno persistente. SQLite también sirve para una prueba local aislada.
-
-Docker se usa para construir la imagen de producción; no es necesario para ejecutar el proyecto localmente.
-
-## Instalación local
-
-Los comandos siguientes usan PowerShell y parten de una copia nueva. Si ya existen archivos `.env`, conserva sus valores.
-
-### 1. Clonar el repositorio
-
-```powershell
-git clone https://github.com/Aokijij/TalentSync-AI.git
-cd TalentSync-AI
-```
-
-### 2. Preparar el backend
-
-```powershell
-cd backend
-py -3.13 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-lite.txt
-Copy-Item .env.example .env
-```
-
-La instalación ligera utiliza `pypdf` y funciona con PDF que contienen texto seleccionable. Para habilitar Docling y OCR, instala `requirements.txt` y revisa las variables `CV_*`.
-
-Para una prueba rápida con SQLite, edita `backend/.env`:
-
-```dotenv
-ENVIRONMENT=development
-DATABASE_URL=sqlite:///./talentsync.db
-SECRET_KEY=PEGA_AQUI_UNA_CLAVE_ALEATORIA_DE_AL_MENOS_32_CARACTERES
-CV_PARSER=pypdf
-CV_OCR_ENABLED=false
-CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173"]
-```
-
-Genera `SECRET_KEY` localmente:
-
-```powershell
-.\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(48))"
-```
-
-Aplica las migraciones e inicia la API:
-
-```powershell
-.\.venv\Scripts\python.exe -m alembic upgrade head
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-Comprueba estos puntos:
-
-- [http://localhost:8000/health](http://localhost:8000/health)
-- [http://localhost:8000/docs](http://localhost:8000/docs)
-- [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
-
-### 3. Preparar el frontend
-
-Abre otra terminal en la raíz del repositorio:
-
-```powershell
-cd frontend
-npm ci
-Copy-Item .env.example .env
-npm run dev
-```
-
-`frontend/.env` debe contener:
-
-```dotenv
-VITE_API_URL=http://127.0.0.1:8000/api/v1
-```
-
-Abre [http://localhost:5173](http://localhost:5173). Después de la instalación inicial también puedes iniciar cada parte con `scripts/dev-backend.ps1` y `scripts/dev-frontend.ps1`.
-
-### 4. Usar PostgreSQL en local
-
-Crea un usuario y una base con un administrador de PostgreSQL:
-
-```sql
-CREATE ROLE talentsync LOGIN;
-\password talentsync
-CREATE DATABASE talentsync OWNER talentsync;
-```
-
-Luego configura `DATABASE_URL` con el formato `postgresql+psycopg://usuario:contraseña@servidor:5432/base`. Codifica los caracteres reservados de la contraseña para que formen una URL válida y vuelve a ejecutar las migraciones.
-
-## Variables de entorno principales
-
-### Backend
-
-| Variable | Uso |
-| --- | --- |
-| `ENVIRONMENT` | Entorno de ejecución y validaciones asociadas |
-| `DATABASE_URL` | Conexión PostgreSQL o SQLite |
-| `SECRET_KEY` | Firma de JWT; es obligatoria y debe tener al menos 32 caracteres |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Vigencia de la sesión |
-| `UPLOAD_DIR` | Almacenamiento local de archivos durante desarrollo |
-| `AZURE_STORAGE_ACCOUNT_URL` | Cuenta de Blob Storage usada en producción |
-| `AZURE_STORAGE_CONTAINER` | Contenedor privado para CV e imágenes |
-| `ALLOWED_HOSTS` | Hosts HTTP aceptados por la API |
-| `CORS_ORIGINS` | Orígenes exactos que pueden llamar a la API desde el navegador |
-| `CV_PARSER` | `pypdf`, `docling` o `auto` |
-| `CV_OCR_ENABLED` | Activa OCR cuando el procesador lo admite |
-| `JSEARCH_API_KEY` | Clave privada de la fuente externa preferida |
-| `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` | Credenciales complementarias de Adzuna |
-| `JOOBLE_API_KEY` | Clave complementaria de Jooble Colombia |
-| `PERIODIC_MAINTENANCE_ENABLED` | Activa sincronización, depuración y alertas de vacantes |
-| `CATALOG_MAX_AGE_DAYS` | Antigüedad máxima admitida para ofertas externas |
-| `CATALOG_MIN_SKILLS` | Cantidad mínima de habilidades exigida al importar |
-
-### Frontend
-
-| Variable | Uso |
-| --- | --- |
-| `VITE_API_URL` | URL base de la API, incluido `/api/v1` |
-
-Las variables `VITE_*` quedan incluidas en los archivos enviados al navegador. No guardes secretos en ellas ni agregues archivos `.env` al repositorio.
-
-## Flujo de uso
-
-1. La empresa completa su perfil, publica una vacante y, si lo necesita, añade preguntas de preselección.
-2. El candidato completa su perfil, registra idiomas y carga su CV.
-3. El backend extrae la información disponible y calcula la compatibilidad.
-4. El candidato revisa recomendaciones, responde las preguntas requeridas y decide a cuáles postularse.
-5. La empresa compara perfiles, respuestas y compatibilidad ajustada, invita talento y prepara movimientos en el tablero.
-6. El botón **Guardar cambios y notificar** confirma los movimientos pendientes.
-7. Contratar a una persona no rechaza a las demás ni cubre la vacante automáticamente.
-8. La empresa marca la vacante como cubierta cuando completa el cupo.
-9. Si necesita reabrirla, puede continuar con el historial existente o crear otro proceso.
-
-## Cuenta administradora
-
-El registro público solo crea candidatos y empresas. Para crear un administrador, ejecuta desde `backend/`:
-
-```powershell
-.\.venv\Scripts\python.exe -m scripts.create_admin --name "Tu nombre" --email "tu-correo@tu-dominio.com"
-```
-
-El comando solicita la contraseña sin mostrarla. El acceso administrativo se abre en `/acceso-administracion`; las cuentas de candidato y empresa no pueden ingresar allí.
-
-## Espacio privado para presentar el rol empresa
-
-Las ofertas externas deben provenir de proveedores autorizados. Para presentar el flujo empresarial completo existe una semilla idempotente que prepara la cuenta de Bancolombia, publica diez vacantes internas, crea doce candidatos sintéticos y organiza postulaciones en distintas etapas. Las vacantes se muestran en el mercado laboral como ofertas propias de TalentSync y la empresa puede administrarlas desde su cuenta.
-
-Desde `backend/`:
-
-```powershell
-.\.venv\Scripts\python.exe -m scripts.create_showcase_company --email "empresa@tu-dominio.com" --name "Equipo de selección"
-```
-
-La contraseña se solicita sin mostrarla. El comando es idempotente: puede repetirse para actualizar el contenido sin duplicarlo. El catálogo demostrativo público anterior se elimina con `python -m scripts.cleanup_demo_catalog`.
-
-Para llenar el mercado interno sin atribuir ofertas inventadas a marcas reales, la semilla siguiente crea veinte compañías ficticias de presentación con perfiles completos y ocho vacantes internas por compañía. Usa los mismos modelos, relaciones y transacciones que el registro normal y puede repetirse sin duplicar registros:
-
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m scripts.seed_internal_marketplace
-```
-
-## Pruebas y compilación
-
-Backend:
-
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider
-```
-
-Frontend:
-
-```powershell
-cd frontend
-npm test
-npm run lint
-npm run build
-```
-
-Las pruebas de integración usan SQLite aislado. `scripts/local.py rehearse` ejecuta la validación completa, conexiones SMTP TLS contra un sumidero local, concurrencia de ocho candidatos y un ensayo de migraciones, aceptación y restauración contra PostgreSQL 18 aislado en loopback. Los informes privados están en `.local/verification/` y `.local/staging/verification.json`. La concurrencia mide ASGI dentro del proceso con datos sintéticos; no representa una capacidad de producción. Existe una suite persistente de Playwright para roles, temas y tamaños de pantalla. Se ejecutaron sus 24 casos con Chromium 158 y se inspeccionaron capturas representativas; cubren componentes con datos ficticios. La revisión posterior cubrió 140 vistas autenticadas y 18 flujos con la API real sobre una copia aislada de los datos locales. Las comparaciones automáticas con capturas de referencia no están configuradas. Consulta REVISION_PLATAFORMA.md para repetir la ejecución con un navegador local. No se conecta a producción ni se entrega correo externo.
-
-El workflow `.github/workflows/ci.yml` ejecuta pruebas, lint, auditorías, migraciones y una construcción Docker. CI valida el commit, pero no despliega automáticamente.
-
-## API
-
-Todas las rutas funcionales comienzan en `/api/v1`. Las operaciones protegidas reciben `Authorization: Bearer <token>`.
-
-| Grupo | Responsabilidad |
-| --- | --- |
-| `/auth` | Registro, inicio de sesión e identidad actual |
-| `/profiles` | Perfil, CV, idiomas y acceso autorizado a candidatos |
-| `/companies` | Perfil público y gestión de empresas |
-| `/jobs` | Métricas públicas, búsqueda avanzada, preguntas, publicación, cierre y reapertura de vacantes |
-| `/applications` | Postulaciones, respuestas de preselección, etapas, notas e entrevistas |
-| `/recommendations` | Vacantes sugeridas y ranking de candidatos |
-| `/notifications` | Avisos por categoría, paginación, estado de lectura y eliminación |
-| `/admin` | Métricas, gestión administrativa e importación CSV/XLSX de catálogos autorizados |
-
-Consulta `/docs` para ver parámetros, esquemas y respuestas del contrato vigente.
-
-### Perfiles, compatibilidad y administración
-
-Cada habilidad del perfil admite un nivel declarado: en aprendizaje, básico, intermedio, avanzado o experto. «Sin indicar» conserva la falta de información. La revisión de una oferta permite solicitar un nivel mínimo; la compatibilidad compara ambos sin inferir dominio por años de experiencia. Si la oferta exige un nivel y el candidato no lo indica, el requisito queda parcial. Los requisitos antiguos sin nivel conservan la comparación por presencia. Estos niveles son declaraciones, no evaluaciones acreditadas.
-
-La ficha del candidato para empresas explica factores, requisitos y ajuste por respuestas de esa vacante. La consulta calcula una sola comparación y respeta los permisos. Las recomendaciones ocultan la identidad hasta que la persona se postula a esa vacante; la invitación por sí sola no la revela. Tras postularse, esa empresa puede consultar la identidad, el perfil y las respuestas sin esperar a la entrevista. Las duraciones se presentan en años y meses.
-
-La afinidad académica distingue nombres normalizados, variantes registradas, relaciones parciales y denominaciones pendientes de revisión. La empresa elige si admite solo las áreas seleccionadas o también formaciones afines. Se comparan área, nivel y estado del mismo estudio. El catálogo inicial versionado está en `backend/app/domain/data/academic_fields.json`: contiene reglas internas y referencias CINE-F del DANE, no un registro de programas SNIES ni equivalencias de diplomas. Contaduría, Finanzas y Economía no se agrupan como un mismo requisito. La política y el contenido del catálogo invalidan selectivamente la caché de vacantes con requisitos académicos. Las empresas pueden consultar sugerencias de denominaciones del catálogo al añadir áreas, conservando la entrada libre.
-
-La importación del CV conserva fechas explícitas de mes y año en `start_date` y `end_date`, además de los años históricos. No inventa meses cuando el documento solo indica años; volver a importar puede completar esa precisión sin duplicar la experiencia. La formación «Para mi perfil» se ordena por habilidades declaradas, cargos, funciones y temas del CV, con una explicación en cada tarjeta y formación complementaria al final. No añade habilidades ni cambia datos del perfil al consultar el catálogo.
-
-El perfil separa las licencias de conducción por categoría y las tarjetas profesionales por profesión, entidad y número opcional. Sus formularios conservan estado y vencimiento declarados; el PDF omite ambos datos y mantiene los documentos en apartados independientes. Los iconos distinguen moto, automóvil, vehículo pesado y articulado según la categoría. Las vacantes pueden solicitar categorías y profesiones concretas: basta una alternativa dentro de cada lista; si se completan ambas listas, se requieren ambos documentos. No se sustituyen categorías ni profesiones por afinidad académica. La comparación indica si existe un registro de lo solicitado, aparte del porcentaje profesional, sin verificar autenticidad ni bloquear automáticamente una postulación. Los números de tarjeta siguen los permisos del perfil y no se incluyen en recomendaciones anónimas. Cada apartado tiene su propio selector de inclusión en el CV exportado.
-
-La fecha de nacimiento y la identificación son opcionales. Cada dato tiene un control de visibilidad independiente: solo los marcados se comparten con empresas que puedan consultar la postulación y se incluyen en el PDF, dentro de Datos de contacto, personales y enlaces. Los datos existentes permanecen ocultos hasta que la persona elija compartirlos. Omitir los campos conserva sus valores para clientes antiguos y un valor nulo los borra. Ni los datos ni sus preferencias de visibilidad se envían al asistente de redacción o intervienen en la compatibilidad. No hay filtros de edad. Los errores del formulario se presentan junto al campo o apartado afectado y el guardado dirige el foco al primer error.
-
-El detalle de cumplimiento permite buscar y filtrar habilidades, desplegar sus respaldos y consultar una explicación académica desplegable en tres puntos: área, nivel y finalización del mismo estudio. Los inicios de candidato y empresa muestran oportunidades pendientes, procesos activos y próximas entrevistas. El inicio de empresa prioriza los plazos de respuesta cercanos y la primera revisión, y ofrece accesos a vacantes sin postulaciones y borradores. Los procesos cerrados o liberados no se cuentan como pendientes.
-
-El inicio del candidato muestra cursos y prácticas activos de Mi plan con acceso al recurso elegido, o formación registrada en el perfil si no hay un plan activo. El catálogo abre en Cursos y prácticas; Retos presenta el último intento propio, permite continuar uno activo, revisar correcciones, conocer el plazo para repetir y buscar formación de esa habilidad. Sus resultados corresponden a ejercicios dentro de TalentSync. El PDF moderno usa etiquetas de habilidades con barras de nivel declarado, respeta el ajuste de nombres largos y agrupa etiquetas cortas cuando caben. La cabecera del perfil muestra la misma foto que el CV.
-
-El lanzador local fuerza la revisión de MFA en SQLite de desarrollo y mantiene desactivada esa excepción durante las pruebas. La interfaz actualiza las opciones de acceso al ingresar y al abrir Seguridad, respeta la pausa y exige una indicación explícita del servidor para pedir la configuración. La política de producción permanece en el backend.
-
-La extracción conserva niveles académicos explícitos como pregrado, tecnólogo, técnico y bachillerato. Reimportar completa niveles faltantes y respeta las correcciones manuales. La formación complementaria admite curso, certificación, diplomado, taller, seminario y otra formación; los registros antiguos sin tipo siguen siendo editables. Las propuestas separan acciones concatenadas y su editor continúa las viñetas con Enter (Shift+Enter permite un salto libre). El calendario de entrevistas y fechas del catálogo comparte el tema visual de la aplicación.
-
-El tablero de postulaciones consulta únicamente las vacantes de la empresa y muestra las tarjetas sin esperar el ranking de toda la base. Reutiliza la compatibilidad guardada y calcula las faltantes por candidato en segundo plano. Durante la carga muestra un estado explícito. El selector incluye el sector y el total real de postulaciones de cada vacante, también para procesos cubiertos, mediante una consulta acotada a la empresa. Los selectores de compatibilidad parten del 40 %; las postulaciones existentes siguen visibles aunque estén por debajo.
-
-La ficha que consulta una empresa reutiliza la cabecera del perfil, oculta apartados vacíos y muestra edad en lugar de fecha de nacimiento cuando se comparte ese dato. El PDF conserva nacimiento e identificación en la cabecera, según las opciones de visibilidad. Administración Logística y sus variantes se reconocen automáticamente como un área distinta de Ingeniería de Sistemas; los nombres ajenos al catálogo conservan la revisión pendiente sin inventar equivalencias.
-
-La formación recomendada para una vacante identifica las habilidades por reforzar y permite filtrarlas, ordenar recursos y avanzar por páginas. El catálogo administrativo muestra la demanda de habilidades de las vacantes activas de TalentSync y permite buscar formación para cubrirla. Salud del ecosistema separa empresas, incidencias, oferta y demanda, y revisión del motor en cuatro accesos superiores. Los conectores configurados ocultan la ayuda de activación.
-
-El directorio educativo incorpora fuentes oficiales de Medellín (Sapiencia), Bogotá (ATENEA), Barranquilla y alcance nacional (SNIBCE de ICETEX). Se filtra por ciudad e incluye las fuentes nacionales. Es un directorio de consulta: no supone inscripción abierta ni importa convocatorias sin revisión.
-
-El administrador puede pausar, reactivar o cerrar una publicación desde su ficha. Pausar mantiene abiertos los procesos; cerrar finaliza los pendientes y notifica a los candidatos. La eliminación definitiva se confirma por separado. Los cambios de estado quedan en el registro de eventos.
-
-El catálogo educativo permite descargar un ejemplo JSON, cargar un archivo y revisar los recursos antes de importarlos como borradores. Para un recurso se recomienda el formulario. La revisión del motor explica qué comprueba, cuándo utilizarla y cómo interpretar el informe; los identificadores técnicos quedan en una sección para soporte.
-
-En el entorno local aislado, `python scripts/local.py seed-skill-levels` añade niveles variados únicamente a los perfiles de prueba identificados como `local_fixture` y a las vacantes de la semilla compatibles. Conserva declaraciones existentes y ofertas modificadas; hace un respaldo SQLite antes de guardar. No reinicia los datos ni modifica perfiles personales o administradores.
-
-## Actualización de producción
-
-La publicación tiene dos pasos separados: Azure para la API y Cloudflare Pages para el frontend. Antes de actualizar, ejecuta pruebas, revisa el diff, confirma un respaldo recuperable y crea el commit que identificará la imagen.
-
-Desde PowerShell 7, en la raíz del repositorio:
-
-```powershell
-./scripts/update-production.ps1 -WhatIf
-./scripts/update-production.ps1 -BackupVerified -FrontendOrigin https://talentsync-ai.pages.dev
-./scripts/deploy-cloudflare.ps1
-```
-
-`-WhatIf` muestra el destino y la operación prevista. La actualización real exige un árbol Git limpio, conserva los secretos y comprueba que la nueva revisión responda `/health`. El script de Cloudflare compila con la URL HTTPS de la API y publica únicamente `frontend/dist`.
-
-No ejecutes semillas no idempotentes, `alembic downgrade` ni reinicios de base de datos en producción. La semilla privada de empresa está preparada para repetirse sin duplicar datos. Si una revisión falla, comprueba primero que la imagen anterior sea compatible con el esquema actual. Las fotos, logos, portadas y CV deben permanecer en Blob Storage antes de retirar una revisión.
-
-## Seguridad y datos
-
-- JWT identifica al usuario y su rol; el backend vuelve a verificar permisos y propiedad de cada recurso.
-- Las contraseñas se almacenan como hash bcrypt.
-- CV e imágenes se guardan en almacenamiento privado en producción.
-- `SECRET_KEY`, credenciales, tokens y archivos `.env` deben permanecer fuera de Git.
-- El matching y los niveles de idioma son orientativos y no deben usarse como única decisión de contratación.
-- El procesamiento de CV depende de la calidad del archivo; la imagen ligera no aplica OCR a documentos escaneados.
-
-## Problemas frecuentes
-
-- **La API rechaza `SECRET_KEY`:** usa una clave aleatoria de al menos 32 caracteres.
-- **No hay conexión con PostgreSQL:** revisa el servicio, la base, las credenciales y la codificación de la URL.
-- **Faltan tablas:** ejecuta `alembic upgrade head` con la misma `DATABASE_URL` que usa la API.
-- **El frontend no conecta:** comprueba `VITE_API_URL`, `CORS_ORIGINS` y el puerto; reinicia Vite después de cambiar `.env`.
-- **El CV no produce texto:** usa un PDF con texto seleccionable o instala la variante con Docling y OCR.
-- **No aparecen recomendaciones:** completa profesión, experiencia, habilidades e idiomas y verifica que existan vacantes activas.
-- **Git busca `credential-manager`:** configura el helper instalado, por ejemplo `git config --global credential.helper manager-core`.
+<p align="center"><strong>TalentSync AI</strong><br />Una conexión con sentido entre lo que puedes aportar y lo que viene después.</p>

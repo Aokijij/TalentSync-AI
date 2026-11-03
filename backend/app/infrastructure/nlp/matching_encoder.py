@@ -40,7 +40,7 @@ class LocalMatchingEncoder:
             import torch
             from sentence_transformers import SentenceTransformer
         except ImportError:
-            raise ValueError("Falta la dependencia opcional sentence-transformers; consulta DEVELOPMENT.md") from None
+            raise ValueError("Falta la dependencia opcional sentence-transformers; consulta docs/DEVELOPMENT.md") from None
         torch.set_num_threads(settings.match_model_cpu_threads)
         self.model = SentenceTransformer(str(path), device="cpu", local_files_only=True, trust_remote_code=False,
             model_kwargs={"use_safetensors": True, "local_files_only": True})

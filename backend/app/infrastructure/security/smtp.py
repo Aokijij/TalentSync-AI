@@ -2,7 +2,7 @@ import hashlib
 import smtplib
 import ssl
 from email.message import EmailMessage
-from email.utils import formatdate
+from email.utils import formataddr, formatdate
 
 from app.application.ports.services import MailDeliveryError
 from app.infrastructure.security.email_template import render_email
@@ -18,7 +18,7 @@ class SmtpDelivery:
             raise MailDeliveryError(retryable=False, kind="configuration")
         try:
             message = EmailMessage()
-            message["From"], message["To"], message["Subject"] = config.smtp_from, recipient, subject
+            message["From"], message["To"], message["Subject"] = formataddr(("TalentSync", config.smtp_from)), recipient, subject
             message["Date"] = formatdate(localtime=False)
             namespace = hashlib.sha256(("mail:" + config.secret_key).encode()).hexdigest()[:16]
             message["Message-ID"] = f"<talentsync-{namespace}-{message_id}@{config.smtp_from.rsplit('@', 1)[1]}>"

@@ -64,7 +64,7 @@ class EvidenceSubmission(BaseModel):
     year: str = Field(default="", max_length=4, pattern=r"^(?:\d{4})?$")
     add_to_profile: bool = False
     title: str = Field(min_length=3, max_length=160)
-    kind: Literal["project", "repository", "portfolio", "experience", "certificate"]
+    kind: Literal["project", "repository", "portfolio", "experience", "certificate", "training"]
     url: HttpUrl | None = None
     description: str = Field(min_length=10, max_length=2000)
     skills: list[str] = Field(min_length=1, max_length=20)

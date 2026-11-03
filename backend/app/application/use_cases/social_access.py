@@ -12,6 +12,7 @@ from app.application.use_cases.account_security import (
     resolve_session,
 )
 from app.application.use_cases.events import record_event
+from app.application.use_cases.legal_consent import registration_consent
 from app.domain.entities.enums import UserRole
 from app.domain.services.authentication import token_digest
 
@@ -57,7 +58,15 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
     db.commit()  # Consume before network I/O; provider failure must not make state reusable.
     if not code:
         raise UseCaseError(status_code=400, detail="No se autorizó el acceso social", code="cancelled")
-    identity_data = gateway.exchange(provider, code, verifier, nonce)
+    from app.application.use_cases.integration_observations import record
+    try:
+        identity_data = gateway.exchange(provider, code, verifier, nonce)
+    except UseCaseError as failure:
+        if failure.status_code >= 500:
+            record(db, "social_" + provider, "provider_error")
+        raise
+    # The provider exchange succeeded, independently of local account linking or MFA.
+    record(db, "social_" + provider, operation="identity_exchange")
     if purpose == "link":
         user = _link_context(db, session_token, link_user_id, link_session_id, mfa_review=mfa_review)
         if (db.accounts.identity(provider, identity_data["subject"])
@@ -97,6 +106,7 @@ def callback(db, provider, state, browser, code, gateway, security, *, user_agen
 
 
 def complete_registration(db, user, payload, nlp):
+    consent = registration_consent(payload, channel="social")
     if not user.registration_pending:
         raise UseCaseError(status_code=409, detail="Tu registro ya está completo")
     if not payload["confirmed"]:
@@ -109,6 +119,7 @@ def complete_registration(db, user, payload, nlp):
     user.profile.profession = payload["profession"]
     user.profile.embedding = nlp.embed(payload["profession"])
     user.registration_pending = False
+    user.legal_acceptance = consent
     record_event(db, "account.registration_completed", "user", user.id, actor_user_id=user.id)
     db.commit()
     return user

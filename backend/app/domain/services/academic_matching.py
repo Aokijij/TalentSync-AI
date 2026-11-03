@@ -32,11 +32,11 @@ def education_evaluation(profile, job):
             "score": None,
             "status": "not_required",
             "comparisons": [],
-            "reason": "Esta vacante no exige formación académica.",
+            "reason": "El anuncio no especifica formación académica; este dato no suma cumplimiento." if getattr(job, "source_kind", "internal") == "external" and (getattr(job, "external_content", None) or {}).get("education", {}).get("status") == "unspecified" else "Esta vacante no exige formación académica.",
         }
     records = getattr(profile, "educations", None) or []
     # A job title or profession alone is not a declared academic record.
-    if not records and getattr(profile, "education", None):
+    if getattr(profile, "educations", None) is None and getattr(profile, "education", None):
         records = [{"degree": str(profile.education)}]
     comparisons = []
     for record in records:

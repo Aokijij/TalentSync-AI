@@ -21,9 +21,10 @@ export function VacancyCard({ interests, comparison, job, match, confidence, app
     <header><Link to={`/empresas/${job.company_id}`} className="vacancy-company">{job.company_name || "Empresa"}</Link><span className="vacancy-modality">{{ remote: "Remoto", hybrid: "Híbrido", onsite: "Presencial" }[job.modality] || "Por confirmar"}</span></header>
     <h2><Link to={`/vacantes/${job.id}`} state={{ returnTo }}>{job.title}</Link></h2>
     <OfferClarityBadge job={job} />
+    {job.source_kind === "external" && job.quality_details?.seniority && <span className="vacancy-seniority">{{ entry: "Inicial / prácticas", junior: "Junior", mid: "Intermedio", senior: "Senior", lead: "Liderazgo" }[job.quality_details.seniority]}</span>}
     <div className="vacancy-meta"><span><MapPin size={14} />{[job.location, job.department].filter(Boolean).join(", ") || "Ubicación por confirmar"}</span><span><CalendarDays size={14} />{formatRelativeTime(job.created_at)}</span></div>
     {showMatch && hasMatch && <div className="vacancy-match"><CompatibilityBar value={score} estimated={job.source_kind === "external"} confidence={confidence} compact /></div>}
-    <p className="vacancy-description">{job.description}</p>
+    <p className="vacancy-description">{job.source_kind === "external" ? job.external_content?.summary || job.description : job.description}</p>
     {!!skills.length && <ul className="vacancy-skills" aria-label="Habilidades solicitadas">{skills.slice(0, 3).map((skill) => <li key={skill}>{skill}</li>)}{skills.length > 3 && <li title={skills.slice(3).join(", ")}>+{skills.length - 3}</li>}</ul>}
     <div className="vacancy-salary"><strong>{comparisonSalary(job)}</strong></div>
     {job.source_kind === "external" && <p className="vacancy-source"><ExternalLink size={12} />{externalPortal(job)}</p>}

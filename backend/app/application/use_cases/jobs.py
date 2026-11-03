@@ -9,6 +9,7 @@ from app.application.use_cases.matching import upsert_recommendation
 from app.domain.entities.enums import ApplicationStatus, UserRole
 from app.domain.entities.records import Company, Job, User
 from app.domain.services.colombian_locations import canonical_commuting_city
+from app.domain.services.job_freshness import externally_available
 from app.domain.services.match_explanations import input_version, preference_alignment
 from app.domain.services.offer_review import review_offer
 from app.domain.services.pipeline import stages_for
@@ -93,6 +94,8 @@ def list_jobs(
     company = owned_company(db, current_user) if current_user and current_user.role == UserRole.COMPANY else None
     visible = [job for job in jobs if job.status != "draft" or (current_user and current_user.role == UserRole.ADMIN)
             or (company and company.id == job.company_id)]
+    if not current_user or current_user.role != UserRole.ADMIN:
+        visible = [job for job in visible if externally_available(job)]
     return sorted(visible, key=lambda job: company_health(job.company)["visibility_reduced"]) if sort == "newest" else visible
 
 

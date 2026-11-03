@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     smtp_username: str = ""
     smtp_password: str = ""
     smtp_from: str = ""
+    gmail_mail_enabled: bool = False
+    gmail_mail_client_id: str = ""
+    gmail_mail_client_secret: SecretStr = SecretStr("")
+    gmail_mail_refresh_token: SecretStr = SecretStr("")
+    gmail_mail_sender: str = ""
     resend_enabled: bool = False
     resend_api_key: str = ""
     resend_from: str = ""
@@ -76,10 +81,11 @@ class Settings(BaseSettings):
     webrtc_turn_secret: str = ""
     webrtc_relay_only: bool = False
     upload_dir: str = "uploads"
-    cv_parser: str = "docling"
+    cv_parser: str = "auto"
+    cv_docling_python: str = ""
     cv_ocr_enabled: bool = True
     cv_ocr_force_full_page: bool = False
-    cv_docling_timeout_seconds: float = 120
+    cv_docling_timeout_seconds: float = 40
     cv_docling_min_text_chars: int = 200
     cv_entity_model_path: str = ""
     cv_entity_python: str = ""
@@ -105,7 +111,10 @@ class Settings(BaseSettings):
     jsearch_timeout_seconds: float = 25
     catalog_max_age_days: int = 60
     catalog_min_skills: int = 3
+    catalog_target_active: int = Field(default=100, ge=10, le=1000)
     periodic_maintenance_enabled: bool = False
+    external_job_checks_enabled: bool = False
+    integration_health_checks_enabled: bool = False
     workflow_maintenance_enabled: bool = False
     model_maintenance_enabled: bool = False
     match_model_path: str = ""
@@ -220,6 +229,14 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def safe_smtp_configuration(self):
+        if sum((self.local_mail_enabled, self.smtp_enabled, self.resend_enabled, self.gmail_mail_enabled)) > 1:
+            raise ValueError("Selecciona un solo transporte de correo: local, SMTP, Resend o Gmail")
+        if self.gmail_mail_enabled:
+            if (not self.gmail_mail_client_id.endswith(".apps.googleusercontent.com")
+                    or not self.gmail_mail_client_secret.get_secret_value()
+                    or not self.gmail_mail_refresh_token.get_secret_value()):
+                raise ValueError("Gmail requiere un cliente OAuth y una autorización de envío vigente")
+            TypeAdapter(EmailStr).validate_python(self.gmail_mail_sender)
         if self.calendar_sync_enabled and (not self.session_auth_enabled or not self.calendar_google_client_id or not self.calendar_google_client_secret):
             raise ValueError("Google Calendar requiere sesión de navegador y credenciales OAuth propias")
         if self.resend_enabled:
@@ -260,11 +277,11 @@ class Settings(BaseSettings):
 
     @property
     def mail_delivery_enabled(self):
-        return self.local_mail_enabled or self.smtp_enabled or self.resend_enabled
+        return self.local_mail_enabled or self.smtp_enabled or self.resend_enabled or self.gmail_mail_enabled
 
     @property
     def mail_delivery_mode(self):
-        return "pending" if self.smtp_enabled or self.resend_enabled else "local"
+        return "pending" if self.smtp_enabled or self.resend_enabled or self.gmail_mail_enabled else "local"
 
     @field_validator("catalog_max_age_days", "catalog_min_skills")
     @classmethod

@@ -30,6 +30,7 @@ from app.domain.services.match_explanations import requirements_for
 from app.domain.services.requirement_analysis import requirement_rows
 from app.domain.services.skills import normalize_skills, skill_gap, skill_set
 from app.domain.services.sql_challenges import CHALLENGES
+from app.domain.services.training_records import unique_training
 
 
 def _evaluate(item, value):
@@ -132,7 +133,7 @@ def plans(db, user, resource_id=None, status=None):
         record_event(db, "learning.plan_updated", "profile", user.profile.id, actor_user_id=user.id, details={"status": status})
         db.commit()
     return [{"id": row.id, "resource": _plan_resource(resources.get(row.resource_id), row.progress or {}), "status": row.status, "created_at": row.created_at, "completed_at": row.completed_at,
-             "version": row.version, "certificate": next((item for item in user.profile.certifications or [] if item.get("resource_id") == row.resource_id), None),
+             "version": row.version, "evidence_added": any(item.get("resource_id") == row.resource_id or item.get("id") == uuid5(NAMESPACE_URL, f"talentsync:external-certificate:{user.id}:{row.resource_id}").hex for item in user.profile.evidence or []), "certificate": next((item for item in user.profile.certifications or [] if item.get("resource_id") == row.resource_id), None),
              "skills_added": skill_set(resources.get(row.resource_id, {}).get("skills", [])) <= skill_set(user.profile.skills or []), "remaining_skills": [skill for skill in resources.get(row.resource_id, {}).get("skills", []) if skill_set([skill]) - skill_set(user.profile.skills or [])], "progress": {**{key: value for key, value in (row.progress or {}).items() if key != "practice_spec"}, "activity_feedback": (row.progress or {}).get("activity_feedback", []) if row.status == "completed" or (row.progress or {}).get("submitted") else [], "published": bool((row.progress or {}).get("published")) and any(item.get("id") == (row.progress or {}).get("evidence_id") for item in user.profile.evidence or [])}} for row in db.learning.plans(user.id)]
 
 
@@ -437,8 +438,8 @@ def passport(db, user):
                         "passed": all(item["correct"] for item in feedback) if feedback else True, "feedback": [{**item, "message": item["message"] if item["correct"] else "Revisa esta actividad en un nuevo intento."} for item in feedback],
                         "completed_at": plan["completed_at"], "attempt_number": 1, "skills": plan["resource"]["skills"], "published": progress.get("published", False)})
     return {"practice_evidence": [{"id": item["id"], "title": item["title"], "skills": item["skills"]} for item in user.profile.evidence or [] if item.get("source") == "learning_practice"],
-            "learning_results": list(reversed(results)), "certificates": user.profile.certifications or [],
-            "course_results": [{"resource_id": item["resource"]["id"], "title": item["resource"]["title"], "provider": item["resource"]["provider"], "completed_at": item["progress"].get("course_completed_at")} for item in plans(db, user) if item["resource"] and item["progress"].get("course_completed")],
+            "learning_results": list(reversed(results)), "certificates": unique_training(user.profile.certifications),
+            "course_results": unique_training([{"resource_id": item["resource"]["id"], "title": item["resource"]["title"], "provider": item["resource"]["provider"], "completed_at": item["progress"].get("course_completed_at")} for item in plans(db, user) if item["resource"] and item["progress"].get("course_completed")]),
             "assessments": [{**public_attempt(row), "valid": bool(row.passed and row.valid_until and row.valid_until >= now),
                              "improvement_resources": [resource for resource in resources if skill_set([row.skill]) & skill_set(resource["skills"])][:4] if any(not item["correct"] for item in row.feedback) else []}
                             for row in db.learning.attempts(user.id) if row.status == "completed"],
@@ -469,21 +470,43 @@ def register_external_certificate(db, user, resource_id, payload):
     db.refresh(user.profile)
     if not (plan.progress or {}).get("course_completed") or plan.status != "completed":
         raise UseCaseError(status_code=409, detail="Marca el curso como finalizado antes de aportar su certificado")
-    if (resource.get("details") or {}).get("certificate_cost") == "none" and not any(item.get("resource_id") == resource_id for item in user.profile.certifications or []):
-        raise UseCaseError(status_code=422, detail="Este recurso es para aprendizaje sin certificado anunciado")
     if payload["year"] > datetime.utcnow().year:
         raise UseCaseError(status_code=422, detail="La fecha de expedición no puede estar en el futuro")
     identifier = uuid5(NAMESPACE_URL, f"talentsync:external-certificate:{user.id}:{resource_id}").hex
     certificate = {"id": identifier, "name": payload["name"], "issuer": resource["provider"], "year": str(payload["year"]),
         "url": payload["credential_url"], "certificate_id": payload["certificate_id"], "source": "external_certificate",
-        "resource_id": resource_id, "verified": False}
+        "resource_id": resource_id, "kind": "certificate", "verified": False}
     previous_evidence = next((item for item in user.profile.evidence or [] if item.get("id") == identifier), {})
-    user.profile.certifications = [item for item in user.profile.certifications or [] if item.get("id") != identifier] + [certificate]
+    user.profile.certifications = unique_training([item for item in user.profile.certifications or [] if item.get("id") != identifier] + [certificate])
     user.profile.evidence = [item for item in user.profile.evidence or [] if item.get("id") != identifier] + [{
         "id": identifier, "title": payload["name"], "kind": "certificate", "url": payload["credential_url"], "skills": resource["skills"],
-        "issuer": resource["provider"], "year": str(payload["year"]), "certificate_id": payload["certificate_id"],
+        "issuer": resource["provider"], "year": str(payload["year"]), "certificate_id": payload["certificate_id"], "resource_id": resource_id,
         "description": f"Certificado externo aportado por el candidato. Emisor: {resource['provider']}. TalentSync no valida certificados.",
         "verified": False, "add_to_profile": previous_evidence.get("add_to_profile", False), "source": "external_certificate", "created_at": datetime.utcnow().isoformat()}]
     record_event(db, "learning.external_certificate_added", "user", user.id, actor_user_id=user.id, details={"source": "external_certificate"})
     db.commit()
     return {"message": "Certificado aportado añadido al perfil. TalentSync no valida certificados.", "certificate": certificate}
+
+
+def register_course_evidence(db, user, resource_id):
+    db.learning.lock_owner(user.id)
+    db.refresh(user.profile)
+    plan = db.learning.plan(user.id, resource_id)
+    resource = next((row for row in catalog_resources(db, include_inactive=True) if row["id"] == resource_id), None)
+    if plan is None or resource is None:
+        raise UseCaseError(status_code=404, detail="Curso no encontrado en tu plan")
+    if plan.status != "completed" or not (plan.progress or {}).get("course_completed"):
+        raise UseCaseError(status_code=409, detail="Finaliza el curso antes de añadirlo como evidencia")
+    identifier = uuid5(NAMESPACE_URL, f"talentsync:external-certificate:{user.id}:{resource_id}").hex
+    existing = next((row for row in user.profile.evidence or [] if row.get("id") == identifier or row.get("resource_id") == resource_id), None)
+    if existing is None:
+        if len(user.profile.evidence or []) >= 50:
+            raise UseCaseError(status_code=422, detail="Puedes conservar hasta 50 evidencias en tu perfil")
+        user.profile.evidence = [*(user.profile.evidence or []), {"id": identifier, "resource_id": resource_id,
+            "kind": "training", "title": resource["title"], "issuer": resource["provider"], "url": resource.get("url"),
+            "description": f"Formación finalizada declarada por el candidato con {resource['provider']}. No incluye un certificado aportado.",
+            "skills": resource["skills"], "source": "external_course", "verified": False, "add_to_profile": False,
+            "created_at": datetime.utcnow().isoformat()}]
+        record_event(db, "learning.course_evidence_added", "user", user.id, actor_user_id=user.id, details={"source": "external_course"})
+        db.commit()
+    return {"message": "Formación añadida a tus evidencias", "evidence_id": (existing or {}).get("id", identifier)}

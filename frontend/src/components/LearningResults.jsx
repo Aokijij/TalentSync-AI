@@ -19,7 +19,7 @@ export function LearningResults({ passport, onReview, plans = [], onOpenPractice
   return <section className="learning-results-v2 space-y-5" aria-label="Resultados de aprendizaje">
     <header className="results-page-heading"><div><p className="section-kicker">TU PROGRESO, CON CONTEXTO</p><h2>Mis resultados</h2><p>Consulta tu formación finalizada, los certificados que aportaste y los resultados de tus retos.</p></div><Link className="button-secondary button-sm" to="/perfil#evidencias">Ver mi perfil<ArrowUpRight size={15} /></Link></header>
     <WorkspaceTabs id="learning-results" label="Tipos de resultados" value={tab} onChange={(value) => { setTab(value); setPage(1); }} items={[["courses", `Cursos (${courses.length})`, BookOpenCheck], ["certificates", `Certificados (${certificates.length})`, Award], ["assessments", `Retos (${assessments.length})`, ClipboardCheck]]} />
-    <div role="tabpanel" id={`learning-results-panel-${tab}`} aria-labelledby={`learning-results-tab-${tab}`}>
+    <div key={tab} role="tabpanel" id={`learning-results-panel-${tab}`} aria-labelledby={`learning-results-tab-${tab}`}>
       <div className="results-toolbar"><label>Buscar en mis resultados<input className="field-control mt-2" value={query} maxLength={160} placeholder="Busca por recurso, habilidad o emisor" onChange={(event) => { setQuery(event.target.value); setPage(1); }} /></label><p>{rows.length} {rows.length === 1 ? "registro" : "registros"}</p></div>
       <p className="results-kind-description">{({ practices: "La puntuación corresponde al ejercicio de TalentSync, no a la finalización del curso ni a un certificado del proveedor.", courses: "Formación que marcaste como finalizada. El avance es una declaración tuya y no incluye una nota de práctica.", certificates: "Documentos aportados por ti. TalentSync no valida su autenticidad ni los convierte en evaluaciones de habilidades.", assessments: "Cada resultado corresponde al nivel y las actividades indicadas. Revisa su fecha de vigencia y alcance." })[tab]}</p>
       <div className="results-record-grid">{rows.slice((safePage - 1) * 8, safePage * 8).map((row, index) => {
@@ -27,7 +27,7 @@ export function LearningResults({ passport, onReview, plans = [], onOpenPractice
         const plan = plans.find((item) => item.resource?.id === row.resource_id);
         const title = row.title || row.name || `Fundamentos de ${row.skill || "la habilidad"}`;
         const status = tab === "certificates" ? "Aportado por ti" : tab === "courses" ? "Finalizado por ti" : isAssessment ? row.valid ? "Vigente" : row.passed ? "Por renovar" : "Por reforzar" : row.published ? "Evidencia declarada publicada" : "Resultado personal";
-        return <article className="result-record" key={row.id || `${tab}-${row.resource_id || index}`}>
+        return <article className="result-record" key={`${tab}-${row.id || row.resource_id || index}`}>
           <header><span className={`result-record-status ${row.valid || row.passed ? "is-positive" : ""}`}>{status}</span>{score != null && Number.isFinite(score) && <strong className="result-record-score">{score}<small>%</small></strong>}</header>
           <h3>{title}</h3>
           <p className="result-record-context">{isPractice ? row.course_title ? `Curso relacionado: ${row.course_title}` : row.provider && row.provider !== "TalentSync" ? "Registro anterior de práctica asociado a formación" : "Práctica de TalentSync" : row.provider || row.issuer || row.skill}</p>

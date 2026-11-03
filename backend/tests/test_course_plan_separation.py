@@ -78,6 +78,32 @@ def test_completed_course_claims_only_selected_skills_without_a_certificate(clie
     assert set(client.get("/api/v1/profiles/me", headers=candidate).json()["skills"]) == {"excel", "python"}
 
 
+def test_training_without_advertised_certificate_is_idempotent_and_can_gain_a_certificate(client):
+    source = create(client, administrator(client), details={"certificate_cost": "none"})
+    _, candidate = register(client, "training-evidence")
+    base = f"/api/v1/learning/plans/{source['id']}"
+    plan = client.put(base, headers=candidate, json={}).json()[0]
+    assert client.post(base + "/evidence", headers=candidate).status_code == 409
+    done = client.patch(base + "/course", headers=candidate, json={"version": plan["version"], "completed": True})
+    assert done.status_code == 200
+    for _ in range(2):
+        response = client.post(base + "/evidence", headers=candidate)
+        assert response.status_code == 200, response.text
+    profile = client.get("/api/v1/profiles/me", headers=candidate).json()
+    evidence = client.get("/api/v1/matching/evidence", headers=candidate).json()
+    assert len(evidence) == 1
+    assert evidence[0]["kind"] == "training"
+    assert profile["certifications"] == []
+    certificate = {"name": "Certificado del proveedor", "credential_url": "https://example.com/credential", "year": datetime.utcnow().year, "has_certificate": True}
+    for _ in range(2):
+        response = client.post(base + "/certificate", headers=candidate, json=certificate)
+        assert response.status_code == 200, response.text
+    profile = client.get("/api/v1/profiles/me", headers=candidate).json()
+    evidence = client.get("/api/v1/matching/evidence", headers=candidate).json()
+    assert len(evidence) == len(profile["certifications"]) == 1
+    assert evidence[0]["kind"] == "certificate"
+
+
 def test_authored_practice_solutions_are_private_and_course_progress_survives_submissions(client):
     admin = administrator(client)
     source = create(client, admin, practice=authored())

@@ -165,6 +165,7 @@ def test_smtp_encrypts_and_validates_certificate_before_authentication(smtp, mod
         context = calls[0][1]["context"]
     assert context.check_hostname and context.verify_mode == ssl.CERT_REQUIRED
     assert messages[0]["Message-ID"] == messages[1]["Message-ID"]
+    assert messages[0]["From"] == "TalentSync <test@example.com>"
     assert "PRIVATE" not in str(messages[0])
     assert messages[0].is_multipart()
     assert messages[0].get_body(preferencelist=("plain",)).get_content().strip() == "Synthetic"

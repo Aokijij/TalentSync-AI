@@ -1,5 +1,5 @@
 import pytest
-from test_api_flows import client, register  # noqa: F401
+from test_api_flows import client, legal_acceptance, register  # noqa: F401
 
 from app.core.config import settings
 from app.infrastructure.database.models import User, UserSession
@@ -25,7 +25,7 @@ def test_portal_rejects_other_role_before_mfa_or_session(client, monkeypatch, se
 @pytest.mark.parametrize("role", ["candidate", "company"])
 def test_separate_registration_routes_reject_forged_role(client, role):  # noqa: F811
     other = "candidate" if role == "company" else "company"
-    payload = {"name": "Cuenta local", "email": "portal-new@example.com", "password": "Test-password-2026!", "role": other, "company_name": "Portal local", "nit": "PORTAL-NEW"}
+    payload = {**legal_acceptance(), "name": "Cuenta local", "email": "portal-new@example.com", "password": "Test-password-2026!", "role": other, "company_name": "Portal local", "nit": "PORTAL-NEW"}
     assert client.post(f"/api/v1/auth/{role}/register", json=payload).status_code == 422
     payload["role"] = role
     result = client.post(f"/api/v1/auth/{role}/register", json=payload)

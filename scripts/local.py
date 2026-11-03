@@ -18,6 +18,7 @@ INTEGRATION_KEYS = {
     "CALENDAR_SYNC_ENABLED", "CALENDAR_GOOGLE_CLIENT_ID", "CALENDAR_GOOGLE_CLIENT_SECRET",
     "RESEND_API_KEY", "RESEND_FROM", "RESEND_WEBHOOK_SECRET",
     "SMTP_HOST", "SMTP_PORT", "SMTP_SECURITY", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM",
+    "GMAIL_MAIL_CLIENT_ID", "GMAIL_MAIL_CLIENT_SECRET", "GMAIL_MAIL_REFRESH_TOKEN", "GMAIL_MAIL_SENDER",
     *(f"OAUTH_{provider.upper()}_CLIENT_{part}" for provider in SOCIAL_PROVIDERS for part in ("ID", "SECRET")),
 }
 
@@ -38,8 +39,8 @@ def integration_overrides(path):
     if values.pop("INTEGRATIONS_ENABLED", "false") != "true":
         return {}
     transport = values.pop("INTEGRATION_MAIL_TRANSPORT", "local")
-    if transport not in {"local", "resend", "smtp"}:
-        raise SystemExit("Selecciona correo local, resend o smtp en .local/integrations.env.")
+    if transport not in {"local", "resend", "smtp", "gmail"}:
+        raise SystemExit("Selecciona correo local, resend, smtp o gmail en .local/integrations.env.")
     origin = values.get("PUBLIC_APP_URL", "http://127.0.0.1:5173").rstrip("/")
     try:
         url = urlsplit(origin)
@@ -55,11 +56,14 @@ def integration_overrides(path):
         raise SystemExit("El correo de cuentas requiere clave y remitente propio verificado; resend.dev solo sirve para la prueba aislada.")
     if transport == "smtp" and (not values.get("SMTP_HOST") or not values.get("SMTP_FROM")):
         raise SystemExit("El correo SMTP requiere servidor y remitente.")
+    if transport == "gmail" and not all(values.get(key) for key in ("GMAIL_MAIL_CLIENT_ID", "GMAIL_MAIL_CLIENT_SECRET", "GMAIL_MAIL_REFRESH_TOKEN", "GMAIL_MAIL_SENDER")):
+        raise SystemExit("Gmail requiere la autorización privada completa del buzón del proyecto.")
     return {**values, "PUBLIC_APP_URL": origin, "CORS_ORIGINS": json.dumps([origin]),
             "SESSION_COOKIE_SECURE": str(url.scheme == "https").lower(),
             "LOCAL_MAIL_ENABLED": str(transport == "local").lower(),
             "RESEND_ENABLED": str(transport == "resend").lower(),
-            "SMTP_ENABLED": str(transport == "smtp").lower()}
+            "SMTP_ENABLED": str(transport == "smtp").lower(),
+            "GMAIL_MAIL_ENABLED": str(transport == "gmail").lower()}
 
 
 def integration_status(env):
@@ -77,7 +81,7 @@ def integration_status(env):
     return {"origin": origin, "providers": providers,
             "calendar": {"state": "configured" if calendar and env.get("CALENDAR_SYNC_ENABLED") == "true" else "disabled" if calendar else "missing_credentials",
                          "callback": f"{origin}/api/v1/account/calendar/google/callback"},
-            "mail": "resend" if env.get("RESEND_ENABLED") == "true" else "smtp" if env.get("SMTP_ENABLED") == "true" else "local",
+            "mail": "gmail" if env.get("GMAIL_MAIL_ENABLED") == "true" else "resend" if env.get("RESEND_ENABLED") == "true" else "smtp" if env.get("SMTP_ENABLED") == "true" else "local",
             "delivery_webhook": {"configured": bool(env.get("RESEND_WEBHOOK_SECRET")),
                                  "path": "/api/v1/webhooks/resend"},
             "verification": "configuration_only; complete real consent and delivery checks after setup"}
@@ -120,6 +124,8 @@ def prepare_environment(*, testing=False):
                    **{key: values.get(key, "false" if key == "LEARN_ENABLED" else "") for key in (
                        "LEARN_ENABLED", "LEARN_TENANT_ID", "LEARN_CLIENT_ID", "LEARN_CLIENT_SECRET")},
                    "SMTP_ENABLED": "false", "SMTP_HOST": "", "SMTP_USERNAME": "", "SMTP_PASSWORD": "", "SMTP_FROM": "",
+                   "GMAIL_MAIL_ENABLED": "false", "GMAIL_MAIL_CLIENT_ID": "", "GMAIL_MAIL_CLIENT_SECRET": "",
+                   "GMAIL_MAIL_REFRESH_TOKEN": "", "GMAIL_MAIL_SENDER": "",
                    "SMTP_PORT": "587", "SMTP_SECURITY": "starttls",
                    "SESSION_AUTH_ENABLED": "true", "LOCAL_MAIL_ENABLED": "true",
                    "LOCAL_MFA_REVIEW_ENABLED": "true", "COMPANY_MFA_REQUIRED": "false",

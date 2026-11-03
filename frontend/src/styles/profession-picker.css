@@ -1,0 +1,19 @@
+.profession-picker { position:relative; min-width:0; }
+.profession-picker>label { display:block; font-size:.85rem; font-weight:650; margin-bottom:.5rem; }
+.profession-picker-control { position:relative; display:flex; align-items:center; gap:.65rem; border:1px solid var(--control-border); border-radius:12px; padding:0 .85rem; background:var(--surface); color:var(--muted); }
+.profession-picker-control:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent); }
+.profession-picker-control input { border:0; outline:none; background:transparent; color:var(--ink-strong); min-width:0; width:100%; padding:.85rem 0; font:inherit; font-size:.85rem; }
+.profession-picker-control>svg { flex-shrink:0; }
+.profession-picker>small { display:block; color:var(--muted); font-size:.74rem; line-height:1.6; margin-top:.5rem; }
+.profession-picker-menu { position:absolute; z-index:60; inset:calc(100% + .35rem) -1px auto; border:1px solid var(--control-border); background:var(--surface); border-radius:14px; box-shadow:0 16px 40px #0003; overflow:hidden; }
+.profession-picker-menu>p { display:flex; align-items:center; gap:.5rem; padding:.8rem 1rem; font-size:.73rem; color:var(--muted); border-bottom:1px solid var(--line); }
+.profession-picker-menu ul { max-height:260px; overflow-y:auto; padding:.4rem; }
+.profession-picker-menu li { display:flex; align-items:center; gap:.65rem; padding:.8rem; border-radius:8px; cursor:pointer; color:var(--ink-strong); font-size:.82rem; }
+.profession-picker-menu li span { flex:1; }
+.profession-picker-menu li:is(:hover,.is-active),.profession-picker-menu [aria-selected=true] { background:var(--surface-subtle); color:var(--accent); }
+.profession-picker-menu>button { display:flex; justify-content:space-between; gap:.5rem; padding:.85rem 1rem; width:100%; font-size:.82rem; color:var(--accent); background:var(--surface-subtle); cursor:pointer; }
+.profession-picker-menu>small { display:block; padding:.7rem 1rem; border-top:1px solid var(--line); color:var(--muted); font-size:.7rem; line-height:1.5; }
+
+.profession-picker-toggle { display:grid; place-items:center; flex-shrink:0; align-self:stretch; width:30px; padding:0; border:0; background:transparent; color:var(--muted); cursor:pointer; }
+.profession-picker-toggle:hover { color:var(--accent); }
+.profession-picker-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }

@@ -295,3 +295,8 @@ def leave_plan(resource_id: str, version: int, user=Depends(candidate), db=Depen
 @router.post("/learning/plans/{resource_id}/certificate")
 def certificate(resource_id: str, payload: ExternalCertificate, user=Depends(candidate), db=Depends(get_unit_of_work)):
     return cases.register_external_certificate(db, user, resource_id, payload.model_dump())
+
+
+@router.post("/learning/plans/{resource_id}/evidence")
+def course_evidence(resource_id: str, user=Depends(candidate), db=Depends(get_unit_of_work)):
+    return cases.register_course_evidence(db, user, resource_id)

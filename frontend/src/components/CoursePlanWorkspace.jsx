@@ -4,6 +4,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 import { useFeedback } from "../contexts/FeedbackContext.jsx";
 import { ExternalCertificateForm } from "./ExternalCertificateForm.jsx";
 import { CourseChallenges } from "./CourseChallenges.jsx";
+import { CourseEvidence } from "./CourseEvidence.jsx";
 import { CourseSkillClaim } from "./CourseSkillClaim.jsx";
 import { ResourceDetailsDialog } from "./ResourceDetailsDialog.jsx";
 import { formatLearningHours } from "../utils/learningPresentation.js";
@@ -26,8 +27,9 @@ export function CoursePlanWorkspace({ plan, onSaved, onClose, onReload }) {
   return <section className={`course-workspace course-path course-flow ${completed ? "is-finished" : "is-running"}`} aria-label="Seguimiento del curso"><button className="button-ghost course-back-action" disabled={busy} onClick={onClose}><ArrowLeft size={16} />Volver al plan</button>
     <header className="course-path-heading"><span className="learning-area-icon">{completed ? <CheckCircle2 size={27} /> : <BookOpen size={27} />}</span><div><p className="section-kicker">{completed ? "MI PLAN · CURSO FINALIZADO" : "MI PLAN · FORMACIÓN"}</p><h2>{plan.resource.title}</h2><p>{plan.resource.provider} · {formatLearningHours(plan.resource.hours)} h estimadas</p></div><span className={`course-path-status ${completed ? "is-complete" : ""}`}>{completed ? <CheckCircle2 size={15} /> : <Clock3 size={15} />}{completed ? "Finalizado por ti" : "En marcha"}</span></header>
     {completed ? <>
-      <section className="course-finish-banner"><CheckCircle2 size={30} /><div><h3>Has completado esta formación</h3><p>{noCertificate ? "Este curso no anuncia certificado. Registra las habilidades que aprendiste y sigue practicando a tu ritmo." : plan.certificate ? "Tu certificado está aportado. Revisa las habilidades que quieres incorporar a tu perfil." : "Ahora puedes incorporar lo aprendido y guardar el certificado del proveedor, si lo recibiste."}</p><small>La finalización la has registrado tú; no sustituye una evaluación del proveedor.</small></div></section>
-      {!noCertificate && <ExternalCertificateForm plan={plan} onChanged={onReload} />}
+      <section className="course-finish-banner"><CheckCircle2 size={30} /><div><h3>Has completado esta formación</h3><p>{noCertificate ? "Este curso no anuncia certificado. Puedes registrar tu formación y, si el proveedor te expidió un documento, añadirlo aquí." : plan.certificate ? "Tu certificado está aportado. Revisa las habilidades que quieres incorporar a tu perfil." : "Ahora puedes incorporar lo aprendido y guardar el certificado del proveedor, si lo recibiste."}</p><small>La finalización la has registrado tú; no sustituye una evaluación del proveedor.</small></div></section>
+      <ExternalCertificateForm plan={plan} onChanged={onReload} />
+      <CourseEvidence plan={plan} onChanged={onReload} />
       <CourseSkillClaim plan={plan} onSaved={onSaved} />
       <details className="finished-course-challenges"><summary>Seguir practicando las habilidades del curso</summary><CourseChallenges plan={plan} /></details>
       <footer className="course-finished-actions"><div>{detailButton}<a className="button-secondary course-flow-button" href={plan.resource.url} target="_blank" rel="noopener noreferrer">Consultar contenido<ExternalLink size={16} /></a></div><button className="button-ghost course-retake-action" disabled={busy} onClick={update}><RotateCcw size={16} />Retomar curso</button></footer>

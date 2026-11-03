@@ -1,14 +1,33 @@
 from __future__ import annotations
 
+import json
 import logging
+import os
 import re
+import subprocess
+import threading
 from functools import lru_cache
+from pathlib import Path
 
 from pypdf import PdfReader
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+MAX_PDF_PAGES = 20
+_ocr_slot = threading.BoundedSemaphore(1)
+
+
+class PDFLimitError(ValueError):
+    pass
+
+
+class PDFText(str):
+    """Native text with an internal signal for partially scanned documents."""
+    def __new__(cls, value, *, needs_ocr=False):
+        result = super().__new__(cls, value)
+        result.needs_ocr = needs_ocr
+        return result
 
 
 @lru_cache(maxsize=1)
@@ -23,6 +42,7 @@ def _docling_converter():
     from docling.document_converter import DocumentConverter, PdfFormatOption
 
     pipeline_options = PdfPipelineOptions()
+    pipeline_options.enable_remote_services = False
     pipeline_options.do_ocr = settings.cv_ocr_enabled
     pipeline_options.do_table_structure = False
     pipeline_options.document_timeout = settings.cv_docling_timeout_seconds
@@ -32,7 +52,7 @@ def _docling_converter():
             if settings.cv_ocr_force_full_page
             else OcrMode.PDF_AWARE_LAYOUT_REGIONS
         )
-        pipeline_options.ocr_options = EasyOcrOptions(lang=["es", "en"], mode=mode)
+        pipeline_options.ocr_options = EasyOcrOptions(lang=["es", "en"], mode=mode, download_enabled=False)
 
     return DocumentConverter(
         allowed_formats=[InputFormat.PDF],
@@ -43,19 +63,58 @@ def _docling_converter():
 
 
 def _extract_docling_text(file_path: str) -> str:
+    if not _ocr_slot.acquire(timeout=2):
+        return ""
     try:
-        result = _docling_converter().convert(file_path)
+        return _run_docling_text(file_path)
+    finally:
+        _ocr_slot.release()
+
+
+def _run_docling_text(file_path: str) -> str:
+    if settings.cv_docling_python:
+        return _extract_isolated_docling_text(file_path)
+    try:
+        result = _docling_converter().convert(file_path, max_num_pages=MAX_PDF_PAGES)
         return (result.document.export_to_markdown() or "").strip()
     except ImportError:
         logger.info("Docling no está instalado; se usa el extractor pypdf.")
     except Exception:
-        logger.exception(
-            "Docling no pudo procesar %s; se usa el extractor pypdf.", file_path
-        )
+        # Exceptions can include document content or private paths.
+        logger.warning("Docling could not process a CV; retaining its native text")
     return ""
 
 
+def _extract_isolated_docling_text(file_path: str) -> str:
+    """Keep OCR packages separate; never pass integration credentials to the worker."""
+    python = Path(settings.cv_docling_python)
+    if not python.is_file():
+        return ""
+    env = {key: value for key, value in os.environ.items() if key.upper() in {
+        "SYSTEMROOT", "WINDIR", "PATH", "TEMP", "TMP", "HOME", "HF_HOME",
+        "EASYOCR_MODULE_PATH", "XDG_CACHE_HOME", "LD_LIBRARY_PATH", "DOCLING_ARTIFACTS_PATH",
+    }}
+    env.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", HF_HUB_DISABLE_TELEMETRY="1",
+               OMP_NUM_THREADS="2", TOKENIZERS_PARALLELISM="false")
+    payload = {"path": str(Path(file_path).resolve()), "ocr": settings.cv_ocr_enabled,
+               "force": settings.cv_ocr_force_full_page, "timeout": settings.cv_docling_timeout_seconds}
+    try:
+        result = subprocess.run([str(python), str(Path(__file__).with_name("docling_worker.py"))],
+            input=json.dumps(payload), capture_output=True, text=True, encoding="utf-8",
+            env=env, timeout=settings.cv_docling_timeout_seconds + 5, check=False)
+        if result.returncode or len(result.stdout) > 1_000_000:
+            return ""
+        value = json.loads(result.stdout)
+        text = value.get("text") if isinstance(value, dict) else None
+        return text.strip() if isinstance(text, str) and len(text) <= 100_000 else ""
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        # Do not log worker stdout/stderr: either can contain private CV text.
+        return ""
+
+
 def _needs_advanced_parser(text: str) -> bool:
+    if getattr(text, "needs_ocr", False):
+        return True
     plain_text = text.replace("COORDINATE EXPERIENCE LAYOUT", "").strip()
     if len(plain_text) < settings.cv_docling_min_text_chars:
         return True
@@ -148,8 +207,11 @@ def _extract_pypdf_text(file_path: str) -> str:
     """
 
     reader = PdfReader(file_path)
+    if len(reader.pages) > MAX_PDF_PAGES:
+        raise PDFLimitError("El CV no puede superar 20 páginas")
 
     texts: list[str] = []
+    needs_ocr = False
     for page in reader.pages:
         # Layout mode preserves columns, headings and CV timelines much better.
         # Some PDFs do not support it, so keep the regular extractor as fallback.
@@ -172,8 +234,14 @@ def _extract_pypdf_text(file_path: str) -> str:
                 )
         if page_text.strip():
             texts.append(page_text)
+        # Check each page: a good first page must not hide a scanned second page.
+        if len(page_text.strip()) < settings.cv_docling_min_text_chars:
+            try:
+                needs_ocr = needs_ocr or bool(page.images)
+            except Exception:
+                needs_ocr = True
 
-    return "\n".join(texts).strip()
+    return PDFText("\n\n".join(texts).strip()[:100_000], needs_ocr=needs_ocr)
 
 
 def extract_pdf_text(file_path: str) -> str:
@@ -183,7 +251,13 @@ def extract_pdf_text(file_path: str) -> str:
     structurally difficult documents through Docling. ``docling`` forces the
     advanced route, while ``pypdf`` disables it.
     """
-    pypdf_text = _extract_pypdf_text(file_path)
+    try:
+        pypdf_text = _extract_pypdf_text(file_path)
+    except PDFLimitError:
+        raise
+    except Exception:
+        # A damaged native text layer should not prevent an isolated OCR attempt.
+        pypdf_text = ""
     parser = settings.cv_parser.strip().lower()
     if parser not in {"auto", "pypdf", "docling"}:
         logger.warning("CV_PARSER=%s no es válido; se usará auto.", settings.cv_parser)
@@ -200,6 +274,10 @@ def extract_pdf_text(file_path: str) -> str:
         return pypdf_text
     if not pypdf_text:
         return docling_text
+    if " ".join(docling_text.split()).casefold() == " ".join(pypdf_text.split()).casefold():
+        return docling_text
     # Preserve the native text as evidence: one engine can recover a field that
     # the other omits, especially in heavily designed multi-column CVs.
-    return f"{docling_text}\n\nPYPDF FALLBACK\n{pypdf_text}"
+    known = {" ".join(line.split()).casefold() for line in docling_text.splitlines() if line.strip()}
+    extra = "\n".join(line for line in pypdf_text.splitlines() if line.strip() and " ".join(line.split()).casefold() not in known)
+    return f"{docling_text}\n\nPYPDF FALLBACK\n{extra}"[:100_000] if extra else docling_text

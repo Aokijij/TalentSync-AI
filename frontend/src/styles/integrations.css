@@ -33,3 +33,6 @@
 .integration-card .ui-inline-notice { font-size:.75rem; }
 .integration-workspace :is(button,a,summary,input):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 @media(max-width:700px) { .integration-grid { grid-template-columns:1fr; } .integration-dates { grid-template-columns:1fr; } .integration-filters { width:100%; } .integration-filters button { flex:1; } }
+
+.integration-auto-check { display:grid; gap:.35rem; padding:.85rem; margin-top:.75rem; border:1px solid var(--line); border-radius:.65rem; background:var(--surface-subtle); font-size:.8rem; }
+.integration-auto-check small { color:var(--muted); line-height:1.6; }

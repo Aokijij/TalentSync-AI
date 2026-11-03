@@ -5,6 +5,7 @@ from app.application.use_cases.career_coach import owner_profile
 from app.domain.services.career_coach import fingerprint
 from app.domain.services.professional_summary import (
     fact_text,
+    structured_summary,
     summary_facts,
     validate_summary,
 )
@@ -19,7 +20,7 @@ def generate(user, payload, *, writer, nlp):
     if len(fact_text(facts).strip()) < 20 or not has_context:
         raise UseCaseError(status_code=422, detail="Completa tu profesión y alguna experiencia, formación o habilidad para preparar un resumen con tus datos")
     if writer is None:
-        raise UseCaseError(status_code=503, detail="El generador local aún no está preparado. Puedes escribir y guardar tu propio resumen")
+        return {"text": structured_summary(facts, payload["tone"]), "method": "structured-profile", "source_version": fingerprint(facts)}
     try:
         generated = writer.generate_summary(facts, tone=payload["tone"])
         text = validate_summary(generated, facts, extract_skills=nlp.extract_skills)

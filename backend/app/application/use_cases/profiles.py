@@ -222,6 +222,10 @@ def update_my_profile(
     payload: dict[str, Any], current_user: User, db: UnitOfWork, *, nlp: TextAnalysis
 ) -> Profile:
     profile = current_user.profile or db.profiles.new(user_id=current_user.id)
+    old_skills = set(profile.skills or [])
+    old_experiences = list(profile.experiences or [])
+    old_educations = list(profile.educations or [])
+    old_education_text = profile.education
     requested_name = (payload.pop("name", None) or "").strip()
     if requested_name:
         current_user.name = requested_name
@@ -265,12 +269,21 @@ def update_my_profile(
     if "mobility" in payload:
         profile.preferences = {**(profile.preferences or {}), "mobility": payload["mobility"]}
     profile.educations = payload["educations"] or []
+    # Structured records are authoritative. Clearing the last study must also
+    # clear the legacy text used by academic matching and generated summaries.
+    if profile.educations or old_educations or payload["education"] == old_education_text:
+        profile.education = "\n".join(f"{row.get('degree', '')} - {row.get('institution', '')}" for row in profile.educations).strip() or None
+    removed_context = (not old_skills <= set(profile.skills or []) or
+                       any(row not in profile.experiences for row in old_experiences) or
+                       any(row not in profile.educations for row in old_educations))
+    if removed_context:
+        profile.preferences = {key: value for key, value in (profile.preferences or {}).items() if key not in {"cv_skill_context", "writing_contexts", "cv_entity_review"}}
     profile.certifications = payload["certifications"] or []
     profile.resume_style = payload["resume_style"]
     profile.resume_color = payload.get("resume_color", "default")
     summary_mode = payload.get("summary_mode") or (profile.preferences or {}).get("professional_summary_mode", "automatic")
     profile.preferences = {**(profile.preferences or {}), "professional_summary_mode": summary_mode}
-    profile.experience = previous_summary if summary_mode == "custom" else build_professional_summary(profile, previous_summary)
+    profile.experience = previous_summary if summary_mode == "custom" else build_professional_summary(profile)
     text = " ".join(
         filter(
             None,
@@ -278,7 +291,7 @@ def update_my_profile(
                 payload["profession"],
                 " ".join(profile.skills),
                 profile.experience,
-                payload["education"],
+                profile.education,
                 payload["location"],
                 payload["department"],
                 payload["preferred_sector"],
@@ -360,10 +373,19 @@ def upload_cv(
     *,
     nlp: TextAnalysis,
     resumes: ResumeReader,
+    replace_profile: bool = False,
 ) -> Profile:
     safe_name, raw_text = resumes.extract(file, current_user.id)
     analysis = nlp.analyze_cv(raw_text)
     profile = current_user.profile or db.profiles.new(user_id=current_user.id)
+    if replace_profile:
+        profile.profession = None
+        profile.skills = []
+        profile.experiences = []
+        profile.educations = []
+        profile.education = None
+        profile.experience = None
+        profile.preferences = {**{key: value for key, value in (profile.preferences or {}).items() if key not in {"writing_contexts", "cv_entity_review", "cv_mention_decisions", "skill_levels", "skill_level_sources"}}, "professional_summary_mode": "automatic"}
     profile.cv_text = analysis.clean_text
     profile.cv_filename = safe_name
     profile.cv_uploaded_at = datetime.utcnow()
@@ -380,7 +402,7 @@ def upload_cv(
             levels[key] = suggestion["level"]
             sources[key] = suggestion
     profile.preferences = {**(profile.preferences or {}), "skill_levels": levels, "skill_level_sources": sources}
-    custom_summary = (profile.preferences or {}).get("professional_summary_mode") == "custom"
+    custom_summary = (profile.preferences or {}).get("professional_summary_mode") == "custom" and bool((profile.experience or "").strip())
     if not custom_summary:
         profile.experience = analysis.experience or profile.experience
     profile.education = analysis.education or profile.education
@@ -393,7 +415,26 @@ def upload_cv(
     profile.experiences = _merge_imported(profile.experiences, analysis.experiences, ("role", "company"))
     profile.educations = _merge_imported(profile.educations, analysis.educations, ("degree", "institution"))
     profile.certifications = _merge_imported(profile.certifications, analysis.certifications, ("name", "issuer"))
-    if analysis.experiences and not custom_summary:
+    from app.domain.services.languages import language_name
+    from app.domain.services.training_records import unique_training
+    profile.certifications = unique_training(profile.certifications)
+    known_languages = {language_name(row.get("name")) for row in profile.languages or []}
+    profile.languages = [*(profile.languages or []), *(row for row in getattr(analysis, "languages", []) if language_name(row.get("name")) not in known_languages)]
+    imported_projects = []
+    from uuid import NAMESPACE_URL, uuid5
+    for project in getattr(analysis, "projects", []):
+        identifier = uuid5(NAMESPACE_URL, f"talentsync:cv-project:{current_user.id}:{project['title'].casefold()}").hex
+        imported_projects.append({"id": identifier, "kind": "project", "source": "cv", "title": project["title"],
+            "description": project["description"], "url": project.get("url"), "verified": False, "add_to_profile": False,
+            "skills": nlp.extract_skills(project["description"]) if hasattr(nlp, "extract_skills") else []})
+    known_evidence = {row.get("id") for row in profile.evidence or []}
+    profile.evidence = [*(profile.evidence or []), *(row for row in imported_projects if row["id"] not in known_evidence)]
+
+    if getattr(analysis, "professional_summary", None) and not custom_summary:
+        # Keep the actual professional paragraph from the PDF, including its
+        # wording. It must not be replaced with a short list of job titles.
+        profile.preferences = {**profile.preferences, "professional_summary_mode": "custom"}
+    elif analysis.experiences and not custom_summary:
         profile.experience = build_professional_summary(
             profile, analysis.experience or profile.experience
         )

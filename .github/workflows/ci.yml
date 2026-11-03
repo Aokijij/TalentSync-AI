@@ -48,6 +48,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements*.txt
       - run: python -m pip install -r requirements-dev.txt pip-audit
+      - run: python -m ruff check app scripts tests
       - run: python -m pytest tests -q
       - run: python -m pip_audit -r requirements-lite.txt --progress-spinner off
       - run: python -m alembic upgrade head
@@ -106,4 +107,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --tag talentsync:ci .
+      # Synthetic contact details for an image that is built only for CI.
+      - run: >-
+          docker build --tag talentsync:ci
+          --build-arg "VITE_LEGAL_NAME=Responsable de pruebas"
+          --build-arg "VITE_LEGAL_EMAIL=privacy@example.test"
+          --build-arg "VITE_LEGAL_CITY=Ciudad de pruebas"
+          --build-arg "VITE_LEGAL_COUNTRY=Colombia"
+          --build-arg "VITE_LEGAL_ADDRESS=Dirección de pruebas"
+          --build-arg "VITE_LEGAL_PHONE=0000000000"
+          --build-arg "VITE_LEGAL_EFFECTIVE_DATE=2026-10-27" .

@@ -77,7 +77,7 @@ def test_entra_validates_signed_identity_and_does_not_authorize_using_email(faul
     if fault == "audience": claims["aud"] = OTHER
     if fault == "audiences": claims["aud"] = [CLIENT, OTHER]; claims["azp"] = CLIENT
     if fault == "version": claims["ver"] = "1.0"
-    if fault == "expired": claims["exp"] = now-1
+    if fault == "expired": claims["exp"] = now-60
     if fault == "future": claims["nbf"] = now+60
     if fault == "missing_nbf": del claims["nbf"]
     if fault == "key_issuer": public["issuer"] = f"https://login.microsoftonline.com/{OTHER}/v2.0"

@@ -57,8 +57,26 @@ def test_course_and_project_sections_do_not_become_hidden_professional_skills():
     p = profile()
     p.preferences = {"cv_skill_context": result.skill_context}
     rows = requirement_rows(p, job())
-    assert [row["status"] for row in rows] == ["unknown", "partial"]
-    assert rows[1]["score"] == 70 and rows[1]["related_months"] == 0
+    assert [row["status"] for row in rows] == ["unknown", "unknown"]
+    assert rows[1]["score"] == 0 and rows[1]["related_months"] == 0
+    p.preferences["cv_mention_decisions"] = {"fastapi": "dismissed"}
+    assert requirement_rows(p, job())[1]["score"] == 0
+    p.skills = ["fastapi"]
+    assert requirement_rows(p, job())[1]["score"] == 100
+
+
+def test_deleted_structured_records_do_not_fall_back_to_old_generated_text():
+    from app.application.use_cases.matching import candidate_match
+    p = profile()
+    p.experience = "Desarrollador backend. Implementé APIs con Python y FastAPI durante varios años."
+    p.education = "Ingeniería de Sistemas"
+    p.preferences = {"professional_summary_mode": "automatic", "cv_skill_context": [{"skill": "python", "state": "project", "excerpt": "Proyectos\nImplementé Python"}, {"skill": "fastapi", "state": "learning", "excerpt": "Estoy aprendiendo FastAPI"}]}
+    j = job()
+    j.required_education_level = "university"
+    j.required_study_fields = ["Ingeniería de Sistemas"]
+    j.embedding = text_processor.embed(j.description)
+    j.sector = "Tecnologia y software"
+    assert candidate_match(p, j, nlp=text_processor)[0] == 0
 
 
 def test_requirement_statuses_are_traceable_and_do_not_change_profile_skills():
@@ -148,7 +166,7 @@ def test_recommendation_api_exposes_context_recomputes_experience_and_preserves_
     assert saved.status_code == 200, saved.text
     endpoint = f"/api/v1/matching/jobs/{created['id']}"
     first = client.get(endpoint, headers=candidate).json()
-    assert first["version"] == "contextual-match-v11" and len(first["section_scores"]) == 3
+    assert first["version"] == "contextual-match-v14" and len(first["section_scores"]) == 3
     assert all("excerpt" not in row for row in first["requirements"])
     assert abs(sum(row["points"] for row in first["components"]) - first["overall_score"]) < .02
     assert client.get(endpoint, headers=company).status_code == 403

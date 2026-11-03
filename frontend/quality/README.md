@@ -1,73 +1,44 @@
-# Comprobación de interfaz y regresión visual
+# Pruebas de interfaz y regresión visual
 
-La página de revisión usa componentes reales y datos ficticios. No forma parte de la compilación publicada. Los recorridos bloquean peticiones externas y las respuestas API del perfil se simulan; no modifican cuentas de trabajo.
+El entorno de calidad monta componentes reales con datos ficticios. Sus rutas y fixtures no forman parte de la aplicación publicada. Los recorridos funcionales simulan las API y bloquean conexiones externas según cada caso.
 
-## Recorridos funcionales
+## Comandos
 
-`npm run quality:ui` comprueba navegación, modales, filtros, retos, CV, confirmaciones, avisos y conservación de ediciones. Puede usar el Chromium personal configurado en `.local/playwright-browser.json`. Estos recorridos también se ejecutan en Linux en CI.
+Desde `frontend/`:
 
-## Imágenes de referencia
+| Comando | Uso |
+| --- | --- |
+| `npm run quality:ui` | Recorridos funcionales con Playwright. |
+| `npm run quality:ui:list` | Inventario de casos sin ejecutarlos. |
+| `npm run quality:ui:build` | Compilación de la página de revisión. |
+| `npm run quality:visual` | Comparación con las imágenes versionadas de Windows. |
+| `npm run quality:visual:update` | Actualización intencional de referencias tras revisar el diseño. |
+| `npm run build:public` | Compilación del sitio informativo independiente. |
+| `npx playwright test --config playwright.public.config.js` | Pruebas de la compilación pública preparada. |
 
-`npm run quality:visual` compara filtros, tarjetas, estados de integraciones, avisos y confirmaciones con 36 PNG versionados: candidato, empresa y administración, temas claro/oscuro, 360 y 1280 píxeles. Usa exclusivamente el Chromium fijado en package-lock/Playwright y referencias de Windows. La preferencia del navegador personal no interviene. Instalarlo con `npx playwright install chromium`.
+Chromium se instala con `npx playwright install chromium`. Para los recorridos funcionales puede configurarse `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` o el archivo privado `.local/playwright-browser.json`. La regresión visual usa siempre el Chromium fijado por Playwright.
 
-El trabajo `visual-regression` de CI usa Windows y ese mismo navegador. Linux conserva las pruebas funcionales; no se comparan píxeles entre sistemas operativos con fuentes diferentes. La tolerancia es 0,1 % de píxeles, con umbral de color 0,15. No se comparan datos de cuentas ni fechas variables.
+## Cobertura
 
-Si un diseño cambia intencionadamente:
+Los casos revisan componentes compartidos, navegación por rol, temas, móvil y escritorio, formularios, filtros, selección, CV, aprendizaje, diálogos, estados de error y conservación de ediciones. Las pruebas de accesibilidad comprueban aspectos concretos como foco, teclado y contraste de controles; no constituyen una certificación integral.
 
-1. Ejecutar la comparación y revisar las diferencias en `playwright-report/index.html` y `test-results/`.
-2. Comprobar visualmente escritorio, móvil, roles y temas afectados.
-3. Solo entonces ejecutar `npm run quality:visual:update` en Windows con el navegador fijado y revisar los PNG del diff de Git.
-4. Ejecutar de nuevo `npm run quality:visual` sin actualizar imágenes.
+Los escenarios se mantienen en `quality/specs/`, los casos del sitio público en `quality/public-specs/` y los datos sintéticos en los módulos del entorno de calidad. Los criterios compartidos de interfaz están en [docs/DESIGN.md](../../docs/DESIGN.md).
 
-CI nunca actualiza las referencias. Conserva el informe y las diferencias como artefactos. Las imágenes cubren los componentes compartidos; no equivalen a una referencia de cada pantalla, estado o navegador de toda la plataforma.
+## Referencias visuales
 
-## Datos de cuenta y operación
+`quality/baselines/win32/` contiene imágenes de componentes compartidos para los tres roles y ambos temas. Las fuentes y la representación del sistema afectan a los píxeles: CI compara esas referencias en Windows y ejecuta los recorridos funcionales en Linux.
 
-`/quality/?auth=register` y `?auth=login` montan las pantallas reales con proveedores
-sintéticos habilitados; `?auth=accounts` muestra vinculación. `providers=off`
-comprueba la configuración ausente. `social-access.spec.js` revisa móvil/escritorio,
-ambos temas, errores de proveedor, redirección con almacenamiento bloqueado y
-separación del registro empresarial. Las API se interceptan: no abre Google,
-GitHub o LinkedIn ni crea cuentas externas.
+Ante un cambio intencional:
 
-`/quality/?controls=1&role=candidate&theme=dark` monta los componentes reales de
-portabilidad, Google Calendar y diagnóstico operativo con las mismas tres hojas
-de estilo globales de la aplicación. La suite intercepta las API con datos
-sintéticos; comprueba descarga, cancelación de borrado, confirmación, sincronizar,
-desconectar y estados de entrega, en móvil/escritorio y ambos temas. No conecta
-Google ni envía correos. Las capturas de revisión se guardan en `.local/operations/`.
+1. Ejecutar la comparación y revisar las diferencias en `playwright-report/` y `test-results/`.
+2. Inspeccionar los tamaños, roles y temas afectados.
+3. Actualizar las referencias en Windows y revisar los PNG modificados en Git.
+4. Repetir la comparación sin actualizar imágenes.
 
+CI nunca actualiza las referencias. Los informes, capturas de fallos y trazas son artefactos generados y quedan fuera de Git. La comparación cubre los componentes incluidos, no todas las pantallas ni todos los navegadores.
 
-## Cierre visual y accesibilidad de los controles
+## Separación de entornos
 
-`design-closure.spec.js` monta el layout real en candidato, empresa y administración. Comprueba los colores de texto y fondo de botones y placeholders, los bordes de los campos estándar, la ampliación del texto al 200 %, la navegación de pestañas con teclado, el salto al contenido y el foco del menú móvil. También verifica error y reintento de una confirmación asíncrona sin doble envío, y la asociación de errores a los campos de acceso. Estos casos usan datos sintéticos y no acreditan conformidad completa de accesibilidad de todas las pantallas.
+La configuración principal sirve la página de calidad en el puerto 4175. La configuración del sitio público usa el puerto 4186 y necesita su compilación preparada. Algunas pruebas públicas verifican también el HTML prerenderizado por `scripts/render-public-site.mjs`; seguir su flujo de preparación antes de ejecutarlas.
 
-Los criterios para mantener componentes y textos consistentes están en [DISENO_INTERFAZ](../../DISENO_INTERFAZ.md). Las capturas locales de la revisión se guardan en `.local/design-closure-review/`.
-
-## Landing y bienvenida por rol
-
-`entry.spec.js` monta `AppRoutes` con los componentes y permisos de navegación reales, autenticación sintética y todas las peticiones externas bloqueadas. Revisa landing, bienvenida de candidato y de empresa a 360/1280 px, ambos temas y texto al 200 %. Incluye conservación de datos tras un fallo, lectura reciente antes de reemplazar el perfil, continuar sin guardar, acceso al control de CV y separación de revisión, aprobación, exención y suspensión. Las capturas se guardan en `.local/entry-review/`; no se incluyen en el sitio publicado. Las pruebas backend de API, organizaciones, calidad y perfil utilizan bases descartables.
-
-## Guía completa y aprendizaje independiente
-
-`guide-learning.spec.js` usa las rutas y componentes reales con API sintética. Comprueba la guía por rol y permisos del entrevistador, los apartados públicos de funcionalidades, un único aviso al añadir recursos, error y reintento, el seguimiento manual de un curso sin práctica asociada y las categorías, búsqueda y paginación de resultados. Revisa 360/1280 px, ambos temas y texto al 200 %. El recorrido administrativo permite revisar una práctica del catálogo y redactar otra, comprobando el contenido enviado y un solo aviso de guardado. Las capturas están en `.local/learning-guide-review/`.
-
-Las pruebas backend `test_course_plan_separation.py` comprueban propiedad, versión, separación de curso/práctica/certificado, privacidad de soluciones y conservación de intentos ante cambios del catálogo. Las familias existentes de cursos, recursos, fuentes y recorridos conservan sus comprobaciones con bases descartables.
-
-La ampliación de `guide-learning.spec.js` incluye 31 retos sintéticos, paginación, búsqueda vacía, niveles, relación con el plan, apertura exacta desde un curso y vuelta al mismo curso. También comprueba el proveedor de solo lectura, enlace del certificado, error con edición conservada, reintento y un solo aviso. Las capturas se guardan en `.local/challenge-paths-review/`. `test_challenge_tracks.py` verifica los esquemas de nivel, soluciones privadas, banco sin mutaciones, historial compartido entre cursos y límites de configuración de producción. Ver [RETOS_APRENDIZAJE](../../RETOS_APRENDIZAJE.md).
-
-
-## Catálogos independientes y ampliación sectorial
-
-La revisión de `guide-learning.spec.js` conserva las cuatro combinaciones de viewport/tema para fichas de curso, retos asignados, certificado con proveedor de solo lectura, fallo/reintento y un único aviso. Añade un catálogo sintético de 79 retos: filtro de sector y nivel, paginación, ausencia de filtros por curso/plan y cambio de pestaña conservando consultas independientes. Las capturas están en `.local/challenge-paths-review/`; los servicios externos permanecen bloqueados.
-
-`test_challenge_tracks.py` cubre los 79 formularios con nivel, formatos y casos originales de los 24 recorridos nuevos, correspondencia por habilidad, metadatos públicos sin soluciones y descubrimiento sin cursos guardados. `test_curated_learning.py` valida las 169 fichas, los 18 proveedores, fechas individuales, idiomas, condiciones y conservación de cambios al importar. Las áreas nuevas tienen retos y formación externa: las pruebas de prácticas guiadas anteriores se parametrizan sobre `EXERCISES`, no sobre todas las áreas del catálogo.
-
-
-## Cursos centrados en retos y limpieza del catálogo
-
-`guide-learning.spec.js` comprueba tarjetas resumidas, apertura de la ficha desde el plan, ausencia de la práctica complementaria aunque exista una asociación histórica, habilidades practicadas, botón de certificado y edición administrativa por habilidades. Un caso adicional comprueba que un recurso retirado no permite abrir curso, práctica o certificado y puede retirarse del plan mediante confirmación. La guía y los textos públicos utilizan Cursos y Retos como recorridos actuales.
-
-`test_learning_resources.py` verifica la retirada de recursos internos y ficticios sin pérdida de planes históricos y los nombres de YouTube. Los casos históricos de `test_learning_journeys.py` y `test_learning_flow_revision.py` reconstruyen planes anteriores a la retirada para comprobar conservación, permisos y privacidad; no vuelven a ofrecer los recursos para planes nuevos. `test_market_radar.py` comprueba que las ofertas de demostración vuelven a consultar en desarrollo y siguen excluidas en producción.
-
-La ampliación del banco llega a 111 formularios con nivel; las 59 rutas nuevas en español se validan mediante el catálogo oficial de Microsoft Learn. Las capturas de tarjetas resumidas están en `.local/refined-learning-review/` y las de los planes, en `.local/challenge-paths-review/`.
+Las pruebas de aceptación con API y base de datos reales deben usar copias aisladas. No reutilizar cuentas ni credenciales productivas en fixtures, capturas o referencias.

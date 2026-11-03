@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from app.application.calendar_errors import CalendarProviderError
 from app.application.errors import UseCaseError
+from app.application.use_cases.integration_observations import record
 from app.application.use_cases.workflow import FINAL, accessible_application
 from app.domain.services.authentication import token_digest
 
@@ -48,8 +49,10 @@ def callback(db, user, session, state, browser, code, gateway, security):
     try:
         refresh = gateway.exchange(code, verifier)
     except CalendarProviderError as failure:
+        record(db, "calendar", "provider_error")
         raise UseCaseError(status_code=503, detail=ERRORS.get(failure.code, ERRORS["temporary"]), code=failure.code) from None
     db.calendars.connect(user.id, security.encrypt_secret(refresh))
+    record(db, "calendar", commit=False, operation="calendar_connect")
     db.commit()
     return {"connected": True}
 
@@ -125,6 +128,7 @@ def process_event(db, row, user, gateway, security, *, public_app_url):
         gateway.sync(access, row.remote_id, event, create=row.application_version == 0)
         row.application_version, row.state, row.error_code, row.attempts, row.last_synced_at = version, "synced" if active else "cancelled", "", 0, now
         row.next_attempt_at, connection.last_error = None, ""
+        record(db, "calendar", commit=False, operation="calendar_sync")
     except (CalendarProviderError, UseCaseError) as failure:
         code = failure.code if isinstance(failure, CalendarProviderError) else "access"
         row.error_code, row.attempts = code, row.attempts + 1
@@ -132,6 +136,8 @@ def process_event(db, row, user, gateway, security, *, public_app_url):
         row.next_attempt_at = now + timedelta(seconds=min(60 * 2 ** min(row.attempts, 6), 3600)) if row.state == "retry" else None
         if code == "authorization":
             connection.last_error = code
+        if isinstance(failure, CalendarProviderError):
+            record(db, "calendar", "provider_error", commit=False)
     finally:
         row.lease_token, row.lease_until = "", None
         db.commit()

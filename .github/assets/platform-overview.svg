@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">TalentSync AI: tres roles, un recorrido conectado</title>
+  <desc id="desc">Candidatos, empresas y administración participan en un proceso que conecta talento, oportunidades y desarrollo profesional.</desc>
+  <defs>
+    <linearGradient id="canvas" x1="0" y1="0" x2="1200" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1830"/>
+      <stop offset="1" stop-color="#172342"/>
+    </linearGradient>
+    <linearGradient id="connection" x1="260" y1="310" x2="940" y2="310" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset=".5" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#FBBF24"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" rx="24" fill="url(#canvas)"/>
+  <circle cx="1150" cy="20" r="210" stroke="#344465" stroke-opacity=".5"/>
+  <circle cx="1150" cy="20" r="260" stroke="#344465" stroke-opacity=".3"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="70" y="65" fill="#93C5FD" font-size="13" font-weight="700" letter-spacing="3">TALENTO · SELECCIÓN · DESARROLLO</text>
+    <text x="70" y="125" fill="#F8FAFC" font-size="43" font-weight="700" letter-spacing="-1">Un siguiente paso, mejor conectado.</text>
+    <text x="70" y="164" fill="#CBD5E1" font-size="19">Personas con trayectoria. Equipos con propósito. Decisiones con contexto.</text>
+
+    <path d="M260 310H940" stroke="url(#connection)" stroke-width="2"/>
+    <rect x="70" y="218" width="320" height="132" rx="16" fill="#142B46" stroke="#23516D"/>
+    <rect x="440" y="218" width="320" height="132" rx="16" fill="#282547" stroke="#51406E"/>
+    <rect x="810" y="218" width="320" height="132" rx="16" fill="#332E30" stroke="#69563B"/>
+
+    <rect x="94" y="242" width="40" height="40" rx="11" fill="#0C4A6E"/>
+    <circle cx="114" cy="254" r="4" stroke="#7DD3FC" stroke-width="2"/>
+    <path d="M105 272V269C105 262 123 262 123 269V272" stroke="#7DD3FC" stroke-width="2" stroke-linecap="round"/>
+    <text x="148" y="268" fill="#BAE6FD" font-size="21" font-weight="700">Candidatos</text>
+    <text x="94" y="317" fill="#CBD5E1" font-size="16">Encuentra tu lugar y sigue creciendo.</text>
+
+    <rect x="464" y="242" width="40" height="40" rx="11" fill="#4C1D95"/>
+    <rect x="474" y="254" width="20" height="15" rx="3" stroke="#DDD6FE" stroke-width="2"/>
+    <path d="M480 254V250H488V254M474 261H494M484 260V264" stroke="#DDD6FE" stroke-width="2" stroke-linejoin="round"/>
+    <text x="518" y="268" fill="#DDD6FE" font-size="21" font-weight="700">Empresas</text>
+    <text x="464" y="317" fill="#CBD5E1" font-size="16">Conecta talento y construye equipo.</text>
+
+    <rect x="834" y="242" width="40" height="40" rx="11" fill="#78350F"/>
+    <path d="M854 249L864 253V260C864 267 854 273 854 273S844 267 844 260V253L854 249Z" stroke="#FDE68A" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M850 260L853 263L859 257" stroke="#FDE68A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="888" y="268" fill="#FDE68A" font-size="21" font-weight="700">Administración</text>
+    <text x="834" y="317" fill="#CBD5E1" font-size="16">Cuida la confianza en cada recorrido.</text>
+  </g>
+</svg>

@@ -510,6 +510,15 @@ class TextProcessor:
         return sorted(set(found))
 
     def extract_location(self, text: str) -> str | None:
+        from app.domain.services.colombian_locations import city_index
+        # Prefer contact lines over cities mentioned in an employer's history.
+        header = self.fold_text("\n".join(text.splitlines()[:20]))
+        for key, places in sorted(city_index().items(), key=lambda item: len(item[0]), reverse=True):
+            if len(key) >= 4 and re.search(rf"(?<!\w){re.escape(key)}(?!\w)", header):
+                explicit = next(((city, department) for city, department in places if self.fold_text(department) in header), None)
+                if explicit or len(places) == 1:
+                    city, department = explicit or places[0]
+                    return f"{city}, {department}"
         domicile = re.search(r"domicilio\s*:\s*([^\n]+)", text, re.I)
         if domicile:
             return domicile.group(1).strip(" .")
@@ -527,7 +536,7 @@ class TextProcessor:
             "envigado",
             "itagui",
         ):
-            if re.search(rf"\b{city}\b", self.clean_text(text)):
+            if re.search(rf"\b{city}\b", self.fold_text(text)):
                 return city.title()
         return None
 
@@ -1309,6 +1318,36 @@ class TextProcessor:
             return text
         return left + "\n\n" + right
 
+    def _extract_heading_records(self, text, kind):
+        """Read title · organisation followed by its own period, across templates."""
+        start = r"(?:^|\n)\s*(?:experiencia laboral|experiencia profesional|work experience)\s*\n" if kind == "experience" else r"(?:^|\n)\s*(?:formaci[oó]n acad[eé]mica|educaci[oó]n|education)\s*\n"
+        stops = (r"(?:^|\n)\s*(?:formaci[oó]n acad[eé]mica|experiencia laboral|muestras de trabajo|habilidades|idiomas|preferencias laborales|certificaciones|referencias|education|skills)\s*(?:\n|$)",)
+        block = self._extract_section(text, start, stops)
+        lines = [self._semantic_line(line) for line in block.splitlines() if line.strip() and not re.match(r"\s*(?:Hoja de vida|P[aá]gina \d)", line, re.I)]
+        starts = []
+        for index in range(1, len(lines)):
+            period = read_period(lines[index])
+            if not period or period[1] != (0, len(self.fold_text(lines[index]))):
+                continue
+            header_index = index - 1
+            header = lines[header_index]
+            if " · " not in header and header_index and " · " in lines[header_index - 1]:
+                header_index -= 1
+                header = lines[header_index] + " " + header
+            if " · " not in header:
+                continue
+            title, organisation = header.split(" · ", 1)
+            if 2 <= len(title) <= 200 and 2 <= len(organisation) <= 180:
+                starts.append((header_index, index, title, organisation, period[0]))
+        result = []
+        for position, (_, index, title, organisation, period) in enumerate(starts):
+            end = starts[position + 1][0] if position + 1 < len(starts) else len(lines)
+            if kind == "experience":
+                result.append({"role": title, "company": organisation, **period, "description": "\n".join(lines[index + 1:end])[:4000]})
+            else:
+                result.append({"degree": title, "institution": organisation, **period, "level": infer_education_level(title)})
+        return result
+
     def extract_resume_items(
         self, text: str
     ) -> tuple[list[dict], list[dict], list[dict]]:
@@ -1324,8 +1363,11 @@ class TextProcessor:
         certifications: list[dict] = []
         visual_experiences: list[dict] = []
         visual_educations: list[dict] = []
+        heading_experiences, heading_educations = [], []
         for source in sources:
             source = self._resume_reading_order(source)
+            heading_experiences.extend(self._extract_heading_records(source, "experience"))
+            heading_educations.extend(self._extract_heading_records(source, "education"))
             semantic_experiences.extend(self._extract_semantic_experiences(source))
             semantic_educations.extend(self._extract_semantic_educations(source))
             experiences.extend(self._extract_structured_experiences(source))
@@ -1349,7 +1391,7 @@ class TextProcessor:
         )
         merged_experiences = [
             item
-            for item in [*semantic_experiences, *experiences, *visual_experiences]
+            for item in (heading_experiences or [*semantic_experiences, *experiences, *visual_experiences])
             if self.fold_text(str(item.get("company", "")))
             and not self.fold_text(str(item.get("company", ""))).startswith(
                 invalid_prefixes
@@ -1365,7 +1407,7 @@ class TextProcessor:
         # can append the following heading to those same lines.
         if semantic_educations:
             visual_educations = [item for item in visual_educations if not re.match(r"^(?:pregrado|posgrado|postgrado|tecn[oó]log[oa]|t[eé]cnic[oa]|bachiller|profesional|especializaci[oó]n|maestr[ií]a|doctorado)\s*:", item.get("degree", ""), re.I)]
-        merged_educations = [item for item in [*semantic_educations, *visual_educations, *educations]
+        merged_educations = [item for item in (heading_educations or [*semantic_educations, *visual_educations, *educations])
                              if not re.search(r"\b(?:tecnolog[ií]as|proyectos|experiencia laboral|perfil profesional)\b", item.get("degree", ""), re.I)]
         from app.domain.services.training_types import infer_training_type
         for item in merged_educations:
@@ -1411,17 +1453,21 @@ class TextProcessor:
     def analyze_cv(self, text: str) -> NLPResult:
         from app.domain.services.skill_context import extraction_context
         from app.domain.services.skills import skill_key
+        from app.infrastructure.nlp.cv_sections import extract_sections
+        extra = extract_sections(self.repair_pdf_glyphs(text))
         clean = self.clean_text(text)
         experiences, educations, certifications = self.extract_resume_items(text)
+        certifications = self._dedupe(extra["certifications"] + certifications, "name")
         detected = self.extract_skills(text)
         context = extraction_context(text, detected, experiences, aliases={skill_key(key): value for key, value in SKILL_ALIAS_PATTERNS.items()})
         states = {skill_key(skill): {row["state"] for row in context if row["skill"] == skill_key(skill)} for skill in detected}
         positive_skills = [skill for skill in detected if "applied" in states[skill_key(skill)] or "declared" in states[skill_key(skill)] and not states[skill_key(skill)] & {"learning", "negated", "training", "unknown"}]
+        summary = extra["summary"]
         return NLPResult(
             clean_text=clean,
             profession=self.extract_profession(text),
             skills=positive_skills,
-            experience="\n".join(
+            experience=summary or "\n".join(
                 f"{item['role']} - {item['company']}" for item in experiences
             )
             or None,
@@ -1436,6 +1482,9 @@ class TextProcessor:
             certifications=certifications,
             embedding=self.embed(clean),
             skill_context=context,
+            professional_summary=summary or None,
+            languages=extra["languages"],
+            projects=extra["projects"],
         )
 
     def analyze(self, text: str) -> NLPResult:

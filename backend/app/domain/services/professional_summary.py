@@ -15,8 +15,8 @@ def summary_facts(profile):
     studies = sorted(getattr(profile, "educations", None) or [], key=lambda row: (is_ongoing(row), str(row.get("end_year") or ""), str(row.get("start_year") or "")), reverse=True)
     education = [{"titulo": text(row.get("degree"), 200), "en_curso": is_ongoing(row)} for row in studies[:2]]
     return {"profesion": text(getattr(profile, "profession", ""), 200), "habilidades": skills,
-            "experiencias": experiences, "formacion": education, "formacion_anterior": text(getattr(profile, "education", ""), 300),
-            "resumen_actual": text(getattr(profile, "experience", ""), 900)}
+            "experiencias": experiences, "formacion": education, "formacion_anterior": text(getattr(profile, "education", ""), 300) if getattr(profile, "educations", None) is None else "",
+            "resumen_actual": text(getattr(profile, "experience", ""), 900) if (getattr(profile, "preferences", None) or {}).get("professional_summary_mode") != "automatic" else ""}
 
 
 def fact_text(facts):
@@ -24,6 +24,28 @@ def fact_text(facts):
     values.extend(value for row in facts["experiencias"] for key, value in row.items() if key != "actual")
     values.extend(row["titulo"] for row in facts["formacion"])
     return " ".join(filter(None, values))
+
+
+def structured_summary(facts, tone="professional"):
+    """An immediately available draft, using only facts supplied by its owner."""
+    parts = []
+    if facts["profesion"]:
+        parts.append(f"Mi perfil profesional se orienta a {facts['profesion']}.")
+    roles = list(dict.fromkeys(row["cargo"] for row in facts["experiencias"] if row["cargo"]))
+    if roles:
+        parts.append(f"Mi trayectoria incluye {', '.join(roles[:2 if tone == 'concise' else 3])}.")
+    skills = list(dict.fromkeys(facts["habilidades"]))
+    if skills:
+        parts.append(f"Cuento con conocimientos en {', '.join(skills[:3 if tone == 'concise' else 6])}.")
+    if tone != "concise":
+        for study in facts["formacion"][:2]:
+            if study["titulo"]:
+                parts.append(f"{'Actualmente curso' if study['en_curso'] else 'Mi formación incluye'} {study['titulo']}.")
+    if not roles and not skills and facts["resumen_actual"]:
+        parts.append(facts["resumen_actual"])
+    if not roles and not skills and not facts["formacion"] and facts["formacion_anterior"]:
+        parts.append(f"Mi formación registrada: {facts['formacion_anterior']}.")
+    return " ".join(parts)[:1600]
 
 
 def validate_summary(generated, facts, *, extract_skills):

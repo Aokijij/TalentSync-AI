@@ -23,4 +23,4 @@ def test_company_gets_component_reasons_without_identity_or_an_extra_match_versi
     assert any("solicitado B1 · registrado B2" in line for line in components["languages"]["explanations"])
     text = str([row["explanations"] for row in components.values()])
     assert candidate["email"] not in text and candidate["name"] not in text
-    assert response.json()["match_details"]["version"] == "contextual-match-v11"
+    assert response.json()["match_details"]["version"] == "contextual-match-v14"

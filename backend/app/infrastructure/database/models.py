@@ -53,6 +53,7 @@ class User(Base):
     )
     email_verified: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
     registration_pending: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    legal_acceptance: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
     mfa_secret: Mapped[str | None] = mapped_column(Text)
     mfa_enabled: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
     mfa_last_counter: Mapped[int | None] = mapped_column(Integer)
@@ -395,6 +396,7 @@ class Job(Base):
     __tablename__ = "jobs"
     __table_args__ = (
         Index("ix_jobs_company_status_created", "company_id", "status", "created_at"),
+        Index("ix_jobs_external_next_check", "source_kind", "status", "external_next_check_at"),
         UniqueConstraint("source_name", "external_id", name="uq_job_external_source"),
     )
 
@@ -441,6 +443,27 @@ class Job(Base):
     external_url: Mapped[str | None] = mapped_column(String(1000))
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime)
+    external_published_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    external_content: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    external_check_state: Mapped[str] = mapped_column(String(24), default="pending", server_default="pending", nullable=False)
+    external_checked_at: Mapped[datetime | None] = mapped_column(DateTime)
+    external_verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    external_check_reason: Mapped[str] = mapped_column(String(40), default="", server_default="", nullable=False)
+    external_next_check_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    @property
+    def external_available(self):
+        from app.domain.services.job_freshness import externally_available
+        return externally_available(self)
+
+    @property
+    def external_admission_reasons(self):
+        from app.domain.services.external_job_content import admission_reasons
+        if self.source_kind != "external":
+            return []
+        clarity = (self.external_content or {}).get("admission", {})
+        return admission_reasons(self.external_published_at, self.skills) + ([] if clarity.get("clarity_passed") else clarity.get("clarity_reasons") or ["clarity_pending"])
 
     company: Mapped[Company] = relationship(back_populates="jobs")
     recommendation_feedback: Mapped[list["RecommendationFeedback"]] = relationship(back_populates="job", cascade="all, delete-orphan")

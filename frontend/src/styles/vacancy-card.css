@@ -43,3 +43,4 @@
 @media(max-width:600px){.vacancy-search-actions{width:100%}.vacancy-search-input{flex-basis:100%}}
 .jobs-market{width:100%;max-width:100%}.jobs-market>*{min-width:0;max-width:100%}.vacancy-page-heading{flex-wrap:wrap;min-width:0;max-width:100%}.vacancy-page-heading>div{min-width:0}.vacancy-page-heading h1{overflow-wrap:anywhere}
 .jobs-market .interest-toggle-container{min-width:0;max-width:100%}.jobs-market .interest-toggle{max-width:100%;white-space:normal}.jobs-market .interest-toggle>span{min-width:0}
+.vacancy-seniority { justify-self:start; display:inline-flex; align-items:center; width:fit-content; padding:.3rem .65rem; border-radius:8px; background:color-mix(in srgb,var(--accent) 10%,transparent); color:var(--accent); font-size:.75rem; font-weight:700; }

@@ -37,3 +37,25 @@ def test_email_is_self_contained_and_readable_without_images():
     assert "<html lang=\"es\">" in html and "max-width:600px" in html
     assert "@media" in html and "role=\"presentation\"" in html
     assert "<img" not in html and "<script" not in html and "src=" not in html
+
+
+def test_recovery_action_precedes_safety_instructions_and_has_clear_expiry():
+    link = "https://app.example.com/cuenta/confirmar?purpose=reset&token=synthetic"
+    html = render_email("Recupera tu acceso", f"Crea una contraseña exclusiva.\n\n{link}\n\nSi no lo solicitaste, ignora este mensaje.", public_app_url="https://app.example.com")
+    assert "RECUPERACIÓN DE ACCESO" in html
+    assert "30 minutos · Un solo uso" in html
+    assert html.index("Recuperar mi acceso &rarr;") < html.index("Si no lo solicitaste")
+    assert "localhost" not in html and "127.0.0.1" not in html
+
+
+def test_invitation_expiry_is_different_from_account_actions():
+    html = render_email("Invitación a Equipo & Asociados", "Te invitaron como entrevistador.\n\nhttps://app.example.com/equipo/invitacion?token=synthetic", public_app_url="https://app.example.com")
+    assert "3 días · Invitación personal" in html
+    assert "30 minutos" not in html
+    assert "Equipo &amp; Asociados" in html
+
+
+def test_malformed_public_origin_does_not_generate_a_button():
+    for origin in ["https://app.example.com:invalid", "http://[invalid"]:
+        html = render_email("Confirmación", "https://app.example.com/cuenta/confirmar?purpose=verify&token=synthetic", public_app_url=origin)
+        assert "href=" not in html

@@ -122,9 +122,18 @@ def _candidate_match(profile, job, *, nlp):
 def external_data_confidence(job) -> float:
     skills = list(dict.fromkeys(getattr(job, "skills", None) or []))
     description = str(getattr(job, "description", "") or "")
-    skill_signal = min(1.0, len(skills) / 8)
-    text_signal = min(1.0, len(description) / 1_200)
-    return round(40 + skill_signal * 35 + text_signal * 25, 2)
+    content = getattr(job, "external_content", None) or {}
+    details = getattr(job, "quality_details", None) or {}
+    sections = content.get("sections", [])
+    score = 15 if getattr(job, "external_check_state", "") == "verified" else 0
+    score += min(20, len(skills) / 5 * 20)
+    score += 20 if any(s["key"] == "responsibilities" and len(s["text"]) >= 60 for s in sections) else min(10, len(description) / 120)
+    score += 15 if len(str(getattr(job, "requirements", "") or "")) >= 50 else 0
+    score += 10 if details.get("experience_months") is not None else 0
+    score += 10 if content.get("education", {}).get("status") in {"required", "not_required", "alternative"} else 0
+    score += 5 if getattr(job, "salary", None) or content.get("compensation", {}).get("status") == "negotiable" else 0
+    score += 5 if getattr(job, "modality", "unspecified") in {"remote", "hybrid", "onsite"} else 0
+    return round(min(100, score), 2)
 
 
 def upsert_recommendation(

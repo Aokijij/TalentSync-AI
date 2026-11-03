@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import and_, case, func, or_
+from sqlalchemy import Numeric, and_, case, cast, func, or_
 
 from app.infrastructure.database.models import (
     Application,
@@ -28,7 +28,7 @@ class EcosystemRepository:
         missed = func.coalesce(processes.c.missed, 0)
         confirmed = func.coalesce(incidents.c.confirmed, 0)
         raw_score = 100.0 * (measured - missed + 5) / (measured + 5) - case((confirmed >= 4, 40), else_=confirmed * 10)
-        score = func.round(case((raw_score < 0, 0), else_=raw_score), 1)
+        score = func.round(cast(case((raw_score < 0, 0), else_=raw_score), Numeric), 1)
         rated = or_(measured > 0, confirmed > 0)
         reduced = or_(and_(measured >= 5, score < 60), confirmed >= 2)
         query = self.session.query(Company.id, Company.name, measured.label("measured"), missed.label("missed"), confirmed.label("confirmed")).outerjoin(

@@ -1,6 +1,7 @@
 // These POST endpoints calculate, preview, download or maintain presence.
 // Successful requests here do not mean that the user's edits were saved.
 const transient = [
+  /^\/jobs\/\d+\/external-access$/,
   /^\/?auth\//,
   /^\/jobs\/\d+\/match$/,
   /^\/hiring\/(quality\/(preview|writing)|skills\/search)$/,

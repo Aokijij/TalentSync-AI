@@ -88,7 +88,7 @@ def main():
     try:
         result = evaluate(json.loads(args.input.read_text(encoding="utf-8")))
     except (ValueError, TypeError, KeyError, AttributeError):
-        parser.error("Entrada inválida: consulta docs/PROTOCOLO_PILOTO.md; no se muestran sus datos")
+        parser.error("Entrada inválida: consulta docs/EVALUATION.md; no se muestran sus datos")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Evaluación agregada: {result['status']}; {result['samples']} muestras")

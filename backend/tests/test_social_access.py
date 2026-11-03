@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from test_account_security import browser, csrf  # noqa: F401
-from test_api_flows import client, register  # noqa: F401
+from test_api_flows import client, legal_acceptance, register  # noqa: F401
 
 from app.api.deps import get_social_identity_provider
 from app.application.errors import UseCaseError
@@ -91,7 +91,7 @@ def test_new_account_cookie_session_returning_identity_and_deletion(social):
     assert me["role"] == "candidate" and me["email_verified"] is True
     assert me["registration_pending"] is True
     assert social.get("/api/v1/profiles/me").status_code == 403
-    assert social.post("/api/v1/auth/social/registration", headers=csrf(social), json={"name": "Persona Social", "profession": "Ingeniero de Sistemas", "confirmed": True}).status_code == 200
+    assert social.post("/api/v1/auth/social/registration", headers=csrf(social), json={**legal_acceptance(), "name": "Persona Social", "profession": "Ingeniero de Sistemas", "confirmed": True}).status_code == 200
     assert social.get("/api/v1/profiles/me").json()["skills"] == []
     assert social.put("/api/v1/account/privacy", headers=csrf(social), json={"share_evidence": False, "notify_new_skills": False, "personalize_recommendations": False}).status_code == 200
     social.cookies.set("talentsync_oauth_browser", binding, domain="testserver.local", path="/")
@@ -180,7 +180,7 @@ def test_social_registration_requires_confirmation_and_personal_data(social, pro
         assert SqlAlchemyUnitOfWork(db).users.candidates_with_profiles() == []
     assert social.put("/api/v1/profiles/me", headers=csrf(social), json={}).status_code == 403
     assert callback(social, start(social, provider), provider).headers["location"].endswith("/completar-cuenta")
-    payload = {"name": "Ana María O’Neill", "profession": "  Ingeniera de Sistemas  ", "confirmed": True}
+    payload = {**legal_acceptance(), "name": "Ana María O’Neill", "profession": "  Ingeniera de Sistemas  ", "confirmed": True}
     assert social.post("/api/v1/auth/social/registration", json=payload).status_code == 403
     assert social.post("/api/v1/auth/social/registration", headers={**csrf(social), "Origin": "https://attacker.invalid"}, json=payload).status_code == 403
     for name in ["dev_123", "12345", "x", "https://alias.test", "😀😀"]:
@@ -197,7 +197,7 @@ def test_social_registration_requires_confirmation_and_personal_data(social, pro
 
 def test_returning_subject_does_not_overwrite_email(social):
     callback(social, start(social))
-    assert social.post("/api/v1/auth/social/registration", headers=csrf(social), json={"name": "Persona social", "profession": "Analista", "confirmed": True}).status_code == 200
+    assert social.post("/api/v1/auth/social/registration", headers=csrf(social), json={**legal_acceptance(), "name": "Persona social", "profession": "Analista", "confirmed": True}).status_code == 200
     social.social_provider.exchange = lambda *args: {"subject": "immutable-123", "email": "changed@example.com", "name": "Cambio"}
     assert callback(social, start(social)).headers["location"].endswith("/candidato")
     assert social.get("/api/v1/auth/me").json()["email"] == "social@example.com"

@@ -4,7 +4,7 @@ import io
 import re
 import unicodedata
 from datetime import datetime, timedelta
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlparse
 
 from openpyxl import load_workbook
 
@@ -17,8 +17,14 @@ from app.application.use_cases.integration_observations import (
 from app.domain.entities.catalog import CatalogJob
 from app.domain.entities.job_sectors import JOB_SECTORS
 from app.domain.entities.records import User
+from app.domain.services.external_job_content import (
+    extract_content,
+    extract_external_skills,
+    infer_external_sector,
+    publication_reasons,
+    source_text,
+)
 from app.domain.services.external_sources import external_portal
-from app.domain.services.professions import infer_education_level, infer_study_fields
 
 MAX_IMPORT_ROWS = 2_000
 IMPORT_HEADERS = (
@@ -239,6 +245,13 @@ def listing_fingerprint(
     )
 
 
+def listing_url_identity(url: str):
+    parsed = urlparse(url)
+    query = tuple(sorted((k, v) for k, v in parse_qsl(parsed.query)
+                         if not k.startswith("utm_") and k not in {"gh_src", "source", "ref"}))
+    return parsed.hostname, parsed.path.rstrip("/"), query
+
+
 def template_csv() -> bytes:
     output = io.StringIO()
     writer = csv.writer(output)
@@ -268,7 +281,7 @@ def sync_job_catalog(
     db: UnitOfWork,
     nlp: TextAnalysis,
     catalog: JobCatalog,
-    max_age_days: int = 60,
+    max_age_days: int = 90,
     min_skills: int = 3,
 ) -> dict:
     source_name = getattr(catalog, "source_name", "Jooble")
@@ -278,7 +291,7 @@ def sync_job_catalog(
             status_code=503,
             detail=(
                 f"{source_name} aún no está conectado. "
-                "Completa sus credenciales en Azure."
+                "Completa sus credenciales en la configuración del servidor."
             ),
         )
     rows: list[dict[str, object]] = []
@@ -300,7 +313,7 @@ def sync_job_catalog(
                 )
                 for job in result.jobs
             )
-            if not result.jobs or len(rows) >= result.total:
+            if not result.jobs:
                 break
     except CatalogProviderError as error:
         record_integration(db, source_name.casefold(), "provider_error")
@@ -351,8 +364,12 @@ def _import_rows(
     errors: list[dict[str, object]] = []
     seen_keys: set[tuple[str, str]] = set()
     seen_listings: set[tuple[str, str, str, str]] = set()
+    seen_urls = set()
+    existing_urls = {}
     existing_listings: dict[tuple[str, str, str, str], object] = {}
     for existing in db.jobs.external_listings():
+        if existing.external_url:
+            existing_urls[listing_url_identity(existing.external_url)] = existing
         fingerprint = listing_fingerprint(
             existing.company.name if existing.company else "",
             existing.title,
@@ -397,22 +414,30 @@ def _import_rows(
             seen_keys.add(identity)
             company_name = _text(row, "empresa", required=True)
             title = _text(row, "cargo", required=True)
-            description = _text(row, "descripcion", required=True)
-            requirements = _text(row, "requisitos", required=True)
+            description = source_text(row.get("descripcion"))
+            requirements = source_text(row.get("requisitos"))
             if len(company_name) > 180 or len(title) > 180:
                 raise ValueError(
                     "El nombre de la empresa o el cargo supera 180 caracteres"
                 )
-            if len(description) < 10 or len(requirements) < 10:
+            if len(description) < 40:
                 raise ValueError(
-                    "La descripción y los requisitos necesitan al menos 10 caracteres"
+                    "La descripción necesita al menos 40 caracteres y contenido del cargo"
                 )
             sector = _sector(_text(row, "sector", required=True))
             external_url = _url(
                 row.get("enlace_externo"), "enlace_externo", required=True
             )
+            url_identity = listing_url_identity(external_url)
+            if url_identity in seen_urls:
+                raise ValueError("La dirección original de la oferta ya apareció en esta importación")
             company_url = _url(row.get("sitio_empresa"), "sitio_empresa")
             published_at = _date(row.get("fecha_publicacion"), "fecha_publicacion")
+            date_reasons = publication_reasons(published_at, now=now)
+            if date_reasons:
+                raise ValueError({"publication_missing": "Falta una fecha de publicación de la fuente",
+                                  "publication_too_old": "La publicación supera tres meses",
+                                  "publication_in_future": "La fecha de publicación está en el futuro"}[date_reasons[0]])
             if (
                 max_age_days is not None
                 and published_at is not None
@@ -423,12 +448,12 @@ def _import_rows(
             if expires_at and expires_at < now:
                 raise ValueError("La fecha de vencimiento ya pasó")
             modality = _mapped(
-                _text(row, "modalidad"), modality_map, "onsite", "modalidad"
+                _text(row, "modalidad"), modality_map, "unspecified", "modalidad"
             )
             employment_type = _mapped(
                 _text(row, "tipo_contrato"),
                 contract_map,
-                "full_time",
+                "unspecified",
                 "tipo_contrato",
             )
             location = _text(row, "ciudad") or None
@@ -442,15 +467,26 @@ def _import_rows(
             explicit_skills = _split(row.get("habilidades"))
             benefits = _split(row.get("beneficios"))
             languages = _languages(row.get("idiomas"))
-            analysis = nlp.analyze_job(f"{title} {description} {requirements}")
-            skills = list(dict.fromkeys([*explicit_skills, *analysis.skills]))[:40]
-            if len(skills) < min_skills:
+            content, extracted_details, extracted_requirements, relevant_text = extract_content(title, description, requirements, published_at=published_at)
+            requirements = extracted_requirements
+            skill_text = relevant_text + "\n" + "\n".join(explicit_skills)
+            analysis = nlp.analyze_job(skill_text)
+            skills = extract_external_skills(skill_text, analysis.skills)[:40]
+            minimum_skills = max(3, min_skills)
+            if len(skills) < minimum_skills:
                 raise ValueError(
                     f"Solo se identificaron {len(skills)} habilidades; "
-                    f"se requieren al menos {min_skills}"
+                    f"se requieren al menos {minimum_skills} habilidades distintas del anuncio"
                 )
+            if not content["admission"]["clarity_passed"]:
+                raise ValueError("La oferta no supera el filtro de claridad: " + ", ".join(content["admission"]["clarity_reasons"]))
+            content["admission"] = {**content["admission"], "passed": True, "minimum_skills": 3, "maximum_age_months": 3}
+            content["declared_skills"] = explicit_skills
+            sector = infer_external_sector(title, sector)
 
-            company = db.companies.find_external(source, company_name)
+            job_by_provider_id = db.jobs.find_external(source, external_id)
+            job = existing_urls.get(url_identity) or existing_listings.get(fingerprint) or job_by_provider_id
+            company = job.company if job is not None and job.company and job.company.is_external else db.companies.find_external(source, company_name)
             if company is None:
                 company = db.companies.new(
                     owner_user_id=current_user.id,
@@ -492,9 +528,13 @@ def _import_rows(
                 "status": "active",
                 "benefits": benefits,
                 "languages": languages,
-                "required_education_level": infer_education_level(f"{title} {requirements}"),
-                "required_study_fields": infer_study_fields(f"{title} {requirements}"),
+                "required_education_level": content["education"]["level"] if content["education"]["status"] == "required" else None,
+                "required_study_fields": content["education"]["fields"] if content["education"]["status"] == "required" else [],
                 "skills": skills,
+                "skill_requirements": [{"skill": skill, "level": "unspecified", "essential": False} for skill in skills],
+                "quality_details": extracted_details,
+                "external_published_at": published_at,
+                "external_content": content,
                 "embedding": analysis.embedding,
                 "source_kind": "external",
                 "source_name": source,
@@ -502,9 +542,16 @@ def _import_rows(
                 "external_url": external_url,
                 "expires_at": expires_at,
                 "last_seen_at": now,
+                # A catalogue/import timestamp is not proof of an open original listing.
+                "external_check_state": "pending",
+                "external_next_check_at": now,
+                "external_check_reason": "",
             }
-            job_by_provider_id = db.jobs.find_external(source, external_id)
-            job = existing_listings.get(fingerprint) or job_by_provider_id
+            if values["salary"] is not None and row.get("moneda_salario") == "COP" and row.get("periodo_salario") == "monthly":
+                values["quality_details"] = {
+                    **extracted_details,
+                    "salary_currency": "COP", "salary_period": "monthly",
+                }
             if job is None:
                 job = db.jobs.new(**values, created_at=published_at or now)
                 db.add(job)
@@ -513,16 +560,22 @@ def _import_rows(
                 created += 1
             else:
                 # JSearch can publish one listing through several aggregators.
+                if job.external_url == external_url and job.status == "active":
+                    for check_key in ("external_check_state", "external_next_check_at", "external_check_reason"):
+                        values.pop(check_key, None)
                 # Preserve the first stable external ID when the semantic listing
                 # already exists and only refresh its content.
                 if job.external_id != external_id:
                     values["external_id"] = job.external_id
+                    values["source_name"] = job.source_name
                 for key, value in values.items():
                     setattr(job, key, value)
                 if published_at:
                     job.created_at = published_at
                 existing_listings[fingerprint] = job
                 updated += 1
+            seen_urls.add(url_identity)
+            existing_urls[url_identity] = job
         except ValueError as error:
             errors.append({"row": row_number, "detail": str(error)})
 
@@ -541,6 +594,7 @@ def _import_rows(
         "companies_created": companies_created,
         "rejected": len(errors),
         "errors": errors[:50],
+        "availability_note": "Las ofertas externas solo se mostrarán al confirmar su vigencia en la fuente original.",
     }
 
 
@@ -553,11 +607,10 @@ def _catalog_row(
         department = "Remoto internacional"
         city = city or "Internacional"
     text = f"{job.title} {job.description}".casefold()
-    published_at = job.published_at or datetime.utcnow()
-    expires_at = min(
-        published_at + timedelta(days=max_age_days),
-        datetime.utcnow() + timedelta(days=30),
-    )
+    published_at = job.published_at
+    # Review window starts at import. An ATS still advertising an old role is
+    # not evidence of closure; source checks independently enforce freshness.
+    expires_at = datetime.utcnow() + timedelta(days=min(max_age_days, 30))
     portal = external_portal(job.url, job.location)
     provider_description = (
         f"{portal} publica el detalle completo de requisitos y condiciones. "
@@ -576,6 +629,8 @@ def _catalog_row(
         "fecha_publicacion": published_at,
         "fecha_vencimiento": expires_at,
         "salario": job.salary,
+        "moneda_salario": "COP" if job.salary and source_name in {"JSearch", "Greenhouse", "Lever"} else "",
+        "periodo_salario": "monthly" if job.salary and source_name in {"JSearch", "Greenhouse", "Lever"} else "",
         "departamento": department,
         "ciudad": city,
         "modalidad": "remoto" if job.remote else _infer_modality(text),
@@ -599,7 +654,9 @@ def _infer_modality(text: str) -> str:
         return "remoto"
     if any(term in text for term in ("híbrido", "hibrido", "hybrid")):
         return "híbrido"
-    return "presencial"
+    if any(term in text for term in ("presencial", "on-site", "onsite", "on site")):
+        return "presencial"
+    return ""
 
 
 def _infer_contract(value: str) -> str:
@@ -612,7 +669,7 @@ def _infer_contract(value: str) -> str:
         return "temporal"
     if any(term in normalized for term in ("contract", "contrato")):
         return "contrato"
-    return "tiempo completo"
+    return "tiempo completo" if any(term in normalized for term in ("full_time", "fulltime", "tiempo_completo")) else ""
 
 
 def _infer_sector(text: str) -> str:
@@ -665,3 +722,56 @@ def _infer_sector(text: str) -> str:
         if any(term in text for term in terms):
             return sector
     return "Retail y consumo masivo"
+
+
+def _board_preview(payload, db, catalog):
+    from app.application.errors import CatalogProviderError
+    from app.application.use_cases.integration_observations import record
+    provider = "greenhouse" if catalog.provider == "greenhouse" else "lever"
+    try:
+        jobs, scanned = catalog.preview(keywords=payload.keywords.strip(), location=payload.location.strip())
+    except CatalogProviderError as failure:
+        record(db, provider, "provider_error")
+        raise UseCaseError(status_code=502, detail=str(failure)) from None
+    record(db, provider)
+    return catalog, jobs, scanned
+
+
+def preview_employer_board(payload, db, nlp, *, catalog):
+    from app.domain.services.external_job_content import (
+        admission_reasons,
+        extract_content,
+        extract_external_skills,
+    )
+
+    catalog, jobs, scanned = _board_preview(payload, db, catalog)
+    items = []
+    for job in jobs:
+        content, details, _, text = extract_content(job.title, job.description, job.requirements, published_at=job.published_at)
+        skills = extract_external_skills(text, [*job.skills, *nlp.analyze_job(text).skills])
+        reasons = admission_reasons(job.published_at, skills) + content["admission"]["clarity_reasons"]
+        items.append({"id": job.external_id, "title": job.title, "company": job.company, "location": job.location,
+                      "url": job.url, "description": content["summary"][:600], "published_at": job.published_at,
+                      "skills": skills, "seniority": details.get("seniority"), "eligible": not reasons, "rejection_reasons": reasons})
+    return {"provider": catalog.source_name, "scanned": scanned, "items": items, "note": "Solo se incorporan publicaciones de los últimos tres meses, con fecha de fuente y al menos tres habilidades distintas. Después se exige vigencia comprobada. La ubicación se conserva sin asumir elegibilidad por decir remoto."}
+
+
+def import_employer_board(payload, current_user, db, nlp, *, catalog):
+    if not payload.authorized or not payload.selected_ids:
+        raise UseCaseError(status_code=422, detail="Selecciona ofertas y confirma que tienes autorización para incorporarlas")
+    catalog, jobs, scanned = _board_preview(payload, db, catalog)
+    selected = set(payload.selected_ids)
+    selected_jobs = [job for job in jobs if job.external_id in selected]
+    if len(selected_jobs) != len(selected):
+        raise UseCaseError(status_code=409, detail="El portal cambió. Consulta de nuevo y revisa la selección")
+    rows = [_catalog_row(job, source_name=catalog.source_name, max_age_days=30) for job in selected_jobs]
+    result = _import_rows(rows, current_user, db, nlp=nlp)
+    from datetime import datetime, timedelta
+    # The explicit selection was re-fetched from the published source, not trusted from the browser.
+    for job in selected_jobs:
+        saved = db.jobs.find_external(catalog.source_name, job.external_id)
+        if saved and saved.external_url == job.url:
+            saved.external_check_state, saved.external_checked_at, saved.external_verified_at = "verified", datetime.utcnow(), datetime.utcnow()
+            saved.external_check_reason, saved.external_next_check_at = "source_api", datetime.utcnow() + timedelta(hours=24)
+    db.commit()
+    return {**result, "source": catalog.source_name, "fetched": len(selected_jobs), "provider_total": scanned}

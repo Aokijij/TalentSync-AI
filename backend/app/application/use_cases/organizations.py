@@ -137,9 +137,10 @@ def invite(db, user, payload, *, app_url, mail_enabled, delivery_mode="local"):
     db.add(db.organizations.new_invitation(company_id=company.id, email=payload["email"].casefold(), role=payload["role"],
         assigned_job_ids=ids, token_hash=token_digest(token), expires_at=datetime.utcnow() + timedelta(days=3)))
     link = f"{app_url.rstrip('/')}/equipo/invitacion?token={quote(token)}"
+    role_label = {"recruiter": "reclutador", "interviewer": "entrevistador"}[payload["role"]]
     db.add(db.accounts.new_message(recipient=payload["email"].casefold(), subject=f"Invitación a {company.name}",
         delivery_state=delivery_mode, expires_at=datetime.utcnow() + timedelta(days=3),
-        body=f"Te invitaron como {payload['role']} a {company.name}. Abre {link}\nVence en 3 días. Confirma tu correo antes de aceptar."))
+        body=f"Te invitaron a unirte al equipo de {company.name} como {role_label} en TalentSync.\n\nAbre la invitación, inicia sesión o crea tu cuenta con este correo y revisa el permiso antes de aceptar. No necesitas registrar otra empresa.\n\n{link}\n\nVence en 3 días. Confirma tu correo antes de aceptar.\n\nSi no reconoces esta invitación, puedes ignorarla. No te incorporarás al equipo hasta que la aceptes."))
     record_event(db, "company.member_invited", "company", company.id, actor_user_id=user.id, details={"role": payload["role"]})
     db.commit()
     return {"message": "Invitación preparada para enviar por correo"}

@@ -13,6 +13,7 @@ const kinds = {
   experience: { label: "Logro laboral", Icon: BriefcaseBusiness },
   portfolio: { label: "Portafolio", Icon: FolderOpen },
   certificate: { label: "Certificado externo", Icon: Award },
+  training: { label: "Formación realizada", Icon: FileBadge },
   project: { label: "Proyecto", Icon: FolderOpen },
   repository: { label: "Repositorio", Icon: Code2 },
 };
@@ -29,7 +30,7 @@ export function EvidenceCard({ row, busy, onRemove, onAddSkills, onEdit }) {
       <span className="evidence-status">{row.kind === "certificate" ? "Aportado" : "Declarada"}</span>
     </div>
     <h4>{row.title}</h4>
-    {row.kind === "certificate" && (row.issuer || row.year) && <p className="evidence-field-help">{[row.issuer, row.year].filter(Boolean).join(" · ")}{row.certificate_id && ` · Credencial ${row.certificate_id}`}</p>}
+    {["certificate", "training"].includes(row.kind) && (row.issuer || row.year) && <p className="evidence-field-help">{[row.issuer, row.year].filter(Boolean).join(" · ")}{row.certificate_id && ` · Credencial ${row.certificate_id}`}</p>}
     <p className="evidence-description">{row.description}</p>
     <div className="evidence-skills" aria-label="Habilidades relacionadas">
       {skills.slice(0, 4).map((skill) => <span key={skill}>{skill}</span>)}
@@ -131,7 +132,7 @@ export function ProfileEvidence({ profile, onChanged }) {
           <fieldset disabled={busy} className="evidence-form-fields">
             <label>Título<input ref={titleInput} className="field-control mt-2" name="title" required minLength={3} maxLength={160} placeholder="Da un título al trabajo o logro que compartes" /></label>
             <label>Tipo de evidencia<select className="field-control mt-2" name="kind" value={kind} onChange={(event) => setKind(event.target.value)}><option value="experience">Logro laboral</option><option value="portfolio">Portafolio</option><option value="certificate">Certificado externo</option><option value="project">Proyecto</option>{(programmingRelevant || toolsActivated) && <option value="repository">Repositorio</option>}</select></label>
-            {kind === "certificate" && <><label>Entidad emisora (para certificados)<input className="field-control mt-2" name="issuer" maxLength={160} placeholder="Indica la institución o entidad responsable" /></label><label>Año del certificado<input className="field-control mt-2" name="year" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} placeholder="Indica el año de realización" /></label></>}
+            {["certificate", "training"].includes(kind) && <><label>Entidad formadora o emisora<input className="field-control mt-2" name="issuer" maxLength={160} placeholder="Indica la institución o entidad responsable" /></label><label>Año del certificado<input className="field-control mt-2" name="year" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} placeholder="Indica el año de realización" /></label></>}
             <label className="evidence-field-wide">Tu aporte y resultado<textarea className="field-control mt-2" name="description" rows={3} required minLength={10} maxLength={2000} placeholder="Qué hiciste, qué cambió gracias a tu trabajo y cómo podría revisarse." /></label>
             <label>Habilidades relacionadas<input className="field-control mt-2" name="skills" required placeholder="Indica las habilidades aplicadas, separadas por comas" /><span className="evidence-field-help">Separa cada habilidad con una coma.</span></label>
             <label>Enlace de respaldo <span className="evidence-optional">Opcional</span><input className="field-control mt-2" name="url" type="url" placeholder="Pega el enlace completo con HTTPS" /><span className="evidence-field-help">El archivo permanece en su plataforma de origen.</span></label>

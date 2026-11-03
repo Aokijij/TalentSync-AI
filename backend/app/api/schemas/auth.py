@@ -1,11 +1,18 @@
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, StrictBool, field_validator
 
 from app.domain.entities.enums import UserRole
 
 
-class RegisterRequest(BaseModel):
+class LegalAcceptanceRequest(BaseModel):
+    data_processing_accepted: StrictBool
+    terms_accepted: StrictBool
+    privacy_version: str = Field(min_length=1, max_length=40)
+    terms_version: str = Field(min_length=1, max_length=40)
+
+
+class RegisterRequest(LegalAcceptanceRequest):
     name: str = Field(min_length=2, max_length=120)
     email: EmailStr
     password: str = Field(min_length=8)
@@ -76,7 +83,7 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class SocialRegistrationRequest(BaseModel):
+class SocialRegistrationRequest(LegalAcceptanceRequest):
     name: str = Field(min_length=2, max_length=120)
     profession: str = Field(min_length=2, max_length=160)
     confirmed: bool

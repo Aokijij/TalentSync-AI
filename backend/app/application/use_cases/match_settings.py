@@ -6,16 +6,17 @@ from app.application.use_cases.events import record_event
 from app.application.use_cases.jobs import match_current_candidate
 from app.domain.services.credential_links import certificate_url
 from app.domain.services.skills import normalize_skills
+from app.domain.services.training_records import unique_training
 from app.domain.services.work_preferences import effective_preferences
 
 
 def add_certificate(profile, item):
-    if item.get("kind") != "certificate":
+    if item.get("kind") not in {"certificate", "training"}:
         return
     certificate = {"id": item["id"], "name": item["title"], "issuer": item.get("issuer", ""),
-                   "year": item.get("year", ""), "url": certificate_url(item.get("url")),
-                   "description": item["description"], "source": "external_certificate", "evidence_id": item["id"]}
-    profile.certifications = [row for row in profile.certifications or [] if row.get("evidence_id") != item["id"]] + [certificate]
+                   "year": item.get("year", ""), "url": certificate_url(item.get("url")) if item.get("kind") == "certificate" else item.get("url"),
+                   "description": item["description"], "kind": "certificate" if item.get("kind") == "certificate" else "course", "source": "external_certificate" if item.get("kind") == "certificate" else "external_training", "evidence_id": item["id"], "resource_id": item.get("resource_id")}
+    profile.certifications = unique_training([row for row in profile.certifications or [] if row.get("evidence_id") != item["id"]] + [certificate])
 
 
 def preferences(db, user, payload=None):

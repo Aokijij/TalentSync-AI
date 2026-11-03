@@ -1,18 +1,27 @@
-import { useState } from "react";
-import { BookOpen, ShieldCheck, UsersRound } from "lucide-react";
-import { platformGuide } from "../constants/platformGuide.js";
-import { WorkspaceTabs } from "./ui/Panel.jsx";
-import "../styles/platform-guide.css";
+import { BookOpen, CalendarDays, ChartNoAxesCombined, ClipboardCheck, Files, GitBranch, Layers3, Search, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 
-export function LandingCapabilities() {
-  const [role, setRole] = useState("candidate");
-  return <>
-    <section className={`public-capabilities public-container role-${role}`} aria-labelledby="capabilities-title" id="funcionalidades"><header className="public-section-heading"><p className="section-kicker">UN ESPACIO PARA CADA ROL</p><h2 id="capabilities-title">Conoce todo lo que puedes hacer.</h2><p>Explora las herramientas del candidato, la empresa y los equipos autorizados de administración.</p></header><WorkspaceTabs id="public-roles" label="Funcionalidades por rol" value={role} onChange={setRole} items={[["candidate", "Candidatos", BookOpen], ["company", "Empresas", UsersRound], ["admin", "Administración", ShieldCheck]]} /><div role="tabpanel" id={`public-roles-panel-${role}`} aria-labelledby={`public-roles-tab-${role}`} className="public-capability-grid">{platformGuide[role].map((item) => <article key={item.id}><h3>{item.title}</h3><p>{item.summary}</p></article>)}</div></section>
-    <section className="public-differences public-container" aria-labelledby="differences-title"><header className="public-section-heading"><p className="section-kicker">MÁS ALLÁ DE ENCONTRAR UNA VACANTE</p><h2 id="differences-title">Lo que distingue tu recorrido en TalentSync.</h2><p>La búsqueda conecta con preparación, evidencias y seguimiento para que cada decisión tenga más contexto.</p></header><ol>{[
-      ["01", "Seguimiento con compromisos de respuesta", "Consulta etapa, historial y plazos. Los atrasos se señalan y los procesos pueden pausarse sin convertir el vencimiento en un rechazo automático."],
-      ["02", "Compatibilidad que puedes contrastar", "Revisa motivos y requisitos en lugar de quedarte con un porcentaje. Distingue lo declarado de los fundamentos evaluados; la puntuación no es una probabilidad de contratación."],
-      ["03", "Aprendizaje con resultados separados", "Organiza cursos, practica sus habilidades con retos y conserva tus resultados. Un reto, un curso finalizado y un certificado aportado tienen significados distintos."],
-      ["04", "Contrataciones con condiciones claras", "Las ofertas pasan por criterios de calidad. La empresa organiza candidaturas, entrevistas y decisiones; administración revisa organizaciones y el catálogo."],
-    ].map(([number, title, text]) => <li key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></li>)}</ol></section>
-  </>;
+const features = {
+  candidate: [
+    [Search, "Oportunidades con contexto", "Filtra vacantes, guarda las que te interesan y compara sus condiciones antes de postularte."],
+    [Sparkles, "Compatibilidad explicada", "Entiende qué coincide con tu perfil y qué habilidades necesitas reforzar. El porcentaje orienta tu búsqueda."],
+    [Files, "Tu CV para cada oportunidad", "Organiza tu trayectoria y guarda versiones con nombre, selección de contenido y diseño propio."],
+    [GitBranch, "Procesos que puedes seguir", "Consulta la etapa actual, los compromisos de respuesta y el historial de cada postulación."],
+    [CalendarDays, "Tu agenda de entrevistas", "Revisa fecha, modalidad y acceso. Conecta Google Calendar si quieres mantener tus citas al día."],
+    [BookOpen, "Aprende con un propósito", "Conecta cursos con retos por habilidad, registra tu avance y conserva tus certificados y resultados."],
+  ],
+  company: [
+    [ClipboardCheck, "Ofertas claras desde el principio", "Define funciones, requisitos, condiciones y plazos para que el talento pueda decidir con información."],
+    [UsersRound, "Una bandeja para revisar talento", "Busca, filtra y consulta las candidaturas sin abrir una pestaña para cada persona."],
+    [Layers3, "Un tablero para quienes avanzan", "Separa la revisión inicial de las etapas activas y distingue las entrevistas pendientes de respuesta."],
+    [CalendarDays, "Entrevistas bien coordinadas", "Gestiona modalidad, dirección o enlace, duración y reprogramaciones desde el proceso."],
+    [ChartNoAxesCombined, "Evaluaciones con criterios", "Conserva las evaluaciones internas y contrasta evidencias para acompañar la decisión del equipo."],
+    [ShieldCheck, "Tu equipo, con sus permisos", "Invita a las personas autorizadas, asigna responsabilidades y cuida el acceso a cada proceso."],
+  ],
+};
+
+export function LandingCapabilities({ role = "candidate" }) {
+  return <section className="role-capabilities public-container" id="funcionalidades" aria-labelledby="capabilities-title">
+    <header className="public-section-heading"><p className="section-kicker">{role === "company" ? "UN ESPACIO PARA TU EQUIPO" : "HERRAMIENTAS PARA TU SIGUIENTE PASO"}</p><h2 id="capabilities-title">{role === "company" ? "Cada parte de la selección, en su lugar." : "Tu búsqueda conecta con lo que viene después."}</h2><p>{role === "company" ? "Desde la publicación hasta la respuesta final, con un recorrido que el equipo puede entender." : "Descubrir una oferta es el comienzo. Prepárate, demuestra lo que sabes y sigue tu proceso."}</p></header>
+    <div className="role-feature-grid">{features[role].map(([Icon, title, text], index) => <article key={title}><div className="role-feature-heading"><span><Icon size={22} /></span><small>0{index + 1}</small></div><h3>{title}</h3><p>{text}</p></article>)}</div>
+  </section>;
 }

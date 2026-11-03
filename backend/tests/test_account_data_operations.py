@@ -48,6 +48,8 @@ def test_export_is_owner_scoped_excludes_credentials_and_company_notes(client):
     with zipfile.ZipFile(io.BytesIO(result.content)) as archive:
         raw = archive.read("datos.json").decode()
         data = json.loads(raw)
+        assert data["account"]["legal_acceptance"]["terms_accepted"] is True
+        assert data["account"]["legal_acceptance"]["accepted_at"]
         assert "Mi borrador" in raw and "Respuesta propia" in raw
         assert all(value not in raw for value in ("password_hash", "HIDDEN EMPLOYER NOTE", "PRIVATE RATING", "PRIVATE REFRESH TOKEN", "SECRET RATING", "PRIVATE SOLUTION", "other-private-person"))
         assert archive.read("cv/" + "a" * 32 + ".pdf") == b"%PDF-owned"

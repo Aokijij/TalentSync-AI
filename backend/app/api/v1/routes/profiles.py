@@ -257,9 +257,10 @@ def upload_cv(
     *,
     nlp: TextAnalysis = Depends(get_text_analysis),
     resumes: ResumeReader = Depends(get_resume_reader),
+    replace_profile: bool = False,
 ) -> Profile:
     return use_cases.upload_cv(
-        file=file, current_user=current_user, db=db, nlp=nlp, resumes=resumes
+        file=file, current_user=current_user, db=db, nlp=nlp, resumes=resumes, replace_profile=replace_profile
     )
 
 

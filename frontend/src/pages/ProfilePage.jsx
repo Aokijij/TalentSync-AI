@@ -26,6 +26,7 @@ import { LanguagesEditor } from "../components/LanguagesEditor.jsx";
 import {
   BookOpen,
   CarFront,
+  LoaderCircle,
   LockKeyhole,
   IdCard,
   BriefcaseBusiness,
@@ -209,13 +210,15 @@ export function ProfilePage() {
   async function upload(event) {
     const file = event.target.files?.[0];
     if (!file || uploadingCv) return;
+    const hasProfessionalData = profile.experiences?.length || profile.educations?.length || profile.skills?.length || profile.experience;
+    if (hasProfessionalData && !await confirm({ title: "Actualizar el perfil con este PDF", description: "El PDF reemplazará la experiencia laboral, formación académica, habilidades y resumen actuales para evitar mezclar dos hojas de vida. Los certificados aportados por separado y tus muestras de trabajo se conservan. Revisa la información después de importar.", confirmLabel: "Actualizar con este PDF", cancelLabel: "Conservar mi perfil" })) { event.target.value = ""; return; }
     const form = new FormData();
     form.append("file", file);
     setUploadingCv(true);
     setError("");
-    setMessage("Analizando PDF y preparando recomendaciones para tu hoja de vida...");
+    setMessage("Extrayendo el texto y organizando tus datos. Los PDF escaneados pueden tardar más…");
     try {
-      const { data } = await api.post("/profiles/me/cv", form, { timeout: 190000, __quiet: true });
+      const { data } = await api.post("/profiles/me/cv?replace_profile=true", form, { timeout: 80000, __skipRetry: true, __quiet: true });
       saved.current = { profile: normalize(data), name };
       setProfile(saved.current.profile);
       setEditing(true);
@@ -223,6 +226,7 @@ export function ProfilePage() {
         `CV analizado: ${data.experiences?.length ?? 0} experiencias, ${data.educations?.length ?? 0} estudios y ${data.skills?.length ?? 0} habilidades. La extracción se ha guardado. Revisa y corrige los campos detectados.`,
       );
     } catch (e) {
+      setMessage("");
       setError(e.response?.data?.detail || "No fue posible procesar el PDF");
     } finally {
       setUploadingCv(false);
@@ -303,7 +307,7 @@ export function ProfilePage() {
           </div>
       </section>
       {dirty && <InlineNotice tone="warning" title="Tienes cambios sin guardar">Pulsa Guardar cambios para conservar las ediciones del perfil.</InlineNotice>}
-      {(message || error) && <InlineNotice error={Boolean(error)} tone={error ? "error" : uploadingCv || editing ? "info" : "success"}>{error || message}</InlineNotice>}
+      {uploadingCv ? <section className="profile-import-status" role="status" aria-live="polite"><LoaderCircle size={23} className="animate-spin" /><div><strong>Estamos leyendo tu hoja de vida</strong><p>Organizamos el resumen, la experiencia, los estudios y los datos de contacto. Un PDF escaneado puede tardar más que uno con texto seleccionable.</p></div></section> : (message || error) && <InlineNotice error={Boolean(error)} tone={error ? "error" : editing ? "info" : "success"}>{error || message}</InlineNotice>}
       <ProfileIdentity profile={profile} name={name} email={email} editing={editing} photoVersion={photoVersion} onNameChange={setName} onChange={(patch) => setProfile((current) => ({ ...current, ...patch }))} />
       <Section id="profile-private" icon={LockKeyhole} title="Datos personales"><PrivateProfileDetails birthDate={profile.birth_date} identification={profile.identification} visibility={profile.personal_visibility} editing={editing} onChange={(patch) => { Object.keys(patch).forEach(clearFieldError); setProfile((current) => ({ ...current, ...patch })); }} /></Section>
       <ResumeExportDialog open={exportOpen} onClose={() => setExportOpen(false)} profile={profile} name={name} photoVersion={photoVersion} onPhoto={uploadPhoto} onDesignSaved={(design) => setProfile((current) => ({ ...current, ...design }))} onEdit={() => editFromCoach("profile-experiences")} />

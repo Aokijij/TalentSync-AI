@@ -4,9 +4,9 @@ from datetime import date
 
 from app.domain.services.experience_dates import experience_months, month_index
 from app.domain.services.job_requirements import minimum_experience_months
+from app.domain.services.matching_text import authored_summary
 from app.domain.services.skill_context import (
     fold,
-    profile_skill_context,
     skill_mentions,
 )
 from app.domain.services.skill_levels import (
@@ -14,7 +14,7 @@ from app.domain.services.skill_levels import (
     SKILL_LEVELS,
     declared_skill_levels,
 )
-from app.domain.services.skills import skill_gap, skill_key, skill_set
+from app.domain.services.skills import skill_gap, skill_set
 
 STATUS_LABELS = {"fulfilled": "Cumplido con datos declarados", "partial": "Cumplimiento parcial", "unknown": "Sin información suficiente", "not_met": "No cumple según lo registrado"}
 
@@ -27,7 +27,6 @@ def requirement_rows(profile, job):
     rows = skill_gap(profile.skills, requirements_for(job))
     experiences = getattr(profile, "experiences", None) or []
     evidence = getattr(profile, "evidence", None) or []
-    imported = profile_skill_context(profile)
     levels = declared_skill_levels(profile)
     for row in rows:
         key = row["key"]
@@ -37,12 +36,10 @@ def requirement_rows(profile, job):
             signals.extend(mentions)
             if any(item["state"] in {"applied", "declared"} for item in mentions):
                 work.append(index)
-        summary = skill_mentions(getattr(profile, "experience", ""), [key]) if not experiences else []
+        summary = skill_mentions(authored_summary(profile), [key]) if not experiences else []
         signals.extend(summary)
-        # Import context is useful for undeclared suggestions, but cannot
-        # override the candidate's later explicit profile edits.
-        if not row["covered"]:
-            signals.extend(item for item in imported if skill_key(item.get("skill", "")) == key and item.get("state") in {"learning", "negated", "project", "training", "unknown"})
+        # Raw CV mentions remain review suggestions. Only current profile
+        # records and evidence may contribute to compatibility.
         supplied = [item for item in evidence if key in skill_set(item.get("skills", []))]
         contextual_evidence = [item for item in supplied if any(mention["state"] in {"applied", "declared"} for mention in skill_mentions(item.get("description", ""), [key]))]
         positive = bool(work) or any(item["state"] == "applied" for item in signals)

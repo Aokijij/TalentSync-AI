@@ -2,6 +2,7 @@
 from types import SimpleNamespace as Row
 
 import pytest
+from learning_fixtures import publish_course
 from test_api_flows import client, company_account, create_job, register  # noqa: F401
 
 from app.application.use_cases import learning, matching
@@ -71,6 +72,8 @@ def test_course_lookup_does_not_evaluate_unrelated_vacancy_compatibilities(clien
     for _ in range(12):
         create_job(client, company)
     _, headers = register(client, "course-speed-owner", skills=["Java"])
+    publish_course(client, "speed-python", skills=["python"])
+    publish_course(client, "speed-sql", skills=["sql"])
     evaluated = []
     original = learning.candidate_match
     def tracked(profile, job, **kwargs):

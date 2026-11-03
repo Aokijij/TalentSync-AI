@@ -1,6 +1,7 @@
 """Several industries with independent browser sessions and real MFA."""
 # ruff: noqa: F811
 from fastapi.testclient import TestClient
+from learning_fixtures import publish_course
 from test_account_security import browser  # noqa: F401
 from test_api_flows import client, register  # noqa: F401
 from test_local_acceptance import PASSWORD, confirm_mail, enroll_mfa, request
@@ -12,6 +13,8 @@ def test_three_companies_cannot_edit_other_vacancies_and_match_different_profile
     cases = [("ventas", "Asesor comercial", ["ventas", "comunicacion"], "Ventas y comercio"),
              ("finanzas", "Auxiliar contable", ["contabilidad", "conciliacion bancaria"], "Finanzas y banca"),
              ("salud", "Auxiliar administrativa en salud", ["confidencialidad", "gestion documental"], "Salud y bienestar")]
+    for key, _, skills, _ in cases:
+        publish_course(browser, "multi-course-" + key, category={"ventas": "sales", "finanzas": "finance", "salud": "care"}[key], skills=skills)
     records = []
     for key, title, skills, sector in cases:
         with TestClient(browser.app) as employer, TestClient(browser.app) as candidate:

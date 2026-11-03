@@ -239,6 +239,9 @@ def seed(db, registry, *, nlp, now=None):
     # Use the same learning validation as interactive users; no fake certificate.
     learner = users["aprendizaje"]
     for resource_id in ["project-python", "project-rest", "project-sql"]:
+        # Retained historical plan: these internal resources no longer accept new enrolments.
+        db.add(LearningPlan(user_id=learner.id, resource_id=resource_id, status="in_progress", progress={}))
+        db.flush()
         learning.plans(uow, learner, resource_id, "in_progress")
     draft = db.query(LearningPlan).filter_by(user_id=learner.id, resource_id="project-rest").one()
     learning.save_journey(uow, learner, "project-rest", {"version": draft.version, "answers": {}, "activity_answers": {"sequence": [1, 3, 0, 2]}})
@@ -270,6 +273,9 @@ def seed(db, registry, *, nlp, now=None):
     db.flush()
     full = users["plan_lleno"]
     for resource_id in ["project-python", "project-rest"]:
+        # Retained historical plan: these internal resources no longer accept new enrolments.
+        db.add(LearningPlan(user_id=full.id, resource_id=resource_id, status="in_progress", progress={}))
+        db.flush()
         learning.plans(uow, full, resource_id, "in_progress")
     db.add(LearningPlan(user_id=full.id, resource_id="scenario-course-archivado", status="in_progress", progress={}))
 
@@ -386,11 +392,11 @@ def write_guide(folder, report):
     from app.application.use_cases.job_imports import IMPORT_HEADERS
     start = datetime.fromisoformat(report["created_at"])
     rows = [{"fuente": "Escenarios ficticios", "id_externo": f"SCENARIO-IMPORT-{index}", "empresa": "Importación Demostración (ficticia)",
-             "cargo": title, "descripcion": "Oferta externa ficticia para comprobar importación, búsqueda y datos incompletos; sin contratación real.",
-             "requisitos": "Experiencia con Python y SQL y ejemplos de trabajo documentados.", "sector": "Tecnologia y software",
+             "cargo": title, "descripcion": "Funciones: Analizar datos con Python, SQL y Excel, documentar resultados y preparar reportes para el equipo. Requisitos: Profesional en Ingeniería de Sistemas con experiencia mínima de 1 año en análisis de datos. Oferta ficticia para comprobar importación; sin contratación real.",
+             "requisitos": "Profesional en Ingeniería de Sistemas. Experiencia mínima de 1 año con Python, SQL y Excel; ejemplos de trabajo documentados.", "sector": "Tecnologia y software",
              "enlace_externo": f"https://example.com/oferta-demostracion-{index}", "fecha_publicacion": start.date().isoformat(),
              "fecha_vencimiento": (start + timedelta(days=90)).date().isoformat(), "salario": "5000000" if index == 1 else "",
-             "departamento": "Bogotá D.C.", "ciudad": "Bogotá", "modalidad": "remoto", "tipo_contrato": "full_time", "habilidades": "python|sql",
+             "departamento": "Bogotá D.C.", "ciudad": "Bogotá", "modalidad": "remoto", "tipo_contrato": "full_time", "habilidades": "python|sql|excel",
              "beneficios": "Formación", "idiomas": "", "sitio_empresa": "https://example.com", "descripcion_empresa": "Empresa ficticia de importación."}
             for index, title in enumerate(["Analista Python · importación completa", "Analista SQL · salario por acordar"], 1)]
     for name, data in [("vacantes-ejemplo.csv", rows), ("vacantes-con-error.csv", [rows[0], {**rows[1], "salario": "salario incorrecto"}])]:

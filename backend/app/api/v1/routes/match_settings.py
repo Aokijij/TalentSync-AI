@@ -20,6 +20,7 @@ from app.api.schemas.matching import (
 from app.application.errors import UseCaseError
 from app.application.use_cases import codewars_evidence, project_evidence
 from app.application.use_cases import match_settings as cases
+from app.application.use_cases.integration_observations import observed
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
 
@@ -33,8 +34,8 @@ def codewars_capabilities(user=Depends(candidate)):
 
 
 @router.post("/integrations/codewars/preview")
-def codewars_preview(payload: CodewarsPreviewRequest, user=Depends(candidate), reader=Depends(get_codewars_reader), security=Depends(get_account_security)):
-    return codewars_evidence.preview(user, payload.username, reader, security)
+def codewars_preview(payload: CodewarsPreviewRequest, user=Depends(candidate), reader=Depends(get_codewars_reader), security=Depends(get_account_security), db=Depends(get_unit_of_work)):
+    return observed(db, "codewars", lambda: codewars_evidence.preview(user, payload.username, reader, security))
 
 
 @router.post("/integrations/codewars/evidence")
@@ -50,8 +51,8 @@ def project_capabilities(user=Depends(candidate)):
 
 
 @router.post("/integrations/github/preview")
-def github_preview(payload: RepositoryPreviewRequest, user=Depends(candidate), inspector=Depends(get_repository_inspector), security=Depends(get_account_security)):
-    return project_evidence.preview(user, payload.url, inspector, security)
+def github_preview(payload: RepositoryPreviewRequest, user=Depends(candidate), inspector=Depends(get_repository_inspector), security=Depends(get_account_security), db=Depends(get_unit_of_work)):
+    return observed(db, "github_projects", lambda: project_evidence.preview(user, payload.url, inspector, security))
 
 
 @router.post("/integrations/github/evidence")

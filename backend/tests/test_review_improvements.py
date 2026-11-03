@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 from test_account_security import browser, csrf  # noqa: F401
 from test_admin_sso import begin, corporate, finish, staff  # noqa: F401
-from test_api_flows import client, register  # noqa: F401
+from test_api_flows import client, legal_acceptance, register  # noqa: F401
 from test_social_access import callback, social, start  # noqa: F401
 
 from app.core.config import settings
@@ -90,6 +90,7 @@ def test_social_review_login_skips_challenge_without_claiming_mfa(social, monkey
     monkeypatch.setattr(settings, "local_mfa_review_enabled", True)
     monkeypatch.setattr(settings, "environment", "development")
     callback(social, start(social))
+    social.post("/api/v1/auth/social/registration", headers=csrf(social), json={"name": "Persona de revisión", "profession": "Analista", "confirmed": True, **legal_acceptance()}).raise_for_status()
     with social.session_factory() as db:
         user = db.query(User).one()
         user.mfa_enabled = True

@@ -2,7 +2,13 @@
 import re
 from urllib.parse import parse_qs, urlparse
 
-from test_api_flows import client, company_account, create_job, register  # noqa: F401
+from test_api_flows import (  # noqa: F401
+    client,
+    company_account,
+    create_job,
+    legal_acceptance,
+    register,
+)
 
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
@@ -73,7 +79,7 @@ def test_invitation_binding_one_use_roles_and_removed_access(client, monkeypatch
     assert "token" not in listed.text and "token_hash" not in listed.text
     mail = client.get("/api/v1/dev/mailbox").json()[0]
     token = parse_qs(urlparse(re.search(r"https?://\S+", mail["body"]).group()).query)["token"][0]
-    wrong = client.post("/api/v1/auth/register", json={"name": "Wrong user", "email": "wrong@example.com", "password": "Test-password-2026!", "role": "company", "invitation_token": token})
+    wrong = client.post("/api/v1/auth/register", json={**legal_acceptance(), "name": "Wrong user", "email": "wrong@example.com", "password": "Test-password-2026!", "role": "company", "invitation_token": token})
     assert wrong.status_code == 422
     member, member_headers = register(client, "member", "company", invitation_token=token)
     assert client.post(endpoint + "/accept", headers=member_headers, json={"token": token}).status_code == 403

@@ -4,6 +4,7 @@ from sqlalchemy import or_
 
 from app.infrastructure.database.models import Job, Recommendation
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
+from app.infrastructure.repositories.jobs import JobRepository
 
 
 class RecommendationRepository(SqlAlchemyRepository[Recommendation]):
@@ -29,6 +30,7 @@ class RecommendationRepository(SqlAlchemyRepository[Recommendation]):
                 Recommendation.user_id == user_id,
                 Job.status == "active",
                 or_(Job.expires_at.is_(None), Job.expires_at >= now),
+                JobRepository.fresh_external(now),
             )
             .order_by(Recommendation.match_percentage.desc())
             .all()

@@ -1,6 +1,7 @@
 # ruff: noqa: F811
 import json
 import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -48,7 +49,14 @@ def test_worker_is_offline_receives_no_integration_secrets_and_truncates(monkeyp
     monkeypatch.setenv("YOUTUBE_API_KEY", "test-private-key")
     monkeypatch.setenv("HF_TOKEN", "test-private-token")
     monkeypatch.setenv("PYTHONPATH", "unexpected-path")
+    original_resolve = Path.resolve
+    def resolve_model_only(path, *args, **kwargs):
+        if path == python:
+            pytest.fail("Resolving a virtualenv interpreter symlink loses its packages")
+        return original_resolve(path, *args, **kwargs)
+    monkeypatch.setattr(Path, "resolve", resolve_model_only)
     def run(command, **kwargs):
+        assert command[0] == str(python.absolute())
         assert "test-private" not in str(kwargs["env"])
         assert "PYTHONPATH" not in kwargs["env"]
         assert kwargs["env"]["HF_HUB_OFFLINE"] == kwargs["env"]["TRANSFORMERS_OFFLINE"] == "1"

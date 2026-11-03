@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
+from external_fixtures import clear_description
 from fastapi.testclient import TestClient
 from openpyxl import Workbook
 from sqlalchemy import create_engine
@@ -11,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps import get_job_catalog, get_jsearch_job_catalog, get_text_analysis
+from app.application.use_cases.legal_consent import DOCUMENTS
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.domain.entities.catalog import CatalogJob, CatalogPage
@@ -57,12 +59,18 @@ def client(monkeypatch):
     engine.dispose()
 
 
+def legal_acceptance():
+    return {"data_processing_accepted": True, "terms_accepted": True,
+            "privacy_version": DOCUMENTS["privacy_version"], "terms_version": DOCUMENTS["terms_version"]}
+
+
 def register(client, name, role="candidate", **fields):
     payload = {
         "name": name,
         "email": f"{name}@example.com",
         "password": "Test-password-2026!",
         "role": role,
+        **legal_acceptance(),
         **fields,
     }
     response = client.post("/api/v1/auth/register", json=payload)
@@ -131,6 +139,7 @@ def test_authentication_and_permissions(client):
         client.post(
             "/api/v1/auth/register",
             json={
+                **legal_acceptance(),
                 "name": "candidato",
                 "email": user["email"],
                 "password": "Test-password-2026!",
@@ -1238,7 +1247,7 @@ def test_admin_imports_external_jobs_without_duplicates(client):
         "id_externo": "VAC-001",
         "empresa": "Organización Ejemplo",
         "cargo": "Coordinador de servicio",
-        "descripcion": "Coordina la atención y mejora la experiencia de clientes.",
+        "descripcion": clear_description("Coordina la atención y mejora la experiencia de clientes."),
         "requisitos": "Experiencia liderando equipos y resolviendo solicitudes.",
         "sector": "Ventas y comercio",
         "enlace_externo": "https://jobs.example.org/vac-001",
@@ -1267,7 +1276,9 @@ def test_admin_imports_external_jobs_without_duplicates(client):
     assert response.json()["companies_created"] == 1
     assert response.json()["rejected"] == 1
 
-    job = client.get("/api/v1/jobs").json()[0]
+    assert client.get("/api/v1/jobs").json() == []  # Import is not proof of current availability.
+    item = client.get("/api/v1/admin/jobs?scope=external", headers=headers).json()["items"][0]
+    job = client.get(f"/api/v1/jobs/{item['id']}").json()
     assert job["source_kind"] == "external"
     assert job["source_name"] == "Bolsa aliada"
     assert job["external_url"] == "https://jobs.example.org/vac-001"
@@ -1299,8 +1310,8 @@ def test_admin_imports_external_jobs_without_duplicates(client):
     assert updated.status_code == 200, updated.text
     assert updated.json()["created"] == 0
     assert updated.json()["updated"] == 1
-    assert len(client.get("/api/v1/jobs").json()) == 1
-    assert client.get("/api/v1/jobs").json()[0]["title"] == "Coordinador de experiencia"
+    assert client.get("/api/v1/jobs").json() == []
+    assert client.get(f"/api/v1/jobs/{job['id']}").json()["title"] == "Coordinador de experiencia"
 
 
 def test_admin_imports_xlsx_catalog(client):
@@ -1325,6 +1336,7 @@ def test_admin_imports_xlsx_catalog(client):
             "enlace_externo",
             "modalidad",
             "tipo_contrato",
+            "fecha_publicacion",
         ]
     )
     sheet.append(
@@ -1333,12 +1345,13 @@ def test_admin_imports_xlsx_catalog(client):
             "XLSX-1",
             "Servicios Abiertos",
             "Asesor de operaciones",
-            "Apoya procesos operativos y la atención de usuarios internos.",
-            "Organización, comunicación y experiencia en servicio.",
+            clear_description("Apoya procesos operativos y la atención de usuarios internos."),
+            "Organización, comunicación, Excel y SQL para atender solicitudes.",
             "Recursos humanos",
             "https://jobs.example.org/xlsx-1",
             "Remoto",
             "Contrato",
+            datetime.utcnow(),
         ]
     )
     content = io.BytesIO()
@@ -1381,9 +1394,10 @@ def test_admin_syncs_authorized_jooble_catalog(client):
                         title="Asesor de servicio al cliente",
                         company="Servicios Colombianos",
                         location="Medellín, Antioquia",
-                        description=(
+                        description=clear_description(
                             "Atiende solicitudes, orienta a los usuarios y registra "
                             "cada caso de manera clara."
+                            " Utiliza Excel y CRM con buena comunicación."
                         ),
                         employment_type="Full-time",
                         salary="$2.500.000 al mes",
@@ -1412,11 +1426,13 @@ def test_admin_syncs_authorized_jooble_catalog(client):
     assert response.json()["created"] == 1
     assert response.json()["fetched"] == 1
     assert response.json()["source"] == "Jooble"
-    job = client.get("/api/v1/jobs").json()[0]
+    assert client.get("/api/v1/jobs").json() == []
+    item = client.get("/api/v1/admin/jobs?scope=external", headers=headers).json()["items"][0]
+    job = client.get(f"/api/v1/jobs/{item['id']}").json()
     assert job["source_name"] == "Jooble"
     assert job["location"] == "Medellín"
     assert job["department"] == "Antioquia"
-    assert job["sector"] == "Ventas y comercio"
+    assert job["sector"] == "BPO y contact center"
     assert job["salary"] == 2_500_000
     assert "servicio al cliente" in job["skills"]
     assert job["external_url"] == "https://co.jooble.org/jdp/JOOBLE-101"
@@ -1447,7 +1463,7 @@ def test_jsearch_sync_deduplicates_the_same_listing_from_multiple_ids(client):
                         title="Analista de datos",
                         company="Compañía de datos",
                         location="Bogotá, Bogotá D.C.",
-                        description="Analiza información con SQL, Excel y Power BI para apoyar decisiones.",
+                        description=clear_description("Analiza información con SQL, Excel y Power BI para apoyar decisiones."),
                         requirements="Experiencia con SQL, Excel y Power BI.",
                         employment_type="Full-time",
                         salary="4200000",
@@ -1477,7 +1493,33 @@ def test_jsearch_sync_deduplicates_the_same_listing_from_multiple_ids(client):
     assert first.json()["created"] == 1
     assert second.json()["created"] == 0
     assert second.json()["updated"] == 1
-    jobs = client.get("/api/v1/jobs").json()
+    assert client.get("/api/v1/jobs").json() == []
+    jobs = client.get("/api/v1/admin/jobs?scope=external", headers=headers).json()["items"]
     assert len(jobs) == 1
     with client.session_factory() as session:
         assert session.get(Job, jobs[0]["id"]).external_id == "JSEARCH-1"
+
+
+def test_external_original_url_deduplicates_changed_titles_and_sources(client):
+    from app.application.use_cases.job_imports import _import_rows
+    from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
+    from app.infrastructure.nlp.text_processor import text_processor
+
+    user, _ = register(client, "original-url-import-admin")
+    row = {"fuente": "Greenhouse", "id_externo": "original-1", "empresa": "Empresa original",
+           "cargo": "Analista de datos", "descripcion": clear_description("Analiza datos con SQL, Excel y Python para preparar reportes."),
+           "requisitos": "Experiencia en SQL, Excel y Python.", "sector": "Tecnologia y software", "fecha_publicacion": datetime.utcnow(),
+           "enlace_externo": "https://jobs.example.org/jobs/123?utm_source=original"}
+    with client.session_factory() as session:
+        actor = session.get(User, user["id"])
+        actor.role = UserRole.ADMIN
+        db = SqlAlchemyUnitOfWork(session)
+        assert _import_rows([row], actor, db, nlp=text_processor)["created"] == 1
+        copy = {**row, "fuente": "JSearch", "id_externo": "aggregate-2", "empresa": "Empresa original SAS",
+                "cargo": "Analista de datos SQL", "enlace_externo": "https://jobs.example.org/jobs/123?utm_source=aggregate"}
+        result = _import_rows([copy], actor, db, nlp=text_processor)
+        assert result["created"] == 0 and result["updated"] == 1
+        assert session.query(Job).count() == 1
+        assert session.query(Company).count() == 1
+        job = session.query(Job).one()
+        assert job.source_name == "Greenhouse" and job.external_id == "original-1"

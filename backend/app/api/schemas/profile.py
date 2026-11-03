@@ -23,6 +23,7 @@ from app.domain.services.profile_status import (
     validate_educations,
 )
 from app.domain.services.skills import skill_key
+from app.domain.services.training_records import unique_training
 from app.domain.services.training_types import validate_training
 
 
@@ -105,6 +106,7 @@ class ProfileBase(BaseModel):
     mobility: Mobility = Field(default_factory=Mobility)
     educations: list[dict] | None = Field(default_factory=list)
     certifications: list[dict] | None = Field(default_factory=list)
+    _deduplicate_training = field_validator("certifications")(unique_training)
     resume_style: str = "classic"
     resume_color: str = "default"
 

@@ -107,7 +107,7 @@ def review_offer(job, peers=()):
     complete_missions = bool(missions) and all(meaningful(row.get("outcome", ""), 15, 4) and meaningful(row.get("measure", ""), 10, 3) and 1 <= (row.get("days") or 0) <= 365 for row in missions)
     schedule = d.get("schedule", "").strip().casefold()
     schedule_ok = meaningful(schedule, 10, 3) and bool(re.search(r"lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|d[ií]as|seman|turnos", schedule)) and bool(re.search(r"\d|horario|diurn|nocturn|rotativ", schedule))
-    response_days = getattr(job, "response_days", 0) or 0
+    response_days = 0 if getattr(job, "source_kind", "internal") == "external" else (getattr(job, "response_days", 0) or 0)
     process_days = d.get("process_days") or 0
     location_ok = job.modality == "remote" or bool((job.location or "").strip())
     scope = d.get("remote_scope") or {}

@@ -97,6 +97,7 @@ async function setup(page, { width = 1280, theme = "light", role = "candidate", 
       return route.fulfill({ json: state.plans });
     }
     if (endpoint === `/learning/plans/${course.id}/certificate`) { state.certificateBody = body; if (state.failCertificate) return route.fulfill({ status: 503, json: { detail: "El documento no pudo guardarse. Reintenta." } }); const certificate = { name: body.name, issuer: course.provider, year: body.year, url: body.credential_url }; state.plans[0].certificate = certificate; return route.fulfill({ json: { certificate, message: "Certificado guardado" } }); }
+    if (endpoint === `/learning/plans/${course.id}/evidence`) { state.plans[0].evidence_added = true; return route.fulfill({ json: { message: "Formación añadida" } }); }
     if (endpoint === `/learning/plans/${course.id}/course`) {
       state.courseDone = body.completed;
       state.plans = state.plans.map((row) => ({ ...row, version: row.version + 1, status: body.completed ? "completed" : "in_progress", progress: { ...row.progress, course_completed: body.completed } }));
@@ -167,11 +168,10 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Co
 
 test("Landing explains roles and guide limits interviewer actions", async ({ page }) => {
   await setup(page, { role: null, path: "/", width: 360, theme: "dark" });
-  await page.getByRole("tab", { name: "Empresas", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Revisar muchas candidaturas", exact: true })).toBeVisible();
-  await page.getByRole("tab", { name: "Administración", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Publicar formación", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Lo que distingue tu recorrido en TalentSync.", exact: true })).toBeVisible();
+  await page.getByRole("navigation", { name: "Elige tu espacio" }).getByRole("link", { name: "Para empresas" }).click();
+  await expect(page.getByRole("heading", { name: "Una bandeja para revisar talento", exact: true })).toBeVisible();
+  await expect(page.getByText(/administración|administrador/i)).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Menos desorden. Más contexto para decidir.", exact: true })).toBeVisible();
   await setup(page, { role: "company", memberRole: "interviewer", path: "/guia", width: 360 });
   await expect(page.getByRole("combobox", { name: "Tema de la guía", exact: true })).toHaveValue("interviews");
   await expect(page.getByRole("option", { name: "Preparar una oferta clara", exact: true })).toHaveCount(0);
@@ -283,7 +283,9 @@ for (const width of [360, 1280]) for (const theme of ["light", "dark"]) test(`Fi
   await page.getByRole("button", { name: "Ya terminé el curso", exact: true }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Confirmar finalización", exact: true }).click();
   await expect(page.locator(".course-finish-banner")).toContainText("Este curso no anuncia certificado");
-  await expect(page.locator(".external-certificate")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Aportar certificado", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Añadir formación a evidencias", exact: true }).click();
+  await expect(page.getByRole("button", { name: "En tus evidencias", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Añadir a mi perfil", exact: true })).toBeDisabled();
   await page.getByRole("checkbox", { name: "Excel", exact: true }).check();
   context.state.failSkills = true;

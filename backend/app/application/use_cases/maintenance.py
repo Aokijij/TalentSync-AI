@@ -11,11 +11,14 @@ def maintain_job_catalog(
     min_skills: int = 3,
 ) -> dict[str, int]:
     now = now or datetime.utcnow()
-    cutoff = now - timedelta(days=max_age_days)
     expired = 0
     for job in db.jobs.active_external():
-        if job.created_at < cutoff or len(job.skills or []) < min_skills:
+        # Age and sparse skills do not prove that an employer closed a role.
+        # Availability checks handle uncertain/stale sources separately.
+        if job.expires_at and job.expires_at <= now:
             job.status = "closed"
+            job.external_check_state, job.external_check_reason = "closed", "expired"
+            job.external_checked_at = now
             expired += 1
 
     notifications = 0

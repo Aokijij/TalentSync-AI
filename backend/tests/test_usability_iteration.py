@@ -2,6 +2,7 @@
 from io import BytesIO
 
 import pytest
+from learning_fixtures import publish_course, retain_legacy_plan
 from pypdf import PdfReader
 from test_account_security import browser, csrf, login  # noqa: F401
 from test_api_flows import client, register  # noqa: F401
@@ -39,23 +40,26 @@ def test_optional_company_mfa_does_not_disable_existing_authenticators_or_admin_
 def test_active_plan_limit_leave_ownership_version_and_rejoin(client):
     _, headers = register(client, "limited-plan")
     _, other = register(client, "other-plan")
+    for area in ["sales", "finance", "logistics", "care"]:
+        publish_course(client, f"course-{area}", category=area)
     for area in ["sales", "finance", "logistics"]:
-        assert client.put(f"/api/v1/learning/plans/practice-{area}-v1", headers=headers, json={}).status_code == 200
-    endpoint = "/api/v1/learning/plans/practice-care-v1"
+        assert client.put(f"/api/v1/learning/plans/course-{area}", headers=headers, json={}).status_code == 200
+    endpoint = "/api/v1/learning/plans/course-care"
     assert client.put(endpoint, headers=headers, json={}).status_code == 409
     plan = client.get("/api/v1/learning/plans", headers=headers).json()[0]
     endpoint = f"/api/v1/learning/plans/{plan['resource']['id']}"
     assert client.delete(endpoint, headers=other, params={"version": plan["version"]}).status_code == 404
     assert client.delete(endpoint, headers=headers, params={"version": 0}).status_code == 409
     assert client.delete(endpoint, headers=headers, params={"version": plan["version"]}).status_code == 200
-    assert client.put("/api/v1/learning/plans/practice-care-v1", headers=headers, json={}).status_code == 200
+    assert client.put("/api/v1/learning/plans/course-care", headers=headers, json={}).status_code == 200
     assert len(client.get("/api/v1/learning/plans", headers=headers).json()) == 3
 
 
 @pytest.mark.parametrize("area", ["general", "technology", "service", "sales", "administration", "finance", "logistics", "education", "design", "care"])
 def test_interactive_laboratory_drafts_checks_and_publishes_scoped_evidence(client, area):
-    _, headers = register(client, f"interactive-{area}", skills=[])
-    resource = client.get(f"/api/v1/learning/catalog?area={area}", headers=headers).json()["resources"][0]
+    user, headers = register(client, f"interactive-{area}", skills=[])
+    retain_legacy_plan(client, user["id"], "project-python" if area == "technology" else f"practice-{area}-v1")
+    resource = client.get("/api/v1/learning/plans", headers=headers).json()[0]["resource"]
     assert all("answer" not in item and "feedback" not in item for item in resource["journey"]["activities"])
     endpoint = f"/api/v1/learning/plans/{resource['id']}"
     plan = client.put(endpoint, headers=headers, json={}).json()[0]
@@ -82,6 +86,7 @@ def test_interactive_laboratory_drafts_checks_and_publishes_scoped_evidence(clie
 
 def test_mixed_assessment_invalid_data_feedback_and_targeted_resources(client):
     _, headers = register(client, "mixed-assessment")
+    publish_course(client, "finance-practice", category="finance", skills=["conciliacion bancaria"])
     assessment = "finance-simulation-v1"
     bank = ASSESSMENTS[assessment]
     attempt = client.post(f"/api/v1/learning/assessments/{assessment}/start", headers=headers).json()
@@ -99,7 +104,8 @@ def test_mixed_assessment_invalid_data_feedback_and_targeted_resources(client):
 
 @pytest.mark.parametrize("resource_id", ["project-rest", "project-git", "project-security", "project-sql", "project-python", "project-microservices"])
 def test_technology_projects_have_their_own_reviewable_laboratory(client, resource_id):
-    _, headers = register(client, f"lab-{resource_id}")
+    user, headers = register(client, f"lab-{resource_id}")
+    retain_legacy_plan(client, user["id"], resource_id)
     endpoint = f"/api/v1/learning/plans/{resource_id}"
     plan = client.put(endpoint, headers=headers, json={}).json()[0]
     answers = {item["id"]: item["answer"] for item in activities_for(resource_id)}
@@ -110,6 +116,7 @@ def test_technology_projects_have_their_own_reviewable_laboratory(client, resour
 
 def test_passed_assessment_still_recommends_practice_for_one_mistake(client):
     _, headers = register(client, "passed-needs-practice")
+    publish_course(client, "finance-practice", category="finance", skills=["conciliacion bancaria"])
     bank = ASSESSMENTS["finance-simulation-v1"]
     attempt = client.post("/api/v1/learning/assessments/finance-simulation-v1/start", headers=headers).json()
     answers = {item["id"]: item["answer"] for item in bank["questions"]}

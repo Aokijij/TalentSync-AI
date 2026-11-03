@@ -6,8 +6,8 @@ import httpx
 import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
-from test_account_security import browser  # noqa: F401
-from test_api_flows import client  # noqa: F401
+from test_account_security import browser, csrf  # noqa: F401
+from test_api_flows import client, legal_acceptance  # noqa: F401
 from test_social_access import callback, social, start  # noqa: F401
 from test_social_providers import configuration
 
@@ -36,8 +36,9 @@ def test_linkedin_authorization_is_fixed_and_requires_https():
 def test_linkedin_uses_existing_one_time_browser_bound_candidate_flow(social):  # noqa: F811
     social.social_provider.configured = lambda provider: provider == "linkedin"
     state = start(social, provider="linkedin")
-    assert callback(social, state, provider="linkedin").headers["location"].endswith("/bienvenida")
+    assert callback(social, state, provider="linkedin").headers["location"].endswith("/completar-cuenta")
     assert social.get("/api/v1/auth/me").json()["role"] == "candidate"
+    social.post("/api/v1/auth/social/registration", headers=csrf(social), json={"name": "Persona de revisión", "profession": "Analista", "confirmed": True, **legal_acceptance()}).raise_for_status()
     assert social.get("/api/v1/account/social-identities").json()[0]["provider"] == "linkedin"
     assert "status=failed" in callback(social, state, provider="linkedin").headers["location"]
 
@@ -53,7 +54,7 @@ def test_linkedin_validates_id_token_and_subject_bound_userinfo(fault):
     if fault == "audience": claims["aud"] = "other-client"
     if fault == "nonce": claims["nonce"] = "other-nonce"
     if fault == "missing_nonce": claims.pop("nonce")
-    if fault == "expired": claims["exp"] = int(time.time()) - 1
+    if fault == "expired": claims["exp"] = int(time.time()) - 60
     signer = rsa.generate_private_key(public_exponent=65537, key_size=2048) if fault == "signature" else key
     token = jwt.encode(claims, signer, algorithm="RS256", headers={"kid": "key-1"})
     def handle(request):

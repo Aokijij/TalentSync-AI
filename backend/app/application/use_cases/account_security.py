@@ -115,10 +115,15 @@ def request_action(db, email, purpose, *, app_url, mail_enabled, target_email=No
         db.add(db.accounts.new_token(user_id=user.id, token_hash=token_digest(token), purpose=purpose,
                                     target_email=target_email, expires_at=datetime.utcnow() + timedelta(minutes=30)))
         labels = {"verify": "Confirma tu correo", "reset": "Recupera tu acceso", "email": "Confirma tu nuevo correo"}
+        descriptions = {
+            "verify": "Confirma que esta dirección te pertenece para completar las acciones protegidas de tu cuenta.",
+            "reset": "Recibimos una solicitud para cambiar tu contraseña. Abre el enlace y crea una contraseña exclusiva para TalentSync. Al guardarla, se cerrarán tus sesiones anteriores.",
+            "email": "Solicitaste usar esta dirección para acceder a TalentSync y recibir avisos. Confirma el cambio con el enlace. Tu correo actual se conserva hasta que confirmes; después se cerrarán tus sesiones anteriores.",
+        }
         link = f"{app_url.rstrip('/')}/cuenta/confirmar?purpose={purpose}&token={quote(token)}"
         db.add(db.accounts.new_message(recipient=target_email or user.email, subject=labels[purpose],
             delivery_state=delivery_mode, expires_at=datetime.utcnow() + timedelta(minutes=30),
-            body=f"{labels[purpose]} en TalentSync: {link}\nEste enlace vence en 30 minutos y solo puede usarse una vez. Si no lo solicitaste, ignora este mensaje."))
+            body=f"{descriptions[purpose]}\n\n{link}\n\nEste enlace vence en 30 minutos y solo puede usarse una vez.\n\nSi no lo solicitaste, ignora este mensaje. No se hará ningún cambio sin tu confirmación."))
         db.commit()
     return {"message": "Si la cuenta corresponde, encontrarás las instrucciones en su correo."}
 

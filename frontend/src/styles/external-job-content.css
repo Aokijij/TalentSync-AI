@@ -1,0 +1,20 @@
+.external-content { min-width:0; display:grid; gap:1.25rem; }
+.external-content-heading { display:flex; gap:1rem; align-items:flex-start; }
+.external-content-icon { display:grid; place-items:center; flex:0 0 46px; height:46px; border-radius:14px; background:color-mix(in srgb,var(--accent) 12%,var(--surface)); color:var(--accent); }
+.external-content-heading h2 { margin:.3rem 0 .4rem; font-size:1.2rem; font-weight:750; color:var(--ink-strong); }
+.external-content-heading p:not(.section-kicker), .external-content-note { color:var(--muted); font-size:.85rem; line-height:1.65; }
+.external-content-meta { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.75rem; color:var(--muted); font-size:.78rem; padding:.8rem 0; border-block:1px solid var(--line); }
+.external-content-meta span { display:flex; align-items:center; gap:.4rem; }
+.external-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; margin:0; }
+.external-facts > div { border:1px solid var(--line); border-radius:12px; padding:1rem; background:var(--surface-subtle); }
+.external-facts > div[data-known="true"] { border-color:color-mix(in srgb,var(--accent) 30%,var(--line)); }
+.external-facts dt { display:flex; align-items:center; gap:.5rem; font-size:.76rem; color:var(--muted); margin-bottom:.5rem; }
+.external-facts dd { margin:0; font-size:.9rem; color:var(--ink-strong); font-weight:650; line-height:1.6; overflow-wrap:anywhere; }
+.external-facts [data-known="false"] dd { font-weight:400; color:var(--muted); font-size:.8rem; }
+.external-text-section { border-top:1px solid var(--line); padding-top:1.25rem; }
+.external-text-section > h3 { font-size:1rem; font-weight:750; margin-bottom:.85rem; color:var(--ink-strong); }
+.external-company-context summary { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.5rem; cursor:pointer; font-weight:700; color:var(--ink-strong); }
+.external-company-context summary span { color:var(--accent); font-size:.78rem; font-weight:600; }
+.external-company-context[open] summary { margin-bottom:1rem; }
+.external-content-footer { border-top:1px solid var(--line); padding-top:1rem; color:var(--muted); font-size:.76rem; line-height:1.7; }
+@media(max-width:600px) { .external-facts { grid-template-columns:minmax(0,1fr); } .external-content-heading { gap:.7rem; } .external-content-heading h2 { font-size:1.05rem; } }

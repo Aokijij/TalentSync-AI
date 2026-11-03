@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.api.deps import (
+    get_job_availability,
     get_optional_user,
     get_text_analysis,
     get_unit_of_work,
@@ -20,10 +21,37 @@ from app.api.schemas.recommendation import RecommendationResponse
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import jobs as use_cases
+from app.core.limiter import limiter
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Job, User
 
 router = APIRouter()
+
+
+@router.post("/{job_id}/external-access")
+@limiter.limit("20/hour")
+def external_access(job_id: int, request: Request, user=Depends(require_roles(UserRole.CANDIDATE, UserRole.ADMIN)), db=Depends(get_unit_of_work), gateway=Depends(get_job_availability)):
+    from datetime import timedelta
+
+    from app.api.v1.routes.account import _origin
+    from app.application.errors import UseCaseError
+    from app.application.use_cases.job_availability import check_job
+    from app.domain.services.job_freshness import externally_available
+    _origin(request)
+    job = db.jobs.get(job_id)
+    if not job or job.source_kind != "external":
+        raise UseCaseError(status_code=404, detail="No se encontró la oferta externa")
+    now = datetime.utcnow()
+    if job.status != "active":
+        raise UseCaseError(status_code=409, detail="Esta oferta ya no está disponible")
+    if job.external_admission_reasons:
+        raise UseCaseError(status_code=409, detail="La oferta no cumple el filtro del catálogo: requiere publicación reciente, tres habilidades distintas, funciones, requisitos, experiencia mínima y formación explícitos.")
+    # Reuse a recent real check, including negative results; do not hammer a blocked source.
+    if not job.external_checked_at or job.external_checked_at < now - timedelta(minutes=15):
+        check_job(db, job, gateway, now=now)
+    if not externally_available(job, now):
+        raise UseCaseError(status_code=409, detail="No podemos confirmar que esta oferta siga abierta. Se retiró de las recomendaciones mientras se revisa su vigencia.")
+    return {"url": job.external_url, "checked_at": job.external_checked_at, "available": True}
 
 
 @router.get("/mine/board")

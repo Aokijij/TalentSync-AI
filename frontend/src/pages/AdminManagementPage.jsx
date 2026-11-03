@@ -22,6 +22,9 @@ import { PageHeader } from "../components/PageHeader.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { useDebouncedValue, usePagedList } from "../hooks/usePagedList.js";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
+import { ExternalCatalogPanel } from "../components/ExternalCatalogPanel.jsx";
+import { EmployerBoardImport } from "../components/EmployerBoardImport.jsx";
+import { ExternalVacancyStatus } from "../components/ExternalVacancyStatus.jsx";
 
 const tabs = [
   {
@@ -49,6 +52,7 @@ export function AdminManagementPage() {
   const [activeTab, setActiveTab] = useState("users");
   const [stats, setStats] = useState({});
   const [scope, setScope] = useState("platform");
+  const [jobStatus, setJobStatus] = useState("");
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [overviewLoading, setOverviewLoading] = useState(true);
@@ -67,7 +71,7 @@ export function AdminManagementPage() {
   const [syncingJsearch, setSyncingJsearch] = useState(false);
 
   const search = useDebouncedValue(query);
-  const { data: managed, loading: recordsLoading, error: recordsError, reload: loadManagedRecords } = usePagedList(`/admin/${activeTab}`, { page, page_size: pageSize, search: search || undefined, scope: activeTab === "users" ? undefined : scope, role: activeTab === "users" ? "candidate" : undefined });
+  const { data: managed, loading: recordsLoading, error: recordsError, reload: loadManagedRecords } = usePagedList(`/admin/${activeTab}`, { page, page_size: pageSize, search: search || undefined, scope: activeTab === "users" ? undefined : scope, status_filter: activeTab === "jobs" ? jobStatus || undefined : undefined, role: activeTab === "users" ? "candidate" : undefined });
   const loading = overviewLoading || recordsLoading || search !== query.trim();
   const displayError = error || recordsError;
 
@@ -209,7 +213,7 @@ export function AdminManagementPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, query, pageSize, scope]);
+  }, [activeTab, query, pageSize, scope, jobStatus]);
   useEffect(() => { if (managed && page > pageCount) setPage(pageCount); }, [managed, page, pageCount]);
 
   return (
@@ -245,7 +249,7 @@ export function AdminManagementPage() {
           icon={BriefcaseBusiness}
           value={stats.platform_jobs ?? 0}
           label="Vacantes TalentSync"
-          detail={`${stats.external_jobs ?? 0} externas · ${stats.applications ?? 0} postulaciones`}
+          detail={`${stats.external_jobs ?? 0} registros externos · ${stats.applications ?? 0} postulaciones`}
         />
       </section>
 
@@ -314,6 +318,7 @@ export function AdminManagementPage() {
                   </select>
                 </label>
               ) : null}
+              {activeTab === "jobs" && <label className="text-xs font-bold text-[var(--muted)]">Disponibilidad<select className="field-control input-sm mt-1.5" value={jobStatus} onChange={(event) => setJobStatus(event.target.value)}><option value="">Todos los estados</option><option value="active">Disponibles</option><option value="review">En revisión</option><option value="closed">Cerradas</option></select></label>}
               <label className="relative block sm:w-80">
                 <span className="sr-only">Buscar</span>
                 <Search
@@ -330,6 +335,9 @@ export function AdminManagementPage() {
             </div>
           </header>
           {activeTab === "jobs" ? (
+            <><ExternalCatalogPanel onChanged={async () => { await loadOverview(); await loadManagedRecords(); }} />
+            <details className="border-b border-[var(--line)]"><summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-[var(--accent)]">Consultar un portal empresarial específico</summary><EmployerBoardImport onChanged={loadManagedRecords} /></details>
+            <details className="border-b border-[var(--line)]"><summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-[var(--accent)]">Otras fuentes: archivo autorizado y agregadores</summary>
             <JobImportPanel
               file={importFile}
               importing={importing}
@@ -344,7 +352,7 @@ export function AdminManagementPage() {
               onJsearchKeywords={setJsearchKeywords}
               onJsearchLocation={setJsearchLocation}
               onSyncJsearch={syncJsearch}
-            />
+            /></details></>
           ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface-subtle)] px-5 py-3 text-xs font-semibold text-[var(--muted)]">
             <span>
@@ -489,7 +497,7 @@ function JobImportPanel({
       ) : (
         <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-amber-500/30 bg-amber-500/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-5 text-[var(--muted)]">
-            Configura la clave del conector de empleos como secreto de Azure para habilitar la sincronización.
+            Este agregador necesita una clave privada en el servidor. También puedes consultar arriba los portales públicos de Greenhouse y Lever.
           </p>
           <a className="button-secondary button-sm shrink-0" href={jsearchSource?.registration_url || "https://www.openwebninja.com/api/jsearch"} target="_blank" rel="noreferrer">
             Ver documentación del conector
@@ -692,6 +700,8 @@ function RecordRow({ kind, item, protectedRecord, onDelete }) {
                 {item.company_name}
               </p>
             ) : null}
+            {kind === "jobs" && item.location && <p className="mt-1 text-xs text-[var(--muted)]">{item.location}{item.department ? ` · ${item.department}` : ""}</p>}
+            {kind === "jobs" && item.source_kind === "external" && <ExternalVacancyStatus job={item} admin />}
             {kind === "companies" ? (
               <p className="max-w-xs truncate text-xs text-[var(--muted)]">
                 {item.description || "Sin descripción"}

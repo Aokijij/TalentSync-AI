@@ -1,6 +1,12 @@
 import re
 
 
+def authored_summary(profile):
+    if (getattr(profile, "preferences", None) or {}).get("professional_summary_mode") == "automatic":
+        return ""
+    return str(getattr(profile, "experience", "") or "")
+
+
 def professional_text(profile):
     """Use professional fields and remove known identifiers, without raw CV text.
 
@@ -32,8 +38,12 @@ def sanitize_professional_text(profile, text):
 
 def professional_sections(profile, job):
     roles = " ".join(str(item.get("role", "")) for item in getattr(profile, "experiences", None) or [])
-    duties = " ".join(str(item.get("description", "")) for item in getattr(profile, "experiences", None) or []) or str(getattr(profile, "experience", "") or "")
+    duties = " ".join(str(item.get("description", "")) for item in getattr(profile, "experiences", None) or []) or authored_summary(profile)
+    description = getattr(job, "description", "")
+    if getattr(job, "source_kind", "internal") == "external":
+        sections = (getattr(job, "external_content", None) or {}).get("sections", [])
+        description = "\n".join(s["text"] for s in sections if s["key"] == "responsibilities") or description
     pairs = [("roles", "Cargos y profesión", f"{getattr(profile, 'profession', '') or ''} {roles}", getattr(job, "title", ""), .3),
-             ("responsibilities", "Funciones realizadas", duties, getattr(job, "description", ""), .5),
+             ("responsibilities", "Funciones realizadas", duties, description, .5),
              ("technical", "Conocimientos declarados", " ".join(profile.skills or []), getattr(job, "requirements", ""), .2)]
     return [(key, label, sanitize_professional_text(profile, left).strip(), str(right or ""), weight) for key, label, left, right, weight in pairs if right]

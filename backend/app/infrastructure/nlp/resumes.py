@@ -90,8 +90,9 @@ class ResumeReader:
         try:
             raw_text = extract_pdf_text(str(file_path))
         except Exception as exc:
+            from app.infrastructure.nlp.pdf_reader import PDFLimitError
             raise UseCaseError(
-                status_code=400, detail="No fue posible leer el PDF"
+                status_code=400, detail=str(exc) if isinstance(exc, PDFLimitError) else "No fue posible leer el PDF"
             ) from exc
         finally:
             if temporary_path:

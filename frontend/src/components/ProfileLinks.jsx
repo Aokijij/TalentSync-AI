@@ -4,7 +4,7 @@ import { ExternalLink, Github, Globe, Linkedin, Link2, Plus, Trash2 } from "luci
 import { linkPlatforms, normalizeProfessionalUrl, profileLinksPayload } from "../utils/profileLinks.js";
 import "../styles/profile-links.css";
 
-export function ProfileLinks({ value = [], editing = false, onChange, onEdit }) {
+export function ProfileLinks({ value = [], editing = false, onChange }) {
   const helpId = useId();
   function update(index, changes) { onChange(value.map((row, current) => current === index ? { ...row, ...changes } : row)); }
   if (!editing) {
@@ -15,7 +15,6 @@ export function ProfileLinks({ value = [], editing = false, onChange, onEdit }) 
         const Icon = row.platform === "github" ? Github : row.platform === "linkedin" ? Linkedin : Globe;
         return <a key={row.url} href={row.url} target="_blank" rel="noopener noreferrer" className="profile-link"><span className="profile-link-icon"><Icon size={19} aria-hidden="true" /></span><span><strong>{row.label || platform.label}</strong><small>{row.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</small></span><ExternalLink size={15} aria-hidden="true" /><span className="sr-only"> (abre en otra pestaña)</span></a>;
       })}</div> : <p className="profile-links-help">Comparte tu LinkedIn, GitHub, portafolio u otros espacios donde muestras tu trabajo.</p>}
-      {!visible.length && onEdit && <button type="button" className="button-secondary button-sm" onClick={onEdit}><Plus size={16} />Añadir enlace</button>}
     </div>;
   }
   return <div className="profile-links">

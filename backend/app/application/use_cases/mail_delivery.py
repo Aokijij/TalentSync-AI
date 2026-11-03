@@ -2,6 +2,7 @@ import secrets
 from datetime import datetime, timedelta
 
 from app.application.ports.services import MailDeliveryError
+from app.application.use_cases.integration_observations import record
 
 
 def deliver_outbox(db, gateway, *, now=None, limit=20):
@@ -31,6 +32,8 @@ def deliver_outbox(db, gateway, *, now=None, limit=20):
                     values["body"] = ""
         if db.accounts.finish_mail(message_id, lease, delivery_state="pending" if state == "retry" else state, **values):
             counts[state] += 1
+            if state in {"sent", "retry", "failed"}:
+                record(db, "mail", "" if state == "sent" else "provider_error", commit=False, operation="mail_accepted")
             if values.get("provider_message_id"):
                 db.accounts.reconcile_mail_events(values["provider_message_id"])
         db.commit()

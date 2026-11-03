@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import joinedload, load_only, selectinload
@@ -51,7 +51,27 @@ class JobRepository(SqlAlchemyRepository[Job]):
         return query.filter(
             Job.status == "active",
             or_(Job.expires_at.is_(None), Job.expires_at >= now),
+            JobRepository.fresh_external(now),
         )
+
+    @staticmethod
+    def fresh_external(now):
+        from sqlalchemy import and_
+
+        from app.domain.services.external_job_content import three_months_ago
+        from app.domain.services.job_freshness import FRESH_HOURS
+        return or_(Job.source_kind != "external", and_(
+            Job.external_check_state == "verified", Job.external_verified_at >= now - timedelta(hours=FRESH_HOURS),
+            Job.external_published_at >= three_months_ago(now), Job.external_published_at <= now,
+            func.json_array_length(Job.skills) >= 3,
+            Job.external_content["admission"]["clarity_passed"].as_boolean().is_(True)))
+
+    def due_external(self, now, limit=20):
+        from app.domain.services.external_job_content import three_months_ago
+        return self.session.query(Job).filter(Job.source_kind == "external", Job.status == "active",
+            Job.external_published_at >= three_months_ago(now), Job.external_published_at <= now, func.json_array_length(Job.skills) >= 3,
+            Job.external_content["admission"]["clarity_passed"].as_boolean().is_(True),
+            or_(Job.external_next_check_at.is_(None), Job.external_next_check_at <= now)).order_by(Job.external_next_check_at.asc(), Job.id).limit(limit).all()
 
     def active(self) -> list[Job]:
         return self._available(self.session.query(Job)).all()
@@ -71,9 +91,7 @@ class JobRepository(SqlAlchemyRepository[Job]):
         return self._available(self.session.query(Job.skills)).all()
 
     def active_external(self) -> list[Job]:
-        return self._available(
-            self.session.query(Job).filter(Job.source_kind == "external")
-        ).all()
+        return self.session.query(Job).filter(Job.source_kind == "external", Job.status == "active").all()
 
     def external_listings(self) -> list[Job]:
         return (
@@ -148,6 +166,7 @@ class JobRepository(SqlAlchemyRepository[Job]):
         limit: int,
         search: str | None = None,
         scope: str = "platform",
+        status_filter: str | None = None,
     ) -> tuple[list[Job], int]:
         query = self._scope(
             self.session.query(Job).options(
@@ -164,6 +183,14 @@ class JobRepository(SqlAlchemyRepository[Job]):
                     Company.name.ilike(pattern),
                 )
             )
+        if status_filter:
+            available_ids = self._available(self.session.query(Job.id))
+            if status_filter == "active":
+                query = query.filter(Job.id.in_(available_ids))
+            elif status_filter == "closed":
+                query = query.filter(Job.status == "closed")
+            else:
+                query = query.filter(Job.status != "closed", ~Job.id.in_(available_ids))
         total = query.count()
         return (
             query.order_by(Job.created_at.desc(), Job.id.desc())
@@ -199,7 +226,8 @@ class JobRepository(SqlAlchemyRepository[Job]):
             query = query.filter(Job.status == status_filter)
             if status_filter == "active":
                 query = query.filter(
-                    or_(Job.expires_at.is_(None), Job.expires_at >= datetime.utcnow())
+                    or_(Job.expires_at.is_(None), Job.expires_at >= datetime.utcnow()),
+                    self.fresh_external(datetime.utcnow()),
                 )
         if modality:
             query = query.filter(Job.modality == modality)

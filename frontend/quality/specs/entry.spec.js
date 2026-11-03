@@ -46,16 +46,16 @@ async function expectLayout(page) {
 
 for (const screen of ["landing", "candidate", "company"]) for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Entry experience · ${screen} · ${theme} · ${width}`, async ({ page }) => {
   const context = await setup(page, { screen, theme, width }); await context.open();
-  const title = screen === "landing" ? /Tu próximo paso/ : screen === "candidate" ? "Empieza por lo que buscas" : "Prepara tu espacio de empresa";
+  const title = screen === "landing" ? /Encuentra tu lugar/ : screen === "candidate" ? "Empieza por lo que buscas" : "Prepara tu espacio de empresa";
   await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
   if (screen === "landing") {
-    await expect(page.getByRole("link", { name: "Busco empleo", exact: true })).toHaveAttribute("href", "/registro");
-    await expect(page.getByRole("link", { name: "Quiero contratar", exact: true })).toHaveAttribute("href", "/empresa/registro");
-    await expect(page.getByText("DEMOSTRACIÓN CON DATOS FICTICIOS", { exact: true })).toBeVisible();
+    await expect(page.locator(".public-hero-actions a").first()).toHaveAttribute("href", "/registro");
+    await expect(page.getByRole("navigation", { name: "Elige tu espacio" }).getByRole("link", { name: "Para empresas" })).toHaveAttribute("href", "/empresas");
+    await expect(page.locator(".role-preview footer")).toContainText("Datos ficticios");
     await page.getByRole("checkbox", { name: "Análisis de datos", exact: true }).check();
-    await expect(page.getByText("2 de 3", { exact: true })).toBeVisible();
+    await expect(page.locator(".role-demo-match strong")).toContainText("2");
     await page.getByRole("checkbox", { name: "Comunicación", exact: true }).check();
-    await expect(page.getByText("3 de 3", { exact: true })).toBeVisible();
+    await expect(page.locator(".role-demo-match strong")).toContainText("3");
     expect(context.calls).toEqual([]);
   } else if (screen === "candidate") {
     await expect(page.getByLabel("Cargo o área de interés", { exact: true })).toHaveValue(baseProfile.profession);

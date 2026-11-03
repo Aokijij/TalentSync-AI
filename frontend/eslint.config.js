@@ -1,7 +1,7 @@
 import react from "eslint-plugin-react";
 
 export default [
-  { ignores: ["dist/**", ".quality-dist/**", "playwright-report/**", "test-results/**", "node_modules/**"] },
+  { ignores: ["dist/**", "public-dist/**", ".public-render/**", ".quality-dist/**", "playwright-report/**", "test-results/**", "node_modules/**"] },
   {
     files: ["src/**/*.{js,jsx}"],
     languageOptions: {

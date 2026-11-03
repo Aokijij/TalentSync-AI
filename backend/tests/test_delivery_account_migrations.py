@@ -23,6 +23,7 @@ def test_new_delivery_calendar_and_erasure_migrations_preserve_existing_data(tmp
     with sqlite3.connect(database) as db:
         assert db.execute("SELECT name FROM users WHERE id=10").fetchone() == ("Synthetic",)
         assert db.execute("SELECT registration_pending FROM users WHERE id=10").fetchone() == (0,)
+        assert db.execute("SELECT legal_acceptance FROM users WHERE id=10").fetchone() == ("{}",)
         assert "AUTOINCREMENT" in db.execute("SELECT sql FROM sqlite_master WHERE name='users'").fetchone()[0]
         names = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert {"calendar_connections", "calendar_events", "mail_delivery_events", "file_erasure_tasks"} <= names

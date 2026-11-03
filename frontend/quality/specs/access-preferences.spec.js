@@ -1,3 +1,4 @@
+import legalDocuments from "../../../backend/legal_documents/current.json" with { type: "json" };
 import { test, expect } from "@playwright/test";
 
 const baseProfile = { profession: "Ingeniero de Sistemas", location: "Medellín", department: "Antioquia", preferred_modality: "remote", desired_salary: 3500000, preferred_sector: "Tecnología", availability: "immediate", skills: ["react"], experiences: [], educations: [], certifications: [], languages: [], links: [], mobility: {} };
@@ -59,18 +60,34 @@ test("A fresh password login reaches its workspace with the real auth context", 
   expect(context.errors).toEqual([]);
 });
 
-test("A new email registration reaches welcome rather than being intercepted by guest guards", async ({ page }) => {
-  const context = await setup(page, { path: "/registro", realSession: true });
-  await page.getByLabel("Nombre completo", { exact: true }).fill("Persona de revisión");
-  await page.getByLabel("Correo electrónico", { exact: true }).fill("person@example.com");
+for (const role of ["candidate", "company"]) test(`New ${role} registration requires both legal decisions`, async ({ page }) => {
+  const company = role === "company", path = company ? "/empresa/registro" : "/registro";
+  const context = await setup(page, { role, path, realSession: true });
+  await page.getByLabel(company ? "Tu nombre como propietario" : "Nombre completo", { exact: true }).fill("Persona de revisión");
+  await page.getByLabel(company ? "Correo de tu cuenta empresarial" : "Correo electrónico", { exact: true }).fill("person@example.com");
   await page.getByRole("button", { name: "Continuar", exact: true }).click();
-  await page.getByLabel("Profesión o cargo de interés", { exact: true }).fill("Analista");
+  if (company) {
+    await page.getByLabel("Nombre de la empresa", { exact: true }).fill("Empresa de revisión");
+    await page.getByLabel("NIT o identificación de la empresa", { exact: true }).fill("CONSENT-TEST");
+  } else {
+    const profession = page.getByRole("combobox", { name: "Profesión o cargo de interés", exact: true });
+    await profession.fill("Analista");
+    await profession.press("Enter");
+  }
   await page.getByRole("button", { name: "Continuar", exact: true }).click();
   await page.getByLabel("Crea tu contraseña", { exact: true }).fill("Synthetic-pass-2026!");
   await page.getByLabel("Repite tu contraseña", { exact: true }).fill("Synthetic-pass-2026!");
   await page.getByRole("button", { name: "Continuar", exact: true }).click();
   await page.getByRole("button", { name: "Confirmar y crear cuenta", exact: true }).click();
-  await expect(output(page)).toHaveText("/bienvenida");
+  await expect(page.locator(".registration-consent-error")).toContainText("Autoriza");
+  expect(context.writes.filter((row) => row.endpoint.endsWith("/register"))).toEqual([]);
+  await page.locator(".registration-consent input").nth(0).check();
+  await page.getByRole("button", { name: "Confirmar y crear cuenta", exact: true }).click();
+  await expect(output(page)).toHaveText(path);
+  await page.locator(".registration-consent input").nth(1).check();
+  await page.getByRole("button", { name: "Confirmar y crear cuenta", exact: true }).click();
+  await expect(output(page)).toHaveText(company ? "/empresa/bienvenida" : "/bienvenida");
+  expect(context.writes.find((row) => row.endpoint.endsWith("/register")).body).toMatchObject({ data_processing_accepted: true, terms_accepted: true, privacy_version: legalDocuments.privacy_version, terms_version: legalDocuments.terms_version });
   expect(context.errors).toEqual([]);
 });
 
@@ -124,12 +141,16 @@ for (const width of [360, 1280]) test(`Social registration confirms identity bef
   await expect(page.getByRole("heading", { name: "Presentémonos bien" })).toBeVisible();
   expect(context.writes).toEqual([]);
   await page.getByLabel("Tu nombre", { exact: true }).fill("Ana María García");
-  await page.getByLabel("Profesión o cargo de interés", { exact: true }).fill("Ingeniera de Sistemas");
-  await page.getByRole("checkbox").check();
+  const profession = page.getByRole("combobox", { name: "Profesión o cargo de interés", exact: true });
+  await profession.fill("Ingeniera de Sistemas");
+  await profession.press("Enter");
+  await page.getByRole("checkbox").first().check();
+  await page.locator(".registration-consent input").nth(0).check();
+  await page.locator(".registration-consent input").nth(1).check();
   await noOverflow(page);
   await page.screenshot({ path: `../.local/access-preferences/registration-${width}.png`, fullPage: true });
   await page.getByRole("button", { name: "Confirmar y continuar", exact: true }).click();
   await expect(output(page)).toHaveText("/bienvenida");
-  expect(context.writes).toEqual([{ endpoint: "/auth/social/registration", body: { name: "Ana María García", profession: "Ingeniera de Sistemas", confirmed: true } }]);
+  expect(context.writes).toEqual([{ endpoint: "/auth/social/registration", body: { name: "Ana María García", profession: "Ingeniera de Sistemas", confirmed: true, data_processing_accepted: true, terms_accepted: true, privacy_version: legalDocuments.privacy_version, terms_version: legalDocuments.terms_version } }]);
   expect(context.errors).toEqual([]);
 });

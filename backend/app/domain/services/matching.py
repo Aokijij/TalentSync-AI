@@ -39,9 +39,10 @@ def _coverage(source: str | None, target: str | None) -> float:
 
 def professional_context_alignment(profile: Profile, job: Job, semantic: float) -> float:
     """Blend broad text similarity with explicit career evidence."""
-    job_text = " ".join(
-        filter(None, [job.title, job.description, job.requirements, job.sector])
-    )
+    description = job.description
+    if getattr(job, "source_kind", "internal") == "external":
+        description = " ".join(s["text"] for s in (getattr(job, "external_content", None) or {}).get("sections", []) if s["key"] == "responsibilities") or description
+    job_text = " ".join(filter(None, [job.title, description, job.requirements, job.sector]))
     roles = " ".join(
         str(item.get("role", "")) for item in (getattr(profile, "experiences", None) or [])
     )
@@ -59,19 +60,20 @@ def professional_context_alignment(profile: Profile, job: Job, semantic: float) 
     )
     profession_score = _coverage(getattr(profile, "profession", None), job.title)
     role_score = max(profession_score, _coverage(roles, f"{job.title} {job.requirements}"))
-    responsibility_score = _coverage(
-        f"{getattr(profile, 'experience', '')} {responsibilities}", job_text
-    )
+    from app.domain.services.matching_text import authored_summary
+    summary = authored_summary(profile)
+    legacy_education = getattr(profile, "education", "") if getattr(profile, "educations", None) is None else ""
+    responsibility_score = _coverage(f"{summary} {responsibilities}", job_text)
     education_score = _coverage(
-        f"{getattr(profile, 'education', '')} {education} {certifications}",
+        f"{legacy_education} {education} {certifications}",
         job.requirements,
     )
     has_structured_context = any(
         str(value or "").strip()
         for value in [
             getattr(profile, "profession", None),
-            getattr(profile, "experience", None),
-            getattr(profile, "education", None),
+            summary,
+            legacy_education,
             roles,
             responsibilities,
             education,

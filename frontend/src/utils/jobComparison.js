@@ -21,7 +21,7 @@ export function toggleComparedJob(ids, id) {
 }
 
 export function comparisonSalary(job) {
-  if (!(Number(job.salary) > 0)) return "Salario no informado";
+  if (!(Number(job.salary) > 0)) return job.external_content?.compensation?.status === "negotiable" ? "Salario por convenir" : "Salario no informado";
   const details = job.quality_details || {};
   const range = [job.salary, details.salary_max > job.salary ? details.salary_max : null].filter((value) => value != null).map((value) => Number(value).toLocaleString("es-CO")).join(" – ");
   const currency = details.salary_currency || (job.source_kind === "external" ? null : "COP");

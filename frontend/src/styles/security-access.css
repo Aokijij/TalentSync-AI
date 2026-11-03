@@ -5,6 +5,13 @@
 .security-email-summary strong { font-size:.95rem; overflow-wrap:anywhere; }
 .security-email-state { display:inline-flex; align-items:center; gap:.35rem; color:var(--muted); font-size:.75rem; }
 .security-email-state.is-verified { color:var(--success); }
+.security-email-verification { display:flex; align-items:center; flex-wrap:wrap; gap:1rem; border:1px solid var(--line); padding:1.1rem; border-radius:1rem; }
+.security-email-verification > div { flex:1 1 15rem; }
+.security-email-verification h3 { font-size:.9rem; font-weight:700; }
+.security-email-verification p { color:var(--muted); font-size:.8rem; line-height:1.65; margin:.35rem 0 .5rem; }
+.security-email-verification > div > span { display:inline-flex; align-items:center; gap:.35rem; color:var(--muted); font-size:.7rem; }
+.security-email-verification.is-requested { border:0; padding:0; justify-content:flex-end; }
+.security-email-recipient { margin:.45rem 0; overflow-wrap:anywhere; }
 .security-email-edit { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; border-top:1px solid var(--line); padding-top:1.25rem; }
 .security-email-edit > div,.security-email-edit > footer { grid-column:1/-1; }
 .security-email-edit h3 { font-weight:700; font-size:.9rem; }

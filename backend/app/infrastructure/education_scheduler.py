@@ -20,8 +20,15 @@ def refresh_cycle():
         if actor is None:
             return
         db = SqlAlchemyUnitOfWork(session)
-        observed(db, "sena", lambda: refresh_sena(db, actor, gateway, limit=40, budget_seconds=45))
-        observed(db, "sapiencia", lambda: refresh_sapiencia(db, actor, gateway))
+        for provider, operation in [
+            ("sapiencia", lambda: refresh_sapiencia(db, actor, gateway)),
+            ("sena", lambda: refresh_sena(db, actor, gateway, limit=40, budget_seconds=45)),
+        ]:
+            try:
+                observed(db, provider, operation)
+            except Exception:
+                session.rollback()
+                logger.warning("Educational provider refresh failed; other sources continue")
 
 
 async def periodic_education(stop_event):

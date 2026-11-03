@@ -2,51 +2,33 @@
 param(
     [ValidatePattern('^[a-z0-9][a-z0-9-]*$')]
     [string]$ProjectName = 'talentsync-ai',
-    [ValidatePattern('^https://[A-Za-z0-9.-]+(?::[0-9]+)?/api/v1/?$')]
-    [string]$ApiUrl = 'https://talentsync-3c02d6e1.yellowwater-01e17d41.eastus2.azurecontainerapps.io/api/v1',
     [ValidatePattern('^https://[A-Za-z0-9.-]+/?$')]
-    [string]$FrontendOrigin = 'https://talentsync-ai.pages.dev'
+    [string]$FrontendOrigin = 'https://talentsync-ai.pages.dev',
+    [switch]$AllowWorkingTree
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$previousApiUrl = $env:VITE_API_URL
 Push-Location $repositoryRoot
 try {
     $revision = (& git rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0) { throw 'No fue posible identificar la versión Git.' }
     $dirty = & git status --porcelain
     if ($LASTEXITCODE -ne 0) { throw 'No fue posible revisar el estado Git.' }
-    if ($dirty -and -not $WhatIfPreference) { throw 'Guarda los cambios en un commit antes de publicar.' }
+    if ($dirty -and -not $AllowWorkingTree -and -not $WhatIfPreference) { throw 'Guarda los cambios en un commit o revisa y autoriza el árbol actual con -AllowWorkingTree.' }
     $FrontendOrigin = $FrontendOrigin.TrimEnd('/')
-    Write-Host "Versión: $revision; API: $ApiUrl; frontend: $FrontendOrigin"
+    Write-Host "Versión base: $revision; API del mismo origen; frontend: $FrontendOrigin"
     if ($PSCmdlet.ShouldProcess($ProjectName, 'Compilar y publicar el frontend en Cloudflare Pages')) {
         # Check authentication/project access before building or uploading anything.
         & npx --yes wrangler@4.132.0 pages project list --json
         if ($LASTEXITCODE -ne 0) { throw 'Inicia sesión con npx wrangler@4.132.0 login y verifica el proyecto Pages.' }
-        $preflight = Invoke-WebRequest "$ApiUrl/auth/login" -Method Options -Headers @{
-            Origin = $FrontendOrigin
-            'Access-Control-Request-Method' = 'POST'
-            'Access-Control-Request-Headers' = 'content-type'
-        } -TimeoutSec 30
-        if ($preflight.Headers['Access-Control-Allow-Origin'] -ne $FrontendOrigin) {
-            throw 'Azure debe permitir el origen del frontend en CORS antes de publicar.'
-        }
-        Set-Location (Join-Path $repositoryRoot 'frontend')
-        $env:VITE_API_URL = $ApiUrl.TrimEnd('/')
-        & npm run build
-        if ($LASTEXITCODE -ne 0) { throw 'Falló la compilación. Cloudflare no se ha actualizado.' }
-        # Select-String -Quiet emits one Boolean for every piped file. An array
-        # containing only $false values is still truthy in PowerShell, so use a
-        # real match object to avoid blocking safe multi-chunk builds.
-        $unsafeBundle = Get-ChildItem -LiteralPath dist -Recurse -File -Include '*.js' |
-            Select-String -Pattern 'https?://(?:127\.0\.0\.1|localhost):8000' -List |
-            Select-Object -First 1
-        if ($unsafeBundle) {
-            throw 'La compilación contiene una API local. Cloudflare no se ha actualizado.'
-        }
-        & npx --yes wrangler@4.132.0 pages deploy dist --project-name $ProjectName --branch main --commit-hash $revision --commit-dirty=false
+        $readiness = Invoke-RestMethod "$FrontendOrigin/health/ready" -TimeoutSec 30
+        if ($readiness.status -ne 'ready') { throw 'Comprueba AWS y las variables privadas API_ORIGIN y API_PROXY_SECRET en Pages.' }
+        & (Join-Path $PSScriptRoot 'prepare-production-site.ps1')
+        if ($LASTEXITCODE -ne 0) { throw 'Falló la preparación. Cloudflare no se ha actualizado.' }
+        $dirtyFlag = if ($dirty) { '--commit-dirty=true' } else { '--commit-dirty=false' }
+        & npx --yes wrangler@4.132.0 pages deploy frontend/dist --project-name $ProjectName --branch main --commit-hash $revision $dirtyFlag
         if ($LASTEXITCODE -ne 0) { throw 'No se confirmó la publicación en Cloudflare.' }
         foreach ($path in @('/', '/login')) {
             $page = Invoke-WebRequest "$FrontendOrigin$path" -TimeoutSec 30
@@ -54,13 +36,12 @@ try {
                 throw "No se verificó la ruta pública $path en Cloudflare."
             }
         }
-        $stats = Invoke-RestMethod "$ApiUrl/jobs/public-stats" -Headers @{ Origin = $FrontendOrigin } -TimeoutSec 30
+        $stats = Invoke-RestMethod "$FrontendOrigin/api/v1/jobs/public-stats" -TimeoutSec 30
         if ($null -eq $stats.active_jobs -or $null -eq $stats.companies) {
             throw 'El frontend se publicó, pero la API productiva no respondió con sus indicadores.'
         }
         Write-Host "Frontend publicado y rutas verificadas: $FrontendOrigin"
     }
 } finally {
-    $env:VITE_API_URL = $previousApiUrl
     Pop-Location
 }

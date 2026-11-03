@@ -148,8 +148,8 @@ def test_integration_readiness_distinguishes_local_and_configured_without_secret
     from app.domain.services.integration_readiness import integration_readiness
     rows = integration_readiness(neural_active=True, local_mail=True, smtp=False, providers={"google": True}, catalog=False)
     assert all({"id", "name", "state", "status", "implemented", "enabled", "configured", "operational_state", "last_success_at", "last_attempt_at", "last_error"} <= set(row) for row in rows)
-    states = {row["name"]: row["state"] for row in rows}
-    assert states["Acceso social"] == "configured"
-    assert states["SSO administrativo"] == "provider_required"
-    assert states["Correo y avisos"] == "local_ready"
-    assert states["Verificación empresarial"] == "local_manual"
+    states = {row["id"]: row["state"] for row in rows}
+    assert states["social_google"] == "configured"
+    assert states["sso"] == "provider_required"
+    assert states["mail"] == "local_ready"
+    assert states["verification"] == "local_manual"

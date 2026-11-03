@@ -1,22 +1,26 @@
+import { ProfessionPicker } from "../components/ProfessionPicker.jsx";
 import { GuestOnly } from "../components/GuestOnly.jsx";
 import { invitationPath, registrationDestination } from "../utils/accessNavigation.js";
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, ShieldCheck } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useId, useState } from "react";
 import { AuthFrame } from "../components/AuthFrame.jsx";
 import { AccessProviders } from "../components/AccessProviders.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { getApiErrorMessage } from "../api/client.js";
+import { RegistrationConsent, registrationLegalPayload } from "../components/RegistrationConsent.jsx";
 
 export function RegisterPage() {
   const fieldPrefix = useId();
   const location = useLocation(), [params] = useSearchParams();
   const invitation = params.get("invitation"), company = location.pathname.startsWith("/empresa"), role = company ? "company" : "candidate";
   const { register: createAccount, accessOptions } = useAuth();
-  const { register, trigger, getValues, watch, formState: { errors } } = useForm({ defaultValues: { name: "", email: "", profession: "", skills: "", password: "", confirm_password: "" } });
+  const { register, control, trigger, getValues, watch, formState: { errors } } = useForm({ defaultValues: { name: "", email: "", profession: "", skills: "", password: "", confirm_password: "" } });
   const [isSubmitting, setSubmitting] = useState(false);
   const [destination, setDestination] = useState(null);
+  const [legal, setLegal] = useState({ data_processing_accepted: false, terms_accepted: false });
+  const [legalError, setLegalError] = useState("");
   const [step, setStep] = useState(0), [error, setError] = useState(""), [showPassword, setShowPassword] = useState(false);
   const steps = ["Tu cuenta", company ? invitation ? "Tu invitación" : "Tu empresa" : "Tu perfil", "Seguridad", "Confirmar"];
   const values = watch();
@@ -28,9 +32,10 @@ export function RegisterPage() {
     if (step < 3) { if (await trigger(fields[step], { shouldFocus: true })) setStep(step + 1); return; }
     for (let index = 0; index < 3; index++) { if (!(await trigger(fields[index]))) { setStep(index); return; } }
     const data = getValues();
+    if (!legal.data_processing_accepted || !legal.terms_accepted) { setLegalError("Autoriza el tratamiento de datos y acepta los términos antes de crear tu cuenta."); return; }
     setSubmitting(true);
     try {
-      await createAccount({ name: data.name.trim(), email: data.email.trim(), password: data.password, role,
+      await createAccount({ name: data.name.trim(), email: data.email.trim(), password: data.password, role, ...registrationLegalPayload(legal),
         ...(company ? invitation ? { invitation_token: invitation } : { company_name: data.company_name.trim(), nit: data.nit.trim(), company_description: data.company_description } : { profession: data.profession, skills: data.skills.split(",").map((skill) => skill.trim()).filter(Boolean) }) });
       setDestination(registrationDestination({ company, invitation, accessOptions }));
     } catch (failure) { setError(getApiErrorMessage(failure, "No fue posible crear la cuenta. Revisa tus datos e inténtalo de nuevo.")); }
@@ -45,9 +50,10 @@ export function RegisterPage() {
     <form onSubmit={next} noValidate className="space-y-5">
       <h3 className="text-xl font-bold" tabIndex={-1}>Paso {step + 1}: {steps[step]}</h3>
       {step === 0 && <>{field("name", company && !invitation ? "Tu nombre como propietario" : "Nombre completo", { required: "Introduce tu nombre", minLength: { value: 2, message: "Usa al menos dos caracteres" }, maxLength: 120 }, { autoComplete: "name", placeholder: "Nombre y apellido" })}{field("email", company ? "Correo de tu cuenta empresarial" : "Correo electrónico", { required: "Introduce tu correo", pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Introduce un correo válido" } }, { type: "email", autoComplete: "email", placeholder: company ? "Introduce tu correo empresarial" : "Introduce tu correo electrónico" })}<p className="text-xs text-[var(--muted)]">{company ? "Usa preferiblemente tu correo corporativo. La identidad de la empresa se verifica por separado." : "Aquí recibirás las comunicaciones sobre tus procesos."}</p></>}
-      {step === 1 && (company ? invitation ? <div className="surface-card space-y-3 p-5"><ShieldCheck className="text-[var(--accent)]" /><h4 className="font-bold">Te unes a un equipo existente</h4><p className="text-sm">Usa el correo al que enviaron la invitación. No necesitas registrar otra empresa. El servidor comprobará la invitación al crear tu cuenta.</p></div> : <>{field("company_name", "Nombre de la empresa", { required: "Introduce el nombre de la empresa", minLength: { value: 2, message: "Usa al menos dos caracteres" }, maxLength: 180 }, { autoComplete: "organization", placeholder: "Nombre comercial" })}{field("nit", "NIT o identificación de la empresa", { required: "Introduce la identificación", minLength: { value: 3, message: "Revisa la identificación" }, maxLength: 80 }, { placeholder: "Introduce la identificación registrada de la empresa" })}<label className="block text-sm font-semibold">¿A qué se dedica?<textarea className="field-control mt-2" rows={3} placeholder="Sector, actividad y qué ofrece tu equipo" {...register("company_description", { maxLength: 4000 })} /></label></> : <>{field("profession", "Profesión o cargo de interés", { required: "Indica tu profesión o cargo de interés", maxLength: 160 }, { placeholder: "Indica tu profesión o cargo de interés" })}{field("skills", "Habilidades que ya tienes (opcional)", { maxLength: 2000 }, { placeholder: "Indica tus habilidades separadas por comas" })}<p className="text-xs text-[var(--muted)]">Separa las habilidades con comas. Podrás completar tu experiencia y respaldarla después.</p></>)}
+      {step === 1 && (company ? invitation ? <div className="surface-card space-y-3 p-5"><ShieldCheck className="text-[var(--accent)]" /><h4 className="font-bold">Te unes a un equipo existente</h4><p className="text-sm">Usa el correo al que enviaron la invitación. No necesitas registrar otra empresa. El servidor comprobará la invitación al crear tu cuenta.</p></div> : <>{field("company_name", "Nombre de la empresa", { required: "Introduce el nombre de la empresa", minLength: { value: 2, message: "Usa al menos dos caracteres" }, maxLength: 180 }, { autoComplete: "organization", placeholder: "Nombre comercial" })}{field("nit", "NIT o identificación de la empresa", { required: "Introduce la identificación", minLength: { value: 3, message: "Revisa la identificación" }, maxLength: 80 }, { placeholder: "Introduce la identificación registrada de la empresa" })}<label className="block text-sm font-semibold">¿A qué se dedica?<textarea className="field-control mt-2" rows={3} placeholder="Sector, actividad y qué ofrece tu equipo" {...register("company_description", { maxLength: 4000 })} /></label></> : <><Controller name="profession" control={control} rules={{ required: "Indica tu profesión o cargo de interés", maxLength: 160 }} render={({ field }) => <ProfessionPicker {...field} required error={errors.profession?.message} />} />{field("skills", "Habilidades que ya tienes (opcional)", { maxLength: 2000 }, { placeholder: "Indica tus habilidades separadas por comas" })}<p className="text-xs text-[var(--muted)]">Separa las habilidades con comas. Podrás completar tu experiencia y respaldarla después.</p></>)}
       {step === 2 && <><div className="flex justify-end"><button type="button" className="flex gap-2 text-sm text-[var(--accent)]" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}{showPassword ? "Ocultar" : "Mostrar"} contraseñas</button></div>{field("password", "Crea tu contraseña", { required: "Crea una contraseña", minLength: { value: 12, message: "Usa al menos 12 caracteres" }, validate: (value) => new TextEncoder().encode(value).length <= 72 || "Máximo 72 bytes; reduce la longitud" }, { type: showPassword ? "text" : "password", autoComplete: "new-password" })}{field("confirm_password", "Repite tu contraseña", { required: "Repite la contraseña", validate: (value) => value === getValues("password") || "Las contraseñas no coinciden" }, { type: showPassword ? "text" : "password", autoComplete: "new-password" })}<p className="text-xs text-[var(--muted)]">Al menos 12 caracteres. {company && accessOptions.company_mfa_required !== false ? "Después del registro configurarás tu autenticador con un código QR." : "Puedes activar la verificación en dos pasos desde Seguridad de cuenta."}</p></>}
       {step === 3 && <div className="registration-review"><ShieldCheck size={26} /><h4 className="font-bold">Todo listo para crear tu {company ? "cuenta empresarial" : "perfil"}</h4><dl><dt>Responsable</dt><dd>{values.name}</dd><dt>Correo</dt><dd>{values.email}</dd><dt>{company ? "Organización" : "Profesión"}</dt><dd>{company ? invitation ? "Equipo de tu invitación" : values.company_name : values.profession}</dd>{!company && <><dt>Habilidades</dt><dd>{values.skills || "Las añadirás después"}</dd></>}</dl><p className="text-xs text-[var(--muted)]">{company ? invitation ? "Confirma tu correo y acepta la invitación para activar el permiso asignado por el propietario." : "Serás el propietario de la empresa. Después podrás invitar reclutadores y entrevistadores desde Tu equipo." : "Tu perfil comienza con habilidades declaradas. Las prácticas y evaluaciones te ayudarán a respaldarlas."}</p></div>}
+      {step === 3 && <RegistrationConsent company={company} values={legal} onChange={(key, value) => { setLegal((current) => ({ ...current, [key]: value })); setLegalError(""); }} error={legalError} disabled={isSubmitting} />}
       {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}
       <div className="flex gap-3">{step > 0 && <button type="button" className="button-secondary" disabled={isSubmitting} onClick={() => { setStep(step - 1); setError(""); }}><ArrowLeft size={17} />Atrás</button>}<button className="button-primary flex-1" disabled={isSubmitting}>{isSubmitting ? "Creando cuenta…" : step === 3 ? "Confirmar y crear cuenta" : "Continuar"}<ArrowRight size={17} /></button></div>
     </form>

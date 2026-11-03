@@ -16,3 +16,6 @@ class NLPResult:
     embedding: list[float]
     skill_context: list[dict] = field(default_factory=list)
     entity_review: dict = field(default_factory=dict)
+    professional_summary: str | None = None
+    languages: list[dict] = field(default_factory=list)
+    projects: list[dict] = field(default_factory=list)

@@ -33,6 +33,21 @@ from app.infrastructure.security.jwt import decode_access_token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
+def get_employer_board_catalog():
+    from app.infrastructure.job_catalogs.ats import EmployerBoardCatalog
+    return EmployerBoardCatalog
+
+
+def get_catalog_refresh():
+    from app.infrastructure.catalog_refresh import catalog_refresh
+    return catalog_refresh
+
+
+def get_job_availability():
+    from app.infrastructure.job_availability import JobAvailability
+    return JobAvailability()
+
+
 @lru_cache
 def get_career_writer():
     from app.infrastructure.nlp.career_writer import LocalCareerWriter

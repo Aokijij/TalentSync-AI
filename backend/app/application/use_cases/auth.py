@@ -4,6 +4,7 @@ from app.application.errors import UseCaseError
 from app.application.ports.services import AccountSecurity, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases.events import record_event
+from app.application.use_cases.legal_consent import registration_consent
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import User
 from app.domain.services.skills import normalize_skills
@@ -17,6 +18,7 @@ def register(
     security: AccountSecurity,
     require_verification: bool = False,
 ) -> User:
+    consent = registration_consent(payload, channel="email")
     if payload["role"] == UserRole.ADMIN:
         raise UseCaseError(
             status_code=403,
@@ -48,6 +50,7 @@ def register(
         email=payload["email"],
         password_hash=security.hash_password(payload["password"]),
         role=payload["role"],
+        legal_acceptance=consent,
     )
     db.add(user)
     db.flush()

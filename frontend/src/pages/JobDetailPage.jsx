@@ -37,7 +37,8 @@ import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
 import { languageLevelLabel } from "../constants/languages.js";
 import "../styles/job-detail.css";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
-import { StructuredJobText } from "../components/StructuredJobText.jsx";
+import { ExternalVacancyStatus } from "../components/ExternalVacancyStatus.jsx";
+import { ExternalJobContent } from "../components/ExternalJobContent.jsx";
 import { formatRelativeTime } from "../utils/dates.js";
 import { cleanExternalLocation, externalPortal } from "../utils/externalPortal.js";
 
@@ -150,7 +151,7 @@ function JobDetailContent({ jobId }) {
                 {job.salary
                   ? salaryLabel(job)
                   : job.source_kind === "external"
-                    ? "Salario no informado"
+                    ? job.external_content?.compensation?.status === "negotiable" ? "Salario por convenir" : "Salario no informado"
                     : "A convenir"}
               </span>
               {job.sector ? (
@@ -178,36 +179,12 @@ function JobDetailContent({ jobId }) {
       </section>
       <section className="job-detail-grid grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="surface-card space-y-6 p-6">
-          <OfferClaritySummary job={job} />
-          <OfferConditions job={job} />
-          {job.source_kind === "external" ? (
-            <div>
-              <h2 className="font-semibold">Resumen de la oferta</h2>
-              <div className="mt-3"><StructuredJobText text={job.description} /></div>
-            </div>
-          ) : <Info title="Descripción" text={job.description} />}
-          {job.source_kind === "external" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[var(--radius-lg)] border border-[var(--accent)]/30 bg-[var(--accent)]/10 p-4">
-                <h2 className="font-semibold">Qué puede analizar TalentSync</h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                  El cargo, la ubicación, la empresa, el salario cuando está disponible
-                  y la información pública de {externalPortal(job)}. De esas
-                  señales se extraen las habilidades visibles en esta página.
-                </p>
-              </div>
-              <div className="rounded-[var(--radius-lg)] border border-[var(--warning)]/30 bg-[var(--warning)]/10 p-4">
-                <h2 className="font-semibold">Qué debes confirmar</h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                  Funciones completas, experiencia mínima, beneficios, vigencia y
-                  condiciones contractuales. Esa información solo está en el anuncio
-                  original.
-                </p>
-              </div>
-            </div>
-          ) : (
+          {job.source_kind === "external" ? <ExternalJobContent job={job} /> : <>
+            <OfferClaritySummary job={job} />
+            <OfferConditions job={job} />
+            <Info title="Descripción" text={job.description} />
             <Info title="Requisitos" text={job.requirements} />
-          )}
+          </>}
           {job.source_kind !== "external" ? <div>
             <h2 className="font-semibold">Beneficios</h2>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -247,7 +224,7 @@ function JobDetailContent({ jobId }) {
         <aside className="job-detail-sidebar">
           <section className="job-requirements-card"><header><span><BriefcaseBusiness size={19} /></span><div><small>ANTES DE POSTULARTE</small><h2>Lo que busca esta oferta</h2></div></header>
             <div className="job-requirement-group"><h3>{job.source_kind === "external" ? "Habilidades identificadas" : "Habilidades relacionadas"}</h3><div className="job-skill-chips">{displayedSkills.map((skill) => <span key={skillKey(skill)}>{skill}{minimumLevels[skillKey(skill)] && minimumLevels[skillKey(skill)] !== "unspecified" ? ` · ${skillLevels[minimumLevels[skillKey(skill)]]}` : ""}</span>)}</div>{!displayedSkills.length && <p>Consulta los requisitos en la descripción de la oferta.</p>}</div>
-            {(job.required_education_level || job.required_study_fields?.length) ? <div className="job-requirement-group"><h3><BookOpen size={16} />Formación requerida</h3><p className="job-requirement-value">{EDUCATION_LEVELS[job.required_education_level] || "Nivel no especificado"}</p>{job.required_education_level !== "secondary" && !!job.required_study_fields?.length && <div className="job-skill-chips">{job.required_study_fields.map((field) => <span key={field}>{field}</span>)}</div>}<small>{job.required_education_level === "secondary" ? "Bachillerato terminado. No se exige una carrera específica." : job.quality_details?.education_accepts_in_progress ? "Se aceptan estudios en curso del nivel y área solicitados." : "Se solicitan estudios terminados del nivel indicado."}</small>{job.required_education_level !== "secondary" && !!job.required_study_fields?.length && <small>{job.quality_details?.education_field_policy === "exact" ? "Se admiten las áreas indicadas y sus variantes de nombre." : "También se consideran formaciones afines con cumplimiento parcial; se revisan los contenidos."}</small>}</div> : null}
+            {job.source_kind === "external" && job.external_content?.education?.status !== "required" ? <div className="job-requirement-group"><h3><BookOpen size={16} />Formación académica</h3><p className="job-requirement-value">{({ alternative: "Formación deseable o experiencia equivalente", not_required: "Sin título obligatorio", unspecified: "No especificada en el anuncio" })[job.external_content?.education?.status] || "Por confirmar"}</p>{job.external_content?.education?.excerpt && <small>{job.external_content.education.excerpt}</small>}</div> : (job.required_education_level || job.required_study_fields?.length) ? <div className="job-requirement-group"><h3><BookOpen size={16} />Formación requerida</h3><p className="job-requirement-value">{EDUCATION_LEVELS[job.required_education_level] || "Nivel no especificado"}</p>{job.required_education_level !== "secondary" && !!job.required_study_fields?.length && <div className="job-skill-chips">{job.required_study_fields.map((field) => <span key={field}>{field}</span>)}</div>}<small>{job.required_education_level === "secondary" ? "Bachillerato terminado. No se exige una carrera específica." : job.quality_details?.education_accepts_in_progress ? "Se aceptan estudios en curso del nivel y área solicitados." : "Se solicitan estudios terminados del nivel indicado."}</small>{job.required_education_level !== "secondary" && !!job.required_study_fields?.length && <small>{job.quality_details?.education_field_policy === "exact" ? "Se admiten las áreas indicadas y sus variantes de nombre." : "También se consideran formaciones afines con cumplimiento parcial; se revisan los contenidos."}</small>}</div> : null}
             <CredentialRequirementsSummary value={job.quality_details?.credential_requirements} />
             <div className="job-requirement-group"><h3><Globe2 size={16} />Idiomas</h3>{job.languages?.length ? <div className="job-language-list">{job.languages.map((language) => <p key={language.name}><strong>{language.name}</strong><span>{languageLevelLabel(language.level)}</span></p>)}</div> : <p>No se especifica un requisito de idioma.</p>}</div>
           </section>
@@ -260,6 +237,7 @@ function JobDetailContent({ jobId }) {
             <>
               {job.source_kind === "external" && job.external_url ? (
                 <div className="mt-8 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">
+                  <ExternalVacancyStatus job={job} />
                   <p className="text-sm leading-5 text-[var(--muted)]">
                     Esta vacante fue publicada fuera de TalentSync. Revisa sus condiciones y
                     continúa el proceso en el sitio de origen.

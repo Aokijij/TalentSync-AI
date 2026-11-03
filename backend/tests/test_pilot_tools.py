@@ -11,7 +11,8 @@ spec.loader.exec_module(pilot)
 
 
 def example():
-    return json.loads((ROOT / "docs/pilot/synthetic-example.json").read_text(encoding="utf-8"))
+    fixture = Path(__file__).parent / "fixtures" / "pilot-synthetic-example.json"
+    return json.loads(fixture.read_text(encoding="utf-8"))
 
 
 def test_synthetic_perfect_scores_are_never_claimed_as_real_validation():

@@ -1,3 +1,5 @@
+import { BrandMark } from "./BrandMark.jsx";
+
 const sizes = {
   sm: {
     mark: "h-9 w-9 rounded-lg",
@@ -26,20 +28,16 @@ export function BrandLogo({
   const inverse = tone === "inverse";
 
   return (
-    <div className={`inline-flex min-w-0 items-center gap-3 ${className}`}>
+    <div className={`inline-flex max-w-full min-w-0 items-center gap-3 ${className}`}>
       <span
+        data-tone={tone}
         className={`brand-mark-shell grid shrink-0 place-items-center overflow-hidden border ${scale.mark} ${
           inverse
             ? "border-white/20 bg-white/10 shadow-xs"
-            : "border-sky-200 bg-sky-50"
+            : "border-[var(--line)] bg-[var(--surface-subtle)]"
         }`}
       >
-        <img
-          src="/brand/talentsync-mark.png"
-          alt=""
-          aria-hidden="true"
-          className="brand-mark-image h-full w-full scale-[1.18] object-contain"
-        />
+        <BrandMark className="h-full w-full p-0.5" />
       </span>
       <span className="min-w-0">
         <span
@@ -47,7 +45,7 @@ export function BrandLogo({
             inverse ? "text-white" : "text-[var(--ink-strong)]"
           }`}
         >
-          TalentSync
+          TalentSync <span className="brand-ai">AI</span>
         </span>
         {subtitle ? (
           <span

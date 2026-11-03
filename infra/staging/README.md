@@ -136,7 +136,7 @@ Los informes son por proceso y deben complementarse con monitorización externa.
 
 La sincronización delegada de Google Calendar, los eventos firmados de Resend y
 los controles de portabilidad/borrado están implementados; su aceptación externa
-sigue pendiente. Véase [operación y datos](../../docs/OPERACION_Y_DATOS.md) para
+sigue pendiente. Véase [operación e integraciones](../production/INTEGRATIONS.md) para
 configuración, conservación y ensayos reproducibles. El protocolo de evaluación
 usa datos sintéticos hasta contar con participantes y documentos autorizados.
 

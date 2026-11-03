@@ -206,6 +206,14 @@ class JobResponse(BaseModel):
     source_portal: str | None = None
     external_url: str | None = None
     expires_at: datetime | None = None
+    external_check_state: str = "pending"
+    external_checked_at: datetime | None = None
+    external_verified_at: datetime | None = None
+    external_check_reason: str = ""
+    external_available: bool = False
+    external_published_at: datetime | None = None
+    external_content: dict | None = None
+    external_admission_reasons: list[str] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 
