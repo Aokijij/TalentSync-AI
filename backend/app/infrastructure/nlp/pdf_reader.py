@@ -210,9 +210,16 @@ def _extract_pypdf_text(file_path: str) -> str:
     if len(reader.pages) > MAX_PDF_PAGES:
         raise PDFLimitError("El CV no puede superar 20 páginas")
 
+    try:
+        from app.infrastructure.nlp.pdf_layout import positioned_pages
+        positioned = positioned_pages(file_path, max_pages=MAX_PDF_PAGES)
+    except Exception:
+        # Keep native/OCR recovery available without logging private PDF data.
+        positioned = []
+
     texts: list[str] = []
     needs_ocr = False
-    for page in reader.pages:
+    for page_index, page in enumerate(reader.pages):
         # Layout mode preserves columns, headings and CV timelines much better.
         # Some PDFs do not support it, so keep the regular extractor as fallback.
         used_regular_fallback = False
@@ -226,7 +233,10 @@ def _extract_pypdf_text(file_path: str) -> str:
         if not page_text.strip():
             page_text = page.extract_text() or ""
             used_regular_fallback = True
-        if used_regular_fallback and page_text.strip():
+        recovered = positioned[page_index] if page_index < len(positioned) else ""
+        if recovered and len(re.sub(r"\s", "", recovered)) >= len(re.sub(r"\s", "", page_text)) * .7:
+            page_text = recovered
+        elif used_regular_fallback and page_text.strip():
             coordinate_layout = _coordinate_experience_layout(page)
             if coordinate_layout.strip():
                 page_text = (

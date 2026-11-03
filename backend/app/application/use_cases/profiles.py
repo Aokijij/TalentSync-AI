@@ -375,9 +375,19 @@ def upload_cv(
     resumes: ResumeReader,
     replace_profile: bool = False,
 ) -> Profile:
+    from hashlib import file_digest
+    # Compare the actual document, not a text representation that can change
+    # when the extraction engine improves. Restore the stream for validation.
+    position = file.file.tell()
+    file.file.seek(0)
+    document_digest = file_digest(file.file, "sha256").hexdigest()
+    file.file.seek(position)
     safe_name, raw_text = resumes.extract(file, current_user.id)
     analysis = nlp.analyze_cv(raw_text)
     profile = current_user.profile or db.profiles.new(user_id=current_user.id)
+    previous_import = (profile.preferences or {}).get("cv_import_snapshot", {})
+    if previous_import.get("document_digest") != document_digest:
+        previous_import = {}
     if replace_profile:
         profile.profession = None
         profile.skills = []
@@ -412,8 +422,8 @@ def upload_cv(
         if len(location_parts) == 2:
             profile.department = location_parts[1]
     profile.phone = analysis.phone or profile.phone
-    profile.experiences = _merge_imported(profile.experiences, analysis.experiences, ("role", "company"))
-    profile.educations = _merge_imported(profile.educations, analysis.educations, ("degree", "institution"))
+    profile.experiences = _refresh_imported(profile.experiences, analysis.experiences, previous_import.get("experiences"), ("role", "company"))
+    profile.educations = _refresh_imported(profile.educations, analysis.educations, previous_import.get("educations"), ("degree", "institution"))
     profile.certifications = _merge_imported(profile.certifications, analysis.certifications, ("name", "issuer"))
     from app.domain.services.languages import language_name
     from app.domain.services.training_records import unique_training
@@ -427,8 +437,11 @@ def upload_cv(
         imported_projects.append({"id": identifier, "kind": "project", "source": "cv", "title": project["title"],
             "description": project["description"], "url": project.get("url"), "verified": False, "add_to_profile": False,
             "skills": nlp.extract_skills(project["description"]) if hasattr(nlp, "extract_skills") else []})
-    known_evidence = {row.get("id") for row in profile.evidence or []}
-    profile.evidence = [*(profile.evidence or []), *(row for row in imported_projects if row["id"] not in known_evidence)]
+    profile.evidence = _refresh_imported(profile.evidence, imported_projects, previous_import.get("projects"), ("id",))
+    profile.preferences = {**profile.preferences, "cv_import_snapshot": {
+        "document_digest": document_digest, "experiences": analysis.experiences,
+        "educations": analysis.educations, "projects": imported_projects,
+    }}
 
     if getattr(analysis, "professional_summary", None) and not custom_summary:
         # Keep the actual professional paragraph from the PDF, including its
@@ -443,6 +456,16 @@ def upload_cv(
     db.commit()
     db.refresh(profile)
     return profile
+
+
+def _refresh_imported(existing, detected, previous, keys):
+    """Refresh unchanged imports; retain additions and manually edited records."""
+    retained = [row for row in existing or [] if not any(
+        all(row.get(key) == value for key, value in old.items())
+        and all(key in old or value in (None, "", []) for key, value in row.items())
+        for old in previous or []
+    )]
+    return _merge_imported(retained, detected, keys)
 
 
 def _merge_imported(existing, detected, keys):
