@@ -8,7 +8,8 @@ from app.infrastructure.nlp.text_processor import text_processor
 
 @pytest.mark.parametrize("sidebar_right", [False, True])
 @pytest.mark.parametrize("nested", [False, True])
-def test_columns_keep_jobs_studies_and_project_cards_separate(tmp_path, sidebar_right, nested):
+@pytest.mark.parametrize("wide_header", [False, True])
+def test_columns_keep_jobs_studies_and_project_cards_separate(tmp_path, sidebar_right, nested, wide_header):
     path = tmp_path / "synthetic.pdf"
     canvas = Canvas(str(path), pagesize=(640, 900))
     side, body = (440, 30) if sidebar_right else (30, 240)
@@ -22,7 +23,9 @@ def test_columns_keep_jobs_studies_and_project_cards_separate(tmp_path, sidebar_
         canvas.drawText(text)
 
     # A full-width header and scrambled drawing order mimic design exports.
-    block(30, 870, "PERSONA DE PRUEBA CON ENCABEZADO A TODO EL ANCHO", True)
+    block(30 if wide_header else body, 870,
+          "PERSONA DE PRUEBA CON ENCABEZADO A TODO EL ANCHO" if wide_header else "PERSONA DE PRUEBA", True)
+    block(body, 845, "ANALISTA DE SISTEMAS", True)
     if nested:
         canvas.beginForm("content")
     block(side, 790, "EDUCACIÓN", True)
@@ -52,6 +55,7 @@ def test_columns_keep_jobs_studies_and_project_cards_separate(tmp_path, sidebar_
         canvas.doForm("content")
     canvas.save()
     result = text_processor.analyze_cv(_extract_pypdf_text(str(path)))
+    assert result.profession == "Analista De Sistemas"
     assert [(row["company"], row["role"], row["start_year"], row["end_year"]) for row in result.experiences] == [
         ("Empresa Alfa SAS", "DESARROLLADOR FRONT-END", "2018", "2019"),
         ("Empresa Beta", "ANALISTA QA", "2019", "2020"),

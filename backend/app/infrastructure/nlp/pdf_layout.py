@@ -118,11 +118,11 @@ def positioned_pages(file_path, *, max_pages):
         has_columns = len(_column_groups(valid)) > 1
         header, body = [], valid
         headings = [block for block in valid if _heading(block)]
-        if not has_columns and headings:
+        if headings:
             top = max(block.top for block in headings)
             header = [block for block in valid if block.bottom >= top]
             body = [block for block in valid if block not in header]
-            has_columns = len(_column_groups(body)) > 1
+            has_columns = has_columns or len(_column_groups(body)) > 1
         text = "\n".join(filter(None, [_rows(header), _ordered(body)])) if has_columns and len(valid) >= 8 and len(valid) >= len(blocks) * .95 else ""
         result.append(re.sub(r"[ \t]+", " ", text))
     return result
