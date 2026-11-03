@@ -25,3 +25,18 @@ def test_upload_stores_extracted_months_and_reimport_preserves_them(
         assert rows[0]["start_date"] == "2025-07" and rows[0]["end_date"] == "2025-11"
     saved = client.get("/api/v1/profiles/me", headers=candidate).json()
     assert saved["experiences"][0]["start_date"] == "2025-07"
+
+
+def test_same_document_reimport_replaces_unchanged_extraction_after_reader_improves(client, monkeypatch, tmp_path):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "upload_dir", str(tmp_path))
+    _, candidate = register(client, "reader-refresh-person", profession="Analista")
+    for employer in ["Empresa mezclada", "Empresa correcta", "Empresa correcta"]:
+        text = f"EXPERIENCIA LABORAL\n{employer} (2021 - 2023)\nCargo: Analista QA\nFunciones:\nPruebas funcionales.\n"
+        monkeypatch.setattr(resumes, "extract_pdf_text", lambda _, value=text: value)
+        response = client.post("/api/v1/profiles/me/cv", headers=candidate,
+                               files={"file": ("cv.pdf", b"%PDF-same-document", "application/pdf")})
+        assert response.status_code == 200, response.text
+        rows = response.json()["experiences"]
+        assert len(rows) == 1 and rows[0]["company"] == employer

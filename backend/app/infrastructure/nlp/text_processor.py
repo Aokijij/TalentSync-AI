@@ -725,7 +725,7 @@ class TextProcessor:
         """
         block = self._extract_section(
             self.repair_pdf_glyphs(text),
-            r"(?:^|\n)\s*#{0,6}\s*(?:experiencia|trayectoria)\s+(?:laboral|profesional)(?:\s+y\s+laboral)?\s*$",
+            r"(?:^|\n)\s*#{0,6}\s*(?:(?:experiencia|trayectoria)(?:\s+(?:laboral|profesional)(?:\s+y\s+laboral)?)?|(?:work|professional|employment)\s+(?:experience|history)|employment)\s*$",
             (
                 r"(?:^|\n)\s*#{1,6}\s*(?:herramientas|habilidades|competencias|tecnolog[ií]as|referencias|idiomas|certificaciones)\b",
                 r"\n\s*PYPDF FALLBACK\s*\n",
@@ -734,6 +734,15 @@ class TextProcessor:
         if not block:
             return []
 
+        from app.infrastructure.nlp.cv_sections import HEADER
+        # A timeline ends at the next section, including plain (non-Markdown)
+        # headings. Projects and education must never become job duties.
+        bounded = []
+        for line in block.splitlines():
+            if HEADER.fullmatch(line.strip()):
+                break
+            bounded.append(line)
+        block = "\n".join(bounded)
         lines = block.splitlines()
         entries: list[tuple[int, str, str, str]] = []
         rejected_prefixes = (
@@ -826,6 +835,10 @@ class TextProcessor:
                     "",
                 )
             if not description_lines:
+                if not role and unlabeled_lines and len(unlabeled_lines[0]) <= 160 and not unlabeled_lines[0].endswith("."):
+                    # Employer + period establish the entry; its immediate
+                    # next line can name roles outside a Spanish keyword list.
+                    role = unlabeled_lines[0]
                 description_lines = [line for line in unlabeled_lines if line != role]
             if not role:
                 role = "Cargo no identificado"
@@ -1194,9 +1207,11 @@ class TextProcessor:
         period_pattern = re.compile(
             r"((?:19|20)\d{2})\s*[-–—]\s*((?:19|20)\d{2}|presente|actualidad)", re.I
         )
+        from app.infrastructure.nlp.cv_sections import sections
+        education_block = sections(visual).get("education")
         lines = [
             re.sub(r"\s+", " ", line).strip(" .")
-            for line in visual.splitlines()
+            for line in (education_block if education_block is not None else visual).splitlines()
             if line.strip()
         ]
         educations = []
@@ -1391,7 +1406,7 @@ class TextProcessor:
         )
         merged_experiences = [
             item
-            for item in (heading_experiences or [*semantic_experiences, *experiences, *visual_experiences])
+            for item in (heading_experiences or semantic_experiences or experiences or visual_experiences)
             if self.fold_text(str(item.get("company", "")))
             and not self.fold_text(str(item.get("company", ""))).startswith(
                 invalid_prefixes
