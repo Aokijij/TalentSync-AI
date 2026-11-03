@@ -104,6 +104,17 @@ def test_training_without_advertised_certificate_is_idempotent_and_can_gain_a_ce
     assert evidence[0]["kind"] == "certificate"
 
 
+def test_training_evidence_without_document_is_a_course_result_and_never_a_certificate(client):
+    _, candidate = register(client, "declared-training")
+    payload = {"kind": "training", "title": "Formación en análisis de datos", "issuer": "Academia de prueba", "year": "2026", "description": "Completé las actividades de SQL y documenté un proyecto de análisis.", "skills": ["sql"], "add_to_profile": True}
+    response = client.post("/api/v1/matching/evidence", headers=candidate, json=payload)
+    assert response.status_code in {200, 201}, response.text
+    passport = client.get("/api/v1/learning/passport", headers=candidate).json()
+    assert passport["certificates"] == []
+    assert len(passport["course_results"]) == 1
+    assert passport["course_results"][0]["kind"] == "course"
+
+
 def test_authored_practice_solutions_are_private_and_course_progress_survives_submissions(client):
     admin = administrator(client)
     source = create(client, admin, practice=authored())
