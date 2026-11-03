@@ -1,0 +1,8 @@
+.recommendation-match { min-width:0; padding:.6rem 0; }
+.recommendation-match > div:first-child { display:flex; align-items:baseline; justify-content:space-between; gap:.4rem; }
+.recommendation-match > div > span { color:var(--muted); font-size:.69rem; }
+.recommendation-match strong { font-size:1.55rem; font-weight:750; font-variant-numeric:tabular-nums; letter-spacing:-.04em; }
+.recommendation-match strong small { margin-left:.1rem; font-size:.8rem; color:var(--muted); font-weight:550; }
+.recommendation-match-track { height:5px; overflow:hidden; border-radius:99px; background:var(--line); margin:.5rem 0 .4rem; }
+.recommendation-match-track > span { display:block; height:100%; border-radius:inherit; }
+.recommendation-match > p { font-size:.68rem; color:var(--muted); }

@@ -2,6 +2,8 @@ import re
 import unicodedata
 
 from app.domain.entities.records import Job, Profile, Recommendation
+from app.domain.services.languages import LEVELS, language_levels
+from app.domain.services.professions import education_match
 from app.domain.services.skills import skill_set
 
 SKILL_WEIGHT = 0.6
@@ -37,9 +39,10 @@ def _coverage(source: str | None, target: str | None) -> float:
 
 def professional_context_alignment(profile: Profile, job: Job, semantic: float) -> float:
     """Blend broad text similarity with explicit career evidence."""
-    job_text = " ".join(
-        filter(None, [job.title, job.description, job.requirements, job.sector])
-    )
+    description = job.description
+    if getattr(job, "source_kind", "internal") == "external":
+        description = " ".join(s["text"] for s in (getattr(job, "external_content", None) or {}).get("sections", []) if s["key"] == "responsibilities") or description
+    job_text = " ".join(filter(None, [job.title, description, job.requirements, job.sector]))
     roles = " ".join(
         str(item.get("role", "")) for item in (getattr(profile, "experiences", None) or [])
     )
@@ -57,19 +60,20 @@ def professional_context_alignment(profile: Profile, job: Job, semantic: float) 
     )
     profession_score = _coverage(getattr(profile, "profession", None), job.title)
     role_score = max(profession_score, _coverage(roles, f"{job.title} {job.requirements}"))
-    responsibility_score = _coverage(
-        f"{getattr(profile, 'experience', '')} {responsibilities}", job_text
-    )
+    from app.domain.services.matching_text import authored_summary
+    summary = authored_summary(profile)
+    legacy_education = getattr(profile, "education", "") if getattr(profile, "educations", None) is None else ""
+    responsibility_score = _coverage(f"{summary} {responsibilities}", job_text)
     education_score = _coverage(
-        f"{getattr(profile, 'education', '')} {education} {certifications}",
+        f"{legacy_education} {education} {certifications}",
         job.requirements,
     )
     has_structured_context = any(
         str(value or "").strip()
         for value in [
             getattr(profile, "profession", None),
-            getattr(profile, "experience", None),
-            getattr(profile, "education", None),
+            summary,
+            legacy_education,
             roles,
             responsibilities,
             education,
@@ -109,6 +113,7 @@ def is_relevant_candidate_recommendation(
     skill_score = item.skill_match_percentage
     semantic_score = item.semantic_match_percentage
     exceptional_cross_sector_fit = skill_score >= 80.0 and semantic_score >= 75.0
+    education_score = education_match(profile, job)
     sector_aligned = (
         not profile.preferred_sector
         or profile.preferred_sector == job.sector
@@ -116,6 +121,7 @@ def is_relevant_candidate_recommendation(
     )
     return (
         sector_aligned
+        and (education_score is None or education_score >= 45.0)
         and item.match_percentage >= MIN_CANDIDATE_RECOMMENDATION
         and (
             skill_score >= 50.0
@@ -129,25 +135,38 @@ def language_coverage(profile, job) -> float | None:
     required = getattr(job, "languages", None) or []
     if not required:
         return None
-    levels = {level: index for index, level in enumerate(["A1", "A2", "B1", "B2", "C1", "C2", "NATIVE"], start=1)}
-    available = {item["name"]: levels.get(item["level"], 0) for item in getattr(profile, "languages", None) or []}
-    return round(sum(min(1.0, available.get(item["name"], 0) / levels[item["level"]]) for item in required) / len(required) * 100, 2)
+    requested = language_levels(required)
+    available = language_levels(getattr(profile, "languages", None))
+    if not requested:
+        return None
+    return round(sum(min(1.0, LEVELS.get(available.get(name), 0) / LEVELS[level]) for name, level in requested.items()) / len(requested) * 100, 2)
 
 
-def combined_match(semantic: float, skill_score: float, language_score: float | None = None) -> float:
+def combined_match(semantic: float, skill_score: float, language_score: float | None = None, education_score: float | None = None, certification_score: float | None = None) -> float:
     """Transparent score: required skills lead, CV/job context validates fit."""
+    if education_score is None and certification_score is None:
+        if language_score is not None:
+            return round(skill_score * SKILL_WEIGHT + semantic * 0.3 + language_score * 0.1, 2)
+        return round(skill_score * SKILL_WEIGHT + semantic * SEMANTIC_WEIGHT, 2)
+    components = [(skill_score, .45), (semantic, .25), (education_score if education_score is not None else semantic, .20), (certification_score if certification_score is not None else skill_score, .10)]
     if language_score is not None:
-        return round(skill_score * SKILL_WEIGHT + semantic * 0.3 + language_score * 0.1, 2)
-    return round(skill_score * SKILL_WEIGHT + semantic * SEMANTIC_WEIGHT, 2)
+        components = [(score, weight * .9) for score, weight in components] + [(language_score, .1)]
+    return round(sum(score * weight for score, weight in components), 2)
 
 
 def recommendation_reasons(
-    profile: Profile, job: Job, semantic: float, skill_score: float
+    profile: Profile, job: Job, semantic: float, skill_score: float,
+    education_score: float | None = None, certification_score: float | None = None,
+    requirement_details=None,
 ) -> list[str]:
     profile_skills = skill_set(profile.skills)
-    job_skills = skill_set(job.skills)
+    requirements = getattr(job, "skill_requirements", None)
+    job_skills = skill_set([row["skill"] for row in requirements] if requirements else job.skills)
     overlap = sorted(profile_skills.intersection(job_skills))
     missing = sorted(job_skills - profile_skills)
+    if requirement_details is not None:
+        overlap = [row["key"] for row in requirement_details if row["covered"]]
+        missing = [row["key"] for row in requirement_details if not row["covered"]]
     reasons: list[str] = []
     if profile.profession:
         profession = profile.profession.lower().strip()
@@ -159,7 +178,7 @@ def recommendation_reasons(
     if overlap:
         reasons.append(f"Habilidades que ya cumples: {', '.join(overlap[:7])}")
     if job_skills and missing:
-        reasons.append(f"Habilidades por fortalecer: {', '.join(missing[:7])}")
+        reasons.append(f"Para acercarte al cargo: acredita experiencia real en {', '.join(missing[:5])}. Agrégala solo si puedes demostrarla con funciones, proyectos o formación")
     elif job_skills and (not missing):
         reasons.append("Cumples todas las habilidades requeridas")
     if semantic >= 75:
@@ -174,37 +193,32 @@ def recommendation_reasons(
             "Para mejorar: agrega cargos, responsabilidades y logros concretos a tu experiencia"
         )
     elif semantic < 65:
-        job_context = _context_tokens(f"{job.title} {job.description} {job.requirements}")
-        profile_context = _context_tokens(
-            " ".join(
-                [
-                    str(getattr(profile, "profession", "") or ""),
-                    str(getattr(profile, "experience", "") or ""),
-                    *[
-                        f"{item.get('role', '')} {item.get('description', '')}"
-                        for item in experiences
-                    ],
-                ]
-            )
-        )
-        missing_context = sorted(job_context - profile_context - job_skills)[:5]
-        if missing_context:
-            reasons.append(
-                "Contexto profesional por explicar mejor: "
-                + ", ".join(missing_context)
-                + ". Incluye ejemplos reales si tienes esa experiencia"
-            )
+        reasons.append("Para mejorar la afinidad: describe logros relacionados con las funciones del cargo e indica qué hiciste, con qué herramientas y qué resultado obtuviste")
+    from app.domain.services.academic_matching import education_evaluation
+    academic = education_evaluation(profile, job)
+    if academic["status"] == "review":
+        reasons.append("Formación pendiente de revisión: faltan datos o una denominación no está reconocida; no se confirma incompatibilidad.")
+    elif academic["status"] == "fulfilled":
+        reasons.append("Tu formación registrada coincide con el área y nivel solicitados")
+    elif academic["status"] == "partial":
+        reasons.append("Tu formación aporta afinidad parcial; revisa el área, el nivel y el estado de los estudios solicitados")
+    elif academic["status"] == "not_met":
+        reasons.append("La formación registrada no cumple la combinación de área, nivel y estado solicitada")
+    if certification_score:
+        reasons.append("Tus certificaciones respaldan conocimientos solicitados por la vacante")
     if not reasons:
         reasons = [
             "Compatibilidad basada en tu experiencia y los requisitos de la vacante"
         ]
     reasons.append(f"Habilidades requeridas cubiertas: {round(skill_score, 2)}%")
     reasons.append(f"Afinidad del contexto profesional: {round(semantic, 2)}%")
-    return [
+    scores = [
         f"score:skills:{round(skill_score, 2)}",
         f"score:context:{round(semantic, 2)}",
-        *dict.fromkeys(reasons),
     ]
+    if education_score is not None: scores.append(f"score:education:{round(education_score, 2)}")
+    if certification_score is not None: scores.append(f"score:certifications:{round(certification_score, 2)}")
+    return [*scores, *dict.fromkeys(reasons)]
 
 
 def recommend_category(match_percentage: float, skill_score: float) -> str:

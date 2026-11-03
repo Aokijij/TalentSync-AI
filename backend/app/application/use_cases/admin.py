@@ -198,12 +198,14 @@ def list_admin_jobs(
     page_size: int = 20,
     search: str | None = None,
     scope: str = "platform",
+    status_filter: str | None = None,
 ) -> dict:
     jobs, total = db.jobs.admin_page(
         offset=(page - 1) * page_size,
         limit=page_size,
         search=search,
         scope=scope,
+        **({"status_filter": status_filter} if status_filter else {}),
     )
     return {
         "items": [
@@ -213,6 +215,7 @@ def list_admin_jobs(
                 "company_id": job.company_id,
                 "company_name": job.company.name if job.company else None,
                 "salary": job.salary,
+                "location": job.location, "department": job.department, "external_url": job.external_url,
                 "skills": job.skills,
                 "applications": len(job.applications)
                 if job.source_kind == "internal"
@@ -221,6 +224,11 @@ def list_admin_jobs(
                 "source_kind": job.source_kind,
                 "source_name": job.source_name,
                 "source_portal": job.source_portal,
+                "external_check_state": job.external_check_state,
+                "external_checked_at": job.external_checked_at,
+                "external_available": job.external_available,
+                "external_admission_reasons": job.external_admission_reasons,
+                "external_published_at": job.external_published_at,
             }
             for job in jobs
         ],
@@ -255,7 +263,9 @@ def delete_admin_user(user_id: int, current_user: User, db: UnitOfWork) -> None:
     if user is None:
         raise UseCaseError(status_code=404, detail="Usuario no encontrado")
     company = db.companies.find_by_owner(user.id)
-    if company is not None:
+    if company is not None and company.owner_user_id == user.id:
         db.delete(company)
+    if db.personalization.feedback(user.id):
+        db.personalization.purge_user(user.id)
     db.delete(user)
     db.commit()

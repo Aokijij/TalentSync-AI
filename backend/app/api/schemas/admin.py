@@ -11,3 +11,18 @@ class JobCatalogSyncRequest(BaseModel):
     @classmethod
     def normalize_text(cls, value: str) -> str:
         return " ".join(value.split())
+
+
+class EmployerBoardRequest(BaseModel):
+    board_url: str = Field(min_length=15, max_length=500)
+    keywords: str = Field(default="", max_length=120)
+    location: str = Field(default="Colombia", max_length=120)
+    selected_ids: list[str] = Field(default_factory=list, max_length=50)
+    authorized: bool = False
+
+    @field_validator("board_url")
+    @classmethod
+    def valid_board(cls, value):
+        from app.infrastructure.job_catalogs.ats import board_reference
+        board_reference(value)
+        return value

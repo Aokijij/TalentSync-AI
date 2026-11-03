@@ -1,0 +1,11 @@
+{
+  "mode": "synthetic",
+  "critical_issues": 0,
+  "samples": [
+    {"id": "S001", "role": "candidate", "flow_completed": true,
+     "extraction": {"skills": {"expected": ["python", "sql"], "actual": ["Python", "SQL"]}, "languages": {"expected": ["Inglés B1"], "actual": ["inglés b1"]}},
+     "relevance": {"J001": 3, "J002": 2, "J003": 0}, "ranking": ["J001", "J002", "J003"]},
+    {"id": "S002", "role": "company", "flow_completed": true},
+    {"id": "S003", "role": "admin", "flow_completed": true}
+  ]
+}

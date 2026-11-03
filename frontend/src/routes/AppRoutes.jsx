@@ -1,3 +1,4 @@
+import { accountHome, requiresAuthenticator } from "../utils/accountAccess.js";
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
@@ -23,37 +24,83 @@ const CompanyTalentPage = lazyNamed(() => import("../pages/CompanyTalentPage.jsx
 const JobDetailPage = lazyNamed(() => import("../pages/JobDetailPage.jsx"), "JobDetailPage");
 const JobsPage = lazyNamed(() => import("../pages/JobsPage.jsx"), "JobsPage");
 const LoginPage = lazyNamed(() => import("../pages/LoginPage.jsx"), "LoginPage");
+const SocialAccessPage = lazyNamed(() => import("../pages/SocialAccessPage.jsx"), "SocialAccessPage");
+const SocialRegistrationPage = lazyNamed(() => import("../pages/SocialRegistrationPage.jsx"), "SocialRegistrationPage");
 const NotificationsPage = lazyNamed(() => import("../pages/NotificationsPage.jsx"), "NotificationsPage");
 const ProfilePage = lazyNamed(() => import("../pages/ProfilePage.jsx"), "ProfilePage");
 const RecommendationsPage = lazyNamed(() => import("../pages/RecommendationsPage.jsx"), "RecommendationsPage");
 const RegisterPage = lazyNamed(() => import("../pages/RegisterPage.jsx"), "RegisterPage");
+const SecurityPage = lazyNamed(() => import("../pages/SecurityPage.jsx"), "SecurityPage");
+const AccountActionPage = lazyNamed(() => import("../pages/AccountActionPage.jsx"), "AccountActionPage");
+const LocalMailboxPage = import.meta.env.DEV ? lazyNamed(() => import("../pages/LocalMailboxPage.jsx"), "LocalMailboxPage") : null;
+const OnboardingPage = lazyNamed(() => import("../pages/OnboardingPage.jsx"), "OnboardingPage");
+const LandingPage = lazyNamed(() => import("../pages/LandingPage.jsx"), "LandingPage");
+const LegalPage = lazyNamed(() => import("../pages/LegalPage.jsx"), "LegalPage");
+const CompanyWelcomePage = lazyNamed(() => import("../pages/CompanyWelcomePage.jsx"), "CompanyWelcomePage");
+const PlatformGuidePage = lazyNamed(() => import("../pages/PlatformGuidePage.jsx"), "PlatformGuidePage");
+const OrganizationPage = lazyNamed(() => import("../pages/OrganizationWorkspace.jsx"), "OrganizationWorkspace");
+const VerificationQueuePage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "VerificationQueuePage");
+const InvitationPage = lazyNamed(() => import("../pages/OrganizationPage.jsx"), "InvitationPage");
+const ProcessPage = lazyNamed(() => import("../pages/ProcessPage.jsx"), "ProcessPage");
+const LearningPage = lazyNamed(() => import("../pages/LearningPage.jsx"), "LearningPage");
+const LearningCatalogPage = lazyNamed(() => import("../pages/LearningCatalogPage.jsx"), "LearningCatalogPage");
+const HiringQualityPage = lazyNamed(() => import("../pages/HiringQualityPage.jsx"), "HiringQualityPage");
+const TrustPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "TrustPage");
+const EcosystemPage = lazyNamed(() => import("../pages/EcosystemPage.jsx"), "EcosystemPage");
+const ModelPage = lazyNamed(() => import("../pages/ModelPage.jsx"), "ModelPage");
 
 function RequireAuth({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, authError, retryAuth, logout, accessOptions } = useAuth();
   const location = useLocation();
 
   if (loading)
     return (
       <div className="grid min-h-screen place-items-center text-steel">
-        Cargando...
+        <div className="text-center">
+          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-[var(--line)] border-t-[var(--accent)]" />
+          <p className="mt-3">Validando tu sesión...</p>
+        </div>
+      </div>
+    );
+  if (authError)
+    return (
+      <div className="grid min-h-screen place-items-center bg-[var(--canvas)] px-5">
+        <section className="surface-card max-w-md p-7 text-center">
+          <h1 className="text-xl font-bold text-[var(--ink)]">No pudimos cargar tu espacio</h1>
+          <p className="mt-2 text-sm text-[var(--muted)]">{authError}</p>
+          <div className="mt-5 flex justify-center gap-3">
+            <button className="button-primary" type="button" onClick={() => retryAuth()}>Reintentar</button>
+            <button className="button-secondary" type="button" onClick={logout}>Cerrar sesión</button>
+          </div>
+        </section>
       </div>
     );
   if (!user) {
     const adminArea = ["/admin", "/administracion"].some((path) =>
       location.pathname.startsWith(path),
     );
-    return <Navigate to={adminArea ? "/acceso-administracion" : "/login"} replace />;
+    return <Navigate to={adminArea ? "/acceso-administracion" : location.pathname.startsWith("/empresa") ? "/empresa/login" : "/login"} state={{ from: location.pathname + location.search }} replace />;
   }
+  if (user.registration_pending && location.pathname !== "/completar-cuenta") return <Navigate to="/completar-cuenta" replace />;
+  if (requiresAuthenticator(user, accessOptions) && location.pathname !== "/seguridad") return <Navigate to="/seguridad" replace />;
   return children;
 }
 
 function HomeRedirect() {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role === "company") return <Navigate to="/empresa" replace />;
-  if (user.role === "admin") return <Navigate to="/admin" replace />;
-  return <Navigate to="/candidato" replace />;
+  const { user, accessOptions } = useAuth();
+  return <Navigate to={accountHome(user, accessOptions)} replace />;
 }
+
+function PublicHome() {
+  const { user, loading } = useAuth();
+  if (loading) return <SessionLoading />;
+  return user ? <HomeRedirect /> : <LandingPage />;
+}
+
+function SessionLoading() {
+  return <div role="status" className="grid min-h-screen place-items-center text-[var(--muted)]">Validando tu sesión…</div>;
+}
+
 
 function RequireRole({ roles, children }) {
   const { user } = useAuth();
@@ -64,10 +111,23 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<div className="grid min-h-screen place-items-center text-[var(--muted)]">Cargando sección...</div>}>
       <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPage key="candidate" />} />
+      <Route path="/acceso-social" element={<SocialAccessPage />} />
       <Route path="/acceso-administracion" element={<AdminLoginPage />} />
-      <Route path="/registro" element={<RegisterPage />} />
-      <Route path="/" element={<HomeRedirect />} />
+      <Route path="/acceso-corporativo" element={<SocialAccessPage administrative />} />
+      <Route path="/registro" element={<RegisterPage key="candidate" />} />
+      <Route path="/empresa/login" element={<LoginPage key="company" />} />
+      <Route path="/empresa/registro" element={<RegisterPage key="company" />} />
+      <Route path="/completar-cuenta" element={<RequireAuth><SocialRegistrationPage /></RequireAuth>} />
+      <Route path="/recuperar-acceso" element={<AccountActionPage recover />} />
+      <Route path="/cuenta/confirmar" element={<AccountActionPage />} />
+      {import.meta.env.DEV && <Route path="/desarrollo/correos" element={<LocalMailboxPage />} />}
+      <Route path="/equipo/invitacion" element={<InvitationPage />} />
+      <Route path="/" element={<PublicHome />} />
+      <Route path="/candidatos" element={<LandingPage />} />
+      <Route path="/empresas" element={<LandingPage role="company" />} />
+      <Route path="/privacidad" element={<LegalPage />} />
+      <Route path="/terminos" element={<LegalPage kind="terms" />} />
 
       <Route
         element={
@@ -76,6 +136,23 @@ export function AppRoutes() {
           </RequireAuth>
         }
       >
+        <Route path="/seguridad" element={<SecurityPage />} />
+        <Route path="/guia" element={<PlatformGuidePage />} />
+        <Route path="/confianza" element={<RequireRole roles={["candidate", "company"]}><TrustPage /></RequireRole>} />
+        <Route path="/admin/ecosistema" element={<RequireRole roles={["admin"]}><EcosystemPage /></RequireRole>} />
+        <Route path="/admin/modelos" element={<RequireRole roles={["admin"]}><ModelPage /></RequireRole>} />
+        <Route path="/admin/aprendizaje" element={<RequireRole roles={["admin"]}><LearningCatalogPage /></RequireRole>} />
+        <Route path="/mis-intereses" element={<RequireRole roles={["candidate"]}><Navigate to="/vacantes?interes=saved" replace /></RequireRole>} />
+        <Route path="/empresa/calidad" element={<RequireRole roles={["company"]}><HiringQualityPage /></RequireRole>} />
+        <Route path="/aprendizaje" element={<RequireRole roles={["candidate"]}><LearningPage /></RequireRole>} />
+        <Route path="/procesos/:applicationId" element={<ProcessPage />} />
+        <Route path="/entrevistas/*" element={<HomeRedirect />} />
+        <Route path="/compatibilidad" element={<HomeRedirect />} />
+        <Route path="/empresa/equipo" element={<RequireRole roles={["company"]}><OrganizationPage /></RequireRole>} />
+        <Route path="/admin/verificaciones" element={<RequireRole roles={["admin"]}><VerificationQueuePage /></RequireRole>} />
+        <Route path="/bienvenida" element={<RequireRole roles={["candidate"]}><OnboardingPage /></RequireRole>} />
+        <Route path="/preferencias" element={<RequireRole roles={["candidate"]}><OnboardingPage adjusting /></RequireRole>} />
+        <Route path="/empresa/bienvenida" element={<RequireRole roles={["company"]}><CompanyWelcomePage /></RequireRole>} />
         <Route
           path="/candidato"
           element={

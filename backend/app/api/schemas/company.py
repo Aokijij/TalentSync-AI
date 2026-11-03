@@ -34,6 +34,7 @@ class CompanyResponse(CompanyCreate):
     cover_url: str | None = None
     is_external: bool = False
     source_name: str | None = None
+    platform_score: float | None = None
 
     model_config = {"from_attributes": True}
 

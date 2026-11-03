@@ -1,29 +1,53 @@
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import StaleDataError
 
+from app.application.errors import UseCaseError
 from app.infrastructure.database.models import (
     Application,
     Company,
+    EventLog,
     Job,
     Notification,
     Profile,
     Recommendation,
     User,
 )
+from app.infrastructure.repositories.account_data import AccountDataRepository
+from app.infrastructure.repositories.accounts import AccountRepository
 from app.infrastructure.repositories.applications import ApplicationRepository
+from app.infrastructure.repositories.calendars import CalendarRepository
 from app.infrastructure.repositories.companies import CompanyRepository
+from app.infrastructure.repositories.ecosystem import EcosystemRepository
+from app.infrastructure.repositories.events import EventRepository
+from app.infrastructure.repositories.interviews import InterviewRepository
 from app.infrastructure.repositories.jobs import JobRepository
+from app.infrastructure.repositories.learning import LearningRepository
 from app.infrastructure.repositories.notifications import NotificationRepository
+from app.infrastructure.repositories.organizations import OrganizationRepository
+from app.infrastructure.repositories.personalization import PersonalizationRepository
 from app.infrastructure.repositories.profiles import ProfileRepository
 from app.infrastructure.repositories.recommendations import RecommendationRepository
+from app.infrastructure.repositories.resume_versions import ResumeVersionRepository
 from app.infrastructure.repositories.users import UserRepository
 
 
 class SqlAlchemyUnitOfWork:
     def __init__(self, session: Session):
         self.session = session
+        self.personalization = PersonalizationRepository(session)
+        self.interviews = InterviewRepository(session)
+        self.organizations = OrganizationRepository(session)
+        self.ecosystem = EcosystemRepository(session)
+        self.learning = LearningRepository(session)
+        self.account_data = AccountDataRepository(session)
+        self.accounts = AccountRepository(session)
+        self.calendars = CalendarRepository(session)
+        self.events = EventRepository(session, EventLog)
         self.users = UserRepository(session, User)
         self.profiles = ProfileRepository(session, Profile)
+        self.resume_versions = ResumeVersionRepository(session)
         self.companies = CompanyRepository(session, Company)
         self.jobs = JobRepository(session, Job)
         self.applications = ApplicationRepository(session, Application)
@@ -37,10 +61,30 @@ class SqlAlchemyUnitOfWork:
         self.session.delete(entity)
 
     def flush(self) -> None:
-        self.session.flush()
+        self._write(self.session.flush)
 
     def commit(self) -> None:
-        self.session.commit()
+        self._write(self.session.commit)
+
+    def commit_retaining_state(self) -> None:
+        # Bulk scoring already loaded every field used by the response. Expiring
+        # all 360 jobs here caused thousands of reloads during serialization.
+        previous = self.session.expire_on_commit
+        self.session.expire_on_commit = False
+        try:
+            self.commit()
+        finally:
+            self.session.expire_on_commit = previous
+
+    def _write(self, operation) -> None:
+        try:
+            operation()
+        except StaleDataError:
+            self.session.rollback()
+            raise UseCaseError(status_code=409, detail="El proceso cambió mientras lo editabas; actualiza y vuelve a intentar") from None
+        except IntegrityError:
+            self.session.rollback()
+            raise UseCaseError(status_code=409, detail="La operación entra en conflicto con un registro existente; actualiza e intenta de nuevo") from None
 
     def refresh(self, entity: object) -> None:
         self.session.refresh(entity)

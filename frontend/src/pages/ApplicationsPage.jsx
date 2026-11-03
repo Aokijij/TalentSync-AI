@@ -9,9 +9,17 @@ import {
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { api } from "../api/client.js";
+import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
+import { responseState } from "../utils/responseDeadlines.js";
+import { ResponseDeadlineBadge } from "../components/ResponseDeadlinePanel.jsx";
+import { InterviewAgenda } from "../components/InterviewAgenda.jsx";
+import { activeInterview, interviewDateParts, processDate, upcomingInterviews } from "../utils/interviewAgenda.js";
+import { isOpenProcess } from "../utils/dashboardData.js";
+import { pageItems, paginationState } from "../utils/pagination.js";
+import { Pagination } from "../components/Pagination.jsx";
+import { WorkspaceTabs } from "../components/ui/Panel.jsx";
 
 const statusLabel = {
   submitted: "Postulación recibida",
@@ -43,98 +51,110 @@ const steps = [
   { label: "Resultado", icon: Check },
 ];
 
-const finalStatuses = ["rejected", "accepted", "hired"];
 const interviewStatuses = ["technical_interview", "psychometric_test"];
 
 export function ApplicationsPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true), [loadError, setLoadError] = useState(""), [retry, setRetry] = useState(0);
   const [jobs, setJobs] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [pendingWithdrawal, setPendingWithdrawal] = useState(null);
   const focusedId = searchParams.get("focus");
+  const section = !focusedId && searchParams.get("section") === "interviews" ? "interviews" : "applications";
+  function changeSection(value) {
+    const next = new URLSearchParams(searchParams);
+    next.set("section", value); next.delete("focus");
+    setSearchParams(next, { replace: true });
+  }
 
   useEffect(() => {
-    Promise.all([
-      api.get("/applications/me").catch(() => ({ data: [] })),
-      api.get("/jobs").catch(() => ({ data: [] })),
-    ]).then(([applicationsResponse, jobsResponse]) => {
-      setApplications(applicationsResponse.data);
-      setJobs(jobsResponse.data);
-    });
+    const controller = new AbortController();
+    setLoading(true); setLoadError("");
+    api.get("/applications/me", { signal: controller.signal, __quiet: true }).then(({ data }) => {
+      if (!controller.signal.aborted) setApplications(data);
+    }).catch((failure) => { if (!controller.signal.aborted) setLoadError(getApiErrorMessage(failure, "No pudimos cargar tus postulaciones.")); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [retry]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    // Job metadata must not delay the candidate's processes or agenda.
+    api.get("/jobs", { signal: controller.signal, __quiet: true }).then(({ data }) => {
+      if (!controller.signal.aborted) setJobs(data);
+    }).catch(() => { /* Application records already include job and company titles. */ });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
     if (!focusedId || !applications.length) return;
-    window.setTimeout(
+    setFilter("all");
+    const index = applications.findIndex((item) => String(item.id) === focusedId);
+    if (index >= 0) setPage(Math.floor(index / 8) + 1);
+  }, [applications, focusedId]);
+
+  useEffect(() => {
+    if (!focusedId || !applications.length) return;
+    const timer = window.setTimeout(
       () =>
         document
           .getElementById(`application-${focusedId}`)
-          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+          ?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" }),
       80,
     );
-  }, [applications, focusedId]);
+    return () => window.clearTimeout(timer);
+  }, [applications, focusedId, page]);
 
   const jobsById = useMemo(
     () => new Map(jobs.map((job) => [job.id, job])),
     [jobs],
   );
   const activeCount = applications.filter(
-    (item) => !finalStatuses.includes(item.status),
+    isOpenProcess,
   ).length;
   const visibleApplications = applications.filter(
     (item) =>
       filter === "all" ||
       (filter === "active"
-        ? !finalStatuses.includes(item.status)
+        ? isOpenProcess(item)
         : filter === "interview"
-          ? interviewStatuses.includes(item.status)
+          ? isOpenProcess(item) && interviewStatuses.includes(item.status)
           : filter === "finalized"
-            ? finalStatuses.includes(item.status)
+            ? !isOpenProcess(item)
             : true),
   );
+  const paging = paginationState(visibleApplications.length, page, 8);
 
   async function withdraw(applicationId) {
-    await api.delete(`/applications/${applicationId}`);
-    setApplications((current) =>
-      current.filter((item) => item.id !== applicationId),
-    );
+    await api.post(`/workflow/applications/${applicationId}/withdraw`);
+    setApplications((await api.get("/applications/me")).data);
     setPendingWithdrawal(null);
   }
 
   return (
-    <div className="space-y-6">
+    <div className="candidate-processes">
       <PageHeader
         kicker="Seguimiento"
-        title="Seguimiento de postulaciones"
-        description="Sigue cada proceso desde el envío hasta la decisión final en una línea de tiempo clara."
+        title="Postulaciones y entrevistas"
+        description="Sigue tus procesos y organiza tus entrevistas en un solo lugar."
       />
-      <section className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
-        <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
-          <div className="surface-card px-4 py-3">
-            <p className="text-2xl font-bold text-[var(--ink-strong)]">
-              {applications.length}
-            </p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-              Procesos totales
-            </p>
-          </div>
-          <div className="surface-card px-4 py-3">
-            <p className="text-2xl font-bold text-[var(--accent)]">
-              {activeCount}
-            </p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-              En curso
-            </p>
-          </div>
-        </div>
-        <label className="text-sm font-semibold text-[var(--muted)]">
-          Mostrar estado
-          <select
-            className="field-control mt-1 sm:w-56"
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-          >
+      <WorkspaceTabs id="candidate-processes" label="Seguimiento y agenda" value={section} onChange={changeSection} items={[["applications", `Postulaciones${loading || loadError ? "" : ` (${applications.length})`}`, FileCheck2], ["interviews", `Entrevistas${loading || loadError ? "" : ` (${upcomingInterviews(applications).length})`}`, CalendarClock]]} />
+      <div role="tabpanel" id="candidate-processes-panel-interviews" aria-labelledby="candidate-processes-tab-interviews" hidden={section !== "interviews"} tabIndex={0}>
+        <InterviewAgenda applications={applications} loading={loading} error={loadError} active={section === "interviews"} onRetry={() => setRetry((value) => value + 1)} />
+      </div>
+      <div role="tabpanel" className="candidate-applications-panel" id="candidate-processes-panel-applications" aria-labelledby="candidate-processes-tab-applications" hidden={section !== "applications"} tabIndex={0}>
+      {loading && <p role="status">Consultando tus postulaciones…</p>}
+      {loadError && <p role="alert" className="surface-card p-4">{loadError} <button type="button" className="button-secondary button-sm" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></p>}
+      <section className="candidate-application-toolbar" aria-label="Resumen y filtros de postulaciones">
+        <dl className="candidate-process-metrics">
+          <div><dt><FileCheck2 size={16} aria-hidden="true" />Procesos totales</dt><dd>{loading || loadError ? "—" : applications.length}</dd></div>
+          <div className="is-active"><dt><Clock3 size={16} aria-hidden="true" />En curso</dt><dd>{loading || loadError ? "—" : activeCount}</dd></div>
+        </dl>
+        <label className="candidate-process-state-filter">
+          <span>Mostrar estado</span>
+          <select className="field-control" value={filter} onChange={(event) => { setFilter(event.target.value); setPage(1); }}>
             <option value="all">Todos</option>
             <option value="active">En curso</option>
             <option value="interview">Con entrevista</option>
@@ -144,10 +164,12 @@ export function ApplicationsPage() {
       </section>
 
       <section className="space-y-4">
-        {visibleApplications.map((application) => {
+        {pageItems(visibleApplications, page, 8).map((application) => {
           const job = jobsById.get(application.job_id);
-          const currentIndex = progressByStatus[application.status] ?? 0;
-          const rejected = application.status === "rejected";
+          const closed = !isOpenProcess(application);
+          const currentIndex = closed ? 3 : progressByStatus[application.status] ?? 0;
+          const rejected = application.status === "rejected" || !!application.released_at;
+          const withdrawn = application.resolution_reason === "candidate_withdrawn";
           const selected = ["accepted", "hired"].includes(application.status);
           const anotherSelected =
             application.resolution_reason === "another_candidate_selected";
@@ -170,7 +192,7 @@ export function ApplicationsPage() {
                   <p className="mt-1 text-sm text-[var(--muted)]">
                     {application.company_name ?? job?.company_name ?? "Empresa"}{" "}
                     · Aplicaste el{" "}
-                    {new Date(application.created_at).toLocaleDateString(
+                    {processDate(application.created_at)?.toLocaleDateString(
                       "es-CO",
                       { day: "numeric", month: "long", year: "numeric" },
                     )}
@@ -181,12 +203,13 @@ export function ApplicationsPage() {
                 >
                   {rejected ? <XCircle size={16} /> : <Clock3 size={16} />}Etapa
                   actual:{" "}
-                  {anotherSelected
+                  {withdrawn ? "Retirada por ti" : application.released_at ? "Proceso cerrado" : anotherSelected
                     ? "Finalizada: se seleccionó a otra persona"
                     : statusLabel[application.status] || "En revisión"}
                 </span>
               </div>
 
+              <div className="mt-3"><ResponseDeadlineBadge application={application} /></div>
               <div
                 className="relative mt-7 grid grid-cols-4 gap-2"
                 aria-label={`Progreso: ${statusLabel[application.status] || "En revisión"}`}
@@ -212,7 +235,7 @@ export function ApplicationsPage() {
                       <span
                         className={`mt-2 text-[11px] font-bold sm:text-xs ${reached ? "text-[var(--ink-strong)]" : "text-[var(--muted)]"}`}
                       >
-                        {rejected && index === 3
+                        {withdrawn && index === 3 ? "Retirada" : rejected && index === 3
                           ? "No seleccionado"
                           : selected && index === 3
                             ? "Seleccionado"
@@ -224,18 +247,17 @@ export function ApplicationsPage() {
               </div>
 
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
+                <Link className="button-secondary" to={`/procesos/${application.id}`}>Historial, plazos y feedback</Link>
                 <div>
-                  {application.interview_at ? (
+                  {activeInterview(application) ? (
                     <p className="flex items-center gap-2 text-sm font-semibold text-[var(--accent)]">
                       <CalendarClock size={16} />
                       Próxima cita:{" "}
-                      {new Date(application.interview_at).toLocaleString(
-                        "es-CO",
-                      )}
+                      {interviewDateParts(application.interview_at).full} · {interviewDateParts(application.interview_at).time} (Colombia)
                     </p>
                   ) : (
                     <p className="text-sm text-[var(--muted)]">
-                      {anotherSelected
+                      {withdrawn ? "Retiraste esta postulación. El historial se conserva." : application.released_at ? "Este proceso ya está cerrado. Consulta el motivo y los mensajes en el seguimiento." : anotherSelected
                         ? "La empresa cubrió esta vacante con otra persona. Esta postulación ya finalizó."
                         : selected
                           ? "Fuiste seleccionado. La empresa se pondrá en contacto contigo para continuar."
@@ -243,7 +265,7 @@ export function ApplicationsPage() {
                     </p>
                   )}
                 </div>
-                {["submitted", "seen"].includes(application.status) ? (
+                {isOpenProcess(application) && (["submitted", "seen"].includes(application.status) || responseState(application) === "paused") ? (
                   <button
                     className="text-sm font-semibold text-[var(--error)] hover:underline"
                     type="button"
@@ -256,7 +278,7 @@ export function ApplicationsPage() {
             </article>
           );
         })}
-        {visibleApplications.length === 0 ? (
+        {!loading && !loadError && visibleApplications.length === 0 ? (
           <div className="surface-card py-14 text-center">
             <FileCheck2 className="mx-auto text-[var(--muted)]" />
             <p className="mt-3 text-sm text-[var(--muted)]">
@@ -265,6 +287,8 @@ export function ApplicationsPage() {
           </div>
         ) : null}
       </section>
+      {!!visibleApplications.length && <Pagination page={paging.page} total={visibleApplications.length} pageSize={8} onChange={setPage} label="Páginas de postulaciones" busy={loading} />}
+      </div>
       <ConfirmModal
         open={Boolean(pendingWithdrawal)}
         title="Retirar postulación"

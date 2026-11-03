@@ -1,0 +1,38 @@
+.platform-guide { border:1px solid var(--line); border-radius:var(--panel-radius); background:var(--surface); overflow:hidden; }
+.platform-guide-heading { display:flex; flex-wrap:wrap; align-items:flex-start; gap:1rem; justify-content:space-between; padding:1.5rem; border-bottom:1px solid var(--line); }
+.platform-guide-heading>div { flex:1 1 300px; min-width:0; }
+.platform-guide-heading h2 { font-size:1.3rem; font-weight:700; margin-top:.5rem; }
+.platform-guide-heading p:last-child { color:var(--muted); font-size:.82rem; line-height:1.8; margin-top:.6rem; max-width:45rem; }
+.platform-guide-layout { display:grid; grid-template-columns:minmax(220px,.8fr) minmax(0,2fr); }
+.platform-guide-layout>nav { padding:1rem; border-right:1px solid var(--line); background:var(--surface-subtle); display:flex; flex-direction:column; gap:.3rem; }
+.platform-guide-layout>nav>button { display:flex; align-items:center; gap:.7rem; padding:.8rem; min-height:44px; text-align:left; border:1px solid transparent; border-radius:9px; font-size:.8rem; color:var(--muted); line-height:1.5; }
+.platform-guide-layout>nav>button>svg { flex:none; }
+.platform-guide-layout>nav>button>span { flex:1; min-width:0; overflow-wrap:anywhere; }
+.platform-guide-layout>nav>button>small { font-size:.68rem; }
+.platform-guide-layout>nav>button[aria-current] { border-color:var(--control-border); color:var(--accent); background:var(--surface); font-weight:650; }
+.platform-guide-content { min-width:0; padding:1.5rem; }
+.platform-guide-content>header { display:flex; align-items:flex-start; gap:.85rem; }
+.platform-guide-content>header p { color:var(--muted); font-size:.72rem; line-height:1.7; }
+.platform-guide-content h3 { font-size:1.25rem; font-weight:700; line-height:1.4; margin-top:.4rem; }
+.platform-guide-summary { color:var(--muted); font-size:.85rem; line-height:1.8; margin-block:1rem 1.3rem; }
+.platform-guide-content>ol { display:grid; gap:1.2rem; }
+.platform-guide-content li { display:flex; align-items:flex-start; gap:.8rem; font-size:.85rem; line-height:1.85; }
+.platform-guide-content li>span { width:26px; height:26px; display:grid; place-items:center; border-radius:7px; border:1px solid var(--line); color:var(--accent); background:var(--surface-subtle); flex:none; font-size:.73rem; }
+.platform-guide-content>aside { padding:1rem; border-left:3px solid var(--accent); background:var(--surface-subtle); border-radius:0 9px 9px 0; margin-block:1.4rem; font-size:.8rem; line-height:1.8; }
+.platform-guide-content>aside>p { color:var(--muted); margin-top:.35rem; }
+.platform-guide-content>footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.75rem; align-items:center; border-top:1px solid var(--line); padding-top:1rem; }
+.platform-guide-content>footer>div { display:flex; flex-wrap:wrap; gap:.5rem; }
+.public-capabilities { padding-block:3rem; border-top:1px solid var(--line); }
+.public-capabilities .ui-workspace-tabs { margin-block:1.5rem; }
+.public-capability-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; }
+.public-capability-grid>article { padding:1.25rem; border:1px solid var(--line); border-radius:var(--panel-radius); background:var(--surface); }
+.public-capability-grid h3 { font-size:.95rem; font-weight:700; }
+.public-capability-grid p { color:var(--muted); font-size:.82rem; line-height:1.8; margin-top:.6rem; }
+.public-differences { padding-block:3rem; border-top:1px solid var(--line); }
+.public-differences ol { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem 2rem; margin-top:1.75rem; }
+.public-differences li { display:flex; gap:1rem; padding-block:1rem; border-top:1px solid var(--line); }
+.public-differences li>span { color:var(--accent); font-size:.75rem; font-weight:700; }
+.public-differences h3 { font-size:1rem; font-weight:700; }
+.public-differences li p { font-size:.83rem; line-height:1.8; color:var(--muted); margin-top:.5rem; }
+@media(max-width:900px) { .public-capability-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:700px) { .platform-guide-layout { grid-template-columns:1fr; } .platform-guide-layout>nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-right:0; border-bottom:1px solid var(--line); padding:.75rem; } .platform-guide-layout>nav>button { padding:.65rem; gap:.4rem; font-size:.73rem; } .platform-guide-layout>nav>button>small { display:none; } .platform-guide-heading,.platform-guide-content { padding:1.1rem; } .platform-guide-content>footer>* { flex:1 1 230px; } .platform-guide-content>footer>div>button { flex:1; } .public-capability-grid,.public-differences ol { grid-template-columns:1fr; } }

@@ -1,0 +1,47 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { BrainCircuit, Plug, FlaskConical, CheckCircle2, ArrowRight, Database, Info, Activity } from "lucide-react";
+import { api, getApiErrorMessage } from "../api/client.js";
+import { OperationsPanel } from "../components/OperationsPanel.jsx";
+import { IntegrationStatus } from "../components/IntegrationStatus.jsx";
+import { InlineNotice } from "../components/ui/Panel.jsx";
+import { PageHeader } from "../components/PageHeader.jsx";
+import { useFeedback } from "../contexts/FeedbackContext.jsx";
+
+const statuses = { insufficient_data: "Faltan datos reales", insufficient_validation_data: "Faltan datos de evaluación", validated_shadow: "Evaluación aprobada", needs_review_shadow: "Necesita revisión", invalidated_consent_withdrawal: "Consentimiento retirado", invalidated_feedback_removal: "Señal retirada" };
+const tabs = [["overview", "Funcionamiento", BrainCircuit], ["connections", "Integraciones", Plug], ["experiments", "Pruebas de mejora", FlaskConical], ["operations", "Operación y correos", Activity]];
+
+export function ModelPage() {
+  const { confirm } = useFeedback();
+  const [tab, setTab] = useState("overview");
+  const [data, setData] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false), [notice, setNotice] = useState("");
+  async function load() { setData((await api.get("/admin/models")).data); }
+  async function refreshIntegrations() { setBusy(true); setError(""); try { await load(); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }
+  useEffect(() => { load().catch((failure) => setError(getApiErrorMessage(failure))); }, []);
+  async function evaluate() {
+    if (!await confirm({ title: "Evaluar el aprendizaje", description: "Se ejecutará un experimento con decisiones consentidas. El resultado quedará registrado y no cambiará el motor de selección.", confirmLabel: "Evaluar" })) return;
+    setBusy(true); setError("");
+    try { const { data: result } = await api.post("/admin/models/train", {}, { __quiet: true }); setNotice(statuses[result.status] || result.status); await load(); }
+    catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); }
+  }
+  return <div className="space-y-5"><PageHeader kicker="Control de plataforma" title="Motor e integraciones" description="Entiende cómo se comparan los perfiles, revisa las conexiones y consulta las evaluaciones del motor." />
+    {error && <InlineNotice error title="No pudimos cargar el estado" actions={<button className="button-secondary button-sm" onClick={refreshIntegrations} disabled={busy}>Reintentar</button>}>{error}</InlineNotice>}
+    <nav className="workspace-tabs" aria-label="Secciones del motor">{tabs.map(([key, label, Icon]) => <button key={key} aria-pressed={tab === key} onClick={() => setTab(key)}><Icon size={18} />{label}</button>)}</nav>
+    {!data && !error && <InlineNotice title="Consultando el estado">Cargando la configuración y los resultados registrados…</InlineNotice>}
+    {data && <>
+      {tab === "overview" && <>
+        <section className="surface-card engine-hero"><span className="engine-symbol"><BrainCircuit size={36} /></span><div><span className="status-chip"><CheckCircle2 size={14} />En funcionamiento</span><h2 className="mt-3 text-2xl font-bold">Compatibilidad por habilidades y contexto</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">Compara los requisitos de cada vacante con la trayectoria y las habilidades del perfil. La empresa decide cómo avanzar en cada proceso.</p><details className="mt-4 text-xs text-[var(--muted)]"><summary className="cursor-pointer">Ver versión técnica</summary><code className="mt-2 block break-all">{data.version}</code></details></div></section>
+        <div className="grid gap-4 md:grid-cols-3">{[["01", "Lee el perfil", "Organiza habilidades, experiencia y formación."], ["02", "Compara la vacante", "Calcula afinidad con sus requisitos y funciones."], ["03", "Explica el resultado", "Muestra coincidencias, brechas y opciones para reforzarlas."]].map(([number, title, copy]) => <article className="surface-card p-6" key={number}><p className="section-kicker">{number}</p><h3 className="mt-3 font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-[var(--muted)]">{copy}</p></article>)}</div>
+        <section className="surface-card flex flex-wrap items-center justify-between gap-4 p-6"><div><h3 className="font-bold">Seguimiento de procesos reales</h3><p className="mt-1 text-sm text-[var(--muted)]">{data.observed_processes} observados · {data.processes_advanced_to_interview} avanzados a entrevista. Se excluyen cuentas de demostración.</p></div><Link className="button-secondary" to="/admin/ecosistema">Revisar recomendaciones<ArrowRight size={16} /></Link></section>
+      </>}
+      {tab === "operations" && <OperationsPanel />}
+      {tab === "connections" && <>{data.mfa_review_active && <InlineNotice tone="warning">La verificación en dos pasos está temporalmente en pausa en este entorno.</InlineNotice>}<IntegrationStatus rows={data.integrations} busy={busy} onRefresh={refreshIntegrations} /></>}
+      {tab === "experiments" && <>
+        <section className="surface-card space-y-5 p-6"><div className="flex items-start gap-3"><Database className="text-[var(--accent)]" /><div><h2 className="text-xl font-bold">Aprender de decisiones explícitas</h2><p className="mt-2 text-sm leading-6 text-[var(--muted)]">Analiza si guardar u ocultar una vacante ayuda a entender intereses. Usa únicamente decisiones consentidas de usuarios reales. Los datos de demostración no cuentan.</p></div></div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[["rows", "Decisiones", data.minimum_data.rows], ["users", "Candidatos", data.minimum_data.users], ["jobs", "Vacantes", data.minimum_data.jobs], ["positives", "Intereses positivos", data.minimum_data.each_label]].map(([key, label, minimum]) => <div className="engine-meter" key={key}><span>{label}</span><strong>{data.training_data[key]}<small> / {minimum}</small></strong><progress max={minimum} value={Math.min(data.training_data[key], minimum)} aria-label={label} /></div>)}</div>
+        <p className="flex items-start gap-2 text-sm text-[var(--muted)]"><Info size={18} className="shrink-0" />También se necesitan {data.minimum_data.each_label} decisiones negativas. Se separan personas entre entrenamiento y evaluación.</p><div className="flex flex-wrap items-center gap-4"><button className="button-primary" disabled={busy || !data.training_data.ready} onClick={evaluate}>{busy ? "Evaluando…" : "Ejecutar evaluación"}</button><span className="text-sm text-[var(--muted)]">{data.training_data.ready ? "Muestra disponible para evaluar." : "La evaluación se habilitará cuando se alcance la muestra mínima."}</span></div>{notice && <p role="status">{notice}</p>}</section>
+        <section className="surface-card space-y-4 p-6"><h2 className="text-lg font-bold">Evaluaciones anteriores</h2><p className="text-sm text-[var(--muted)]">Los experimentos no se activan automáticamente ni deciden contrataciones.</p>{!data.experiments.length && <div className="learning-empty"><FlaskConical size={28} /><p>Las evaluaciones aparecerán aquí cuando haya datos suficientes.</p></div>}{data.experiments.map((row) => <details className="engine-experiment" key={row.id}><summary className="cursor-pointer"><strong>{statuses[row.status] || row.status}</strong><span>{new Date(row.created_at + "Z").toLocaleDateString("es-CO")}</span></summary><p className="mt-3 break-all text-xs text-[var(--muted)]">Versión: {row.version}</p>{row.metrics.auc != null && <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2"><div><dt>Capacidad de distinguir intereses (AUC)</dt><dd>{row.metrics.auc} · cuanto más cerca de 1, mejor</dd></div><div><dt>Error de probabilidad (Brier)</dt><dd>{row.metrics.brier} · cuanto menor, mejor; referencia {row.metrics.baseline_brier}</dd></div><div><dt>Decisiones de evaluación</dt><dd>{row.metrics.test_rows}</dd></div></dl>}</details>)}</section>
+      </>}
+    </>}
+  </div>;
+}

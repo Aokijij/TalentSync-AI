@@ -3,8 +3,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.api.schemas.job_quality import QualityDetails
 from app.api.schemas.language import LanguageLevel, unique_languages
+from app.api.schemas.matching import SkillRequirement, unique_requirements
 from app.domain.entities.job_sectors import JOB_SECTORS
+from app.domain.services.pipeline import default_stages
 
 
 class PipelineStage(BaseModel):
@@ -13,8 +16,9 @@ class PipelineStage(BaseModel):
 
 
 class ScreeningQuestionPublic(BaseModel):
+    category: Literal["screening", "work_scenario"] = "screening"
     id: str = Field(min_length=2, max_length=80, pattern=r"^[a-z0-9][a-z0-9_-]*$")
-    prompt: str = Field(min_length=5, max_length=300)
+    prompt: str = Field(min_length=5, max_length=1000)
     type: Literal["open", "choice"] = "open"
     required: bool = True
     options: list[str] = Field(default_factory=list, max_length=12)
@@ -31,28 +35,18 @@ class ScreeningQuestionPublic(BaseModel):
 
 
 class ScreeningQuestionConfig(ScreeningQuestionPublic):
-    keywords: list[str] = Field(default_factory=list, max_length=20)
-    preferred_options: list[str] = Field(default_factory=list, max_length=12)
+    """Choice scores are configured up front; open answers are reviewed later."""
+
     option_scores: dict[str, float] = Field(default_factory=dict, max_length=12)
-    positive_adjustment: float = Field(default=3, ge=0, le=10)
-    negative_adjustment: float = Field(default=-1, ge=-10, le=0)
 
     @model_validator(mode="after")
-    def validate_scoring(self):
-        if self.type == "choice" and any(
-            option not in self.options for option in self.preferred_options
-        ):
-            raise ValueError("La respuesta preferida debe pertenecer a las opciones")
-        if self.type == "choice" and any(
-            option not in self.options for option in self.option_scores
-        ):
-            raise ValueError("La valoración debe pertenecer a una opción existente")
-        if any(score < -10 or score > 10 for score in self.option_scores.values()):
-            raise ValueError("La valoración de cada opción debe estar entre -10 y 10")
-        if self.type == "open" and self.preferred_options:
-            raise ValueError("Las preguntas abiertas usan palabras clave")
+    def validate_choice_scores(self):
         if self.type == "open" and self.option_scores:
-            raise ValueError("Las preguntas abiertas no usan valoración automática")
+            raise ValueError("Las preguntas abiertas se valoran después de la postulación")
+        if any(option not in self.options for option in self.option_scores):
+            raise ValueError("La valoración debe pertenecer a una opción existente")
+        if any(score < -5 or score > 5 for score in self.option_scores.values()):
+            raise ValueError("La valoración de cada opción debe estar entre -5 y +5")
         return self
 
 
@@ -64,25 +58,33 @@ class PipelineStagesMixin(BaseModel):
             raise ValueError("Las etapas del proceso no pueden repetirse")
         return self
 
+    @model_validator(mode="after")
+    def secondary_education_is_completed_and_has_no_study_fields(self):
+        if getattr(self, "required_education_level", None) == "secondary":
+            self.required_study_fields = []
+            if self.quality_details is not None:
+                self.quality_details.education_accepts_in_progress = False
+        return self
+
 
 def default_pipeline_stages() -> list[PipelineStage]:
-    return [
-        PipelineStage(id="submitted", title="Recibidas"),
-        PipelineStage(id="reviewing", title="En revisión"),
-        PipelineStage(id="interview", title="Entrevista"),
-        PipelineStage(id="hired", title="Contratados"),
-        PipelineStage(id="rejected", title="No seleccionados"),
-    ]
+    return [PipelineStage(**stage) for stage in default_stages()]
 
 
 class JobCreate(PipelineStagesMixin):
+    quality_details: QualityDetails | None = None
+    blind_hiring: bool = True
+    response_days: int = Field(default=5, ge=1, le=30)
+    skill_requirements: list[SkillRequirement] = Field(default_factory=list, max_length=50)
+    _unique_requirements = field_validator("skill_requirements")(unique_requirements)
+    status: Literal["active", "draft"] = "active"
     languages: list[LanguageLevel] = Field(default_factory=list, max_length=20)
     _unique_languages = field_validator("languages")(unique_languages)
     company_id: int | None = None
     title: str = Field(min_length=2, max_length=180)
     description: str = Field(min_length=10)
     requirements: str = Field(min_length=10)
-    salary: float | None = None
+    salary: float | None = Field(default=None, ge=0, le=1_000_000_000, allow_inf_nan=False)
     location: str | None = None
     department: str | None = None
     modality: str = "remote"
@@ -95,6 +97,14 @@ class JobCreate(PipelineStagesMixin):
     application_questions: list[ScreeningQuestionConfig] = Field(
         default_factory=list, max_length=10
     )
+    required_education_level: Literal["secondary", "technical", "technologist", "university", "postgraduate"] | None = None
+    required_study_fields: list[str] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def guided_vacancies_use_blind_hiring(self):
+        if self.quality_details is not None:
+            self.blind_hiring = True
+        return self
 
     @field_validator("application_questions")
     @classmethod
@@ -112,18 +122,22 @@ class JobCreate(PipelineStagesMixin):
 
 
 class JobUpdate(PipelineStagesMixin):
+    quality_details: QualityDetails | None = None
+    response_days: int | None = Field(default=None, ge=1, le=30)
+    skill_requirements: list[SkillRequirement] | None = Field(default=None, max_length=50)
+    _unique_requirements = field_validator("skill_requirements")(unique_requirements)
     languages: list[LanguageLevel] | None = Field(default=None, max_length=20)
     _unique_languages = field_validator("languages")(unique_languages)
     title: str | None = Field(default=None, min_length=2, max_length=180)
     description: str | None = Field(default=None, min_length=10)
     requirements: str | None = Field(default=None, min_length=10)
-    salary: float | None = None
+    salary: float | None = Field(default=None, ge=0, le=1_000_000_000, allow_inf_nan=False)
     location: str | None = None
     department: str | None = None
     modality: str | None = None
     employment_type: str | None = None
     sector: str | None = None
-    status: Literal["active", "paused", "filled", "closed"] | None = None
+    status: Literal["active", "draft", "paused", "filled", "closed"] | None = None
     benefits: list[str] | None = None
     pipeline_stages: list[PipelineStage] | None = Field(
         default=None, min_length=2, max_length=12
@@ -131,6 +145,8 @@ class JobUpdate(PipelineStagesMixin):
     application_questions: list[ScreeningQuestionConfig] | None = Field(
         default=None, max_length=10
     )
+    required_education_level: Literal["secondary", "technical", "technologist", "university", "postgraduate"] | None = None
+    required_study_fields: list[str] | None = Field(default=None, max_length=20)
 
     @field_validator("application_questions")
     @classmethod
@@ -150,8 +166,17 @@ class JobUpdate(PipelineStagesMixin):
 
 
 class JobResponse(BaseModel):
+    quality_details: QualityDetails | None = None
+    quality_revision: int = 0
+    quality_summary: dict | None = None
+    employer_trust: dict = Field(default_factory=dict)
+    blind_hiring: bool = False
+    response_days: int = 5
+    skill_requirements: list[SkillRequirement] = Field(default_factory=list)
     languages: list[LanguageLevel] = Field(default_factory=list)
     application_questions: list[ScreeningQuestionPublic] = Field(default_factory=list)
+    required_education_level: str | None = None
+    required_study_fields: list[str] = Field(default_factory=list)
     id: int
     company_id: int
     company_name: str | None = None
@@ -181,6 +206,14 @@ class JobResponse(BaseModel):
     source_portal: str | None = None
     external_url: str | None = None
     expires_at: datetime | None = None
+    external_check_state: str = "pending"
+    external_checked_at: datetime | None = None
+    external_verified_at: datetime | None = None
+    external_check_reason: str = ""
+    external_available: bool = False
+    external_published_at: datetime | None = None
+    external_content: dict | None = None
+    external_admission_reasons: list[str] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 
@@ -194,3 +227,10 @@ class PublicStatsResponse(BaseModel):
     companies: int
     candidates: int
     applications: int
+
+
+class QualityPreview(JobCreate):
+    job_id: int | None = None
+    title: str = Field(default="", max_length=180)
+    description: str = Field(default="", max_length=20000)
+    requirements: str = Field(default="", max_length=20000)

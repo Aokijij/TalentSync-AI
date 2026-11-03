@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
 
 from app.domain.entities.enums import UserRole
 from app.infrastructure.database.models import Profile, User
@@ -9,15 +10,21 @@ from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 class UserRepository(SqlAlchemyRepository[User]):
     def find_by_email(self, email: str) -> User | None:
-        return self.session.query(User).filter(User.email == email).first()
+        return self.session.query(User).filter(func.lower(User.email) == email.casefold()).first()
 
     def candidates_with_profiles(self) -> list[User]:
         return (
             self.session.query(User)
+            .options(joinedload(User.profile))
             .join(Profile)
-            .filter(User.role == UserRole.CANDIDATE)
+            .filter(User.role == UserRole.CANDIDATE, User.registration_pending.is_(False))
             .all()
         )
+
+    def candidates_for_ids(self, user_ids):
+        if not user_ids:
+            return []
+        return self.session.query(User).options(joinedload(User.profile)).join(Profile).filter(User.role == UserRole.CANDIDATE, User.registration_pending.is_(False), User.id.in_(user_ids)).all()
 
     def count(self) -> int:
         return self.session.query(User).count()

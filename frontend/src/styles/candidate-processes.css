@@ -1,0 +1,95 @@
+.candidate-processes { display:grid; gap:1.5rem; min-width:0; }
+.candidate-processes>.page-heading { padding-bottom:.3rem; border-bottom:0; }
+.candidate-applications-panel { display:grid; gap:1.5rem; }
+.candidate-applications-panel[hidden] { display:none; }
+.candidate-application-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1.25rem; padding:1.1rem 1.25rem; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
+.candidate-process-metrics { display:flex; flex-wrap:wrap; align-items:center; gap:1.5rem; margin:0; }
+.candidate-process-metrics>div { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:.7rem; }
+.candidate-process-metrics>div+div { padding-left:1.5rem; border-left:1px solid var(--line); }
+.candidate-process-metrics dt { display:flex; align-items:center; gap:.4rem; grid-column:2; grid-row:1; color:var(--muted); font-size:.77rem; line-height:1.5; }
+.candidate-process-metrics dt>svg { flex:none; }
+.candidate-process-metrics dd { grid-column:1; grid-row:1; margin:0; font-size:1.8rem; font-weight:750; line-height:1.2; letter-spacing:-.04em; color:var(--ink-strong); font-variant-numeric:tabular-nums; }
+.candidate-process-metrics>.is-active dd,.candidate-process-metrics>.is-active dt>svg { color:var(--accent); }
+.candidate-process-state-filter { display:grid; gap:.4rem; min-width:220px; font-size:.73rem; font-weight:600; color:var(--muted); }
+.candidate-process-state-filter>.field-control { width:100%; min-height:42px; margin:0; padding:.55rem .85rem; border-radius:9px; font-size:.8rem; font-weight:500; color:var(--ink); background:var(--surface-subtle); }
+.candidate-agenda .ui-panel-heading { align-items:center; }
+.candidate-agenda-timezone { color:var(--muted); font-size:.75rem; padding:.35rem .55rem; border:1px solid var(--line); border-radius:7px; }
+.candidate-agenda-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.25rem .6rem; }
+.candidate-agenda-groups { display:flex; flex-wrap:wrap; gap:.3rem; padding:.25rem; border:1px solid var(--line); background:var(--surface-subtle); border-radius:11px; }
+.candidate-agenda-groups button { display:inline-flex; align-items:center; gap:.5rem; min-height:38px; padding:.45rem .7rem; color:var(--muted); font-size:.77rem; border-radius:8px; }
+.candidate-agenda-groups button[aria-pressed=true] { background:var(--surface); color:var(--accent); box-shadow:0 1px 4px #0001; font-weight:700; }
+.candidate-agenda-groups button>span { padding:.1rem .35rem; border-radius:5px; background:var(--surface-subtle); font-size:.68rem; }
+.candidate-agenda-filters { display:flex; flex:1 1 420px; justify-content:flex-end; gap:.6rem; }
+.candidate-agenda-search,.candidate-agenda-mode { display:flex; align-items:center; position:relative; min-width:0; }
+.candidate-agenda-search { flex:1; max-width:320px; }
+.candidate-agenda-filters label>svg { position:absolute; left:.7rem; color:var(--muted); pointer-events:none; }
+.candidate-agenda-filters input,.candidate-agenda-filters .field-control { width:100%; min-height:42px; padding:.55rem .75rem .55rem 2.1rem; border:1px solid var(--control-border); border-radius:9px; font-size:.78rem; background:var(--surface); color:var(--ink); }
+.candidate-agenda-filters input:focus { outline:2px solid var(--accent); outline-offset:2px; }
+.candidate-agenda-context { margin:0; padding:.2rem 1.25rem 1rem; font-size:.76rem; color:var(--muted); line-height:1.6; }
+.candidate-interview-list { list-style:none; padding:0; margin:0; border-top:1px solid var(--line); }
+.candidate-interview-list>li+li { border-top:1px solid var(--line); }
+.candidate-interview-summary { display:flex; align-items:center; width:100%; min-width:0; gap:1rem; padding:.85rem 1.25rem; text-align:left; }
+.candidate-interview-summary:hover,.candidate-interview-list>.is-expanded { background:var(--surface-subtle); }
+.candidate-interview-summary>.interview-date-tile { width:48px; min-height:54px; background:var(--surface); border-radius:9px; }
+.candidate-interview-summary .interview-date-tile strong { font-size:1.2rem; }
+.candidate-interview-identity { display:grid; gap:.25rem; min-width:0; flex:1; line-height:1.5; }
+.candidate-interview-identity>span:first-child { color:var(--muted); font-size:.72rem; }
+.candidate-interview-identity>strong { color:var(--ink-strong); font-size:.85rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.candidate-interview-meta { display:flex; flex-wrap:wrap; gap:.15rem .4rem; font-size:.72rem; color:var(--muted); }
+.candidate-interview-meta time { display:inline-flex; flex-wrap:wrap; gap:.25rem .45rem; }
+.candidate-interview-meta time>strong { font-weight:600; white-space:nowrap; color:var(--ink); }
+.candidate-interview-short-date { display:none; }
+.candidate-interview-status { flex:none; padding:.3rem .5rem; border-radius:6px; color:var(--accent); background:color-mix(in srgb,var(--accent) 9%,var(--surface)); font-size:.67rem; font-weight:650; }
+.candidate-interview-status.is-history { color:var(--muted); background:var(--surface); }
+.candidate-interview-caret { flex:none; color:var(--muted); transition:transform .15s; }
+.candidate-interview-summary[aria-expanded=true]>.candidate-interview-caret { transform:rotate(180deg); }
+.candidate-interview-expanded { display:grid; gap:1rem; grid-template-columns:minmax(0,1fr) auto; padding:0 1.25rem 1rem 5.25rem; }
+.candidate-interview-expanded h3 { font-size:.72rem; font-weight:650; color:var(--muted); }
+.candidate-interview-expanded .interview-details { margin-top:.4rem; }
+.candidate-interview-pending { font-size:.75rem; color:var(--muted); line-height:1.6; margin-top:.65rem; }
+.candidate-interview-actions { display:flex; min-width:0; align-items:flex-start; gap:.6rem; flex-wrap:wrap; justify-content:flex-end; }
+.candidate-interview-actions>.button-secondary { min-height:42px; gap:.4rem; padding:.6rem .8rem; border-radius:9px; font-size:.77rem; }
+.candidate-interview-actions:has(.calendar-sync-trigger[aria-expanded=true]) { grid-column:1/-1; justify-content:flex-start; }
+.candidate-interview-actions .interview-calendar-actions { min-width:0; margin-left:0; }
+.candidate-interview-actions .calendar-sync-options { max-width:620px; }
+.candidate-agenda-empty { display:grid; justify-items:center; gap:.65rem; padding:2.5rem 1.25rem; color:var(--muted); text-align:center; font-size:.8rem; line-height:1.6; }
+.candidate-agenda-empty>svg { color:var(--accent); }
+.candidate-agenda-empty h3 { color:var(--ink-strong); font-weight:700; }
+.candidate-agenda .directory-pagination { margin:0; padding:.9rem 1.25rem; border-top:1px solid var(--line); }
+@media(max-width:900px) { .candidate-agenda-filters { flex-basis:100%; justify-content:stretch; } .candidate-agenda-search { max-width:none; } .candidate-interview-expanded { grid-template-columns:minmax(0,1fr); } .candidate-interview-actions { justify-content:flex-start; } }
+@media(max-width:600px) {
+ .candidate-processes { gap:1.15rem; }
+ .candidate-processes>.ui-workspace-tabs { width:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.25rem; }
+ .candidate-processes>.ui-workspace-tabs>button { min-width:0; padding:.65rem .35rem; justify-content:center; font-size:.76rem; gap:.35rem; }
+ .candidate-processes>.ui-workspace-tabs>button>svg { width:16px; flex:none; }
+ .candidate-application-toolbar { padding:1rem; gap:1rem; }
+ .candidate-process-metrics { width:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.85rem; }
+ .candidate-process-metrics>div { grid-template-columns:minmax(0,1fr); gap:.45rem; }
+ .candidate-process-metrics>div+div { padding-left:.85rem; }
+ .candidate-process-metrics dt { grid-column:1; grid-row:2; gap:.35rem; font-size:.7rem; }
+ .candidate-process-metrics dd { grid-column:1; grid-row:1; font-size:1.65rem; }
+ .candidate-process-state-filter { min-width:0; width:100%; padding-top:.85rem; border-top:1px solid var(--line); }
+ .candidate-agenda-toolbar { padding:.85rem .85rem .5rem; gap:.75rem; }
+ .candidate-agenda-groups { width:100%; gap:.15rem; }
+ .candidate-agenda-groups button { flex:1; justify-content:center; padding:.4rem; font-size:.72rem; }
+ .candidate-agenda-filters { flex-wrap:wrap; }
+ .candidate-agenda-search,.candidate-agenda-mode { flex:1 1 100%; }
+ .candidate-agenda-context { padding:.3rem .85rem .85rem; }
+ .candidate-agenda-timezone { display:none; }
+ .candidate-interview-summary { display:grid; grid-template-columns:44px minmax(0,1fr) 17px; gap:.5rem .7rem; padding:.85rem; }
+ .candidate-interview-summary>.interview-date-tile { width:44px; grid-row:1/3; align-self:start; }
+ .candidate-interview-identity { grid-column:2; }
+ .candidate-interview-identity>strong { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+ .candidate-interview-full-date { display:none; }
+ .candidate-interview-short-date { display:inline; }
+ .candidate-interview-status { grid-column:2; justify-self:start; font-size:.62rem; }
+ .candidate-interview-caret { grid-column:3; grid-row:1; }
+ .candidate-interview-expanded { padding:0 .85rem .85rem; }
+ .candidate-interview-actions { flex-direction:column; flex-wrap:nowrap; align-items:stretch; }
+ .candidate-interview-actions>.button-secondary { justify-content:center; }
+ .candidate-interview-actions .interview-calendar-actions { width:100%; flex-basis:auto; }
+ .candidate-agenda .directory-pagination { padding:.75rem .85rem; display:grid; gap:.5rem; }
+ .candidate-agenda .directory-pagination>div { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
+ .candidate-agenda .directory-pagination>div>span { grid-column:1/-1; grid-row:1; text-align:center; font-size:.72rem; }
+ .candidate-agenda .directory-pagination button { min-height:40px; justify-content:center; }
+}

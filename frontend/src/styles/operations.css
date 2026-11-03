@@ -1,0 +1,28 @@
+.operations-workspace { display:grid; gap:1rem; }
+.operations-workspace>header { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+.operations-workspace h2,.operations-workspace h3 { display:flex; align-items:center; gap:.6rem; font-weight:700; }
+.operations-workspace p,.operations-workspace small { color:var(--muted); font-size:.8rem; line-height:1.6; }
+.operations-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
+.operations-summary article { padding:1.1rem; display:grid; gap:.5rem; }
+.operations-summary span { color:var(--muted); font-size:.8rem; }
+.operations-summary strong { color:var(--warning); font-size:.9rem; }
+.operations-summary strong[data-ready=true] { color:var(--success); }
+.operations-section { display:grid; gap:1rem; padding:1.25rem; min-width:0; }
+.operations-table-scroll { overflow:auto; }
+.operations-section table { width:100%; border-collapse:collapse; text-align:left; font-size:.75rem; }
+.operations-section th,.operations-section td { padding:.7rem .5rem; border-bottom:1px solid var(--line); white-space:nowrap; }
+.operations-section th { color:var(--muted); }
+.operations-section code { font-family:monospace; }
+.operations-workspace .ui-inline-notice ul { list-style:disc inside; line-height:1.9; }
+.operations-counts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; }
+.operations-counts dt { font-size:.75rem; color:var(--muted); }
+.operations-counts dd { font-size:1.3rem; font-weight:700; margin-top:.4rem; }
+.mail-delivery-list { display:grid; gap:0; }
+.mail-delivery-list li { display:flex; justify-content:space-between; align-items:center; gap:.7rem; padding:1rem 0; border-bottom:1px solid var(--line); }
+.mail-delivery-list li>div { display:grid; gap:.3rem; }
+.mail-delivery-list strong { font-size:.85rem; }
+.mail-delivery-list li>div>span { font-size:.75rem; color:var(--muted); }
+.mail-delivery-list [data-state=delivered] { color:var(--success); }
+.mail-delivery-list :is([data-state=bounced],[data-state=failed],[data-state=complained]) { color:var(--error); }
+.operations-section footer,.operations-section footer>div { display:flex; gap:.65rem; justify-content:space-between; align-items:center; flex-wrap:wrap; font-size:.75rem; }
+@media(max-width:600px) { .operations-summary,.operations-counts { grid-template-columns:1fr 1fr; } .mail-delivery-list li { align-items:flex-start; flex-direction:column; } }

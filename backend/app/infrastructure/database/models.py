@@ -6,7 +6,9 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -14,12 +16,31 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.entities.enums import ApplicationStatus, UserRole
+from app.domain.services.blind_hiring import candidate_alias, identity_hidden
 from app.domain.services.external_sources import external_portal
+from app.domain.services.reputation import company_health
 from app.infrastructure.database.session import Base
+
+
+class EventLog(Base):
+    __tablename__ = "event_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    actor_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    entity_type: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    entity_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    details: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False, index=True
+    )
 
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
@@ -30,6 +51,14 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole), default=UserRole.CANDIDATE, nullable=False
     )
+    email_verified: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    registration_pending: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    legal_acceptance: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    mfa_secret: Mapped[str | None] = mapped_column(Text)
+    mfa_enabled: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    mfa_last_counter: Mapped[int | None] = mapped_column(Integer)
+    recovery_codes: Mapped[list[str]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
+    privacy_preferences: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
@@ -49,6 +78,92 @@ class User(Base):
     company_follows: Mapped[list["CompanyFollower"]] = relationship(
         back_populates="candidate", cascade="all, delete-orphan"
     )
+    sessions: Mapped[list["UserSession"]] = relationship(cascade="all, delete-orphan")
+    account_tokens: Mapped[list["AccountToken"]] = relationship(cascade="all, delete-orphan")
+    memberships: Mapped[list["CompanyMember"]] = relationship(cascade="all, delete-orphan")
+    learning_plans: Mapped[list["LearningPlan"]] = relationship(cascade="all, delete-orphan")
+    assessment_attempts: Mapped[list["AssessmentAttempt"]] = relationship(cascade="all, delete-orphan")
+    reported_incidents: Mapped[list["TrustIncident"]] = relationship(cascade="all, delete-orphan")
+    recommendation_feedback: Mapped[list["RecommendationFeedback"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    offer_feedback: Mapped[list["OfferFeedback"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    interview_participants: Mapped[list["InterviewParticipant"]] = relationship(cascade="all, delete-orphan")
+    social_identities: Mapped[list["SocialIdentity"]] = relationship(cascade="all, delete-orphan")
+    oauth_link_attempts: Mapped[list["OAuthAttempt"]] = relationship(cascade="all, delete-orphan", foreign_keys="OAuthAttempt.link_user_id")
+    resume_versions: Mapped[list["ResumeVersion"]] = relationship(cascade="all, delete-orphan")
+
+
+class SocialIdentity(Base):
+    __tablename__ = "social_identities"
+    __table_args__ = (UniqueConstraint("provider", "subject", name="uq_social_identity_subject"),
+                      UniqueConstraint("user_id", "provider", name="uq_social_identity_user_provider"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class OAuthAttempt(Base):
+    __tablename__ = "oauth_attempts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    purpose: Mapped[str] = mapped_column(String(10), default="login", server_default="login", nullable=False)
+    link_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    link_session_id: Mapped[int | None] = mapped_column(ForeignKey("user_sessions.id", ondelete="CASCADE"), index=True)
+    state_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    browser_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    verifier_cipher: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    csrf_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    user_agent: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
+    mfa_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
+    authentication_method: Mapped[str] = mapped_column(String(20), default="password", server_default="password", nullable=False)
+    authentication_authority: Mapped[str] = mapped_column(String(64), default="", server_default="", nullable=False)
+    oauth_link_attempts: Mapped[list["OAuthAttempt"]] = relationship(cascade="all, delete-orphan", foreign_keys="OAuthAttempt.link_session_id")
+
+
+class AccountToken(Base):
+    __tablename__ = "account_tokens"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    purpose: Mapped[str] = mapped_column(String(40), nullable=False)
+    target_email: Mapped[str | None] = mapped_column(String(255))
+    context: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class MailMessage(Base):
+    __tablename__ = "mail_messages"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    recipient: Mapped[str] = mapped_column(String(255), nullable=False)
+    subject: Mapped[str] = mapped_column(String(180), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    delivery_state: Mapped[str] = mapped_column(String(16), default="local", server_default="local", nullable=False, index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime)
+    lease_token: Mapped[str] = mapped_column(String(64), default="", server_default="", nullable=False)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    provider_message_id: Mapped[str | None] = mapped_column(String(100), unique=True, index=True)
+    transport_status: Mapped[str | None] = mapped_column(String(24))
+    provider_event_at: Mapped[datetime | None] = mapped_column(DateTime)
+    failure_kind: Mapped[str] = mapped_column(String(32), default="", server_default="", nullable=False)
 
 
 class Profile(Base):
@@ -60,6 +175,8 @@ class Profile(Base):
     )
     profession: Mapped[str | None] = mapped_column(String(160))
     skills: Mapped[list[str]] = mapped_column(JSON, default=list)
+    preferences: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    evidence: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     experience: Mapped[str | None] = mapped_column(Text)
     education: Mapped[str | None] = mapped_column(Text)
     location: Mapped[str | None] = mapped_column(String(120))
@@ -94,6 +211,92 @@ class Profile(Base):
     def photo_url(self) -> str | None:
         return f"/api/v1/profiles/{self.user_id}/photo" if self.photo_filename else None
 
+    @property
+    def mobility(self):
+        return (self.preferences or {}).get("mobility", {})
+
+    @property
+    def driving_licenses(self):
+        return (self.preferences or {}).get("driving_licenses", [])
+
+    @property
+    def identification(self):
+        return (self.preferences or {}).get("identification")
+
+    @property
+    def personal_visibility(self):
+        return (self.preferences or {}).get("personal_visibility", {})
+
+    @property
+    def birth_date(self):
+        return (self.preferences or {}).get("birth_date")
+
+    @property
+    def professional_cards(self):
+        return (self.preferences or {}).get("professional_cards", [])
+
+    @property
+    def links(self):
+        return (self.preferences or {}).get("professional_links", [])
+
+    @property
+    def summary_mode(self):
+        return "custom" if (self.preferences or {}).get("professional_summary_mode") == "custom" else "automatic"
+
+    @property
+    def skill_levels(self):
+        return (self.preferences or {}).get("skill_levels", {})
+
+    @property
+    def skill_level_sources(self):
+        return (self.preferences or {}).get("skill_level_sources", {})
+
+    @property
+    def cv_skill_context(self):
+        from app.domain.services.skill_context import profile_skill_context
+        return profile_skill_context(self)
+
+    @property
+    def cv_mention_decisions(self):
+        return (self.preferences or {}).get("cv_mention_decisions", {})
+
+    @property
+    def resume_export_options(self):
+        return (self.preferences or {}).get("resume_export_options", {})
+
+    @property
+    def cv_entity_review(self):
+        return {}  # Retired candidate-facing diagnostic; kept for API compatibility.
+
+    @property
+    def cv_guidance(self):
+        from app.domain.services.career_guidance import career_guidance
+        return career_guidance(self)
+
+
+class ResumeVersion(Base):
+    __tablename__ = "resume_versions"
+    __table_args__ = (UniqueConstraint("user_id", "request_key", name="uq_resume_version_request"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    job_id: Mapped[int | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"), index=True)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    snapshot: Mapped[dict] = mapped_column(JSON, nullable=False)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    pdf_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    pdf: Mapped[bytes] = mapped_column(LargeBinary, deferred=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CareerCoachState(Base):
+    __tablename__ = "career_coach_states"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
+    content: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    __mapper_args__ = {"version_id_col": version}
+
 
 class Company(Base):
     __tablename__ = "companies"
@@ -114,11 +317,18 @@ class Company(Base):
     cover_filename: Mapped[str | None] = mapped_column(String(255))
     is_external: Mapped[bool] = mapped_column(default=False, nullable=False)
     source_name: Mapped[str | None] = mapped_column(String(80), index=True)
+    verification_required: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    verification_status: Mapped[str] = mapped_column(String(30), default="pending", server_default="pending", nullable=False)
+    verification_submission: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    verification_feedback: Mapped[str | None] = mapped_column(Text)
 
     owner: Mapped[User] = relationship()
     jobs: Mapped[list["Job"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"
     )
+    incidents: Mapped[list["TrustIncident"]] = relationship(back_populates="company", cascade="all, delete-orphan")
+    members: Mapped[list["CompanyMember"]] = relationship(cascade="all, delete-orphan")
+    invitations: Mapped[list["CompanyInvitation"]] = relationship(cascade="all, delete-orphan")
     followers: Mapped[list["CompanyFollower"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"
     )
@@ -128,8 +338,34 @@ class Company(Base):
         return f"/api/v1/companies/{self.id}/logo" if self.logo_filename else None
 
     @property
+    def platform_score(self):
+        return None if self.is_external else company_health(self)["score"]
+
+    @property
     def cover_url(self) -> str | None:
         return f"/api/v1/companies/{self.id}/cover" if self.cover_filename else None
+
+
+class CompanyMember(Base):
+    __tablename__ = "company_members"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)
+    active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    assigned_job_ids: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
+
+
+class CompanyInvitation(Base):
+    __tablename__ = "company_invitations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    assigned_job_ids: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class CompanyFollower(Base):
@@ -159,6 +395,8 @@ class CompanyFollower(Base):
 class Job(Base):
     __tablename__ = "jobs"
     __table_args__ = (
+        Index("ix_jobs_company_status_created", "company_id", "status", "created_at"),
+        Index("ix_jobs_external_next_check", "source_kind", "status", "external_next_check_at"),
         UniqueConstraint("source_name", "external_id", name="uq_job_external_source"),
     )
 
@@ -167,6 +405,9 @@ class Job(Base):
     title: Mapped[str] = mapped_column(String(180), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     requirements: Mapped[str] = mapped_column(Text, nullable=False)
+    quality_details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    quality_revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    offer_feedback: Mapped[list["OfferFeedback"]] = relationship(back_populates="job", cascade="all, delete-orphan")
     salary: Mapped[float | None] = mapped_column(Float)
     location: Mapped[str | None] = mapped_column(String(120))
     department: Mapped[str | None] = mapped_column(String(120))
@@ -182,7 +423,14 @@ class Job(Base):
     application_questions: Mapped[list[dict]] = mapped_column(
         JSON, default=list, server_default="[]", nullable=False
     )
+    required_education_level: Mapped[str | None] = mapped_column(String(40))
+    required_study_fields: Mapped[list[str]] = mapped_column(
+        JSON, default=list, server_default="[]", nullable=False
+    )
     skills: Mapped[list[str]] = mapped_column(JSON, default=list)
+    skill_requirements: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
+    response_days: Mapped[int] = mapped_column(Integer, default=7, server_default="7", nullable=False)
+    blind_hiring: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
@@ -195,8 +443,30 @@ class Job(Base):
     external_url: Mapped[str | None] = mapped_column(String(1000))
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime)
+    external_published_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    external_content: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    external_check_state: Mapped[str] = mapped_column(String(24), default="pending", server_default="pending", nullable=False)
+    external_checked_at: Mapped[datetime | None] = mapped_column(DateTime)
+    external_verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    external_check_reason: Mapped[str] = mapped_column(String(40), default="", server_default="", nullable=False)
+    external_next_check_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    @property
+    def external_available(self):
+        from app.domain.services.job_freshness import externally_available
+        return externally_available(self)
+
+    @property
+    def external_admission_reasons(self):
+        from app.domain.services.external_job_content import admission_reasons
+        if self.source_kind != "external":
+            return []
+        clarity = (self.external_content or {}).get("admission", {})
+        return admission_reasons(self.external_published_at, self.skills) + ([] if clarity.get("clarity_passed") else clarity.get("clarity_reasons") or ["clarity_pending"])
 
     company: Mapped[Company] = relationship(back_populates="jobs")
+    recommendation_feedback: Mapped[list["RecommendationFeedback"]] = relationship(back_populates="job", cascade="all, delete-orphan")
     applications: Mapped[list["Application"]] = relationship(
         back_populates="job", cascade="all, delete-orphan"
     )
@@ -205,8 +475,18 @@ class Job(Base):
     )
 
     @property
+    def quality_summary(self) -> dict:
+        from app.domain.services.offer_review import review_offer
+        review = review_offer(self)
+        return {key: review[key] for key in ("score", "level", "can_publish", "rating", "rating_scale")}
+
+    @property
     def company_name(self) -> str | None:
         return self.company.name if self.company else None
+
+    @property
+    def employer_trust(self) -> dict:
+        return company_health(self.company) if self.company else {}
 
     @property
     def applications_count(self) -> int:
@@ -246,10 +526,26 @@ class Job(Base):
 class Application(Base):
     __tablename__ = "applications"
     __table_args__ = (
+        Index("ix_applications_job_status", "job_id", "status"),
+        Index("ix_applications_job_reviewed", "job_id", "reviewed_at"),
+        Index("ix_applications_job_paused", "job_id", "response_paused_at"),
         UniqueConstraint("user_id", "job_id", name="uq_application_user_job"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
+    identity_revealed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    first_response_at: Mapped[datetime | None] = mapped_column(DateTime)
+    response_due_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    response_overdue_at: Mapped[datetime | None] = mapped_column(DateTime)
+    response_paused_at: Mapped[datetime | None] = mapped_column(DateTime)
+    deadline_missed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    deadline_extension_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime)
+    candidate_feedback: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    coach_snapshot: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    __mapper_args__ = {"version_id_col": version}
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), nullable=False)
     status: Mapped[ApplicationStatus] = mapped_column(
@@ -259,7 +555,11 @@ class Application(Base):
         DateTime, default=datetime.utcnow, nullable=False
     )
     recruiter_notes: Mapped[str | None] = mapped_column(Text)
+    interview_evaluations: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     interview_at: Mapped[datetime | None] = mapped_column(DateTime)
+    interview_details: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    interview_completed_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
     pipeline_stage: Mapped[str | None] = mapped_column(String(80), nullable=True)
     resolution_reason: Mapped[str | None] = mapped_column(String(80), nullable=True)
     screening_answers: Mapped[list[dict]] = mapped_column(
@@ -271,10 +571,20 @@ class Application(Base):
 
     user: Mapped[User] = relationship(back_populates="applications")
     job: Mapped[Job] = relationship(back_populates="applications")
+    interview_room: Mapped["InterviewRoom | None"] = relationship(back_populates="application", cascade="all, delete-orphan")
+    trust_incidents: Mapped[list["TrustIncident"]] = relationship()
 
     @property
     def job_title(self) -> str | None:
         return self.job.title if self.job else None
+
+    @property
+    def coach_draft_id(self):
+        return (self.coach_snapshot or {}).get("draft_id")
+
+    @property
+    def resume_version_id(self):
+        return (self.coach_snapshot or {}).get("resume_version_id")
 
     @property
     def company_name(self) -> str | None:
@@ -282,29 +592,26 @@ class Application(Base):
 
     @property
     def candidate_name(self) -> str | None:
-        return self.user.name if self.user else None
+        return candidate_alias(self.job_id, self.user_id) if identity_hidden(self.job, self) else self.user.name if self.user else None
 
     @property
     def pipeline_stage_title(self) -> str | None:
         if not self.job:
             return None
-        stage_id = self.pipeline_stage
-        if stage_id is None:
-            value = (
-                self.status.value if hasattr(self.status, "value") else str(self.status)
-            )
-            stage_id = {
-                "seen": "submitted",
-                "reviewing": "reviewing",
-                "shortlisted": "reviewing",
-                "technical_interview": "interview",
-                "psychometric_test": "interview",
-                "accepted": "hired",
-            }.get(value, value)
-        for stage in self.job.pipeline_stages or []:
+        from app.domain.services.pipeline import stage_id_for, stages_for
+
+        stage_id = stage_id_for(self)
+
+        for stage in stages_for(self.job):
             if stage.get("id") == stage_id:
                 return stage.get("title")
         return stage_id.replace("_", " ").capitalize()
+
+    @property
+    def response_state(self) -> str:
+        from app.domain.services.response_deadlines import response_state
+
+        return response_state(self)
 
     @property
     def base_match_percentage(self) -> float | None:
@@ -331,6 +638,7 @@ class Application(Base):
 class Recommendation(Base):
     __tablename__ = "recommendations"
     __table_args__ = (
+        Index("ix_recommendations_job_user", "job_id", "user_id"),
         UniqueConstraint("user_id", "job_id", name="uq_recommendation_user_job"),
     )
 
@@ -339,6 +647,7 @@ class Recommendation(Base):
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), nullable=False)
     match_percentage: Mapped[float] = mapped_column(Float, nullable=False)
     reasons: Mapped[list[str]] = mapped_column(JSON, default=list)
+    match_details: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
@@ -390,8 +699,149 @@ class Recommendation(Base):
         return "source:external" in (self.reasons or [])
 
 
+class RecommendationFeedback(Base):
+    __tablename__ = "recommendation_feedback"
+    __table_args__ = (UniqueConstraint("user_id", "job_id", name="uq_recommendation_feedback_pair"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)
+    interested: Mapped[bool] = mapped_column(nullable=False)
+    features: Mapped[list] = mapped_column(JSON, nullable=False)
+    feature_version: Mapped[str] = mapped_column(String(180), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    user: Mapped[User] = relationship(back_populates="recommendation_feedback")
+    job: Mapped[Job] = relationship(back_populates="recommendation_feedback")
+
+
+class ModelExperiment(Base):
+    __tablename__ = "model_experiments"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version: Mapped[str] = mapped_column(String(180), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False)
+    metrics: Mapped[dict] = mapped_column(JSON, nullable=False)
+    artifact: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class InterviewRoom(Base):
+    __tablename__ = "interview_rooms"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    application_id: Mapped[int] = mapped_column(ForeignKey("applications.id", ondelete="CASCADE"), unique=True, nullable=False)
+    creator_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    title: Mapped[str] = mapped_column(String(150), nullable=False)
+    code: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    whiteboard: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    closed: Mapped[bool] = mapped_column(default=False, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    application: Mapped[Application] = relationship(back_populates="interview_room")
+    participants: Mapped[list["InterviewParticipant"]] = relationship(cascade="all, delete-orphan")
+    signals: Mapped[list["InterviewSignal"]] = relationship(cascade="all, delete-orphan")
+    __mapper_args__ = {"version_id_col": version}
+
+
+class InterviewParticipant(Base):
+    __tablename__ = "interview_participants"
+    __table_args__ = (UniqueConstraint("room_id", "slot", name="uq_interview_participant_slot"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    room_id: Mapped[str] = mapped_column(ForeignKey("interview_rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    slot: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class InterviewSignal(Base):
+    __tablename__ = "interview_signals"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    room_id: Mapped[str] = mapped_column(ForeignKey("interview_rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    sender_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    recipient_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    kind: Mapped[str] = mapped_column(String(10), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class TrustIncident(Base):
+    __tablename__ = "trust_incidents"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    reporter_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False)
+    application_id: Mapped[int | None] = mapped_column(ForeignKey("applications.id", ondelete="SET NULL"))
+    category: Mapped[str] = mapped_column(String(40), nullable=False)
+    details: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="open", nullable=False)
+    shared_summary: Mapped[str | None] = mapped_column(Text)
+    appeal: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    company: Mapped[Company] = relationship(back_populates="incidents")
+
+
+class ModelAuditRun(Base):
+    __tablename__ = "model_audit_runs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    actor_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    version: Mapped[str] = mapped_column(String(80), nullable=False)
+    metrics: Mapped[dict] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class LearningSourceSnapshot(Base):
+    __tablename__ = "learning_source_snapshots"
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    content: Mapped[dict] = mapped_column(JSON, nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    attempted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    error: Mapped[str] = mapped_column(String(250), default="", nullable=False)
+
+
+class LearningResource(Base):
+    __tablename__ = "learning_resources"
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    content: Mapped[dict] = mapped_column(JSON, nullable=False)
+    active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    __mapper_args__ = {"version_id_col": version}
+
+
+class LearningPlan(Base):
+    __tablename__ = "learning_plans"
+    __table_args__ = (UniqueConstraint("user_id", "resource_id", name="uq_learning_plan_user_resource"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    resource_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="in_progress", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    progress: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
+
+
+class AssessmentAttempt(Base):
+    __tablename__ = "assessment_attempts"
+    __table_args__ = (Index("ix_attempts_user_passed_valid", "user_id", "passed", "valid_until"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    assessment_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    skill: Mapped[str] = mapped_column(String(100), nullable=False)
+    version: Mapped[str] = mapped_column(String(30), nullable=False)
+    snapshot: Mapped[list[dict]] = mapped_column(JSON, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime)
+    status: Mapped[str] = mapped_column(String(30), default="active", nullable=False)
+    score: Mapped[float | None] = mapped_column(Float)
+    passed: Mapped[bool] = mapped_column(default=False, nullable=False)
+    feedback: Mapped[list[dict]] = mapped_column(JSON, default=list, nullable=False)
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime)
+
+
 class Notification(Base):
     __tablename__ = "notifications"
+    __table_args__ = (Index("ix_notifications_action_type_read_user", "action_url", "type", "is_read", "user_id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(
@@ -422,3 +872,65 @@ class Notification(Base):
         }:
             return "applications"
         return "system"
+
+
+class OfferFeedback(Base):
+    __tablename__ = "offer_feedback"
+    __table_args__ = (UniqueConstraint("user_id", "job_id", name="uq_offer_feedback_pair"),
+                      Index("ix_offer_feedback_job_revision", "job_id", "revision"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)
+    reason: Mapped[str] = mapped_column(String(30), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    user: Mapped[User] = relationship(back_populates="offer_feedback")
+    job: Mapped[Job] = relationship(back_populates="offer_feedback")
+
+
+class MailDeliveryEvent(Base):
+    __tablename__ = "mail_delivery_events"
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    provider_message_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    happened_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    received_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CalendarConnection(Base):
+    __tablename__ = "calendar_connections"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    refresh_cipher: Mapped[str] = mapped_column(Text, nullable=False)
+    connected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    last_error: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+
+
+class CalendarEvent(Base):
+    __tablename__ = "calendar_events"
+    __table_args__ = (UniqueConstraint("user_id", "application_id", name="uq_calendar_event_owner_application"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    application_id: Mapped[int] = mapped_column(ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, index=True)
+    remote_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    minutes: Mapped[int] = mapped_column(Integer, default=45, nullable=False)
+    application_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime)
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime)
+    error_code: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    lease_token: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class FileErasureTask(Base):
+    __tablename__ = "file_erasure_tasks"
+    lease_token: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    owner_id: Mapped[int | None] = mapped_column(Integer)
+    state: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)

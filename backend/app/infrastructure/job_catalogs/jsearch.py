@@ -3,12 +3,21 @@ import re
 from datetime import datetime, timedelta
 from html import unescape
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.parse import urlencode, urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from app.application.errors import CatalogProviderError
 from app.domain.entities.catalog import CatalogJob, CatalogPage
+from app.domain.services.external_job_content import sections_for, source_text
 from app.domain.services.external_sources import clean_external_location
+
+
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+urlopen = build_opener(_NoRedirect()).open
 
 
 class JSearchJobCatalog:
@@ -26,6 +35,7 @@ class JSearchJobCatalog:
         self._country = country
         self._language = language
         self._timeout_seconds = timeout_seconds
+        self._cursors = {}
 
     @property
     def source_name(self) -> str:
@@ -49,8 +59,13 @@ class JSearchJobCatalog:
     ) -> CatalogPage:
         if not self.configured:
             raise CatalogProviderError(
-                "JSearch aún no está conectado. Agrega JSEARCH_API_KEY en Azure."
+                "JSearch aún no está conectado. Configura su clave privada en el servidor."
             )
+        if self._base_url != "https://api.openwebninja.com/jsearch/search-v2":
+            raise CatalogProviderError("La dirección de JSearch no es la oficial.")
+        identity = (keywords, location)
+        if page > 1 and not self._cursors.get((identity, page)):
+            return CatalogPage(jobs=[], total=0)
         query_text = " ".join(filter(None, [keywords, f"en {location}" if location else ""]))
         query = urlencode(
             {
@@ -58,6 +73,8 @@ class JSearchJobCatalog:
                 "country": self._country,
                 "language": self._language,
                 "date_posted": "month",
+                "num_pages": 1,
+                **({"cursor": self._cursors[(identity, page)]} if page > 1 else {}),
             }
         )
         request = Request(
@@ -70,7 +87,10 @@ class JSearchJobCatalog:
         )
         try:
             with urlopen(request, timeout=self._timeout_seconds) as response:
-                body = json.loads(response.read().decode("utf-8"))
+                raw = response.read(4_000_001)
+                if len(raw) > 4_000_000:
+                    raise CatalogProviderError("La respuesta de JSearch supera el límite permitido.")
+                body = json.loads(raw.decode("utf-8"))
         except HTTPError as error:
             message = (
                 "JSearch rechazó la clave configurada."
@@ -94,10 +114,11 @@ class JSearchJobCatalog:
                 "JSearch devolvió una respuesta que TalentSync no pudo interpretar."
             )
         jobs = [self._map_job(item) for item in results if isinstance(item, dict)]
-        # search-v2 is cursor based. A page request intentionally reuses the current
-        # result set until the provider exposes its cursor through the shared port.
-        if page > 1:
-            jobs = []
+        if page == 1:
+            self._cursors.clear()
+        cursor = data.get("cursor") if isinstance(data, dict) else None
+        if isinstance(cursor, str) and cursor and len(cursor) <= 20_000:
+            self._cursors[(identity, page + 1)] = cursor
         return CatalogPage(jobs=jobs[:result_count], total=len(jobs))
 
     def _map_job(self, item: dict) -> CatalogJob:
@@ -120,7 +141,18 @@ class JSearchJobCatalog:
                 *(item.get("job_required_skills") or []),
             ]
         )
-        description = _clean(item.get("job_description"))
+        description = source_text(item.get("job_description"))
+        # Preserve structured source facts when the main description lacks headings.
+        if isinstance(highlights, dict):
+            for key, heading in [("Responsibilities", "Funciones y responsabilidades"), ("Qualifications", "Requisitos"), ("Benefits", "Beneficios")]:
+                values = highlights.get(key) or highlights.get(key.lower())
+                existing_sections = {section["key"] for section in sections_for(description)}
+                section_key = {"Responsibilities": "responsibilities", "Qualifications": "requirements", "Benefits": "benefits"}[key]
+                if isinstance(values, list) and values and section_key not in existing_sections:
+                    section = "\n".join("• " + _clean(value) for value in values if _clean(value))
+                    if section:
+                        description += "\n\n" + heading + "\n" + section
+
         raw_title = _clean(item.get("job_title"))
         salary = _salary(
             item,
@@ -136,11 +168,7 @@ class JSearchJobCatalog:
             description=description,
             employment_type=_clean(employment_type),
             salary=salary,
-            url=str(
-                item.get("job_apply_link")
-                or item.get("job_google_link")
-                or ""
-            ).strip(),
+            url=_application_url(item),
             published_at=_published_date(item),
             skills=tuple(skills),
             benefits=tuple(
@@ -169,6 +197,19 @@ def _strings(values: list[object]) -> list[str]:
     )
 
 
+def _application_url(item: dict) -> str:
+    options = [row for row in (item.get("apply_options") or []) if isinstance(row, dict)]
+    options.sort(key=lambda row: (urlsplit(str(row.get("apply_link") or "")).hostname not in
+                 {"job-boards.greenhouse.io", "boards.greenhouse.io", "jobs.lever.co", "jobs.eu.lever.co"},
+                 row.get("is_direct") is not True))
+    for row in options:
+        url = str(row.get("apply_link") or "").strip()
+        parsed = urlsplit(url)
+        if parsed.scheme == "https" and parsed.hostname and not parsed.username and not parsed.password:
+            return url
+    return str(item.get("job_apply_link") or item.get("job_google_link") or "").strip()
+
+
 def _salary(
     item: dict, *, title: str, description: str, country: str
 ) -> str:
@@ -181,6 +222,9 @@ def _salary(
     period = _clean(item.get("job_salary_period")).casefold()
     structured = [value for value in (minimum, maximum) if value is not None]
     if structured:
+        currency = str(item.get("job_salary_currency") or item.get("salary_currency") or "").upper()
+        if currency != "COP":
+            return ""
         values = [_monthly_cop(float(value), period) for value in structured]
         return "-".join(str(round(value)) for value in values)
 
@@ -280,8 +324,10 @@ def _published_date(item: dict) -> datetime | None:
         delta = timedelta(weeks=amount)
     elif any(term in relative for term in ("month", "mes")):
         delta = timedelta(days=amount * 30)
-    else:
+    elif any(term in relative for term in ("day", "dia", "día", "today", "hoy", "just posted")):
         delta = timedelta(days=amount)
+    else:
+        return None
     return datetime.utcnow() - delta
 
 
@@ -289,7 +335,7 @@ def _requirements(highlights: object, description: str) -> str:
     if isinstance(highlights, dict):
         values = highlights.get("Qualifications") or highlights.get("qualifications")
         if isinstance(values, list):
-            result = " ".join(_clean(value) for value in values if _clean(value))
+            result = "\n".join("• " + _clean(value) for value in values if _clean(value))
             if result:
                 return result
 
@@ -334,7 +380,7 @@ def _requirements(highlights: object, description: str) -> str:
     ]
     if selected:
         return " ".join(selected)[:6_000]
-    return description[-1_500:] if description else ""
+    return ""
 
 
 def _clean(value: object) -> str:

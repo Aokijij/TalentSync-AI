@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
+from external_fixtures import clear_description
 from fastapi.testclient import TestClient
 from openpyxl import Workbook
 from sqlalchemy import create_engine
@@ -11,10 +12,12 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps import get_job_catalog, get_jsearch_job_catalog, get_text_analysis
+from app.application.use_cases.legal_consent import DOCUMENTS
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.domain.entities.catalog import CatalogJob, CatalogPage
 from app.domain.entities.enums import UserRole
+from app.infrastructure.database import session as database_session
 from app.infrastructure.database.models import Company, Job, User
 from app.infrastructure.database.session import Base, get_db
 from app.infrastructure.nlp import resumes
@@ -29,12 +32,24 @@ def client(monkeypatch):
     )
     Base.metadata.create_all(engine)
     session_factory = sessionmaker(bind=engine, autoflush=False)
+    # Keep the fallback dependency isolated even if a test removes app overrides.
+    monkeypatch.setattr(database_session, "SessionLocal", session_factory)
+    monkeypatch.setattr(settings, "database_url", "sqlite://")
 
     def test_database():
         with session_factory() as session:
             yield session
 
     monkeypatch.setattr(settings, "environment", "development")
+    monkeypatch.setattr(settings, "session_auth_enabled", False)
+    monkeypatch.setattr(settings, "local_mail_enabled", False)
+    monkeypatch.setattr(settings, "account_cleanup_enabled", False)
+    monkeypatch.setattr(settings, "calendar_sync_enabled", False)
+    monkeypatch.setattr(settings, "workflow_maintenance_enabled", False)
+    monkeypatch.setattr(settings, "model_maintenance_enabled", False)
+    monkeypatch.setattr(settings, "match_model_path", "")
+    monkeypatch.setattr(settings, "cv_entity_model_path", "")
+    monkeypatch.setattr(settings, "cv_entity_python", "")
     monkeypatch.setattr(limiter, "enabled", False)
     app = create_app()
     app.dependency_overrides[get_db] = test_database
@@ -44,12 +59,18 @@ def client(monkeypatch):
     engine.dispose()
 
 
+def legal_acceptance():
+    return {"data_processing_accepted": True, "terms_accepted": True,
+            "privacy_version": DOCUMENTS["privacy_version"], "terms_version": DOCUMENTS["terms_version"]}
+
+
 def register(client, name, role="candidate", **fields):
     payload = {
         "name": name,
         "email": f"{name}@example.com",
         "password": "Test-password-2026!",
         "role": role,
+        **legal_acceptance(),
         **fields,
     }
     response = client.post("/api/v1/auth/register", json=payload)
@@ -65,6 +86,7 @@ def create_job(client, headers):
         headers=headers,
         json={
             "title": "Desarrollador Python",
+            "blind_hiring": False,
             "description": "Desarrollo de APIs con Python y SQL",
             "requirements": "Experiencia en Python, SQL y FastAPI",
             "sector": "Tecnologia y software",
@@ -72,6 +94,24 @@ def create_job(client, headers):
     )
     assert response.status_code == 201, response.text
     return response.json()
+
+
+def test_production_hides_api_docs_and_adds_security_headers(monkeypatch, tmp_path):
+    monkeypatch.setattr(settings, "environment", "production")
+    (tmp_path / "index.html").write_text('<div id="root"></div>', encoding="utf-8")
+    monkeypatch.setattr(settings, "static_dir", str(tmp_path))
+    app = create_app()
+    with TestClient(app) as production_client:
+        response = production_client.get("/health")
+        assert response.status_code == 200
+        assert response.headers["x-content-type-options"] == "nosniff"
+        assert response.headers["x-frame-options"] == "DENY"
+        assert response.headers["strict-transport-security"].startswith("max-age=")
+        assert production_client.get("/docs").status_code == 404
+        assert production_client.get("/openapi.json").status_code == 404
+        assert production_client.get("/.env").status_code == 404
+        assert production_client.get("/.git/config").status_code == 404
+        assert production_client.get("/login").status_code == 200
 
 
 def company_account(client, name="empresa"):
@@ -99,6 +139,7 @@ def test_authentication_and_permissions(client):
         client.post(
             "/api/v1/auth/register",
             json={
+                **legal_acceptance(),
                 "name": "candidato",
                 "email": user["email"],
                 "password": "Test-password-2026!",
@@ -197,6 +238,7 @@ def test_screening_questions_adjust_only_the_company_score(client):
         headers=owner,
         json={
             "title": "Backend Python",
+            "blind_hiring": False,
             "description": "Construcción y mantenimiento de servicios internos.",
             "requirements": "Experiencia con Python, APIs y bases de datos.",
             "sector": "Tecnologia y software",
@@ -260,17 +302,38 @@ def test_screening_questions_adjust_only_the_company_score(client):
     assert company_view["screening_adjustment"] == 5
     assert company_view["base_match_percentage"] == pytest.approx(base)
     assert company_view["adjusted_match_percentage"] == pytest.approx(
-        min(100, base + 5)
+        base + 5
     )
     assert company_view["screening_answers"][0]["question"].startswith("¿Has trabajado")
+    ranked = client.get(
+        f"/api/v1/recommendations/jobs/{job['id']}/candidates?audience=applied&minimum_match=0",
+        headers=owner,
+    )
+    assert ranked.status_code == 200, ranked.text
+    ranked_application = next(row for row in ranked.json() if row["application_id"] == company_view["id"])
+    assert ranked_application["version"] == company_view["version"]
     adjusted = client.put(
         f"/api/v1/applications/{company_view['id']}/status",
         headers=owner,
-        json={"screening_answer_adjustments": {"motivation": 3}},
+        json={"screening_answer_adjustments": {"motivation": 3}, "expected_version": ranked_application["version"]},
     )
     assert adjusted.status_code == 200, adjusted.text
     assert adjusted.json()["screening_adjustment"] == 8
+    assert adjusted.json()["screening_answers"][0]["configured_adjustment"] == 5
+    assert adjusted.json()["screening_answers"][0]["reviewer_adjustment"] == 0
     assert adjusted.json()["screening_answers"][1]["reviewer_adjustment"] == 3
+    stale = client.put(
+        f"/api/v1/applications/{company_view['id']}/status",
+        headers=owner,
+        json={"screening_answer_adjustments": {"motivation": 0}, "expected_version": ranked_application["version"]},
+    )
+    assert stale.status_code == 409
+    invalid_choice = client.put(
+        f"/api/v1/applications/{company_view['id']}/status",
+        headers=owner,
+        json={"screening_answer_adjustments": {"python_experience": 1}},
+    )
+    assert invalid_choice.status_code == 422
     invalid = client.put(
         f"/api/v1/applications/{company_view['id']}/status",
         headers=owner,
@@ -357,7 +420,7 @@ def test_application_pipeline_notifications_and_candidate_access(client):
     )
     notifications = client.get("/api/v1/notifications", headers=headers).json()
     assert len(notifications) == 1
-    assert notifications[0]["action_url"] == f"/postulaciones?focus={application['id']}"
+    assert notifications[0]["action_url"] == f"/procesos/{application['id']}"
     assert client.get("/api/v1/notifications/unread-count", headers=headers).json() == {
         "count": 1
     }
@@ -414,6 +477,10 @@ def test_reopening_covered_vacancy_preserves_history_and_notifications(client, m
         == 200
     )
     before = client.get("/api/v1/applications/me", headers=candidate_headers).json()
+    assert "recruiter_notes" not in before[0]
+    assert client.get(
+        f"/api/v1/applications/jobs/{job['id']}", headers=owner
+    ).json()[0]["recruiter_notes"] == "Seguimiento que debe conservarse"
     notifications = client.get(
         "/api/v1/notifications?unread_only=false", headers=candidate_headers
     ).json()
@@ -463,9 +530,8 @@ def test_reopening_covered_vacancy_preserves_history_and_notifications(client, m
             headers=owner,
             json={"pipeline_stage": "reviewing"},
         )
-        assert moved.status_code == 200, moved.text
-        assert moved.json()["resolution_reason"] is None
-        assert moved.json()["status"] == "reviewing"
+        assert moved.status_code == 409, moved.text
+        # Reopening the vacancy preserves completed candidatures as read-only.
     else:
         assert reopened["id"] != job["id"]
         assert reopened["applications_count"] == 0
@@ -641,7 +707,7 @@ def test_talent_search_and_invitations_start_at_fifty_percent(
     monkeypatch.setattr(
         recommendations,
         "rank_candidates_for_job",
-        lambda db, job, *, nlp: [(db.users.get(candidate["id"]), score)],
+        lambda db, job, *, nlp, **options: [(db.users.get(candidate["id"]), score)],
     )
     monkeypatch.setattr(
         recommendations,
@@ -683,7 +749,7 @@ def test_company_candidate_page_uses_eighty_percent_and_pagination_contract(
     monkeypatch.setattr(
         recommendations,
         "rank_candidates_for_job",
-        lambda db, job, *, nlp: [
+        lambda db, job, *, nlp, **options: [
             (db.users.get(first["id"]), 86),
             (db.users.get(second["id"]), 79),
         ],
@@ -894,7 +960,11 @@ def test_profile_photo_and_resume_style_are_saved(client, monkeypatch, tmp_path)
     )
     assert invalid.status_code == 422
 
-    image = b"\x89PNG\r\n\x1a\n" + b"local-profile-image"
+    from PIL import Image
+
+    photo_buffer = io.BytesIO()
+    Image.new("RGB", (32, 32), "navy").save(photo_buffer, format="PNG")
+    image = photo_buffer.getvalue()
     uploaded = client.post(
         "/api/v1/profiles/me/photo",
         headers=headers,
@@ -903,13 +973,15 @@ def test_profile_photo_and_resume_style_are_saved(client, monkeypatch, tmp_path)
     assert uploaded.status_code == 200, uploaded.text
     assert uploaded.json()["resume_color"] == "teal"
     assert uploaded.json()["photo_url"] == f"/api/v1/profiles/{user['id']}/photo"
-    fetched = client.get(uploaded.json()["photo_url"])
+    assert client.get(uploaded.json()["photo_url"]).status_code == 401
+    fetched = client.get(uploaded.json()["photo_url"], headers=headers)
     assert fetched.status_code == 200
     assert fetched.headers["content-type"].startswith("image/png")
     assert fetched.content == image
 
     _, company_headers = company_account(client, "foto-empresa")
     job = create_job(client, company_headers)
+    assert client.get(uploaded.json()["photo_url"], headers=company_headers).status_code == 403
     assert (
         client.get(
             f"/api/v1/profiles/candidates/{user['id']}", headers=company_headers
@@ -925,7 +997,7 @@ def test_profile_photo_and_resume_style_are_saved(client, monkeypatch, tmp_path)
     )
     assert visible.status_code == 200, visible.text
     assert visible.json()["photo_url"] == uploaded.json()["photo_url"]
-    assert client.get(visible.json()["photo_url"]).content == image
+    assert client.get(visible.json()["photo_url"], headers=company_headers).content == image
 
     from app.api.deps import get_image_storage
 
@@ -948,7 +1020,7 @@ def test_profile_photo_and_resume_style_are_saved(client, monkeypatch, tmp_path)
         client.get("/api/v1/profiles/me", headers=headers).json()["photo_url"]
         == uploaded.json()["photo_url"]
     )
-    assert client.get(uploaded.json()["photo_url"]).content == image
+    assert client.get(uploaded.json()["photo_url"], headers=headers).content == image
 
 
 def test_cv_rejects_invalid_uploads_without_overwriting_profile(
@@ -1175,7 +1247,7 @@ def test_admin_imports_external_jobs_without_duplicates(client):
         "id_externo": "VAC-001",
         "empresa": "Organización Ejemplo",
         "cargo": "Coordinador de servicio",
-        "descripcion": "Coordina la atención y mejora la experiencia de clientes.",
+        "descripcion": clear_description("Coordina la atención y mejora la experiencia de clientes."),
         "requisitos": "Experiencia liderando equipos y resolviendo solicitudes.",
         "sector": "Ventas y comercio",
         "enlace_externo": "https://jobs.example.org/vac-001",
@@ -1204,7 +1276,9 @@ def test_admin_imports_external_jobs_without_duplicates(client):
     assert response.json()["companies_created"] == 1
     assert response.json()["rejected"] == 1
 
-    job = client.get("/api/v1/jobs").json()[0]
+    assert client.get("/api/v1/jobs").json() == []  # Import is not proof of current availability.
+    item = client.get("/api/v1/admin/jobs?scope=external", headers=headers).json()["items"][0]
+    job = client.get(f"/api/v1/jobs/{item['id']}").json()
     assert job["source_kind"] == "external"
     assert job["source_name"] == "Bolsa aliada"
     assert job["external_url"] == "https://jobs.example.org/vac-001"
@@ -1236,8 +1310,8 @@ def test_admin_imports_external_jobs_without_duplicates(client):
     assert updated.status_code == 200, updated.text
     assert updated.json()["created"] == 0
     assert updated.json()["updated"] == 1
-    assert len(client.get("/api/v1/jobs").json()) == 1
-    assert client.get("/api/v1/jobs").json()[0]["title"] == "Coordinador de experiencia"
+    assert client.get("/api/v1/jobs").json() == []
+    assert client.get(f"/api/v1/jobs/{job['id']}").json()["title"] == "Coordinador de experiencia"
 
 
 def test_admin_imports_xlsx_catalog(client):
@@ -1262,6 +1336,7 @@ def test_admin_imports_xlsx_catalog(client):
             "enlace_externo",
             "modalidad",
             "tipo_contrato",
+            "fecha_publicacion",
         ]
     )
     sheet.append(
@@ -1270,12 +1345,13 @@ def test_admin_imports_xlsx_catalog(client):
             "XLSX-1",
             "Servicios Abiertos",
             "Asesor de operaciones",
-            "Apoya procesos operativos y la atención de usuarios internos.",
-            "Organización, comunicación y experiencia en servicio.",
+            clear_description("Apoya procesos operativos y la atención de usuarios internos."),
+            "Organización, comunicación, Excel y SQL para atender solicitudes.",
             "Recursos humanos",
             "https://jobs.example.org/xlsx-1",
             "Remoto",
             "Contrato",
+            datetime.utcnow(),
         ]
     )
     content = io.BytesIO()
@@ -1318,9 +1394,10 @@ def test_admin_syncs_authorized_jooble_catalog(client):
                         title="Asesor de servicio al cliente",
                         company="Servicios Colombianos",
                         location="Medellín, Antioquia",
-                        description=(
+                        description=clear_description(
                             "Atiende solicitudes, orienta a los usuarios y registra "
                             "cada caso de manera clara."
+                            " Utiliza Excel y CRM con buena comunicación."
                         ),
                         employment_type="Full-time",
                         salary="$2.500.000 al mes",
@@ -1349,11 +1426,13 @@ def test_admin_syncs_authorized_jooble_catalog(client):
     assert response.json()["created"] == 1
     assert response.json()["fetched"] == 1
     assert response.json()["source"] == "Jooble"
-    job = client.get("/api/v1/jobs").json()[0]
+    assert client.get("/api/v1/jobs").json() == []
+    item = client.get("/api/v1/admin/jobs?scope=external", headers=headers).json()["items"][0]
+    job = client.get(f"/api/v1/jobs/{item['id']}").json()
     assert job["source_name"] == "Jooble"
     assert job["location"] == "Medellín"
     assert job["department"] == "Antioquia"
-    assert job["sector"] == "Ventas y comercio"
+    assert job["sector"] == "BPO y contact center"
     assert job["salary"] == 2_500_000
     assert "servicio al cliente" in job["skills"]
     assert job["external_url"] == "https://co.jooble.org/jdp/JOOBLE-101"
@@ -1384,7 +1463,7 @@ def test_jsearch_sync_deduplicates_the_same_listing_from_multiple_ids(client):
                         title="Analista de datos",
                         company="Compañía de datos",
                         location="Bogotá, Bogotá D.C.",
-                        description="Analiza información con SQL, Excel y Power BI para apoyar decisiones.",
+                        description=clear_description("Analiza información con SQL, Excel y Power BI para apoyar decisiones."),
                         requirements="Experiencia con SQL, Excel y Power BI.",
                         employment_type="Full-time",
                         salary="4200000",
@@ -1414,7 +1493,33 @@ def test_jsearch_sync_deduplicates_the_same_listing_from_multiple_ids(client):
     assert first.json()["created"] == 1
     assert second.json()["created"] == 0
     assert second.json()["updated"] == 1
-    jobs = client.get("/api/v1/jobs").json()
+    assert client.get("/api/v1/jobs").json() == []
+    jobs = client.get("/api/v1/admin/jobs?scope=external", headers=headers).json()["items"]
     assert len(jobs) == 1
     with client.session_factory() as session:
         assert session.get(Job, jobs[0]["id"]).external_id == "JSEARCH-1"
+
+
+def test_external_original_url_deduplicates_changed_titles_and_sources(client):
+    from app.application.use_cases.job_imports import _import_rows
+    from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
+    from app.infrastructure.nlp.text_processor import text_processor
+
+    user, _ = register(client, "original-url-import-admin")
+    row = {"fuente": "Greenhouse", "id_externo": "original-1", "empresa": "Empresa original",
+           "cargo": "Analista de datos", "descripcion": clear_description("Analiza datos con SQL, Excel y Python para preparar reportes."),
+           "requisitos": "Experiencia en SQL, Excel y Python.", "sector": "Tecnologia y software", "fecha_publicacion": datetime.utcnow(),
+           "enlace_externo": "https://jobs.example.org/jobs/123?utm_source=original"}
+    with client.session_factory() as session:
+        actor = session.get(User, user["id"])
+        actor.role = UserRole.ADMIN
+        db = SqlAlchemyUnitOfWork(session)
+        assert _import_rows([row], actor, db, nlp=text_processor)["created"] == 1
+        copy = {**row, "fuente": "JSearch", "id_externo": "aggregate-2", "empresa": "Empresa original SAS",
+                "cargo": "Analista de datos SQL", "enlace_externo": "https://jobs.example.org/jobs/123?utm_source=aggregate"}
+        result = _import_rows([copy], actor, db, nlp=text_processor)
+        assert result["created"] == 0 and result["updated"] == 1
+        assert session.query(Job).count() == 1
+        assert session.query(Company).count() == 1
+        job = session.query(Job).one()
+        assert job.source_name == "Greenhouse" and job.external_id == "original-1"

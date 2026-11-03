@@ -1,23 +1,88 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from sqlalchemy import or_
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy import func, or_, select
+from sqlalchemy.orm import joinedload, load_only, selectinload
 
-from app.infrastructure.database.models import Company, Job
+from app.infrastructure.database.models import Application, Company, Job, OfferFeedback
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class JobRepository(SqlAlchemyRepository[Job]):
+    def board_choices(self, company_id):
+        count = select(func.count(Application.id)).where(Application.job_id == Job.id).correlate(Job).scalar_subquery()
+        rows = self.session.query(
+            Job.id, Job.company_id, Job.title, Job.status, Job.skills,
+            Job.location, Job.modality, Job.sector, Job.pipeline_stages,
+            Job.created_at, count.label("applications_count"),
+        ).filter(Job.company_id == company_id).order_by(Job.created_at.desc(), Job.id.desc()).all()
+        return [dict(row._mapping) for row in rows]
+
+    def company_choices(self, company_id, search, offset, limit):
+        query = self.session.query(Job).filter(Job.company_id == company_id, Job.status != "filled")
+        if search:
+            query = query.filter(Job.title.ilike(f"%{search.strip()}%"))
+        total = query.count()
+        count = select(func.count(Application.id)).where(Application.job_id == Job.id).correlate(Job).scalar_subquery()
+        rows = query.with_entities(Job.id, Job.title, Job.status, Job.skills, count.label("applications_count")).order_by(Job.created_at.desc(), Job.id.desc()).offset(offset).limit(limit).all()
+        return [dict(row._mapping) for row in rows], total
+    def market_jobs(self, since, demo=False):
+        query = self.session.query(Job).options(
+            joinedload(Job.company).load_only(Company.name),
+            # Public statistics need neither embeddings nor selection data.
+            load_only(
+                Job.id, Job.company_id, Job.title, Job.description, Job.source_kind, Job.source_name,
+                Job.external_url, Job.status, Job.created_at, Job.expires_at, Job.sector, Job.location,
+                Job.skills, Job.salary, Job.modality, Job.employment_type, Job.quality_details),
+        ).filter(Job.created_at >= since)
+        return (query.filter(Job.source_name == "radar-demo", Job.status == "draft") if demo else self._available(query)).all()
+
+    def offer_feedback_for(self, job_id):
+        return self.session.query(OfferFeedback).filter_by(job_id=job_id).all()
+
+    def candidate_offer_feedback(self, user_id, job_id):
+        return self.session.query(OfferFeedback).filter_by(user_id=user_id, job_id=job_id).first()
+
+    def new_offer_feedback(self, **values):
+        return OfferFeedback(**values)
+
     @staticmethod
     def _available(query):
         now = datetime.utcnow()
         return query.filter(
             Job.status == "active",
             or_(Job.expires_at.is_(None), Job.expires_at >= now),
+            JobRepository.fresh_external(now),
         )
+
+    @staticmethod
+    def fresh_external(now):
+        from sqlalchemy import and_
+
+        from app.domain.services.external_job_content import three_months_ago
+        from app.domain.services.job_freshness import FRESH_HOURS
+        return or_(Job.source_kind != "external", and_(
+            Job.external_check_state == "verified", Job.external_verified_at >= now - timedelta(hours=FRESH_HOURS),
+            Job.external_published_at >= three_months_ago(now), Job.external_published_at <= now,
+            func.json_array_length(Job.skills) >= 3,
+            Job.external_content["admission"]["clarity_passed"].as_boolean().is_(True)))
+
+    def due_external(self, now, limit=20):
+        from app.domain.services.external_job_content import three_months_ago
+        return self.session.query(Job).filter(Job.source_kind == "external", Job.status == "active",
+            Job.external_published_at >= three_months_ago(now), Job.external_published_at <= now, func.json_array_length(Job.skills) >= 3,
+            Job.external_content["admission"]["clarity_passed"].as_boolean().is_(True),
+            or_(Job.external_next_check_at.is_(None), Job.external_next_check_at <= now)).order_by(Job.external_next_check_at.asc(), Job.id).limit(limit).all()
 
     def active(self) -> list[Job]:
         return self._available(self.session.query(Job)).all()
+
+    def active_for_matching(self) -> list[Job]:
+        # Trust is evaluated over all recent processes of each employer. Load
+        # those relationships in batches rather than once per recommended job.
+        return self._available(self.session.query(Job).options(
+            joinedload(Job.company).selectinload(Company.jobs).selectinload(Job.applications),
+            joinedload(Job.company).selectinload(Company.incidents),
+        )).all()
 
     def count_active(self) -> int:
         return self._available(self.session.query(Job)).count()
@@ -26,9 +91,16 @@ class JobRepository(SqlAlchemyRepository[Job]):
         return self._available(self.session.query(Job.skills)).all()
 
     def active_external(self) -> list[Job]:
-        return self._available(
-            self.session.query(Job).filter(Job.source_kind == "external")
-        ).all()
+        return self.session.query(Job).filter(Job.source_kind == "external", Job.status == "active").all()
+
+    def external_listings(self) -> list[Job]:
+        return (
+            self.session.query(Job)
+            .options(joinedload(Job.company))
+            .filter(Job.source_kind == "external")
+            .order_by(Job.created_at.desc(), Job.id.desc())
+            .all()
+        )
 
     def company_attention_jobs(self, created_before: datetime) -> list[Job]:
         return (
@@ -94,6 +166,7 @@ class JobRepository(SqlAlchemyRepository[Job]):
         limit: int,
         search: str | None = None,
         scope: str = "platform",
+        status_filter: str | None = None,
     ) -> tuple[list[Job], int]:
         query = self._scope(
             self.session.query(Job).options(
@@ -110,6 +183,14 @@ class JobRepository(SqlAlchemyRepository[Job]):
                     Company.name.ilike(pattern),
                 )
             )
+        if status_filter:
+            available_ids = self._available(self.session.query(Job.id))
+            if status_filter == "active":
+                query = query.filter(Job.id.in_(available_ids))
+            elif status_filter == "closed":
+                query = query.filter(Job.status == "closed")
+            else:
+                query = query.filter(Job.status != "closed", ~Job.id.in_(available_ids))
         total = query.count()
         return (
             query.order_by(Job.created_at.desc(), Job.id.desc())
@@ -136,12 +217,17 @@ class JobRepository(SqlAlchemyRepository[Job]):
         created_after: datetime | None = None,
         sort: str = "newest",
     ) -> list[Job]:
-        query = self.session.query(Job).options(joinedload(Job.company))
+        query = self.session.query(Job).options(
+            joinedload(Job.company).selectinload(Company.jobs).selectinload(Job.applications),
+            joinedload(Job.company).selectinload(Company.incidents),
+            selectinload(Job.applications),
+        )
         if status_filter:
             query = query.filter(Job.status == status_filter)
             if status_filter == "active":
                 query = query.filter(
-                    or_(Job.expires_at.is_(None), Job.expires_at >= datetime.utcnow())
+                    or_(Job.expires_at.is_(None), Job.expires_at >= datetime.utcnow()),
+                    self.fresh_external(datetime.utcnow()),
                 )
         if modality:
             query = query.filter(Job.modality == modality)

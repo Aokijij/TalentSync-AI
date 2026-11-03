@@ -1,0 +1,343 @@
+# ruff: noqa: F811
+from datetime import datetime, timedelta
+from hashlib import sha256
+from io import BytesIO
+from uuid import uuid4
+
+from pypdf import PdfReader
+from test_api_flows import client, company_account, create_job, register  # noqa: F401
+
+from app.infrastructure.database.models import (
+    Application,
+    EventLog,
+    Job,
+    Notification,
+    ResumeVersion,
+    User,
+)
+
+BASE = "/api/v1/profiles/me/coach"
+
+
+def test_resume_options_match_profile_defaults_and_legacy_section_preferences():
+    from app.domain.services.application_preparation import resume_options
+
+    assert "preferences" in resume_options({})["sections"]
+    legacy = resume_options({"preferences": {"resume_export_options": {"sections": ["certifications"], "include_photo": False}}})
+    assert legacy == {"sections": ["certifications", "driving_licenses", "professional_cards"], "include_photo": False}
+    assert resume_options({"preferences": {"resume_export_options": {"version": 2, "sections": []}}})["sections"] == []
+
+
+def test_prioritizing_skills_preserves_existing_private_notes(client):
+    _, headers, _, job = setup_case(client)
+    with client.session_factory() as db:
+        row = db.get(Job, job["id"])
+        row.skills = ["python", "sql", "git", "excel", "react"]
+        row.skill_requirements = []
+        db.commit()
+    original = pack(client, headers, job["id"])
+    question = next(row for row in original["interview"]["questions"] if row.get("skill") == "excel")
+    answers = {question["id"]: {"situation": "", "task": "", "action": "PRIVATE-SAVED-EXCEL-EXAMPLE", "result": ""}}
+    endpoint = f"{BASE}/jobs/{job['id']}/interview"
+    assert client.put(endpoint, headers=headers, json={"expected_version": 0, "revision": original["revision"], "answers": answers}).status_code == 200
+    with client.session_factory() as db:
+        db.get(Job, job["id"]).skill_requirements = [{"skill": "react", "essential": True, "weight": 5}]
+        db.commit()
+    updated = pack(client, headers, job["id"])
+    assert updated["interview"]["outdated"] is True
+    assert updated["interview"]["answers"] == answers
+    assert question["id"] in {row["id"] for row in updated["interview"]["questions"]}
+    assert client.put(endpoint, headers=headers, json={"expected_version": 1, "revision": updated["revision"], "answers": answers}).status_code == 200
+
+
+def setup_case(client):
+    owner, headers = register(client, "preparation-owner", profession="Analista de datos", skills=["python", "excel"])
+    _, company = company_account(client, "preparation-company")
+    job = create_job(client, company)
+    profile = client.get("/api/v1/profiles/me", headers=headers).json()
+    profile.update(experience="Preparaba reportes para el equipo.", experiences=[
+        {"role": "Analista de datos", "company": "Equipo de reportes", "description": "Usé Python para preparar reportes.", "start_date": "2020-01", "end_date": "2022-01"},
+        {"role": "Auxiliar de inventario", "company": "Bodega", "description": "Controlé el inventario.", "start_date": "2018-01", "end_date": "2019-01"},
+    ], certifications=[{"name": "Excel básico", "issuer": "SENA", "year": "2020", "kind": "course"}])
+    updated = client.put("/api/v1/profiles/me", headers=headers, json=profile)
+    assert updated.status_code == 200, updated.text
+    return owner, headers, company, job
+
+
+def test_default_profile_cv_is_attached_downloadable_and_frozen_with_saved_preferences(client):
+    owner, headers, company, job = setup_case(client)
+    options = {"style": "minimal", "color": "teal", "sections": ["summary"], "include_photo": False}
+    assert client.patch("/api/v1/profiles/me/resume-design", headers=headers, json=options).status_code == 200
+    response = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"]})
+    assert response.status_code == 201, response.text
+    application_id = response.json()["id"]
+    endpoint = f"/api/v1/applications/{application_id}/resume"
+    pdf = client.get(endpoint, headers=company)
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+    text = " ".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+    assert "Fortalezas en python, excel" in text and "Equipo de reportes" not in text and "SENA" not in text
+    assert "preparation-owner@example.com" not in text
+    preview = client.post("/api/v1/profiles/me/export", headers=headers, json={"sections": options["sections"], "include_photo": False})
+    assert preview.status_code == 200
+    assert " ".join(page.extract_text() for page in PdfReader(BytesIO(preview.content)).pages) == text
+    view = client.get(f"/api/v1/profiles/candidates/{owner['id']}", headers=company, params={"job_id": job["id"]}).json()
+    assert view["submitted_resume_url"] == endpoint
+    assert pack(client, headers, job["id"])["versions"] == []
+    submitted = client.get(f"{BASE}/applications/{application_id}/preparation", headers=headers).json()
+    assert len(submitted["versions"]) == 1 and submitted["versions"][0]["id"] == submitted["submitted_resume_id"]
+    with client.session_factory() as db:
+        profile = db.get(User, owner["id"]).profile
+        profile.experience = "Un resumen distinto después del envío"
+        profile.preferences = {}
+        db.commit()
+    assert client.get(endpoint, headers=headers).content == pdf.content
+    duplicate = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "attach_resume": False})
+    assert duplicate.json()["id"] == application_id
+    with client.session_factory() as db:
+        assert db.query(ResumeVersion).count() == 1
+    _, stranger = register(client, "default-resume-stranger")
+    assert client.get(endpoint, headers=stranger).status_code == 403
+
+
+def test_vacancy_versions_use_profile_visibility_and_detect_changed_preferences(client):
+    _, headers, _, job = setup_case(client)
+    before = pack(client, headers, job["id"])
+    options = {"style": "minimal", "color": "teal", "sections": ["summary"], "include_photo": False}
+    assert client.patch("/api/v1/profiles/me/resume-design", headers=headers, json=options).status_code == 200
+    stale = client.post(f"{BASE}/jobs/{job['id']}/cv-versions", headers=headers, json={"request_key": str(uuid4()), "source_version": before["source_version"], "job_version": before["job_version"]})
+    assert stale.status_code == 409
+    version, _ = create_version(client, headers, job["id"], include_photo=True)
+    pdf = client.get(f"{BASE}/cv-versions/{version['id']}/pdf", headers=headers)
+    text = " ".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+    assert "Fortalezas en python, excel" in text and "SENA" not in text and "Equipo de reportes" not in text
+    with client.session_factory() as db:
+        assert db.get(ResumeVersion, version["id"]).snapshot["include_photo"] is False
+    assert pack(client, headers, job["id"])["profile"]["resume_options"] == {"sections": ["summary"], "include_photo": False}
+
+
+def test_explicit_no_attachment_keeps_profile_but_exposes_no_pdf(client):
+    owner, headers, company, job = setup_case(client)
+    response = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "attach_resume": False})
+    assert response.status_code == 201, response.text
+    assert client.get(f"/api/v1/applications/{response.json()['id']}/resume", headers=company).status_code == 404
+    view = client.get(f"/api/v1/profiles/candidates/{owner['id']}", headers=company, params={"job_id": job["id"]}).json()
+    assert view["submitted_resume_url"] is None and view["experience"] == client.get("/api/v1/profiles/me", headers=headers).json()["experience"]
+    with client.session_factory() as db:
+        assert db.query(ResumeVersion).count() == 0
+
+
+def test_historical_profile_submission_download_uses_submitted_facts(client):
+    owner, headers, company, job = setup_case(client)
+    response = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "attach_resume": False})
+    application_id = response.json()["id"]
+    with client.session_factory() as db:
+        application = db.get(Application, application_id)
+        application.coach_snapshot = {key: value for key, value in application.coach_snapshot.items() if key != "attach_resume"}
+        db.get(User, owner["id"]).profile.experience = "ONLY-NEW-PROFILE-TEXT"
+        db.commit()
+    pdf = client.get(f"/api/v1/applications/{application_id}/resume", headers=company)
+    assert pdf.status_code == 200, pdf.text if pdf.status_code != 200 else ""
+    text = " ".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+    assert "Equipo de reportes" in text and "ONLY-NEW-PROFILE-TEXT" not in text
+
+
+def pack(client, headers, job_id):
+    response = client.get(f"{BASE}/jobs/{job_id}/preparation", headers=headers)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def create_version(client, headers, job_id, **changes):
+    data = pack(client, headers, job_id)
+    payload = {"request_key": str(uuid4()), "source_version": data["source_version"], "job_version": data["job_version"], "include_photo": False, **changes}
+    response = client.post(f"{BASE}/jobs/{job_id}/cv-versions", headers=headers, json=payload)
+    assert response.status_code == 201, response.text
+    return response.json(), payload
+
+
+def test_cv_names_persist_and_renaming_preserves_pdf_and_submitted_document(client):
+    _, headers, company, job = setup_case(client)
+    version, payload = create_version(client, headers, job["id"], label="  Frontend · React  ")
+    assert version["label"] == "Frontend · React"
+    pdf_url = f"{BASE}/cv-versions/{version['id']}/pdf"
+    before = client.get(pdf_url, headers=headers)
+    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "resume_version_id": version["id"]}).json()
+    endpoint = f"{BASE}/cv-versions/{version['id']}"
+    renamed = client.patch(endpoint, headers=headers, json={"label": "PRIVATE-NAME-ONLY-ME"})
+    assert renamed.status_code == 200, renamed.text
+    assert renamed.json()["label"] == "PRIVATE-NAME-ONLY-ME" and renamed.json()["sha256"] == version["sha256"]
+    assert pack(client, headers, job["id"])["versions"][0]["label"] == "PRIVATE-NAME-ONLY-ME"
+    assert client.get(pdf_url, headers=headers).content == before.content
+    delivered = client.get(f"/api/v1/applications/{application['id']}/resume", headers=company)
+    assert delivered.content == before.content
+    assert "PRIVATE-NAME" not in delivered.headers["content-disposition"]
+    assert "PRIVATE-NAME" not in " ".join(page.extract_text() for page in PdfReader(BytesIO(delivered.content)).pages)
+    replay = client.post(f"{BASE}/jobs/{job['id']}/cv-versions", headers=headers, json=payload)
+    assert replay.json()["id"] == version["id"] and replay.json()["label"] == "PRIVATE-NAME-ONLY-ME"
+    for label in ["", "   ", "x" * 81, "name\nsecond line"]:
+        assert client.patch(endpoint, headers=headers, json={"label": label}).status_code == 422
+    _, stranger = register(client, "cv-label-stranger")
+    assert client.patch(endpoint, headers=stranger, json={"label": "Other"}).status_code == 404
+    assert client.patch(endpoint, headers=company, json={"label": "Other"}).status_code == 403
+
+
+def test_unnamed_and_historical_cv_versions_remain_usable_and_can_be_named(client):
+    _, headers, _, job = setup_case(client)
+    version, _ = create_version(client, headers, job["id"])
+    second, _ = create_version(client, headers, job["id"])
+    assert version["label"] == "CV 1" and second["label"] == "CV 2"
+    with client.session_factory() as db:
+        historical = db.get(ResumeVersion, version["id"])
+        historical.snapshot = {key: value for key, value in historical.snapshot.items() if key != "label"}
+        db.commit()
+    legacy = next(row for row in pack(client, headers, job["id"])["versions"] if row["id"] == version["id"])
+    assert legacy["label"] == "CV guardado"
+    response = client.patch(f"{BASE}/cv-versions/{version['id']}", headers=headers, json={"label": "Mi CV anterior"})
+    assert response.status_code == 200 and response.json()["label"] == "Mi CV anterior"
+
+
+def test_cv_selection_is_private_does_not_change_profile_and_keeps_exact_pdf(client):
+    owner, headers, company, job = setup_case(client)
+    before = client.get("/api/v1/profiles/me", headers=headers).json()
+    version, _ = create_version(client, headers, job["id"], experience_indices=[0], skills=["python"], summary="Mi experiencia relacionada con esta oferta.")
+    assert client.get("/api/v1/profiles/me", headers=headers).json() == before
+    endpoint = f"{BASE}/cv-versions/{version['id']}/pdf"
+    pdf = client.get(endpoint, headers=headers)
+    assert pdf.status_code == 200 and "no-store" in pdf.headers["cache-control"]
+    assert sha256(pdf.content).hexdigest() == version["sha256"]
+    contents = " ".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+    assert "Mi experiencia relacionada" in contents and "Equipo de reportes" in contents and "SENA" in contents
+    assert "Auxiliar de inventario" not in contents and "Bodega" not in contents
+    _, stranger = register(client, "preparation-stranger")
+    assert client.get(endpoint, headers=stranger).status_code == 404
+    assert client.get(endpoint, headers=company).status_code == 403
+    assert client.get(endpoint).status_code == 401
+    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "resume_version_id": version["id"]})
+    assert application.status_code == 201, application.text
+    application_id = application.json()["id"]
+    assert application.json()["resume_version_id"] == version["id"]
+    with client.session_factory() as db:
+        stored = db.get(User, owner["id"]).profile
+        stored.experience = "Ahora mi perfil tiene otro resumen"
+        stored.skills = ["otra habilidad"]
+        db.get(Job, job["id"]).description = "Oferta actualizada después de postularme"
+        db.commit()
+    assert client.get(endpoint, headers=headers).content == pdf.content
+    assert client.get(f"/api/v1/applications/{application_id}/resume", headers=headers).content == pdf.content
+    assert client.get(f"/api/v1/applications/{application_id}/resume", headers=company).content == pdf.content
+    assert client.get(f"/api/v1/applications/{application_id}/resume", headers=stranger).status_code == 403
+    view = client.get(f"/api/v1/profiles/candidates/{owner['id']}", headers=company, params={"job_id": job["id"]}).json()
+    assert view["skills"] == ["python"] and view["experience"] == "Mi experiencia relacionada con esta oferta."
+    process_pack = client.get(f"{BASE}/applications/{application_id}/preparation", headers=headers).json()
+    assert process_pack["source"] == "submitted" and process_pack["submitted_resume_id"] == version["id"]
+    assert "actualizada después" not in process_pack["job"]["description"]
+
+
+def test_duplicate_requests_and_lost_application_response_do_not_duplicate_effects(client):
+    _, headers, company, job = setup_case(client)
+    version, payload = create_version(client, headers, job["id"])
+    duplicate = client.post(f"{BASE}/jobs/{job['id']}/cv-versions", headers=headers, json=payload)
+    assert duplicate.status_code == 201 and duplicate.json()["id"] == version["id"]
+    conflict = client.post(f"{BASE}/jobs/{job['id']}/cv-versions", headers=headers, json={**payload, "summary": "Otra versión"})
+    assert conflict.status_code == 409
+    submitted = {"job_id": job["id"], "resume_version_id": version["id"]}
+    first = client.post("/api/v1/applications", headers=headers, json=submitted)
+    assert first.status_code == 201
+    with client.session_factory() as db:
+        db.get(Job, job["id"]).status = "closed"
+        db.commit()
+    retry = client.post("/api/v1/applications", headers=headers, json=submitted)
+    assert retry.status_code == 201 and retry.json()["id"] == first.json()["id"]
+    other_tab = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"]})
+    assert other_tab.status_code == 201 and other_tab.json()["resume_version_id"] == version["id"]
+    with client.session_factory() as db:
+        assert db.query(ResumeVersion).count() == 1 and db.query(Application).count() == 1
+        assert db.query(Notification).filter_by(type="application_received").count() == 1
+        assert db.query(EventLog).filter_by(event_type="application.transition").count() == 1
+
+
+def test_stale_profile_unknown_skills_foreign_versions_and_expired_jobs_are_rejected(client):
+    owner, headers, company, job = setup_case(client)
+    version, payload = create_version(client, headers, job["id"])
+    with client.session_factory() as db:
+        db.get(User, owner["id"]).profile.phone = "+57 300 111 2222"
+        db.commit()
+    stale = client.post(f"{BASE}/jobs/{job['id']}/cv-versions", headers=headers, json={**payload, "request_key": str(uuid4())})
+    assert stale.status_code == 409
+    current = pack(client, headers, job["id"])["source_version"]
+    for changes in [{"skills": ["habilidad inventada"]}, {"experience_indices": [99]}, {"experience_indices": [0, 0]}]:
+        response = client.post(f"{BASE}/jobs/{job['id']}/cv-versions", headers=headers, json={**payload, "source_version": current, "request_key": str(uuid4()), **changes})
+        assert response.status_code == 422, response.text
+    _, other = register(client, "preparation-foreign")
+    assert client.post("/api/v1/applications", headers=other, json={"job_id": job["id"], "resume_version_id": version["id"]}).status_code == 404
+    another_job = create_job(client, company)
+    assert client.post("/api/v1/applications", headers=headers, json={"job_id": another_job["id"], "resume_version_id": version["id"]}).status_code == 422
+    assert client.post(f"{BASE}/jobs/{another_job['id']}/cv-versions", headers=headers, json=payload).status_code == 409
+    with client.session_factory() as db:
+        db.get(Job, job["id"]).expires_at = datetime.utcnow() - timedelta(seconds=1)
+        db.commit()
+    assert client.get(f"{BASE}/jobs/{job['id']}/preparation", headers=headers).status_code == 404
+
+
+def test_interview_notes_survive_reload_remain_private_and_detect_two_tab_conflicts(client):
+    _, headers, company, job = setup_case(client)
+    data = pack(client, headers, job["id"])
+    assert any(question.get("skill") == "python" for question in data["interview"]["questions"])
+    assert any(question.get("skill") == "sql" and not question["in_profile"] for question in data["interview"]["questions"])
+    question = data["interview"]["questions"][0]["id"]
+    answers = {question: {"situation": "PRIVATE-EXAMPLE", "task": "Preparar un reporte", "action": "Ordené los registros", "result": "El equipo lo pudo consultar"}}
+    payload = {"expected_version": 0, "revision": data["revision"], "answers": answers}
+    endpoint = f"{BASE}/jobs/{job['id']}/interview"
+    response = client.put(endpoint, headers=headers, json=payload)
+    assert response.status_code == 200, response.text
+    assert response.json()["reviews"][question] == {"complete": True, "missing": []}
+    assert client.put(endpoint, headers=headers, json=payload).status_code == 409
+    loaded = pack(client, headers, job["id"])
+    assert loaded["interview"]["answers"] == answers and loaded["interview"]["version"] == 1
+    _, other = register(client, "preparation-notes-other")
+    assert pack(client, other, job["id"])["interview"]["answers"] == {}
+    assert client.put(endpoint, headers=company, json=payload).status_code == 403
+    assert client.get(f"{BASE}/jobs/{job['id']}/preparation", headers=company).status_code == 403
+    with client.session_factory() as db:
+        db.get(Job, job["id"]).skills = ["logística"]
+        db.commit()
+    assert pack(client, headers, job["id"])["interview"]["outdated"] is True
+    assert client.put(endpoint, headers=headers, json={**payload, "expected_version": 1}).status_code == 409
+
+
+def test_normal_submission_freezes_facts_and_closed_process_can_still_be_prepared(client):
+    owner, headers, company, job = setup_case(client)
+    application = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"]}).json()
+    with client.session_factory() as db:
+        db.get(User, owner["id"]).profile.experience = "Resumen posterior"
+        db.get(Job, job["id"]).status = "closed"
+        db.commit()
+    endpoint = f"{BASE}/applications/{application['id']}/preparation"
+    response = client.get(endpoint, headers=headers)
+    assert response.status_code == 200 and response.json()["source"] == "submitted"
+    question = response.json()["interview"]["questions"][0]
+    assert any("reportes" in str(row) for row in question["experiences"])
+    payload = {"expected_version": 0, "revision": response.json()["revision"], "answers": {question["id"]: {"action": "Mi respuesta privada"}}}
+    saved = client.put(endpoint.replace("/preparation", "/interview"), headers=headers, json=payload)
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["reviews"][question["id"]]["complete"] is False
+    _, other = register(client, "preparation-process-other")
+    assert client.get(endpoint, headers=other).status_code == 403
+    assert "Mi respuesta privada" not in client.get(f"/api/v1/workflow/applications/{application['id']}", headers=company).text
+
+
+def test_blind_process_never_exposes_submitted_pdf_through_another_revealed_process(client, monkeypatch):
+    owner, headers, company, job = setup_case(client)
+    version, _ = create_version(client, headers, job["id"])
+    response = client.post("/api/v1/applications", headers=headers, json={"job_id": job["id"], "resume_version_id": version["id"]})
+    application_id = response.json()["id"]
+    with client.session_factory() as db:
+        db.get(Job, job["id"]).blind_hiring = True
+        db.get(Application, application_id).identity_revealed_at = None
+        db.commit()
+    # The identity policy currently reveals a self-submitted application. Exercise
+    # the hidden state explicitly so future changes cannot expose this PDF.
+    from app.application.use_cases import application_preparation
+    monkeypatch.setattr(application_preparation, "identity_hidden", lambda *_: True)
+    assert client.get(f"/api/v1/applications/{application_id}/resume", headers=company).status_code == 403
+    assert client.get(f"/api/v1/applications/{application_id}/resume", headers=headers).status_code == 200

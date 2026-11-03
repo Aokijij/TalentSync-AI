@@ -18,6 +18,8 @@ PORTAL_DOMAINS = (
     ("myworkdayjobs.", "Workday"),
     ("greenhouse.io", "Greenhouse"),
     ("lever.co", "Lever"),
+    ("getonbrd.com", "Get on Board"),
+    ("ashbyhq.com", "Ashby"),
 )
 
 

@@ -13,6 +13,11 @@ from app.application.ports.services import (
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Profile, User
+from app.domain.services.blind_hiring import candidate_alias, identity_hidden
+from app.domain.services.skill_levels import (
+    declared_skill_levels,
+    inferred_skill_levels,
+)
 from app.domain.services.skills import normalize_skills
 
 
@@ -22,13 +27,52 @@ def company_can_view_candidate(
     company = db.companies.find_by_owner(company_user.id)
     if company is None:
         return False
-    return (
-        db.applications.find_for_candidate_company(candidate_id, company.id) is not None
-    )
+    return any(row.user_id == candidate_id and not identity_hidden(job, row) for job in company.jobs for row in job.applications)
 
 
 def get_my_profile(current_user: User) -> Profile:
     return current_user.profile
+
+
+def decide_cv_mention(db, user, skill, action, *, nlp):
+    from app.domain.services.skill_context import profile_skill_context
+    from app.domain.services.skills import skill_key
+    profile = user.profile
+    if profile is None:
+        raise UseCaseError(status_code=404, detail="Completa primero tu perfil")
+    db.profiles.lock_owner(user.id)
+    db.refresh(profile)
+    key = skill_key(skill)
+    mention = next((row for row in profile_skill_context(profile) if skill_key(row.get("skill", "")) == key), None)
+    if mention is None:
+        raise UseCaseError(status_code=404, detail="Esta mención ya no está disponible. Actualiza tu perfil")
+    decisions = dict((profile.preferences or {}).get("cv_mention_decisions", {}))
+    if action == "delete":
+        if decisions.get(key) != "dismissed":
+            raise UseCaseError(status_code=409, detail="Descarta la mención antes de eliminarla")
+        from app.domain.services.skill_context import CONTEXT_VERSION
+        decisions.pop(key, None)
+        profile.preferences = {**(profile.preferences or {}), "cv_skill_context": [row for row in profile_skill_context(profile) if skill_key(row.get("skill", "")) != key], "cv_context_version": CONTEXT_VERSION, "cv_mention_decisions": decisions}
+        db.add(profile); db.commit(); db.refresh(profile)
+        return profile
+    if action == "restore":
+        decisions.pop(key, None)
+    elif action == "confirm":
+        profile.skills = normalize_skills([*(profile.skills or []), mention["skill"]])
+        suggestion = inferred_skill_levels((profile.preferences or {}).get("cv_source_text") or mention.get("excerpt", ""), [key])[key]
+        levels = declared_skill_levels(profile)
+        sources = dict((profile.preferences or {}).get("skill_level_sources", {}))
+        if key not in levels:
+            levels[key] = suggestion["level"]
+            sources[key] = suggestion
+        profile.preferences = {**(profile.preferences or {}), "skill_levels": levels, "skill_level_sources": sources}
+        decisions[key] = "confirmed"
+        profile.embedding = nlp.embed(" ".join(filter(None, [profile.profession, profile.experience, " ".join(profile.skills)])))
+    else:
+        decisions[key] = "dismissed"
+    profile.preferences = {**(profile.preferences or {}), "cv_mention_decisions": decisions}
+    db.add(profile); db.commit(); db.refresh(profile)
+    return profile
 
 
 def build_professional_summary(profile: Profile, fallback: str | None = None) -> str | None:
@@ -74,7 +118,8 @@ def build_professional_summary(profile: Profile, fallback: str | None = None) ->
     return summary[:600].rstrip()
 
 
-def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork) -> dict:
+def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork, job_id: int | None = None) -> dict:
+    application = None
     candidate = db.users.get(user_id)
     if (
         candidate is None
@@ -82,53 +127,121 @@ def get_candidate_profile(user_id: int, current_user: User, db: UnitOfWork) -> d
         or candidate.profile is None
     ):
         raise UseCaseError(status_code=404, detail="Perfil de candidato no encontrado")
-    if current_user.role == UserRole.COMPANY and (
+    if current_user.role == UserRole.COMPANY and job_id is not None:
+        company = db.companies.find_for_access(current_user.id)
+        job = db.jobs.get(job_id)
+        application = db.applications.find_for_user_job(user_id, job_id) if job else None
+        if not company or not job or job.company_id != company.id or application is None:
+            raise UseCaseError(status_code=403, detail="El perfil debe pertenecer a una postulación de esta vacante")
+        if identity_hidden(job, application):
+            profile = _submitted_profile(candidate.profile, application)
+            # Do not include CV text, names of employers/schools, descriptions or contact data.
+            # Identity visibility is scoped to this process, even if another job revealed it.
+            return {
+                "id": profile.id, "user_id": user_id, "name": candidate_alias(job_id, user_id),
+                "identity_hidden": True, "profession": profile.profession,
+                "skills": profile.skills or [], "skill_levels": declared_skill_levels(profile), "languages": profile.languages or [],
+                "availability": profile.availability, "preferred_modality": profile.preferred_modality,
+                "desired_salary": profile.desired_salary,
+                "experiences": [{key: row.get(key) for key in ("role", "start_year", "end_year", "start_date", "end_date", "is_current")} for row in profile.experiences or []],
+                "educations": [{key: row.get(key) for key in ("degree", "start_year", "end_year", "is_current")} for row in profile.educations or []],
+            }
+    if current_user.role == UserRole.COMPANY and application is None and (
         not company_can_view_candidate(db, current_user, user_id)
     ):
         raise UseCaseError(
             status_code=403,
             detail="Solo puedes ver el perfil completo de candidatos que se postularon a tus vacantes",
         )
-    profile = candidate.profile
+    profile = _submitted_profile(candidate.profile, application)
+    saved = (application.coach_snapshot or {}) if application else {}
+    from app.domain.services.personal_details import shared_personal_details
     return {
+        **shared_personal_details(candidate.profile),
         "id": profile.id,
         "user_id": profile.user_id,
-        "name": candidate.name,
-        "email": candidate.email,
+        "name": saved.get("name", candidate.name),
+        "email": saved.get("email", candidate.email),
         "profession": profile.profession,
         "skills": profile.skills or [],
+        "skill_levels": declared_skill_levels(profile),
         "languages": profile.languages or [],
         "experience": profile.experience,
         "education": profile.education,
         "location": profile.location,
         "department": profile.department,
+        "mobility": (profile.preferences or {}).get("mobility", {}),
         "availability": profile.availability,
         "preferred_modality": profile.preferred_modality,
         "preferred_sector": profile.preferred_sector,
         "desired_salary": profile.desired_salary,
         "phone": profile.phone,
+        "links": getattr(profile, "links", []) or [],
         "experiences": profile.experiences or [],
         "educations": profile.educations or [],
         "certifications": profile.certifications or [],
+        "driving_licenses": getattr(profile, "driving_licenses", None) or [],
+        "professional_cards": getattr(profile, "professional_cards", None) or [],
         "cv_text": profile.cv_text,
         "cv_filename": profile.cv_filename,
         "cv_uploaded_at": profile.cv_uploaded_at,
         "photo_url": profile.photo_url,
         "resume_style": profile.resume_style,
         "resume_color": profile.resume_color,
+        "submitted_version": saved.get("resume_version_id") or saved.get("draft_id") or (f"profile-{application.id}" if saved.get("schema") == 2 else None),
+        "submitted_resume_url": f"/api/v1/applications/{application.id}/resume" if application and saved.get("attach_resume") is not False and (saved.get("resume_version_id") or saved.get("profile_resume_id") or saved.get("schema") == 2 and saved.get("profile")) else None,
     }
+
+
+def _submitted_profile(profile, application):
+    from types import SimpleNamespace
+    saved = (getattr(application, "coach_snapshot", None) or {}) if application else {}
+    if not saved.get("profile"):
+        return profile
+    if saved.get("schema") == 2:
+        return SimpleNamespace(**{**saved["profile"], "id": profile.id, "user_id": profile.user_id,
+            "cv_text": None, "cv_filename": None, "cv_uploaded_at": None, "photo_url": profile.photo_url})
+    return SimpleNamespace(**{**saved["profile"], "experience": saved["intro"], "id": profile.id, "user_id": profile.user_id,
+                              "cv_text": None, "cv_filename": None, "cv_uploaded_at": None, "photo_url": None,
+                              "resume_style": "minimal", "resume_color": "default", "preferences": {}})
+
+
+def save_resume_design(db, user, payload):
+    from app.application.use_cases.career_coach import owner_profile
+
+    profile = owner_profile(user)
+    db.profiles.lock_owner(user.id); db.refresh(profile)
+    profile.resume_style, profile.resume_color = payload["style"], payload["color"]
+    options = {"sections": list(dict.fromkeys(payload["sections"])), "include_photo": payload["include_photo"], "version": 2}
+    profile.preferences = {**(profile.preferences or {}), "resume_export_options": options}
+    db.add(profile); db.commit()
+    return {"resume_style": profile.resume_style, "resume_color": profile.resume_color, "resume_export_options": options}
 
 
 def update_my_profile(
     payload: dict[str, Any], current_user: User, db: UnitOfWork, *, nlp: TextAnalysis
 ) -> Profile:
     profile = current_user.profile or db.profiles.new(user_id=current_user.id)
+    old_skills = set(profile.skills or [])
+    old_experiences = list(profile.experiences or [])
+    old_educations = list(profile.educations or [])
+    old_education_text = profile.education
     requested_name = (payload.pop("name", None) or "").strip()
     if requested_name:
         current_user.name = requested_name
         db.add(current_user)
     profile.profession = payload["profession"]
     profile.skills = normalize_skills(payload["skills"])
+    supplied_levels = payload.get("skill_levels")
+    if supplied_levels is not None:
+        previous_levels = declared_skill_levels(profile)
+        sources = dict((profile.preferences or {}).get("skill_level_sources", {}))
+        for key, level in supplied_levels.items():
+            if previous_levels.get(key) != level:
+                sources[key] = {"source": "manual", "level": level, "excerpt": ""}
+        profile.preferences = {**(profile.preferences or {}), "skill_level_sources": {key: value for key, value in sources.items() if key in supplied_levels}}
+        profile.preferences = {**(profile.preferences or {}), "skill_levels": supplied_levels}
+    profile.preferences = {**(profile.preferences or {}), "skill_levels": declared_skill_levels(profile)}
     profile.languages = payload.get("languages", [])
     previous_summary = payload["experience"]
     profile.education = payload["education"]
@@ -139,12 +252,38 @@ def update_my_profile(
     profile.preferred_sector = payload["preferred_sector"]
     profile.desired_salary = payload["desired_salary"]
     profile.phone = payload["phone"]
+    from datetime import date
+    if "birth_date" in payload:
+        birthday = payload["birth_date"]
+        profile.preferences = {**(profile.preferences or {}), "birth_date": birthday.isoformat() if birthday is not None else None}
+    for personal_field in ("identification", "personal_visibility"):
+        if personal_field in payload:
+            profile.preferences = {**(profile.preferences or {}), personal_field: payload[personal_field]}
+    for credential_field in ("driving_licenses", "professional_cards"):
+        if payload.get(credential_field) is not None:
+            records = [{key: value.isoformat() if isinstance(value, date) else value for key, value in record.items()} for record in payload[credential_field]]
+            profile.preferences = {**(profile.preferences or {}), credential_field: records}
+    if payload.get("links") is not None:
+        profile.preferences = {**(profile.preferences or {}), "professional_links": [{**item, "url": str(item["url"])} for item in payload["links"]]}
     profile.experiences = payload["experiences"] or []
+    if "mobility" in payload:
+        profile.preferences = {**(profile.preferences or {}), "mobility": payload["mobility"]}
     profile.educations = payload["educations"] or []
+    # Structured records are authoritative. Clearing the last study must also
+    # clear the legacy text used by academic matching and generated summaries.
+    if profile.educations or old_educations or payload["education"] == old_education_text:
+        profile.education = "\n".join(f"{row.get('degree', '')} - {row.get('institution', '')}" for row in profile.educations).strip() or None
+    removed_context = (not old_skills <= set(profile.skills or []) or
+                       any(row not in profile.experiences for row in old_experiences) or
+                       any(row not in profile.educations for row in old_educations))
+    if removed_context:
+        profile.preferences = {key: value for key, value in (profile.preferences or {}).items() if key not in {"cv_skill_context", "writing_contexts", "cv_entity_review"}}
     profile.certifications = payload["certifications"] or []
     profile.resume_style = payload["resume_style"]
     profile.resume_color = payload.get("resume_color", "default")
-    profile.experience = build_professional_summary(profile, previous_summary)
+    summary_mode = payload.get("summary_mode") or (profile.preferences or {}).get("professional_summary_mode", "automatic")
+    profile.preferences = {**(profile.preferences or {}), "professional_summary_mode": summary_mode}
+    profile.experience = previous_summary if summary_mode == "custom" else build_professional_summary(profile)
     text = " ".join(
         filter(
             None,
@@ -152,7 +291,7 @@ def update_my_profile(
                 payload["profession"],
                 " ".join(profile.skills),
                 profile.experience,
-                payload["education"],
+                profile.education,
                 payload["location"],
                 payload["department"],
                 payload["preferred_sector"],
@@ -201,8 +340,18 @@ def upload_photo(
 
 
 def profile_photo_content(
-    user_id: int, db: UnitOfWork, *, storage: ImageStorage
+    user_id: int, current_user: User, db: UnitOfWork, *, storage: ImageStorage
 ) -> tuple[bytes, str]:
+    can_view = (
+        current_user.id == user_id
+        or current_user.role == UserRole.ADMIN
+        or (
+            current_user.role == UserRole.COMPANY
+            and company_can_view_candidate(db, current_user, user_id)
+        )
+    )
+    if not can_view:
+        raise UseCaseError(status_code=403, detail="No puedes consultar esta foto")
     user = db.users.get(user_id)
     profile = user.profile if user else None
     if profile is None or not profile.photo_filename:
@@ -224,16 +373,38 @@ def upload_cv(
     *,
     nlp: TextAnalysis,
     resumes: ResumeReader,
+    replace_profile: bool = False,
 ) -> Profile:
     safe_name, raw_text = resumes.extract(file, current_user.id)
     analysis = nlp.analyze_cv(raw_text)
     profile = current_user.profile or db.profiles.new(user_id=current_user.id)
+    if replace_profile:
+        profile.profession = None
+        profile.skills = []
+        profile.experiences = []
+        profile.educations = []
+        profile.education = None
+        profile.experience = None
+        profile.preferences = {**{key: value for key, value in (profile.preferences or {}).items() if key not in {"writing_contexts", "cv_entity_review", "cv_mention_decisions", "skill_levels", "skill_level_sources"}}, "professional_summary_mode": "automatic"}
     profile.cv_text = analysis.clean_text
     profile.cv_filename = safe_name
     profile.cv_uploaded_at = datetime.utcnow()
+    from app.domain.services.skill_context import CONTEXT_VERSION
+    profile.preferences = {**{key: value for key, value in (profile.preferences or {}).items() if key != "cv_entity_review"},
+                           "cv_skill_context": getattr(analysis, "skill_context", []), "cv_context_version": CONTEXT_VERSION,
+                           "cv_source_text": raw_text[:30000]}
     profile.profession = analysis.profession or profile.profession
     profile.skills = normalize_skills([*(profile.skills or []), *analysis.skills])
-    profile.experience = analysis.experience or profile.experience
+    levels = declared_skill_levels(profile)
+    sources = dict((profile.preferences or {}).get("skill_level_sources", {}))
+    for key, suggestion in inferred_skill_levels(raw_text, analysis.skills).items():
+        if key not in levels:
+            levels[key] = suggestion["level"]
+            sources[key] = suggestion
+    profile.preferences = {**(profile.preferences or {}), "skill_levels": levels, "skill_level_sources": sources}
+    custom_summary = (profile.preferences or {}).get("professional_summary_mode") == "custom" and bool((profile.experience or "").strip())
+    if not custom_summary:
+        profile.experience = analysis.experience or profile.experience
     profile.education = analysis.education or profile.education
     if analysis.location:
         location_parts = [part.strip() for part in analysis.location.split(",", 1)]
@@ -241,10 +412,29 @@ def upload_cv(
         if len(location_parts) == 2:
             profile.department = location_parts[1]
     profile.phone = analysis.phone or profile.phone
-    profile.experiences = analysis.experiences or profile.experiences or []
-    profile.educations = analysis.educations or profile.educations or []
-    profile.certifications = analysis.certifications or profile.certifications or []
-    if analysis.experiences:
+    profile.experiences = _merge_imported(profile.experiences, analysis.experiences, ("role", "company"))
+    profile.educations = _merge_imported(profile.educations, analysis.educations, ("degree", "institution"))
+    profile.certifications = _merge_imported(profile.certifications, analysis.certifications, ("name", "issuer"))
+    from app.domain.services.languages import language_name
+    from app.domain.services.training_records import unique_training
+    profile.certifications = unique_training(profile.certifications)
+    known_languages = {language_name(row.get("name")) for row in profile.languages or []}
+    profile.languages = [*(profile.languages or []), *(row for row in getattr(analysis, "languages", []) if language_name(row.get("name")) not in known_languages)]
+    imported_projects = []
+    from uuid import NAMESPACE_URL, uuid5
+    for project in getattr(analysis, "projects", []):
+        identifier = uuid5(NAMESPACE_URL, f"talentsync:cv-project:{current_user.id}:{project['title'].casefold()}").hex
+        imported_projects.append({"id": identifier, "kind": "project", "source": "cv", "title": project["title"],
+            "description": project["description"], "url": project.get("url"), "verified": False, "add_to_profile": False,
+            "skills": nlp.extract_skills(project["description"]) if hasattr(nlp, "extract_skills") else []})
+    known_evidence = {row.get("id") for row in profile.evidence or []}
+    profile.evidence = [*(profile.evidence or []), *(row for row in imported_projects if row["id"] not in known_evidence)]
+
+    if getattr(analysis, "professional_summary", None) and not custom_summary:
+        # Keep the actual professional paragraph from the PDF, including its
+        # wording. It must not be replaced with a short list of job titles.
+        profile.preferences = {**profile.preferences, "professional_summary_mode": "custom"}
+    elif analysis.experiences and not custom_summary:
         profile.experience = build_professional_summary(
             profile, analysis.experience or profile.experience
         )
@@ -253,3 +443,32 @@ def upload_cv(
     db.commit()
     db.refresh(profile)
     return profile
+
+
+def _merge_imported(existing, detected, keys):
+    from app.domain.services.skill_context import fold
+    merged = [dict(row) for row in existing or []]
+    for row in detected or []:
+        identity = tuple(fold(row.get(key)) for key in keys)
+        def same_record(item):
+            if tuple(fold(item.get(key)) for key in keys) != identity:
+                return False
+            if keys == ("role", "company"):
+                start_a, end_a = item.get("start_date") or item.get("start_year"), item.get("end_date") or item.get("end_year")
+                start_b, end_b = row.get("start_date") or row.get("start_year"), row.get("end_date") or row.get("end_year")
+                if all(value and str(value)[:4].isdigit() for value in (start_a, end_a, start_b, end_b)):
+                    # Separate rehires, while retaining confirmed fields when
+                    # the imported period overlaps the existing employment.
+                    precision = 7 if all(len(str(value)) == 7 for value in (start_a, end_a, start_b, end_b)) else 4
+                    return not (str(end_a)[:precision] < str(start_b)[:precision] or str(end_b)[:precision] < str(start_a)[:precision])
+            return True
+        previous = next((item for item in merged if same_record(item)), None)
+        if previous is None:
+            incoming = dict(row)
+            if keys == ("role", "company") and incoming.get("is_current") and any(item.get("is_current") for item in merged):
+                incoming.update(is_current=False, end_date=None, end_year="", date_review_required=True)
+            merged.append(incoming)
+        else:
+            # Keep manually confirmed content and supplied certificate links.
+            previous.update({key: value for key, value in row.items() if previous.get(key) in (None, "", [])})
+    return merged

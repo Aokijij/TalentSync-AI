@@ -1,7 +1,19 @@
-from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 
 from app.api.deps import (
     get_adzuna_job_catalog,
+    get_catalog_refresh,
+    get_employer_board_catalog,
+    get_job_availability,
     get_job_catalog,
     get_jsearch_job_catalog,
     get_resume_reader,
@@ -9,18 +21,63 @@ from app.api.deps import (
     get_unit_of_work,
     require_roles,
 )
-from app.api.schemas.admin import JobCatalogSyncRequest
+from app.api.schemas.admin import EmployerBoardRequest, JobCatalogSyncRequest
 from app.application.errors import UseCaseError
 from app.application.ports.services import JobCatalog, ResumeReader, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import admin as use_cases
 from app.application.use_cases import job_imports
+from app.core.limiter import limiter
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import User
 
 router = APIRouter()
 
+
+@router.post("/jobs/availability/check")
+@limiter.limit("12/hour")
+def check_external_vacancies(request: Request, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work), gateway=Depends(get_job_availability)):
+    from app.application.use_cases.job_availability import check_due
+    return check_due(db, gateway, limit=5, budget_seconds=25)
+
+
+@router.post("/jobs/{job_id}/availability/check")
+@limiter.limit("30/hour")
+def check_external_vacancy(job_id: int, request: Request, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work), gateway=Depends(get_job_availability)):
+    from datetime import datetime, timedelta
+
+    from app.application.use_cases.job_availability import check_job
+    job = db.jobs.get(job_id)
+    if not job:
+        raise UseCaseError(status_code=404, detail="No se encontró la vacante")
+    if job.external_checked_at and job.external_checked_at > datetime.utcnow() - timedelta(minutes=5):
+        raise UseCaseError(status_code=429, detail="La oferta acaba de comprobarse. Espera cinco minutos antes de consultar de nuevo la fuente.")
+    return check_job(db, job, gateway)
+
 MAX_IMPORT_BYTES = 5 * 1024 * 1024
+
+
+@router.post("/jobs/sources/ats/preview")
+@limiter.limit("12/hour")
+def preview_employer_board(request: Request, payload: EmployerBoardRequest, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis), catalog_factory=Depends(get_employer_board_catalog)):
+    return job_imports.preview_employer_board(payload, db, nlp, catalog=catalog_factory(payload.board_url))
+
+
+@router.post("/jobs/sources/ats/import")
+@limiter.limit("6/hour")
+def import_employer_board(request: Request, payload: EmployerBoardRequest, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis), catalog_factory=Depends(get_employer_board_catalog)):
+    return job_imports.import_employer_board(payload, current_user, db, nlp, catalog=catalog_factory(payload.board_url))
+
+
+@router.get("/jobs/catalog-status")
+def catalog_status(current_user=Depends(require_roles(UserRole.ADMIN)), refresh=Depends(get_catalog_refresh)):
+    return refresh.status()
+
+
+@router.post("/jobs/catalog-refresh")
+@limiter.limit("6/hour")
+def refresh_catalog(request: Request, payload: JobCatalogSyncRequest, current_user=Depends(require_roles(UserRole.ADMIN)), refresh=Depends(get_catalog_refresh)):
+    return refresh.start(payload.keywords, payload.location)
 
 
 @router.get("/stats")
@@ -89,6 +146,7 @@ def list_admin_jobs(
     page_size: int = Query(default=20, ge=5, le=100),
     search: str | None = Query(default=None, max_length=120),
     scope: str = Query(default="platform", pattern="^(platform|external|all)$"),
+    status_filter: str | None = Query(default=None, pattern="^(active|review|closed)$"),
     current_user: User = Depends(require_roles(UserRole.ADMIN)),
     db: UnitOfWork = Depends(get_unit_of_work),
 ) -> dict:
@@ -99,6 +157,7 @@ def list_admin_jobs(
         page_size=page_size,
         search=search,
         scope=scope,
+        status_filter=status_filter,
     )
 
 

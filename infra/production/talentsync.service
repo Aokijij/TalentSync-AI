@@ -1,0 +1,36 @@
+[Unit]
+Description=TalentSync application API and background workers
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=talentsync
+Group=talentsync
+WorkingDirectory=/opt/talentsync/current
+EnvironmentFile=/etc/talentsync/backend.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+Environment=OMP_NUM_THREADS=2
+Environment=MKL_NUM_THREADS=2
+Environment=TOKENIZERS_PARALLELISM=false
+Environment=HF_HOME=/var/lib/talentsync/models/huggingface
+Environment=EASYOCR_MODULE_PATH=/var/lib/talentsync/models/easyocr
+Environment=DOCLING_ARTIFACTS_PATH=/var/lib/talentsync/models/docling
+ExecStart=/opt/talentsync/venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips 127.0.0.1 --limit-concurrency 32 --no-access-log
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/talentsync
+UMask=0077
+MemoryMax=6500M
+CPUQuota=190%
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

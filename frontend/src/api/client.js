@@ -1,19 +1,66 @@
 import axios from "axios";
 import { validationMessage } from "./errors.js";
 import { resolveApiBase } from "./config.js";
+import { shouldNotifyMutation, mutationMessage } from "./feedback.js";
 
 export const api = axios.create({
   baseURL: resolveApiBase(import.meta.env.VITE_API_URL, window.location),
   timeout: 25000,
+  withCredentials: true,
 });
 
+let sessionRequests = new AbortController();
+export function cancelPendingRequests() {
+  sessionRequests.abort();
+  sessionRequests = new AbortController();
+  window.dispatchEvent(new CustomEvent("talentsync:requests-canceled"));
+}
+
 api.interceptors.request.use((config) => {
+  config.signal = config.signal ? AbortSignal.any([config.signal, sessionRequests.signal]) : sessionRequests.signal;
+  const csrf = document.cookie.split("; ").find((part) => part.startsWith("talentsync_csrf="))?.split("=")[1];
+  if (csrf && !["get", "head", "options"].includes(String(config.method ?? "get").toLowerCase())) {
+    config.headers["X-CSRF-Token"] = decodeURIComponent(csrf);
+  }
   const token = localStorage.getItem("talentsync_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => {
+    if (shouldNotifyMutation(response.config)) {
+      window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { message: mutationMessage(response.config, response.data) } }));
+    }
+    return response;
+  },
+  async (error) => {
+    const config = error.config ?? {};
+    const status = error.response?.status;
+    const method = String(config.method ?? "get").toLowerCase();
+    const retryable =
+      method === "get" &&
+      error.code !== "ERR_CANCELED" && !config.signal?.aborted &&
+      !config.__talentsyncRetried &&
+      !config.__skipRetry &&
+      (!error.response || [502, 503, 504].includes(status));
+
+    if (retryable) {
+      config.__talentsyncRetried = true;
+      return api(config);
+    }
+
+    const isLogin = /\/auth\/(?:session\/)?(?:(?:admin|company|candidate)\/)?login$/.test(config.url ?? "");
+    if (status === 401 && !isLogin && !config.__skipSessionEvent) {
+      localStorage.removeItem("talentsync_token");
+      window.dispatchEvent(new CustomEvent("talentsync:session-expired"));
+    }
+    if (shouldNotifyMutation(config) && error.code !== "ERR_CANCELED") window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { error: true, message: getApiErrorMessage(error, config.__errorMessage || "No se completó la operación. Revisa los datos e inténtalo de nuevo.") } }));
+    return Promise.reject(error);
+  },
+);
 
 export function getApiErrorMessage(
   error,

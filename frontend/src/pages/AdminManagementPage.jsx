@@ -20,7 +20,11 @@ import {
 import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { useDebouncedValue, usePagedList } from "../hooks/usePagedList.js";
 import { ConfirmModal } from "../components/ConfirmModal.jsx";
+import { ExternalCatalogPanel } from "../components/ExternalCatalogPanel.jsx";
+import { EmployerBoardImport } from "../components/EmployerBoardImport.jsx";
+import { ExternalVacancyStatus } from "../components/ExternalVacancyStatus.jsx";
 
 const tabs = [
   {
@@ -46,15 +50,12 @@ const tabs = [
 export function AdminManagementPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("users");
-  const [users, setUsers] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [jobs, setJobs] = useState([]);
   const [stats, setStats] = useState({});
-  const [resourceTotal, setResourceTotal] = useState(0);
   const [scope, setScope] = useState("platform");
+  const [jobStatus, setJobStatus] = useState("");
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [overviewLoading, setOverviewLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [pageSize, setPageSize] = useState(10);
@@ -69,9 +70,14 @@ export function AdminManagementPage() {
   const [jsearchLocation, setJsearchLocation] = useState("Colombia");
   const [syncingJsearch, setSyncingJsearch] = useState(false);
 
+  const search = useDebouncedValue(query);
+  const { data: managed, loading: recordsLoading, error: recordsError, reload: loadManagedRecords } = usePagedList(`/admin/${activeTab}`, { page, page_size: pageSize, search: search || undefined, scope: activeTab === "users" ? undefined : scope, status_filter: activeTab === "jobs" ? jobStatus || undefined : undefined, role: activeTab === "users" ? "candidate" : undefined });
+  const loading = overviewLoading || recordsLoading || search !== query.trim();
+  const displayError = error || recordsError;
+
   async function loadOverview() {
     setError("");
-    setLoading(true);
+    setOverviewLoading(true);
     try {
       const [statsResponse, jsearchResponse] =
         await Promise.all([
@@ -88,44 +94,13 @@ export function AdminManagementPage() {
         ),
       );
     } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadManagedRecords() {
-    setLoading(true);
-    setError("");
-    try {
-      const { data } = await api.get(`/admin/${activeTab}`, {
-        params: {
-          page,
-          page_size: pageSize,
-          search: query.trim() || undefined,
-          scope: activeTab === "users" ? undefined : scope,
-          role: activeTab === "users" ? "candidate" : undefined,
-        },
-      });
-      if (activeTab === "users") setUsers(data.items || []);
-      else if (activeTab === "companies") setCompanies(data.items || []);
-      else setJobs(data.items || []);
-      setResourceTotal(data.total || 0);
-    } catch (requestError) {
-      setError(
-        getApiErrorMessage(requestError, "No fue posible cargar los registros"),
-      );
-    } finally {
-      setLoading(false);
+      setOverviewLoading(false);
     }
   }
 
   useEffect(() => {
     loadOverview();
   }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(loadManagedRecords, 250);
-    return () => window.clearTimeout(timer);
-  }, [activeTab, page, pageSize, query, scope]);
 
   async function remove(kind, id) {
     setDeleting(true);
@@ -228,24 +203,18 @@ export function AdminManagementPage() {
     }
   }
 
-  const records =
-    activeTab === "users"
-      ? users
-      : activeTab === "companies"
-        ? companies
-        : jobs;
-  const filtered = records;
   const activeMeta = tabs.find((tab) => tab.id === activeTab);
-  const totalRecords = resourceTotal;
+  const totalRecords = managed?.total || 0;
   const pageCount = Math.max(1, Math.ceil(totalRecords / pageSize));
   const safePage = Math.min(page, pageCount);
-  const visibleRecords = filtered;
+  const visibleRecords = loading || recordsError ? [] : managed?.items || [];
   const firstVisible = totalRecords ? (safePage - 1) * pageSize + 1 : 0;
   const lastVisible = Math.min(safePage * pageSize, totalRecords);
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, query, pageSize, scope]);
+  }, [activeTab, query, pageSize, scope, jobStatus]);
+  useEffect(() => { if (managed && page > pageCount) setPage(pageCount); }, [managed, page, pageCount]);
 
   return (
     <div className="space-y-6">
@@ -254,21 +223,21 @@ export function AdminManagementPage() {
         title="Consola administrativa"
         description="Busca, revisa y administra los recursos principales con una vista más compacta."
       />
-      {error ? (
+      {displayError ? (
         <p
           role="alert"
           className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm font-medium text-[var(--error)]"
         >
-          {error}
+          {displayError}
         </p>
       ) : null}
 
       <section className="grid gap-4 sm:grid-cols-3">
         <Summary
           icon={UsersRound}
-          value={stats.candidates ?? users.filter((item) => item.role === "candidate").length}
+          value={stats.candidates ?? "—"}
           label="Candidatos"
-          detail={`${stats.users ?? users.length} usuarios registrados`}
+          detail={`${stats.users ?? "—"} usuarios registrados`}
         />
         <Summary
           icon={Building2}
@@ -280,7 +249,7 @@ export function AdminManagementPage() {
           icon={BriefcaseBusiness}
           value={stats.platform_jobs ?? 0}
           label="Vacantes TalentSync"
-          detail={`${stats.external_jobs ?? 0} externas · ${stats.applications ?? 0} postulaciones`}
+          detail={`${stats.external_jobs ?? 0} registros externos · ${stats.applications ?? 0} postulaciones`}
         />
       </section>
 
@@ -349,6 +318,7 @@ export function AdminManagementPage() {
                   </select>
                 </label>
               ) : null}
+              {activeTab === "jobs" && <label className="text-xs font-bold text-[var(--muted)]">Disponibilidad<select className="field-control input-sm mt-1.5" value={jobStatus} onChange={(event) => setJobStatus(event.target.value)}><option value="">Todos los estados</option><option value="active">Disponibles</option><option value="review">En revisión</option><option value="closed">Cerradas</option></select></label>}
               <label className="relative block sm:w-80">
                 <span className="sr-only">Buscar</span>
                 <Search
@@ -365,6 +335,9 @@ export function AdminManagementPage() {
             </div>
           </header>
           {activeTab === "jobs" ? (
+            <><ExternalCatalogPanel onChanged={async () => { await loadOverview(); await loadManagedRecords(); }} />
+            <details className="border-b border-[var(--line)]"><summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-[var(--accent)]">Consultar un portal empresarial específico</summary><EmployerBoardImport onChanged={loadManagedRecords} /></details>
+            <details className="border-b border-[var(--line)]"><summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-[var(--accent)]">Otras fuentes: archivo autorizado y agregadores</summary>
             <JobImportPanel
               file={importFile}
               importing={importing}
@@ -379,7 +352,7 @@ export function AdminManagementPage() {
               onJsearchKeywords={setJsearchKeywords}
               onJsearchLocation={setJsearchLocation}
               onSyncJsearch={syncJsearch}
-            />
+            /></details></>
           ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface-subtle)] px-5 py-3 text-xs font-semibold text-[var(--muted)]">
             <span>
@@ -404,6 +377,7 @@ export function AdminManagementPage() {
           <RecordsTable
             kind={activeTab}
             records={visibleRecords}
+            loading={loading}
             currentUserId={user.id}
             onDelete={setPendingDelete}
           />
@@ -415,7 +389,7 @@ export function AdminManagementPage() {
               <button
                 type="button"
                 className="button-secondary button-sm"
-                disabled={safePage <= 1}
+                disabled={loading || safePage <= 1}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
               >
                 <ChevronLeft size={15} />
@@ -424,7 +398,7 @@ export function AdminManagementPage() {
               <button
                 type="button"
                 className="button-secondary button-sm"
-                disabled={safePage >= pageCount}
+                disabled={loading || safePage >= pageCount}
                 onClick={() =>
                   setPage((current) => Math.min(pageCount, current + 1))
                 }
@@ -501,7 +475,7 @@ function JobImportPanel({
               className="field-control mt-1.5"
               value={jsearchKeywords}
               onChange={(event) => onJsearchKeywords(event.target.value)}
-              placeholder="Ej. servicio al cliente, salud, tecnología"
+              placeholder="Indica las áreas profesionales que quieres consultar"
               required
             />
           </label>
@@ -523,7 +497,7 @@ function JobImportPanel({
       ) : (
         <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-amber-500/30 bg-amber-500/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-5 text-[var(--muted)]">
-            Configura la clave del conector de empleos como secreto de Azure para habilitar la sincronización.
+            Este agregador necesita una clave privada en el servidor. También puedes consultar arriba los portales públicos de Greenhouse y Lever.
           </p>
           <a className="button-secondary button-sm shrink-0" href={jsearchSource?.registration_url || "https://www.openwebninja.com/api/jsearch"} target="_blank" rel="noreferrer">
             Ver documentación del conector
@@ -635,7 +609,8 @@ function Summary({ icon: Icon, value, label, detail }) {
   );
 }
 
-function RecordsTable({ kind, records, currentUserId, onDelete }) {
+function RecordsTable({ kind, records, loading, currentUserId, onDelete }) {
+  if (loading) return <p role="status" className="px-5 py-10 text-center text-sm text-[var(--muted)]">Cargando registros…</p>;
   if (!records.length)
     return (
       <div className="py-16 text-center">
@@ -725,6 +700,8 @@ function RecordRow({ kind, item, protectedRecord, onDelete }) {
                 {item.company_name}
               </p>
             ) : null}
+            {kind === "jobs" && item.location && <p className="mt-1 text-xs text-[var(--muted)]">{item.location}{item.department ? ` · ${item.department}` : ""}</p>}
+            {kind === "jobs" && item.source_kind === "external" && <ExternalVacancyStatus job={item} admin />}
             {kind === "companies" ? (
               <p className="max-w-xs truncate text-xs text-[var(--muted)]">
                 {item.description || "Sin descripción"}

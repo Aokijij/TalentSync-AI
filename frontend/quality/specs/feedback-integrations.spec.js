@@ -1,0 +1,37 @@
+import { test, expect } from "@playwright/test";
+for (const width of [360, 1440]) for (const theme of ["light", "dark"]) test(`Feedback and integration states · ${width}px · ${theme}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 950 });
+  const errors = []; page.on("pageerror", (error) => errors.push(error.message));
+  await page.route("**/*", (route) => { const url = new URL(route.request().url()); return url.hostname === "127.0.0.1" && !url.pathname.startsWith("/api/") ? route.continue() : route.abort(); });
+  await page.goto(`/quality/?system=1&role=admin&theme=${theme}`);
+  const integrations = page.getByRole("region", { name: "Estado de integraciones" });
+  await integrations.getByRole("button", { name: "Por revisar", exact: true }).click();
+  await expect(integrations.getByRole("heading", { name: "YouTube", exact: true })).toHaveCount(0);
+  await expect(integrations.getByRole("heading", { name: "Microsoft Learn", exact: true })).toBeVisible();
+  await integrations.getByRole("searchbox", { name: "Buscar integración" }).fill("social");
+  await expect(integrations.getByRole("heading", { name: "Microsoft Learn", exact: true })).toHaveCount(0);
+  await expect(integrations.getByRole("heading", { name: "Acceso social", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Abrir editor de ejemplo" }).click();
+  await page.getByRole("textbox", { name: "Resumen", exact: true }).fill("Mis cambios todavía no están guardados.");
+  await page.getByRole("button", { name: "Cerrar ventana", exact: true }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Descartar los cambios", exact: true });
+  await expect(confirm).toBeVisible();
+  await expect(confirm.getByRole("button", { name: "Seguir editando" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(confirm).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Resumen", exact: true })).toHaveValue("Mis cambios todavía no están guardados.");
+  await page.getByRole("button", { name: "Guardar resumen", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Editar el resumen" })).toBeHidden();
+  await page.getByRole("button", { name: "Probar avisos" }).click();
+  await expect(page.locator(".feedback-toast[data-tone=error]")).toBeVisible();
+  await expect(page.locator(".feedback-toast[data-tone=success]").filter({ hasText: "Preferencias actualizadas" })).toBeVisible();
+  // Repeated events are deduplicated; errors require explicit dismissal.
+  await page.getByRole("button", { name: "Probar avisos" }).click();
+  await expect(page.locator(".feedback-toast[data-tone=error]")).toHaveCount(1);
+  await page.clock.install(); await page.clock.fastForward(12000);
+  await expect(page.locator(".feedback-toast[data-tone=error]")).toBeVisible();
+  await page.locator(".feedback-toast[data-tone=error]").getByRole("button", { name: "Cerrar aviso" }).click();
+  await expect(page.locator(".feedback-toast[data-tone=error]")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  expect(errors).toEqual([]);
+});

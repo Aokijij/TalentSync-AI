@@ -1,69 +1,59 @@
-import { ArrowRight, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { GuestOnly } from "../components/GuestOnly.jsx";
+import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Navigate, useNavigate } from "react-router-dom";
 
-import { BrandLogo } from "../components/brand/BrandLogo.jsx";
-import { ThemeToggle } from "../components/ThemeToggle.jsx";
+import { AuthFrame } from "../components/AuthFrame.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { api, getApiErrorMessage } from "../api/client.js";
+import { MfaChallenge } from "../components/MfaChallenge.jsx";
 
 export function AdminLoginPage() {
-  const { user, login } = useAuth();
-  const navigate = useNavigate();
+  const fieldPrefix = useId();
+  const { login, accessOptions } = useAuth();
+  const [destination, setDestination] = useState(null);
   const [error, setError] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [credentials, setCredentials] = useState(null), [verifying, setVerifying] = useState(false);
+  const [corporate, setCorporate] = useState(null);
+  const [corporateBusy, setCorporateBusy] = useState(false);
+  useEffect(() => { api.get("/auth/admin-sso/options", { __skipSessionEvent: true }).then(({ data }) => setCorporate(data)).catch(() => setError("No pudimos consultar los métodos de acceso administrativo.")); }, []);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm();
 
-  if (user) return <Navigate to={user.role === "admin" ? "/admin" : "/"} replace />;
 
   async function onSubmit(values) {
     setError("");
     try {
-      await login(values.email, values.password, { admin: true });
-      navigate("/admin", { replace: true });
+      const result = await login(values.email, values.password, { admin: true, code: values.code });
+      if (result.mfa_required) { setCredentials(values); setMfaRequired(true); return; }
+      setDestination(accessOptions.mode !== "session" || accessOptions.admin_mfa_required === false || result.mfa_enabled ? "/admin" : "/seguridad");
     } catch {
       setError("No fue posible validar el acceso administrativo.");
     }
   }
+  async function startCorporate() {
+    setCorporateBusy(true); setError("");
+    try { const { data } = await api.post("/auth/admin-sso/start"); window.location.assign(data.url); }
+    catch (failure) { setError(getApiErrorMessage(failure)); setCorporateBusy(false); }
+  }
 
   return (
-    <main className="auth-shell role-admin relative">
-      <ThemeToggle compact className="fixed right-5 top-5 z-20" />
-      <section className="auth-stage">
-        <aside className="auth-brand-panel" aria-label="Acceso administrativo">
-          <div>
-            <BrandLogo size="lg" subtitle="Administración segura" tone="inverse" />
-            <p className="mt-16 text-sm font-bold uppercase tracking-[0.16em] text-violet-200">
-              Acceso restringido
-            </p>
-            <h1 className="mt-4 max-w-md text-balance text-4xl font-bold text-white">
-              Control de la plataforma en un espacio independiente.
-            </h1>
-            <p className="mt-5 max-w-md text-base leading-7 text-violet-100">
-              Esta dirección está reservada para cuentas administradoras autorizadas.
-            </p>
-          </div>
-          <div className="auth-signal-card flex gap-3">
-            <ShieldCheck className="mt-0.5 shrink-0 text-violet-300" size={21} />
-            <div>
-              <p className="font-bold text-white">Sesión administrativa</p>
-              <p className="mt-1 text-sm text-violet-100">
-                Las cuentas de candidatos y empresas no pueden ingresar por este acceso.
-              </p>
-            </div>
-          </div>
-        </aside>
-        <div className="auth-form-panel">
+    <GuestOnly busy={isSubmitting || verifying} destination={destination}><AuthFrame admin>
           <div className="auth-form">
+            {mfaRequired ? <MfaChallenge email={credentials.email} error={error} busy={verifying} onBack={() => { setCredentials(null); setMfaRequired(false); setError(""); }} onVerify={async (code) => { setVerifying(true); await onSubmit({ ...credentials, code }); setVerifying(false); }} /> : <>
             <p className="section-kicker">Administración</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Iniciar sesión</h2>
             <p className="mt-3 text-[var(--muted)]">
-              Ingresa las credenciales de una cuenta administradora.
+              {corporate?.required ? "Utiliza tu cuenta corporativa aprovisionada para administración." : "Ingresa las credenciales de una cuenta administradora."}
             </p>
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
+            {!corporate && !error && <p className="mt-5 text-sm">Consultando métodos de acceso…</p>}
+            {(corporate?.enabled || corporate?.required) && <div className="mt-6 space-y-3"><button className="button-primary w-full" type="button" disabled={!corporate.enabled || corporateBusy} onClick={startCorporate}>{corporateBusy ? "Abriendo proveedor…" : `Continuar con ${corporate.provider}`}</button><p className="text-xs text-[var(--muted)]">{corporate.enabled ? "Solo admite cuentas corporativas vinculadas previamente a una cuenta administradora." : "El acceso corporativo obligatorio aún no está configurado. Contacta al responsable del entorno."}</p></div>}
+            {error && <p role="alert" className="mt-4 text-sm text-[var(--error)]">{error}</p>}
+            {corporate && !corporate.required && <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
               <label className="block text-sm font-semibold">
                 Correo administrativo
                 <div className="field-control mt-2 flex items-center">
@@ -72,10 +62,11 @@ export function AdminLoginPage() {
                     className="min-h-0 p-0"
                     type="email"
                     autoComplete="username"
+                    aria-label="Correo administrativo" aria-invalid={!!errors.email} aria-describedby={errors.email ? `${fieldPrefix}-email-error` : undefined}
                     {...register("email", { required: "El correo es obligatorio" })}
                   />
                 </div>
-                {errors.email ? <span className="mt-1 block text-sm text-[var(--error)]">{errors.email.message}</span> : null}
+                {errors.email ? <span id={`${fieldPrefix}-email-error`} className="form-field-error" role="alert">{errors.email.message}</span> : null}
               </label>
               <label className="block text-sm font-semibold">
                 Contraseña
@@ -85,19 +76,18 @@ export function AdminLoginPage() {
                     className="min-h-0 p-0"
                     type="password"
                     autoComplete="current-password"
+                    aria-label="Contraseña" aria-invalid={!!errors.password} aria-describedby={errors.password ? `${fieldPrefix}-password-error` : undefined}
                     {...register("password", { required: "La contraseña es obligatoria" })}
                   />
                 </div>
-                {errors.password ? <span className="mt-1 block text-sm text-[var(--error)]">{errors.password.message}</span> : null}
+                {errors.password ? <span id={`${fieldPrefix}-password-error`} className="form-field-error" role="alert">{errors.password.message}</span> : null}
               </label>
-              {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-[var(--error)]">{error}</p> : null}
               <button className="button-primary w-full" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Validando…" : <>Entrar al panel <ArrowRight size={17} /></>}
               </button>
-            </form>
+            </form>}
+            </>}
           </div>
-        </div>
-      </section>
-    </main>
+    </AuthFrame></GuestOnly>
   );
 }

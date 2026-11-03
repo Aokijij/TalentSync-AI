@@ -3,6 +3,8 @@ from typing import Any
 from app.application.errors import UseCaseError
 from app.application.ports.services import AccountSecurity, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
+from app.application.use_cases.events import record_event
+from app.application.use_cases.legal_consent import registration_consent
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import User
 from app.domain.services.skills import normalize_skills
@@ -14,7 +16,9 @@ def register(
     *,
     nlp: TextAnalysis,
     security: AccountSecurity,
+    require_verification: bool = False,
 ) -> User:
+    consent = registration_consent(payload, channel="email")
     if payload["role"] == UserRole.ADMIN:
         raise UseCaseError(
             status_code=403,
@@ -22,7 +26,16 @@ def register(
         )
     if db.users.find_by_email(payload["email"]):
         raise UseCaseError(status_code=409, detail="El email ya esta registrado")
-    if payload["role"] == UserRole.COMPANY:
+    invitation = None
+    if payload.get("invitation_token"):
+        from datetime import datetime
+
+        from app.domain.services.authentication import token_digest
+        invitation = db.organizations.invitation(token_digest(payload["invitation_token"]))
+        if (invitation is None or invitation.used_at or invitation.expires_at <= datetime.utcnow()
+                or invitation.email != payload["email"].casefold() or payload["role"] != UserRole.COMPANY):
+            raise UseCaseError(status_code=422, detail="La invitación no corresponde a esta cuenta")
+    if payload["role"] == UserRole.COMPANY and invitation is None:
         if not payload["company_name"] or not payload["nit"]:
             raise UseCaseError(
                 status_code=422,
@@ -37,6 +50,7 @@ def register(
         email=payload["email"],
         password_hash=security.hash_password(payload["password"]),
         role=payload["role"],
+        legal_acceptance=consent,
     )
     db.add(user)
     db.flush()
@@ -85,15 +99,18 @@ def register(
             embedding=nlp.embed(profile_text) if profile_text else None,
         )
     )
-    if payload["role"] == UserRole.COMPANY:
+    if payload["role"] == UserRole.COMPANY and invitation is None:
         db.add(
             db.companies.new(
                 owner_user_id=user.id,
                 name=payload["company_name"],
                 nit=payload["nit"],
                 description=payload["company_description"],
+                verification_required=require_verification,
             )
         )
+    record_event(db, "account.created", "user", user.id,
+                 actor_user_id=user.id, details={"role": user.role.value})
     db.commit()
     db.refresh(user)
     return user
@@ -118,6 +135,8 @@ def login(
             status_code=403,
             detail="La cuenta administradora utiliza un acceso independiente",
         )
+    if payload.get("portal") and user.role.value != payload["portal"]:
+        raise UseCaseError(status_code=401, detail="Esta cuenta no pertenece a este acceso. Utiliza el portal de tu rol.")
     return dict(
         access_token=security.create_access_token(str(user.id), user.role.value)
     )

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RecommendationResponse(BaseModel):
@@ -15,12 +15,29 @@ class RecommendationResponse(BaseModel):
     data_confidence_percentage: float = 100
     is_estimated: bool = False
     reasons: list[str]
+    match_details: dict = Field(default_factory=dict)
+    personalization: dict = Field(default_factory=dict)
+    discovery: dict = Field(default_factory=dict)
     created_at: datetime
 
     model_config = {"from_attributes": True}
 
 
+class RecommendationBatch(BaseModel):
+    items: list[RecommendationResponse]
+    pending: int
+    total: int
+
+
 class RankedCandidate(BaseModel):
+    credential_status: str = "not_required"
+    skill_levels: dict = Field(default_factory=dict)
+    professional_match_percentage: float | None = None
+    location_fit: dict = Field(default_factory=dict)
+    experience_months: int = 0
+    identity_hidden: bool = False
+    related_skills: list[dict] = Field(default_factory=list)
+    validated_foundations: list[dict] = Field(default_factory=list)
     user_id: int
     name: str
     profession: str | None
@@ -32,6 +49,7 @@ class RankedCandidate(BaseModel):
     has_pending_invitation: bool = False
     languages: list[dict] = []
     application_id: int | None = None
+    version: int | None = None
     screening_answers: list[dict] = []
     screening_adjustment: float = 0
     base_match_percentage: float | None = None
@@ -39,6 +57,8 @@ class RankedCandidate(BaseModel):
 
 
 class RankedCandidatePage(BaseModel):
+    pending: int = 0
+    pool_total: int = 0
     items: list[RankedCandidate]
     total: int
     limit: int

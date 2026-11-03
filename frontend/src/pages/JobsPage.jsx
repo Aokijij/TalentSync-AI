@@ -1,8 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
+import { VacancyCard } from "../components/VacancyCard.jsx";
+import { InterestsToggle } from "../components/JobInterests.jsx";
+import { useJobInterests } from "../hooks/useJobInterests.js";
+import { useJobComparison } from "../hooks/useJobComparison.js";
+import { JobComparison } from "../components/JobComparison.jsx";
+import { searchJob, visibleInterest } from "../utils/jobDiscovery.js";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BriefcaseBusiness,
-  CalendarDays,
-  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -11,35 +16,25 @@ import {
   Clock3,
   FileText,
   Globe2,
-  ExternalLink,
   MapPin,
   Search,
   SlidersHorizontal,
-  Sparkles,
   RotateCcw,
 } from "lucide-react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 import { api } from "../api/client.js";
+import { getRecommendations } from "../api/recommendations.js";
 import { useAuth } from "../hooks/useAuth.js";
 import {
   COLOMBIA_LOCATIONS,
   COLOMBIAN_DEPARTMENTS,
 } from "../constants/colombianCities.js";
-import { JOB_SECTORS } from "../constants/jobSectors.js";
-import { formatRelativeTime, isWithinDays } from "../utils/dates.js";
-import { cleanExternalLocation, externalPortal } from "../utils/externalPortal.js";
+import { isWithinDays } from "../utils/dates.js";
+import { cleanExternalLocation } from "../utils/externalPortal.js";
+import { MARKET_MINIMUM_OPTIONS, marketMinimum, meetsMarketMinimum } from "../utils/marketMinimum.js";
+import { pageNumber, pageItems, paginationState } from "../utils/pagination.js";
 
-const modalityLabel = {
-  remote: "Remoto",
-  hybrid: "Híbrido",
-  onsite: "Presencial",
-};
-const contractLabel = {
-  full_time: "Tiempo completo",
-  part_time: "Medio tiempo",
-  contract: "Contrato",
-};
 const defaultFilters = {
   modality: "",
   department: "",
@@ -55,97 +50,92 @@ const defaultFilters = {
 
 export function JobsPage() {
   const { user } = useAuth();
+  return <JobsWorkspace key={user?.id || "public"} user={user} />;
+}
+
+function JobsWorkspace({ user }) {
+  const interests = useJobInterests(user?.role === "candidate");
+  const comparison = useJobComparison(user?.role === "candidate" ? user.id : null);
+  const [interestMode, setInterestMode] = useState(() => ["saved", "hidden"].includes(new URLSearchParams(window.location.search).get("interes")) ? new URLSearchParams(window.location.search).get("interes") : "all");
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(true), [jobsError, setJobsError] = useState("");
+  const [matchesLoading, setMatchesLoading] = useState(user?.role === "candidate"), [matchesError, setMatchesError] = useState("");
+  const [matchRetry, setMatchRetry] = useState(0), [catalogRetry, setCatalogRetry] = useState(0);
   const [applications, setApplications] = useState([]);
   const [matches, setMatches] = useState({});
+  const [matchDetails, setMatchDetails] = useState({});
   const [matchConfidence, setMatchConfidence] = useState({});
   const [profileSkills, setProfileSkills] = useState([]);
   const [onlyMySkills, setOnlyMySkills] = useState(() => searchParams.get("skills") === "1");
-  const [minCompatibility, setMinCompatibility] = useState(() => Number(searchParams.get("match") || 0));
+  const updateMatches = useCallback((items) => {
+    setMatchDetails(Object.fromEntries(items.map((item) => [item.job_id, item])));
+    setMatches(Object.fromEntries(items.map((item) => [item.job_id, item.match_percentage])));
+    setMatchConfidence(Object.fromEntries(items.map((item) => [item.job_id, item.data_confidence_percentage ?? 100])));
+  }, []);
+  const { refreshing: refreshingMatches, error: matchLoadError, retry: retryMatches } = useRecommendationUpdates(user?.role === "candidate" ? user.id : null, updateMatches);
+  const [minCompatibility, setMinCompatibility] = useState(() => marketMinimum(searchParams.get("match")));
+  const [ignoreMatchFilter, setIgnoreMatchFilter] = useState(false);
   const [query, setQuery] = useState(() => searchParams.get("q") || "");
   const [filters, setFilters] = useState(() => Object.fromEntries(
     Object.keys(defaultFilters).map((key) => [key, searchParams.get(key) ?? defaultFilters[key]]),
   ));
-  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get("page") || 1)));
+  const [page, setPage] = useState(() => pageNumber(searchParams.get("page")));
   const [pageSize, setPageSize] = useState(() => [9, 12, 24].includes(Number(searchParams.get("size"))) ? Number(searchParams.get("size")) : 9);
   const [showFilters, setShowFilters] = useState(() => searchParams.get("filters") === "1");
 
   useEffect(() => {
     const next = new URLSearchParams();
     if (query) next.set("q", query);
+    if (interestMode !== "all") next.set("interes", interestMode);
     Object.entries(filters).forEach(([key, value]) => {
       if (value && value !== defaultFilters[key]) next.set(key, value);
     });
-    if (filters.sort !== defaultFilters.sort) next.set("sort", filters.sort);
     if (onlyMySkills) next.set("skills", "1");
-    if (minCompatibility) next.set("match", String(minCompatibility));
+    if (user?.role === "candidate" && minCompatibility > 0) next.set("match", String(minCompatibility));
     if (page > 1) next.set("page", String(page));
     if (pageSize !== 9) next.set("size", String(pageSize));
     if (showFilters) next.set("filters", "1");
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
-  }, [filters, minCompatibility, onlyMySkills, page, pageSize, query, searchParams, setSearchParams, showFilters]);
+  }, [filters, interestMode, minCompatibility, onlyMySkills, page, pageSize, query, searchParams, setSearchParams, showFilters]);
 
   useEffect(() => {
-    const requests = [
-      api.get("/jobs"),
-      api.get("/applications/me").catch(() => ({ data: [] })),
-    ];
-    if (user?.role === "candidate")
-      requests.push(
-        api
-          .get("/recommendations/me/jobs", { params: { include_all: true } })
-          .catch(() => ({ data: [] })),
-        api.get("/profiles/me").catch(() => ({ data: { skills: [] } })),
-      );
-    Promise.all(requests)
-      .then(([
-        jobsResponse,
-        applicationsResponse,
-        recommendationsResponse,
-        profileResponse,
-      ]) => {
-        setJobs(
-          jobsResponse.data.map((job) => ({
-            ...job,
-            location:
-              job.source_kind === "external"
-                ? cleanExternalLocation(job.location)
-                : job.location,
-          })),
-        );
-        setApplications(applicationsResponse.data);
-        setMatches(
-          Object.fromEntries(
-            (recommendationsResponse?.data ?? []).map((item) => [
-              item.job_id,
-              item.match_percentage,
-            ]),
-          ),
-        );
-        setMatchConfidence(
-          Object.fromEntries(
-            (recommendationsResponse?.data ?? []).map((item) => [
-              item.job_id,
-              item.data_confidence_percentage ?? 100,
-            ]),
-          ),
-        );
-        setProfileSkills(profileResponse?.data?.skills ?? []);
-      })
-      .catch(() => setJobs([]));
-  }, [user?.role]);
+    let active = true;
+    setJobsLoading(true); setJobsError("");
+    const requests = [api.get("/jobs"), api.get("/applications/me").catch(() => ({ data: [] })),
+      user?.role === "candidate" ? api.get("/profiles/me").catch(() => ({ data: { skills: [] } })) : Promise.resolve({ data: { skills: [] } })];
+    Promise.all(requests).then(([jobsResponse, applicationsResponse, profileResponse]) => {
+      if (!active) return;
+      setJobs(jobsResponse.data.map((job) => ({ ...job, location: job.source_kind === "external" ? cleanExternalLocation(job.location) : job.location })));
+      setApplications(applicationsResponse.data);
+      setProfileSkills(profileResponse.data.skills || []);
+    }).catch(() => { if (active) setJobsError("No pudimos cargar las vacantes."); })
+      .finally(() => { if (active) setJobsLoading(false); });
+    return () => { active = false; };
+  }, [user?.role, user?.id, catalogRetry]);
 
-  const applied = useMemo(
-    () => new Set(applications.map((application) => application.job_id)),
+  useEffect(() => {
+    if (user?.role !== "candidate") return;
+    let active = true;
+    setMatchesLoading(true); setMatchesError("");
+    getRecommendations(user.id).then(({ data }) => {
+      if (!active) return;
+      updateMatches(data); setIgnoreMatchFilter(false);
+    }).catch(() => { if (active) setMatchesError("Las vacantes están disponibles, pero no pudimos calcular tu compatibilidad."); })
+      .finally(() => { if (active) setMatchesLoading(false); });
+    return () => { active = false; };
+  }, [user?.role, user?.id, matchRetry]);
+
+  const applicationsByJob = useMemo(
+    () => Object.fromEntries(applications.map((application) => [application.job_id, application])),
     [applications],
   );
   const availableSectors = useMemo(
     () =>
-      JOB_SECTORS.filter((sector) => jobs.some((job) => job.sector === sector)),
+      [...new Set(jobs.map((job) => job.sector).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es")),
     [jobs],
   );
   const availableCities = filters.department
@@ -176,16 +166,12 @@ export function JobsPage() {
     );
     return jobs
       .filter((job) => {
-        const matchesTerm =
-          !term ||
-          `${job.title} ${job.company_name} ${job.description} ${job.requirements} ${(job.skills || []).join(" ")}`
-            .toLowerCase()
-            .includes(term);
+        const matchesTerm = searchJob(job, term);
         const hasCandidateSkill = (job.skills || []).some((skill) =>
           candidateSkills.has(skill.toLowerCase().trim()),
         );
         return (
-          matchesTerm &&
+          matchesTerm && visibleInterest(job, interests.byId, interestMode) &&
           (!filters.modality || job.modality === filters.modality) &&
           (!filters.employment_type ||
             job.employment_type === filters.employment_type) &&
@@ -197,7 +183,7 @@ export function JobsPage() {
           (!filters.max_salary || (job.salary != null && Number(job.salary) <= Number(filters.max_salary))) &&
           isWithinDays(job.created_at, Number(filters.published_days || 0)) &&
           (!onlyMySkills || hasCandidateSkill) &&
-          (matches[job.id] ?? 0) >= minCompatibility
+          (user?.role !== "candidate" || ignoreMatchFilter || meetsMarketMinimum(matches[job.id], minCompatibility))
         );
       })
       .sort((first, second) => {
@@ -208,6 +194,7 @@ export function JobsPage() {
         return (matches[second.id] ?? -1) - (matches[first.id] ?? -1);
       });
   }, [
+    interests.byId, interestMode,
     jobs,
     query,
     filters,
@@ -215,13 +202,11 @@ export function JobsPage() {
     profileSkills,
     onlyMySkills,
     minCompatibility,
+    ignoreMatchFilter, user?.role,
   ]);
 
-  const pages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
-  const visibleJobs = filteredJobs.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
-  );
+  const { pages, page: safePage } = paginationState(filteredJobs.length, page, pageSize);
+  const visibleJobs = pageItems(filteredJobs, page, pageSize);
   const setFilter = (key, value) => {
     setFilters((current) => ({
       ...current,
@@ -232,14 +217,16 @@ export function JobsPage() {
   };
 
   useEffect(() => {
-    if (page > pages) setPage(pages);
-  }, [page, pages]);
+    if (!jobsLoading && !matchesLoading && !jobsError && !matchesError && page !== safePage) setPage(safePage);
+  }, [page, safePage, jobsLoading, matchesLoading, jobsError, matchesError]);
 
   return (
-    <div className="space-y-6">
+    <div className={`jobs-market space-y-6${comparison.ids.length ? " has-comparison" : ""}`}>
+      {refreshingMatches && <p role="status" className="text-sm text-[var(--muted)]">Actualizando compatibilidades… Las vacantes ya están disponibles.</p>}
+      {matchLoadError && <p role="alert" className="surface-card p-4 text-[var(--error)]">{matchLoadError} <button className="underline" onClick={retryMatches}>Reintentar</button></p>}
       <section className="surface-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="vacancy-page-heading flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-[var(--radius-lg)] bg-[var(--accent)]/10 text-[var(--accent)]">
               <BriefcaseBusiness size={21} />
             </div>
@@ -247,12 +234,12 @@ export function JobsPage() {
               <p className="section-kicker">Mercado laboral</p>
               <h1 className="mt-1 text-2xl font-bold">Explorar vacantes</h1>
               <p className="text-sm text-[var(--muted)]">
-                {filteredJobs.length} oportunidades disponibles.
+                {jobsLoading ? "Cargando vacantes…" : matchesLoading && minCompatibility > 0 ? "Calculando los resultados de tu filtro…" : `${filteredJobs.length} oportunidades disponibles.`}
               </p>
             </div>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <label className="relative w-full sm:w-80">
+          <div className="vacancy-search-actions">
+            <label className="vacancy-search-input relative">
               <Search className="absolute left-3 top-3 text-[var(--muted)]" size={18} />
               <input className="field-control input-md !pl-10" placeholder="Cargo, empresa o habilidad" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} />
             </label>
@@ -268,7 +255,7 @@ export function JobsPage() {
               {activeFilterCount ? <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-bold text-[var(--accent)]">{activeFilterCount} activos</span> : null}
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Filter icon={MapPin} label="Departamento"><select className="field-control input-md" value={filters.department} onChange={(event) => setFilter("department", event.target.value)}><option value="">Todo el país</option>{COLOMBIAN_DEPARTMENTS.map((department) => <option key={department}>{department}</option>)}</select></Filter>
+              <Filter icon={MapPin} label="Departamento"><select className="field-control input-md" value={filters.department} onChange={(event) => setFilter("department", event.target.value)}><option value="">Todo el país</option><option>Remoto internacional</option>{COLOMBIAN_DEPARTMENTS.map((department) => <option key={department}>{department}</option>)}</select></Filter>
               <Filter icon={MapPin} label="Ciudad"><select className="field-control input-md" value={filters.location} disabled={!filters.department} onChange={(event) => setFilter("location", event.target.value)}><option value="">{filters.department ? "Todas las ciudades" : "Elige departamento"}</option>{availableCities.map((city) => <option key={city}>{city}</option>)}</select></Filter>
               <Filter icon={BriefcaseBusiness} label="Modalidad"><select className="field-control input-md" value={filters.modality} onChange={(event) => setFilter("modality", event.target.value)}><option value="">Todas</option><option value="remote">Remoto</option><option value="hybrid">Híbrido</option><option value="onsite">Presencial</option></select></Filter>
               <Filter icon={FileText} label="Contrato"><select className="field-control input-md" value={filters.employment_type} onChange={(event) => setFilter("employment_type", event.target.value)}><option value="">Todos</option><option value="full_time">Tiempo completo</option><option value="part_time">Medio tiempo</option><option value="contract">Contrato</option></select></Filter>
@@ -277,32 +264,44 @@ export function JobsPage() {
               <Filter icon={Globe2} label="Origen"><select className="field-control input-md" value={filters.source_kind} onChange={(event) => setFilter("source_kind", event.target.value)}><option value="">Todas las vacantes</option><option value="internal">Publicadas en TalentSync</option><option value="external">Portales externos</option></select></Filter>
               <SalaryRange minimum={Number(filters.min_salary || 0)} maximum={Number(filters.max_salary || salaryCeiling)} ceiling={salaryCeiling} onMinimum={(value) => setFilter("min_salary", value ? String(value) : "")} onMaximum={(value) => setFilter("max_salary", value >= salaryCeiling ? "" : String(value))} />
             </div>
-            <div className="flex flex-col gap-4 border-t border-[var(--line)] pt-4 lg:flex-row lg:items-end lg:justify-between">
-              {user?.role === "candidate" ? <div className="flex flex-col gap-3 sm:flex-row sm:items-center"><label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={onlyMySkills} onChange={(event) => { setOnlyMySkills(event.target.checked); setPage(1); }} />Coincide con mis habilidades</label><Filter label="Compatibilidad mínima"><select className="field-control input-sm w-28" value={minCompatibility} onChange={(event) => { setMinCompatibility(Number(event.target.value)); setPage(1); }}>{[0, 40, 50, 60, 70, 80, 90].map((value) => <option key={value} value={value}>{value}%</option>)}</select></Filter></div> : null}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end"><Filter label="Ordenar por"><select className="field-control input-sm min-w-44" value={filters.sort} onChange={(event) => setFilter("sort", event.target.value)}>{user?.role === "candidate" ? <option value="match">Mayor compatibilidad</option> : null}<option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="salary_desc">Mayor sueldo</option><option value="salary_asc">Menor sueldo</option></select></Filter><button type="button" className="button-secondary button-sm" onClick={() => { setFilters({ ...defaultFilters, sort: user?.role === "candidate" ? "match" : "newest" }); setQuery(""); setOnlyMySkills(false); setMinCompatibility(0); setPage(1); }}><RotateCcw size={15} />Restablecer</button></div>
+            <div className="vacancy-filter-footer">
+              {user?.role === "candidate" ? <div className="vacancy-match-filters"><label className="vacancy-skills-toggle"><input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={onlyMySkills} onChange={(event) => { setOnlyMySkills(event.target.checked); setPage(1); }} />Coincide con mis habilidades</label><Filter label="Compatibilidad mínima"><select className="field-control" value={minCompatibility} onChange={(event) => { setMinCompatibility(marketMinimum(event.target.value)); setIgnoreMatchFilter(false); setPage(1); }}>{MARKET_MINIMUM_OPTIONS.map((value) => <option key={value} value={value}>{value === 0 ? "Cualquiera" : `${value}%`}</option>)}</select></Filter></div> : null}
+              <div className="vacancy-sort-filters"><Filter label="Ordenar por"><select className="field-control" value={filters.sort} onChange={(event) => setFilter("sort", event.target.value)}>{user?.role === "candidate" ? <option value="match">Mayor compatibilidad</option> : null}<option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="salary_desc">Mayor sueldo</option><option value="salary_asc">Menor sueldo</option></select></Filter><button type="button" className="filter-reset-button" onClick={() => { setFilters({ ...defaultFilters, sort: user?.role === "candidate" ? "match" : "newest" }); setQuery(""); setOnlyMySkills(false); setMinCompatibility(0); setIgnoreMatchFilter(false); setPage(1); }}><RotateCcw size={15} />Restablecer</button></div>
             </div>
           </div>
         ) : activeFilterCount ? <button type="button" className="mt-4 text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setShowFilters(true)}>{activeFilterCount} filtro{activeFilterCount === 1 ? " activo" : "s activos"} · Ver o cambiar</button> : null}
       </section>
 
+      {user?.role === "candidate" && <><div className="discovery-navigation"><nav className="workspace-tabs" aria-label="Colecciones de vacantes">{[["all", "Todas"], ["saved", "Guardadas"], ["hidden", "Ocultas"]].map(([key, label]) => <button key={key} aria-pressed={interestMode === key} onClick={() => { setInterestMode(key); setPage(1); }}>{label}</button>)}</nav><InterestsToggle interests={interests} /></div>{!interests.enabled && interestMode !== "all" && <p className="text-sm text-[var(--muted)]">Activa el uso de tus decisiones con el interruptor para guardar y recuperar vacantes.</p>}</>}
+
+      {jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Buscando vacantes disponibles…</p>}
+      {jobsError && <p role="alert" className="surface-card p-4 text-sm">{jobsError} <button type="button" className="underline" onClick={() => setCatalogRetry((value) => value + 1)}>Reintentar</button></p>}
+      {matchesLoading && !jobsLoading && <p role="status" className="text-sm text-[var(--muted)]">Calculando tu compatibilidad… Las vacantes ya están disponibles si eliges Cualquiera.</p>}
+      {matchesError && <p role="alert" className="surface-card p-4 text-sm">{matchesError} <button type="button" className="underline" onClick={() => setMatchRetry((value) => value + 1)}>Reintentar compatibilidad</button>{minCompatibility > 0 && <button type="button" className="ml-3 underline" onClick={() => { setIgnoreMatchFilter(true); setPage(1); }}>Ver ofertas sin filtrar por compatibilidad</button>}</p>}
+      {user?.role === "candidate" && <JobComparison applications={applicationsByJob} selection={comparison} jobs={jobs} matches={matchDetails} loading={jobsLoading} returnTo={`${location.pathname}${location.search}`} />}
+      {ignoreMatchFilter && <p role="status" className="ui-inline-notice">Mostrando ofertas sin aplicar el mínimo mientras no esté disponible el cálculo. Pulsa Reintentar compatibilidad para recuperarlo.</p>}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleJobs.map((job) => (
-          <JobCard
+          <VacancyCard
+            comparison={user?.role === "candidate" ? comparison : null}
+              interests={user?.role === "candidate" ? interests : null}
             key={job.id}
             job={job}
             match={matches[job.id]}
             confidence={matchConfidence[job.id]}
-            applied={applied.has(job.id)}
-            showMatch={user?.role === "candidate"}
+            applied={Boolean(applicationsByJob[job.id])}
+            application={applicationsByJob[job.id]}
+            showMatch={user?.role === "candidate" && Number.isFinite(matches[job.id])}
             returnTo={`${location.pathname}${location.search}`}
           />
         ))}
-        {!visibleJobs.length ? (
+        {!jobsLoading && (!matchesLoading || minCompatibility === 0) && !jobsError && (!matchesError || minCompatibility === 0) && !visibleJobs.length ? (
           <p className="surface-card col-span-full px-5 py-12 text-center text-[var(--muted)]">
             No encontramos vacantes con esos filtros.
           </p>
         ) : null}
       </div>
+
 
       {filteredJobs.length ? (
         <nav
@@ -310,8 +309,8 @@ export function JobsPage() {
           aria-label="Paginación de vacantes"
         >
           <p className="text-sm text-[var(--muted)]">
-            Mostrando {(page - 1) * pageSize + 1}–
-            {Math.min(page * pageSize, filteredJobs.length)} de{" "}
+            Mostrando {(safePage - 1) * pageSize + 1}–
+            {Math.min(safePage * pageSize, filteredJobs.length)} de{" "}
             {filteredJobs.length}
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -333,20 +332,20 @@ export function JobsPage() {
             <button
               className="button-secondary button-sm"
               type="button"
-              disabled={page === 1}
-              onClick={() => setPage((current) => current - 1)}
+              disabled={safePage === 1}
+              onClick={() => setPage(safePage - 1)}
             >
               <ChevronLeft size={15} />
               Anterior
             </button>
             <span className="px-2 text-sm font-bold">
-              {page} / {pages}
+              {safePage} / {pages}
             </span>
             <button
               className="button-secondary button-sm"
               type="button"
-              disabled={page === pages}
-              onClick={() => setPage((current) => current + 1)}
+              disabled={safePage === pages}
+              onClick={() => setPage(safePage + 1)}
             >
               Siguiente
               <ChevronRight size={15} />
@@ -355,106 +354,6 @@ export function JobsPage() {
         </nav>
       ) : null}
     </div>
-  );
-}
-
-function JobCard({ job, match, confidence, applied, showMatch, returnTo }) {
-  const score = Number(match ?? 0);
-  return (
-    <article className="surface-card flex flex-col p-5 transition-colors hover:border-[var(--accent)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <Link
-            to={`/empresas/${job.company_id}`}
-            className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--accent)] hover:underline"
-          >
-            {job.company_name ?? "Empresa"}
-          </Link>
-          <h2 className="mt-1 text-lg font-bold">{job.title}</h2>
-        </div>
-        {applied ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--success)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--success)]">
-            <CheckCircle2 size={13} />
-            Postulado
-          </span>
-        ) : (
-          <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">
-            {modalityLabel[job.modality] ?? job.modality}
-          </span>
-        )}
-      </div>
-      {job.source_kind === "external" ? (
-        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
-          <ExternalLink size={13} />
-          Disponible en {externalPortal(job)}
-        </p>
-      ) : null}
-      {showMatch ? (
-        <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] p-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--muted)]">
-              <Sparkles size={15} />
-              {job.source_kind === "external" ? "Compatibilidad estimada" : "Compatibilidad"}
-            </span>
-            <strong className="text-[var(--accent)]">
-              {score.toFixed(0)}%
-            </strong>
-          </div>
-          {job.source_kind === "external" ? (
-            <p className="mt-2 text-xs text-[var(--muted)]">
-              Confianza de los datos: {Number(confidence ?? 0).toFixed(0)}%
-            </p>
-          ) : null}
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--line)]">
-            <div
-              className="h-full rounded-full bg-[var(--accent)]"
-              style={{ width: `${score}%` }}
-            />
-          </div>
-        </div>
-      ) : null}
-      <p className="mt-4 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
-        {job.description}
-      </p>
-      <div className="mt-4 flex flex-wrap gap-3 text-xs text-[var(--muted)]">
-        <span className="flex items-center gap-1 font-semibold text-[var(--accent)]"><CalendarDays size={14} />{formatRelativeTime(job.created_at)}</span>
-        <span className="flex items-center gap-1">
-          <MapPin size={14} />
-          {[job.location, job.department].filter(Boolean).join(", ") ||
-            "Ubicación flexible"}
-        </span>
-        <span>{contractLabel[job.employment_type] || job.employment_type}</span>
-      </div>
-      <p className="mt-3 text-sm font-semibold text-[var(--accent)]">
-        {job.sector}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {(job.skills || []).slice(0, 5).map((skill) => (
-          <span
-            key={skill}
-            className="rounded-md border border-[var(--line)] px-2 py-1 text-xs text-[var(--muted)]"
-          >
-            {skill}
-          </span>
-        ))}
-      </div>
-      <div className="mt-auto flex items-center justify-between border-t border-[var(--line)] pt-4">
-        <strong>
-          {job.salary
-            ? `$${job.salary.toLocaleString("es-CO")} COP`
-            : job.source_kind === "external"
-              ? "Salario no informado"
-              : "A convenir"}
-        </strong>
-        <Link to={`/vacantes/${job.id}`} state={{ returnTo }} className="button-primary button-sm">
-          {job.source_kind === "external"
-            ? "Ver oferta"
-            : applied
-              ? "Ver postulación"
-              : "Ver detalle"}
-        </Link>
-      </div>
-    </article>
   );
 }
 

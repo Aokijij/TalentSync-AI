@@ -1,0 +1,39 @@
+import { EngineAuditPanel } from "../components/EngineAuditPanel.jsx";
+import { IncidentReviewQueue } from "../components/IncidentReviewQueue.jsx";
+import { IncidentCard } from "../components/IncidentCard.jsx";
+import { CompanyTrustDirectory } from "../components/CompanyTrustDirectory.jsx";
+import { TrustCard } from "../components/TrustCard.jsx";
+import { ShieldCheck, MessageSquare, ArrowRight } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { SkillMarketTable } from "../components/SkillMarketTable.jsx";
+import { useEffect, useState } from "react";
+import { api, getApiErrorMessage } from "../api/client.js";
+import { PageHeader } from "../components/PageHeader.jsx";
+import { useAuth } from "../hooks/useAuth.js";
+
+export function TrustPage() {
+  const { user } = useAuth(); const candidate = user.role === "candidate";
+  const [rows, setRows] = useState([]); const [applications, setApplications] = useState([]); const [trust, setTrust] = useState(null); const [error, setError] = useState(""); const [busy, setBusy] = useState(false); const [owner, setOwner] = useState(false);
+  async function load() { if (candidate) { const [a, b] = await Promise.all([api.get("/trust/incidents/me"), api.get("/applications/me")]); setRows(a.data); setApplications(b.data); } else { const { data } = await api.get("/organization/me"); setOwner(data.role === "owner"); setTrust((await api.get(`/trust/companies/${data.id}`)).data); if (data.role === "owner") setRows((await api.get("/trust/organization/incidents")).data); } }
+  useEffect(() => { load().catch((failure) => setError(getApiErrorMessage(failure))); }, [candidate]);
+  async function act(action) { setBusy(true); setError(""); try { await action(); await load(); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }
+  return <div className="space-y-5"><PageHeader kicker="Salud de la comunidad" title="Confianza e incidencias" description="Un espacio para resolver situaciones, seguir revisiones y cuidar tus procesos de selección." />{error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}{trust && <TrustCard data={trust} />}
+    {candidate && <form className="surface-card grid gap-3 p-5" onSubmit={(event) => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget)); act(() => api.post("/trust/incidents", { ...data, application_id: Number(data.application_id) })); }}><h2 className="font-bold">Solicitar revisión de un proceso</h2><label>Postulación<select className="field-control mt-1" name="application_id" required><option value="">Selecciona tu proceso</option>{applications.map((row) => <option key={row.id} value={row.id}>{row.job_title} · {row.company_name}</option>)}</select></label><label>Tipo<select className="field-control mt-1" name="category"><option value="ghosting">Falta de respuesta</option><option value="inappropriate_interview">Entrevista inapropiada</option><option value="suspected_fraud">Posible fraude</option><option value="discrimination">Posible discriminación</option><option value="other">Otro</option></select></label><label>Describe hechos concretos para el administrador<textarea className="field-control mt-1" name="details" minLength={20} maxLength={3000} required /></label><p className="text-xs text-[var(--muted)]">El reporte original queda visible para ti y el administrador. La empresa recibirá el resumen de revisión. Una denuncia pendiente no modifica la reputación.</p><button disabled={busy} className="button-primary">Enviar a revisión</button></form>}
+    <section className="surface-card space-y-4 p-6"><div className="flex items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-bold"><MessageSquare size={20} />Centro de revisiones</h2><span className="status-chip">{rows.length} registradas</span></div>{!rows.length && <div className="trust-empty"><ShieldCheck size={36} /><h3 className="text-lg font-bold">No hay incidencias registradas</h3><p>Las solicitudes de revisión y sus respuestas aparecerán aquí. Una solicitud pendiente no afecta la valoración.</p>{!candidate && <Link className="button-secondary" to="/empresa/postulaciones">Revisar mis procesos<ArrowRight size={16} /></Link>}</div>}{rows.map((row) => <IncidentCard key={row.id} incident={row} candidate={candidate}>{owner && row.status === "confirmed" && <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); const message = new FormData(event.currentTarget).get("message"); act(() => api.post(`/trust/incidents/${row.id}/appeal`, { message })); }}><label>Motivo de apelación<textarea className="field-control mt-1" name="message" minLength={20} maxLength={3000} required /></label><p className="text-xs text-[var(--muted)]">La respuesta será visible para el administrador y la persona que reportó el proceso.</p><button disabled={busy} className="button-secondary">Solicitar nueva revisión</button></form>}</IncidentCard>)}</section>
+  </div>;
+}
+
+export function EcosystemPage() {
+  const [params, setParams] = useSearchParams();
+  const tab = ["empresas", "incidencias", "habilidades", "recomendaciones"].includes(params.get("vista")) ? params.get("vista") : "empresas";
+  const [data, setData] = useState(null); const [directoryRefresh, setDirectoryRefresh] = useState(0); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
+  async function load() { const { data: result } = await api.get("/admin/ecosystem", { params: { include_companies: false } }); setData(result); setDirectoryRefresh((value) => value + 1); }
+  useEffect(() => { load().catch((failure) => setError(getApiErrorMessage(failure))); }, []);
+  async function act(action) { setBusy(true); setError(""); try { await action(); await load(); } catch (failure) { setError(getApiErrorMessage(failure)); } finally { setBusy(false); } }
+  return <div className="space-y-5"><PageHeader kicker="Administración" title="Salud del ecosistema" description="Consulta el comportamiento de las empresas o atiende solicitudes en una bandeja independiente." />{error && <p role="alert" className="surface-card p-4 text-[var(--error)]">{error}</p>}<nav className="ecosystem-navigation" aria-label="Secciones del ecosistema">{[["empresas", "Comportamiento de empresas", "Valoración y seguimiento de organizaciones"], ["incidencias", "Bandeja de incidencias", "Solicitudes y revisiones por resolver"], ["habilidades", "Oferta y demanda", "Habilidades de vacantes y perfiles"], ["recomendaciones", "Revisión del motor", "Comprobaciones de las recomendaciones"]].map(([key, label, description]) => <button type="button" key={key} aria-pressed={tab === key} onClick={() => setParams({ vista: key })}><strong>{label}</strong><small>{description}</small></button>)}</nav>
+    {tab === "empresas" && data && <CompanyTrustDirectory refresh={directoryRefresh} />}
+    {tab === "habilidades" && data && <SkillMarketTable data={data} />}
+    {tab === "recomendaciones" && data && <EngineAuditPanel audits={data.audits} busy={busy} onRun={() => act(() => api.post("/admin/ecosystem/audit", {}, { timeout: 180000, __quiet: true }))} />}
+    {tab === "incidencias" && <IncidentReviewQueue onReviewed={() => load().catch((failure) => setError(getApiErrorMessage(failure)))} />}
+  </div>;
+}

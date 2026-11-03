@@ -1,0 +1,33 @@
+.response-deadline-panel { min-width:0; scroll-margin-top:1.5rem; }
+.response-deadline-state { display:flex; align-items:center; gap:.6rem; color:var(--accent); font-size:.85rem; line-height:1.6; }
+.response-deadline-state svg { flex:none; }
+.response-deadline-panel.is-overdue,.response-deadline-panel.is-paused { border-color:color-mix(in srgb,var(--warning) 45%,var(--line)); }
+.response-deadline-panel.is-overdue .response-deadline-state,.response-deadline-panel.is-paused .response-deadline-state { color:var(--ink-strong); }
+.response-deadline-date { font-size:1.1rem; line-height:1.5; font-weight:750; margin:.65rem 0; }
+.response-deadline-explanation { font-size:.8rem; color:var(--muted); line-height:1.75; }
+.response-deadline-panel dl { margin:1rem 0; display:grid; gap:.8rem; }
+.response-deadline-panel dt,.response-deadline-created>span { font-size:.7rem; color:var(--muted); }
+.response-deadline-panel dd { font-size:.8rem; margin-top:.2rem; font-weight:600; overflow-wrap:anywhere; }
+.response-deadline-actions { margin-top:1rem; }
+.response-deadline-actions button { gap:.5rem; min-height:42px; font-size:.8rem; }
+.response-deadline-actions p,.response-deadline-footnote,.response-deadline-created small { font-size:.71rem; color:var(--muted); line-height:1.7; }
+.response-deadline-footnote { margin-top:1rem; }
+.response-deadline-created { display:grid; gap:.4rem; border-top:1px solid var(--line); margin-top:1rem; padding-top:1rem; }
+.response-deadline-created p { font-size:.78rem; }
+.response-extension-form { display:grid; gap:.85rem; margin-top:1rem; border-top:1px solid var(--line); padding-top:1rem; }
+.response-extension-form>div:first-child { display:flex; justify-content:space-between; align-items:center; }
+.response-extension-form h3 { font-size:.85rem; font-weight:700; }
+.response-extension-form label { display:grid; gap:.4rem; font-size:.78rem; font-weight:600; }
+.response-extension-form .field-control { font-size:.8rem; }
+.response-extension-form>small { font-size:.7rem; color:var(--muted); line-height:1.7; }
+.response-extension-form>button { min-height:42px; font-size:.8rem; }
+.response-extension-error { color:var(--error); font-size:.8rem; }
+.response-deadline-badge { display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .5rem; border-radius:7px; border:1px solid color-mix(in srgb,var(--warning) 40%,var(--line)); background:color-mix(in srgb,var(--warning) 8%,var(--surface)); color:var(--ink-strong); font-size:.68rem; line-height:1.5; width:fit-content; max-width:100%; }
+.response-deadline-badge svg { flex:none; }
+
+.response-deadline-due>small { display:block; font-size:.7rem; color:var(--muted); margin-top:.75rem; }
+.deadline-extension-dialog { max-width:600px; }
+.deadline-extension-dialog .response-extension-form { margin:0; padding:1.3rem; border:0; gap:1rem; }
+.response-extension-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.65rem; padding-top:1rem; border-top:1px solid var(--line); }
+.response-extension-actions button { min-height:42px; font-size:.8rem; }
+@media(max-width:480px) { .response-extension-actions button { flex:1; } }

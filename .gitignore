@@ -20,11 +20,17 @@ uploads/
 *.sqlite3-*
 node_modules/
 dist/
+public-dist/
+.public-render/
 .vite/
 .wrangler/
 .dev.vars
 .dev.vars.*
 coverage/
+.quality-dist/
+playwright-report/
+test-results/
+test-results-public/
 *.log
 logs/
 .azure/
@@ -33,10 +39,10 @@ Thumbs.db
 .idea/
 .vscode/
 
-/docs/
 /output/
 /tmp/
 .tmp/
+.local/
 /backups/
 *.doc
 *.docx

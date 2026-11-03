@@ -1,17 +1,37 @@
 from typing import Protocol
 
+from app.domain.repositories.account_data import AccountDataRepository
+from app.domain.repositories.accounts import AccountRepository
 from app.domain.repositories.applications import ApplicationRepository
+from app.domain.repositories.calendars import CalendarRepository
 from app.domain.repositories.companies import CompanyRepository
+from app.domain.repositories.ecosystem import EcosystemRepository
+from app.domain.repositories.events import EventRepository
+from app.domain.repositories.interviews import InterviewRepository
 from app.domain.repositories.jobs import JobRepository
+from app.domain.repositories.learning import LearningRepository
 from app.domain.repositories.notifications import NotificationRepository
+from app.domain.repositories.organizations import OrganizationRepository
+from app.domain.repositories.personalization import PersonalizationRepository
 from app.domain.repositories.profiles import ProfileRepository
 from app.domain.repositories.recommendations import RecommendationRepository
+from app.domain.repositories.resume_versions import ResumeVersionRepository
 from app.domain.repositories.users import UserRepository
 
 
 class UnitOfWork(Protocol):
+    personalization: PersonalizationRepository
+    interviews: InterviewRepository
+    ecosystem: EcosystemRepository
+    learning: LearningRepository
+    organizations: OrganizationRepository
+    calendars: CalendarRepository
+    account_data: AccountDataRepository
+    accounts: AccountRepository
+    events: EventRepository
     users: UserRepository
     profiles: ProfileRepository
+    resume_versions: ResumeVersionRepository
     companies: CompanyRepository
     jobs: JobRepository
     applications: ApplicationRepository
@@ -22,5 +42,6 @@ class UnitOfWork(Protocol):
     def delete(self, entity: object) -> None: ...
     def flush(self) -> None: ...
     def commit(self) -> None: ...
+    def commit_retaining_state(self) -> None: ...
     def refresh(self, entity: object) -> None: ...
     def ping(self) -> None: ...

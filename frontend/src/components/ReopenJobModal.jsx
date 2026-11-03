@@ -17,7 +17,7 @@ export function ReopenJobModal({ job, onClose, onReopened }) {
     } finally { setSaving(false); }
   }
   return (
-    <div className="fixed inset-0 z-[75] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[75] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-xs">
       <section role="dialog" aria-modal="true" aria-labelledby="reopen-title" className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">
         <p className="section-kicker">Reabrir vacante</p><h2 id="reopen-title" className="mt-2 text-xl font-bold">¿Cómo quieres volver a contratar?</h2>
         <p className="mt-2 text-sm text-[var(--muted)]">{job.title}</p>

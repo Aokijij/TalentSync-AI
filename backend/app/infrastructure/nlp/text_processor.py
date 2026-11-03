@@ -1,12 +1,13 @@
 import re
 import unicodedata
-from difflib import SequenceMatcher
 
 import numpy as np
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from app.domain.entities.nlp import NLPResult
+from app.domain.services.cv_periods import PERIOD, period_fields, read_period
+from app.domain.services.professions import infer_education_level
 
 COMMON_SKILLS = {
     "python",
@@ -291,6 +292,115 @@ SKILL_ALIAS_PATTERNS = {
     "reclutamiento": (r"\breclutamiento\b", r"\breclutador(?:a|es|as)?\b"),
 }
 
+# Vocabulario transversal detectado tanto en hojas de vida como en vacantes. Las
+# entradas son competencias concretas; se evitan sustantivos genéricos como
+# "apoyo" o "gestión" que producirían compatibilidades artificialmente altas.
+COMMON_SKILLS.update(
+    {
+        "accessibilidad web",
+        "administración de bases de datos",
+        "análisis de negocio",
+        "análisis estadístico",
+        "arquitectura de software",
+        "auditoría",
+        "azure devops",
+        "banca digital",
+        "biometría",
+        "business intelligence",
+        "cobranza",
+        "comercio exterior",
+        "comunicación efectiva",
+        "control interno",
+        "copilot",
+        "data engineering",
+        "data governance",
+        "databricks",
+        "devops",
+        "diseño de producto",
+        "diseño gráfico",
+        "excel avanzado",
+        "experiencia de cliente",
+        "firebase",
+        "gestión de cartera",
+        "gestión de incidentes",
+        "gestión de proveedores",
+        "gestión de stakeholders",
+        "gestión financiera",
+        "google cloud",
+        "graphql",
+        "investigación de usuarios",
+        "jira",
+        "kotlin",
+        "laravel",
+        "microservicios",
+        "oracle",
+        "power automate",
+        "power apps",
+        "presentaciones ejecutivas",
+        "product management",
+        "protección de datos",
+        "pruebas automatizadas",
+        "pruebas funcionales",
+        "react native",
+        "resolución de problemas",
+        "salesforce",
+        "service design",
+        "sharepoint",
+        "snowflake",
+        "soporte al usuario",
+        "tableau",
+        "terraform",
+        "ux research",
+        "ux/ui",
+        "visualización de datos",
+    }
+)
+
+SKILL_ALIAS_PATTERNS.update(
+    {
+        "api rest": (
+            r"\b(?:api|apis)\s+(?:rest|restful)\b",
+            r"\bservicios?\s+rest\b",
+            r"\brestful\b",
+        ),
+        "business intelligence": (
+            r"\bbusiness\s+intelligence\b",
+            r"\binteligencia\s+de\s+negocios?\b",
+        ),
+        "excel avanzado": (r"\bexcel\s+(?:intermedio[ -]avanzado|avanzado)\b",),
+        "experiencia de cliente": (
+            r"\bexperiencia\s+(?:del?|de la)\s+cliente\b",
+            r"\bcustomer\s+experience\b",
+            r"\bcx\b",
+        ),
+        "gestión de cartera": (
+            r"\b(?:gestion|administracion)\s+de\s+cartera\b",
+            r"\bcartera\s+de\s+clientes\b",
+        ),
+        "gestión de proyectos": (
+            r"\bgestion\s+de\s+proyectos\b",
+            r"\bproject\s+management\b",
+        ),
+        "pruebas automatizadas": (
+            r"\b(?:automatizacion\s+de\s+pruebas|pruebas\s+automatizadas)\b",
+        ),
+        "pruebas funcionales": (r"\b(?:testing|pruebas)\s+funcionales\b",),
+        "resolución de problemas": (
+            r"\b(?:resolucion|solucion)\s+de\s+problemas\b",
+            r"\bproblem[ -]solving\b",
+        ),
+        "selección de personal": (
+            r"\bseleccion\s+(?:de\s+personal|por\s+competencias)\b",
+            r"\batraccion\s+de\s+talento\b",
+        ),
+        "soporte técnico": (r"\bsoporte\s+(?:tecnico|de\s+ti)\b", r"\bhelp\s*desk\b"),
+        "visualización de datos": (
+            r"\bvisualizacion\s+de\s+datos\b",
+            r"\bdata\s+visualization\b",
+        ),
+    }
+)
+
 
 class TextProcessor:
     def __init__(self) -> None:
@@ -387,28 +497,11 @@ class TextProcessor:
 
     def extract_skills(self, text: str) -> list[str]:
         clean = self.fold_text(text)
-        tokens = clean.split()
         found = []
         for skill in sorted(COMMON_SKILLS):
             folded_skill = self.fold_text(skill)
             if re.search(
-                rf"(?<![\w+#.]){re.escape(folded_skill)}(?![\w+#.])", clean, re.I
-            ):
-                found.append(skill)
-                continue
-            # Font maps sometimes lose a single accented vowel (gesti�n -> gestin).
-            # A conservative fuzzy pass recovers long domain terms without turning
-            # arbitrary CV prose into skills.
-            skill_tokens = folded_skill.split()
-            if len(folded_skill) < 7:
-                continue
-            windows = (
-                " ".join(tokens[index : index + len(skill_tokens)])
-                for index in range(len(tokens) - len(skill_tokens) + 1)
-            )
-            if any(
-                SequenceMatcher(None, folded_skill, window).ratio() >= 0.92
-                for window in windows
+                rf"(?<![\w+#]){re.escape(folded_skill)}(?![\w+#])", clean, re.I
             ):
                 found.append(skill)
         for skill, patterns in SKILL_ALIAS_PATTERNS.items():
@@ -417,6 +510,15 @@ class TextProcessor:
         return sorted(set(found))
 
     def extract_location(self, text: str) -> str | None:
+        from app.domain.services.colombian_locations import city_index
+        # Prefer contact lines over cities mentioned in an employer's history.
+        header = self.fold_text("\n".join(text.splitlines()[:20]))
+        for key, places in sorted(city_index().items(), key=lambda item: len(item[0]), reverse=True):
+            if len(key) >= 4 and re.search(rf"(?<!\w){re.escape(key)}(?!\w)", header):
+                explicit = next(((city, department) for city, department in places if self.fold_text(department) in header), None)
+                if explicit or len(places) == 1:
+                    city, department = explicit or places[0]
+                    return f"{city}, {department}"
         domicile = re.search(r"domicilio\s*:\s*([^\n]+)", text, re.I)
         if domicile:
             return domicile.group(1).strip(" .")
@@ -434,7 +536,7 @@ class TextProcessor:
             "envigado",
             "itagui",
         ):
-            if re.search(rf"\b{city}\b", self.clean_text(text)):
+            if re.search(rf"\b{city}\b", self.fold_text(text)):
                 return city.title()
         return None
 
@@ -490,11 +592,7 @@ class TextProcessor:
 
     @staticmethod
     def _month_period_pattern() -> re.Pattern[str]:
-        month = r"enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre"
-        return re.compile(
-            rf"(?P<start_month>{month})\s*(?P<start_year>(?:19|20)\d{{2}})\s*[-–—a]+\s*(?P<end_month>{month})?\s*(?P<end_year>(?:19|20)\d{{2}}|presente|actualidad)",
-            re.I,
-        )
+        return PERIOD
 
     def _extract_period_entries(self, block: str, kind: str) -> list[dict]:
         periods = list(self._month_period_pattern().finditer(block))
@@ -534,12 +632,13 @@ class TextProcessor:
                     {
                         "company": company[:140],
                         "role": role[:160],
-                        "start_year": period.group("start_year"),
+                        "start_year": period_fields(period.group(0))["start_year"],
                         "end_year": "Presente"
-                        if period.group("end_year").lower()
+                        if period_fields(period.group(0))["end_year"].lower()
                         in {"presente", "actualidad"}
-                        else period.group("end_year"),
+                        else period_fields(period.group(0))["end_year"],
                         "description": description[:900],
+                        **period_fields(period.group(0)),
                     }
                 )
             else:
@@ -564,12 +663,13 @@ class TextProcessor:
                 entries.append(
                     {
                         "degree": degree[:200],
+                        **period_fields(period.group(0)),
                         "institution": institution[:160],
-                        "start_year": period.group("start_year"),
+                        "start_year": period_fields(period.group(0))["start_year"],
                         "end_year": "Presente"
-                        if period.group("end_year").lower()
+                        if period_fields(period.group(0))["end_year"].lower()
                         in {"presente", "actualidad"}
-                        else period.group("end_year"),
+                        else period_fields(period.group(0))["end_year"],
                     }
                 )
         return entries
@@ -613,26 +713,8 @@ class TextProcessor:
     @staticmethod
     def _resume_period(value: str) -> tuple[str, str, tuple[int, int]] | None:
         """Read common CV periods without depending on one visual template."""
-        month = r"(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)"
-        end_word = r"presente|actualidad|actual|en\s+curso|vigente"
-        patterns = (
-            re.compile(
-                rf"(?:{month}\s+)?(?P<start>(?:19|20)\d{{2}})\s*(?:[-–—]|a|hasta)\s*(?:{month}\s+)?(?P<end>(?:19|20)\d{{2}}|{end_word})",
-                re.I,
-            ),
-            re.compile(
-                rf"(?P<start>(?:19|20)\d{{2}})\s*(?:[-–—]|a|hasta)\s*(?P<end>(?:19|20)\d{{2}}|{end_word})",
-                re.I,
-            ),
-        )
-        for pattern in patterns:
-            match = pattern.search(value)
-            if match:
-                end = match.group("end")
-                if not re.fullmatch(r"(?:19|20)\d{2}", end):
-                    end = "Presente"
-                return match.group("start"), end, match.span()
-        return None
+        result = read_period(value)
+        return (result[0]["start_year"], result[0]["end_year"], result[1]) if result else None
 
     def _extract_semantic_experiences(self, text: str) -> list[dict]:
         """Interpret Docling headings and field labels as employment records.
@@ -750,6 +832,7 @@ class TextProcessor:
             experiences.append(
                 {
                     "company": employer,
+                    **period_fields(lines[line_index]),
                     "role": role[:160],
                     "start_year": start_year,
                     "end_year": end_year,
@@ -853,6 +936,7 @@ class TextProcessor:
             items.append(
                 {
                     "degree": degree[:200],
+                    "level": infer_education_level(label),
                     "institution": institution[:160],
                     "start_year": "",
                     "end_year": end_year,
@@ -892,6 +976,7 @@ class TextProcessor:
                     "start_year": self._period_year(match.group("start")),
                     "end_year": self._period_year(match.group("end")),
                     "description": description[:900],
+                    **period_fields(match.group(0)),
                 }
             )
         return experiences
@@ -910,13 +995,13 @@ class TextProcessor:
         for line in block.splitlines():
             cleaned = re.sub(r"^[•\-]\s*", "", line).strip()
             match = re.match(
-                r"(?:pregrado|tecn.loga|t.cnica|bachiller|profesional|especializaci.n|maestr.a)\s*:\s*(.+)",
+                r"(pregrado|posgrado|postgrado|tecn.log[oa]|t.cnic[oa]|bachiller|profesional|especializaci.n|maestr.a|doctorado)\s*:\s*(.+)",
                 cleaned,
                 re.I,
             )
             if not match:
                 continue
-            content = match.group(1).strip()
+            content = match.group(2).strip()
             year_match = re.search(
                 r"(?:-|–|—)\s*(\d{4}|en\s+curso|presente)\s*$", content, re.I
             )
@@ -924,10 +1009,14 @@ class TextProcessor:
             degree = (
                 content[: year_match.start()].strip(" -") if year_match else content
             )
+            institution = "No especificada"
+            if match.group(1).casefold().startswith("bachiller"):
+                institution, degree = degree, "Bachiller"
             educations.append(
                 {
                     "degree": degree,
-                    "institution": "No especificada",
+                    "level": infer_education_level(match.group(1)),
+                    "institution": institution,
                     "start_year": "",
                     "end_year": end,
                 }
@@ -975,6 +1064,7 @@ class TextProcessor:
                     certifications.append(
                         {
                             "name": name[:180],
+                            "kind": "certificate",
                             "issuer": "Documento adjunto",
                             "year": year,
                         }
@@ -1005,13 +1095,7 @@ class TextProcessor:
             )
             experience_blocks.append((period_count, len(block), block))
         experience_block = max(experience_blocks, default=(0, 0, ""))[2]
-        periods = list(
-            re.finditer(
-                r"(?P<start>(?:19|20)\d{2})\s*[-–—]\s*(?P<end>(?:19|20)\d{2}|presente|actualidad)",
-                experience_block,
-                re.I,
-            )
-        )
+        periods = list(PERIOD.finditer(experience_block))
         role_pattern = re.compile(
             r"^(?P<role>(?:desarrollador|analista|ingeniero|coordinador|director|residente|auxiliar|profesional|practicante|diseñador|asistente|supervisor)[^\n]{0,100})$",
             re.I | re.M,
@@ -1095,6 +1179,7 @@ class TextProcessor:
                     if period.group("end").lower() in {"presente", "actualidad"}
                     else period.group("end"),
                     "description": " ".join(description_lines)[:900],
+                    **period_fields(period.group(0)),
                 }
             )
 
@@ -1194,12 +1279,81 @@ class TextProcessor:
             )
         return self._dedupe(experiences, "company"), self._dedupe(educations, "degree")
 
+    def _merge_resume_experiences(self, items):
+        merged = []
+        for item in items:
+            name = re.sub(r"[^a-z0-9]", "", self.fold_text(item["company"]))
+            previous = next((row for row in merged if re.sub(r"[^a-z0-9]", "", self.fold_text(row["company"])) == name and row.get("start_year") == item.get("start_year") and row.get("end_year") == item.get("end_year") and all(not row.get(key) or not item.get(key) or row[key] == item[key] for key in ("start_date", "end_date"))), None)
+            if previous is None:
+                merged.append(dict(item))
+                continue
+            for key in ("start_date", "end_date", "is_current"):
+                if item.get(key) and not previous.get(key):
+                    previous[key] = item[key]
+            if previous.get("role") == "Cargo no identificado" and item.get("role"):
+                previous["role"] = item["role"]
+            if len(item.get("description", "")) > len(previous.get("description", "")):
+                previous["description"] = item["description"]
+        return merged
+
+    @staticmethod
+    def _resume_reading_order(text: str) -> str:
+        """Unweave native PDF layout columns before interpreting section boundaries."""
+        lines = text.splitlines()
+        gaps = []
+        for line in lines:
+            for match in re.finditer(r"\S( {8,})\S", line):
+                gaps.append((match.start(1), match.end(1)))
+        if len(gaps) < 5:
+            return text
+        # A genuine gutter is shared by many rows, unlike date alignment.
+        candidates = [int((left + right) / 2) for left, right in gaps]
+        boundary = max(candidates, key=lambda pos: sum(left < pos < right for left, right in gaps))
+        support = sum(left < boundary < right for left, right in gaps)
+        if support < 5:
+            return text
+        left = "\n".join(line[:boundary].strip() for line in lines)
+        right = "\n".join(line[boundary:].strip() for line in lines)
+        if not re.search(r"(?:perfil|formaci[oó]n|educaci[oó]n|habilidades|experiencia)", left, re.I) or not re.search(r"(?:perfil|formaci[oó]n|educaci[oó]n|habilidades|experiencia)", right, re.I):
+            return text
+        return left + "\n\n" + right
+
+    def _extract_heading_records(self, text, kind):
+        """Read title · organisation followed by its own period, across templates."""
+        start = r"(?:^|\n)\s*(?:experiencia laboral|experiencia profesional|work experience)\s*\n" if kind == "experience" else r"(?:^|\n)\s*(?:formaci[oó]n acad[eé]mica|educaci[oó]n|education)\s*\n"
+        stops = (r"(?:^|\n)\s*(?:formaci[oó]n acad[eé]mica|experiencia laboral|muestras de trabajo|habilidades|idiomas|preferencias laborales|certificaciones|referencias|education|skills)\s*(?:\n|$)",)
+        block = self._extract_section(text, start, stops)
+        lines = [self._semantic_line(line) for line in block.splitlines() if line.strip() and not re.match(r"\s*(?:Hoja de vida|P[aá]gina \d)", line, re.I)]
+        starts = []
+        for index in range(1, len(lines)):
+            period = read_period(lines[index])
+            if not period or period[1] != (0, len(self.fold_text(lines[index]))):
+                continue
+            header_index = index - 1
+            header = lines[header_index]
+            if " · " not in header and header_index and " · " in lines[header_index - 1]:
+                header_index -= 1
+                header = lines[header_index] + " " + header
+            if " · " not in header:
+                continue
+            title, organisation = header.split(" · ", 1)
+            if 2 <= len(title) <= 200 and 2 <= len(organisation) <= 180:
+                starts.append((header_index, index, title, organisation, period[0]))
+        result = []
+        for position, (_, index, title, organisation, period) in enumerate(starts):
+            end = starts[position + 1][0] if position + 1 < len(starts) else len(lines)
+            if kind == "experience":
+                result.append({"role": title, "company": organisation, **period, "description": "\n".join(lines[index + 1:end])[:4000]})
+            else:
+                result.append({"degree": title, "institution": organisation, **period, "level": infer_education_level(title)})
+        return result
+
     def extract_resume_items(
         self, text: str
     ) -> tuple[list[dict], list[dict], list[dict]]:
         sources = [
             source.strip()
-            for source in re.split(r"\n\s*PYPDF FALLBACK\s*\n", text)
+            for source in re.split(r"\n\s*(?:PYPDF FALLBACK|COORDINATE EXPERIENCE LAYOUT)\s*\n", text)
             if source.strip()
         ]
         semantic_experiences: list[dict] = []
@@ -1209,7 +1363,11 @@ class TextProcessor:
         certifications: list[dict] = []
         visual_experiences: list[dict] = []
         visual_educations: list[dict] = []
+        heading_experiences, heading_educations = [], []
         for source in sources:
+            source = self._resume_reading_order(source)
+            heading_experiences.extend(self._extract_heading_records(source, "experience"))
+            heading_educations.extend(self._extract_heading_records(source, "education"))
             semantic_experiences.extend(self._extract_semantic_experiences(source))
             semantic_educations.extend(self._extract_semantic_educations(source))
             experiences.extend(self._extract_structured_experiences(source))
@@ -1233,7 +1391,7 @@ class TextProcessor:
         )
         merged_experiences = [
             item
-            for item in [*semantic_experiences, *experiences, *visual_experiences]
+            for item in (heading_experiences or [*semantic_experiences, *experiences, *visual_experiences])
             if self.fold_text(str(item.get("company", "")))
             and not self.fold_text(str(item.get("company", ""))).startswith(
                 invalid_prefixes
@@ -1242,12 +1400,27 @@ class TextProcessor:
                 ("jefe inmediato", "funciones")
             )
         ]
+        for item in merged_experiences:
+            description = item.get("description", "")
+            item["description"] = re.split(r"\b(?:PERFIL\s+PROFESIONAL|FORMACI[ÓO]N\s+ACAD[ÉE]MICA|EDUCACI[ÓO]N|TECNOLOG[IÍ]AS|REFERENCIAS\s+(?:PERSONALES|LABORALES))\b", description, maxsplit=1, flags=re.I)[0].strip()
+        # Labelled lines already have structured records. The visual fallback
+        # can append the following heading to those same lines.
+        if semantic_educations:
+            visual_educations = [item for item in visual_educations if not re.match(r"^(?:pregrado|posgrado|postgrado|tecn[oó]log[oa]|t[eé]cnic[oa]|bachiller|profesional|especializaci[oó]n|maestr[ií]a|doctorado)\s*:", item.get("degree", ""), re.I)]
+        merged_educations = [item for item in (heading_educations or [*semantic_educations, *visual_educations, *educations])
+                             if not re.search(r"\b(?:tecnolog[ií]as|proyectos|experiencia laboral|perfil profesional)\b", item.get("degree", ""), re.I)]
+        from app.domain.services.training_types import infer_training_type
+        for item in merged_educations:
+            item["level"] = item.get("level") or infer_education_level(item.get("degree", ""))
+        merged_certifications = self._dedupe(certifications + self._extract_certifications(text), "name")
+        for item in merged_certifications:
+            item["kind"] = item.get("kind") or infer_training_type(item.get("name", ""))
         return (
-            self._dedupe(merged_experiences, "company"),
+            self._merge_resume_experiences(merged_experiences),
             self._dedupe(
-                [*semantic_educations, *visual_educations, *educations], "degree"
+                merged_educations, "degree"
             ),
-            self._dedupe(certifications + self._extract_certifications(text), "name"),
+            merged_certifications,
         )
 
     def embed(self, text: str) -> list[float]:
@@ -1258,14 +1431,43 @@ class TextProcessor:
             .tolist()
         )
 
+    @property
+    def match_method(self):
+        from app.infrastructure.nlp.matching_encoder import matching_encoder
+        encoder = matching_encoder()
+        return encoder.method if encoder else "lexical-hashing-v1"
+
+    def prepare_matching(self, texts):
+        from app.infrastructure.nlp.matching_encoder import matching_encoder
+        encoder = matching_encoder()
+        if encoder:
+            encoder.prepare(texts)
+
+    def matching_similarity(self, left, right, stored_job_embedding=None):
+        from app.infrastructure.nlp.matching_encoder import matching_encoder
+        encoder = matching_encoder()
+        if encoder:
+            return encoder.similarity(left, right)
+        return self.similarity_percentage(self.embed(left), stored_job_embedding if stored_job_embedding is not None else self.embed(right))
+
     def analyze_cv(self, text: str) -> NLPResult:
+        from app.domain.services.skill_context import extraction_context
+        from app.domain.services.skills import skill_key
+        from app.infrastructure.nlp.cv_sections import extract_sections
+        extra = extract_sections(self.repair_pdf_glyphs(text))
         clean = self.clean_text(text)
         experiences, educations, certifications = self.extract_resume_items(text)
+        certifications = self._dedupe(extra["certifications"] + certifications, "name")
+        detected = self.extract_skills(text)
+        context = extraction_context(text, detected, experiences, aliases={skill_key(key): value for key, value in SKILL_ALIAS_PATTERNS.items()})
+        states = {skill_key(skill): {row["state"] for row in context if row["skill"] == skill_key(skill)} for skill in detected}
+        positive_skills = [skill for skill in detected if "applied" in states[skill_key(skill)] or "declared" in states[skill_key(skill)] and not states[skill_key(skill)] & {"learning", "negated", "training", "unknown"}]
+        summary = extra["summary"]
         return NLPResult(
             clean_text=clean,
             profession=self.extract_profession(text),
-            skills=self.extract_skills(text),
-            experience="\n".join(
+            skills=positive_skills,
+            experience=summary or "\n".join(
                 f"{item['role']} - {item['company']}" for item in experiences
             )
             or None,
@@ -1279,6 +1481,10 @@ class TextProcessor:
             educations=educations,
             certifications=certifications,
             embedding=self.embed(clean),
+            skill_context=context,
+            professional_summary=summary or None,
+            languages=extra["languages"],
+            projects=extra["projects"],
         )
 
     def analyze(self, text: str) -> NLPResult:

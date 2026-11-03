@@ -12,6 +12,8 @@ class User(Protocol):
     email: str
     password_hash: str
     role: UserRole
+    registration_pending: bool
+    legal_acceptance: dict
     created_at: datetime
     profile: Profile | None
     applications: list["Application"]
@@ -25,6 +27,7 @@ class Profile(Protocol):
     profession: str | None
     skills: list[str]
     experience: str | None
+    summary_mode: str
     education: str | None
     location: str | None
     department: str | None
@@ -33,9 +36,12 @@ class Profile(Protocol):
     preferred_sector: str | None
     desired_salary: float | None
     phone: str | None
+    links: list[dict]
     experiences: list[dict]
     educations: list[dict]
     certifications: list[dict]
+    driving_licenses: list[dict]
+    professional_cards: list[dict]
     languages: list[dict]
     cv_text: str | None
     cv_filename: str | None
@@ -83,6 +89,10 @@ class CompanyFollower(Protocol):
 
 
 class Job(Protocol):
+    external_published_at: datetime | None
+    external_content: dict | None
+    quality_details: dict | None
+    quality_revision: int
     id: int
     company_id: int
     title: str
@@ -99,6 +109,8 @@ class Job(Protocol):
     pipeline_stages: list[dict] | None
     languages: list[dict]
     application_questions: list[dict]
+    required_education_level: str | None
+    required_study_fields: list[str]
     skills: list[str]
     embedding: list[float] | None
     created_at: datetime
@@ -108,6 +120,11 @@ class Job(Protocol):
     external_url: str | None
     expires_at: datetime | None
     last_seen_at: datetime | None
+    external_check_state: str
+    external_checked_at: datetime | None
+    external_verified_at: datetime | None
+    external_check_reason: str
+    external_next_check_at: datetime | None
     company: Company
     applications: list["Application"]
     recommendations: list["Recommendation"]
@@ -128,6 +145,13 @@ class Application(Protocol):
     created_at: datetime
     recruiter_notes: str | None
     interview_at: datetime | None
+    interview_details: dict
+    interview_completed_at: datetime | None
+    reviewed_at: datetime | None
+    response_overdue_at: datetime | None
+    response_paused_at: datetime | None
+    deadline_missed_at: datetime | None
+    deadline_extension_count: int
     pipeline_stage: str | None
     resolution_reason: str | None
     screening_answers: list[dict]

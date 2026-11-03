@@ -1,0 +1,23 @@
+.city-combobox { position:relative; min-width:0; }
+.city-combobox > label { font-size:.74rem; color:var(--muted); }
+.city-combobox-input { position:relative; display:flex; align-items:center; margin-top:.35rem; }
+.city-combobox-input > svg:first-child { position:absolute; left:.8rem; color:var(--muted); pointer-events:none; }
+.city-combobox .city-combobox-input input { margin:0; padding-left:2.5rem; padding-right:2.6rem; width:100%; }
+.city-combobox-input > button, .city-combobox-input > svg:last-child { position:absolute; right:.75rem; color:var(--muted); }
+.city-combobox-input > button { padding:.3rem; }
+.city-combobox-menu { position:absolute; top:calc(100% + .4rem); left:0; right:0; z-index:45; padding:.4rem; border:1px solid var(--line); border-radius:.8rem; box-shadow:0 12px 32px #0003; background:var(--surface); }
+.city-combobox-menu > p, .city-combobox-menu > small { display:block; font-size:.65rem; color:var(--muted); padding:.45rem .65rem; }
+.city-combobox-menu ul { max-height:240px; overflow:auto; }
+.city-combobox-menu li { display:flex; align-items:center; gap:.6rem; padding:.7rem .65rem; font-size:.78rem; border-radius:.5rem; cursor:pointer; }
+.city-combobox-menu li span { flex:1; }
+.city-combobox-menu li svg { color:var(--accent); }
+.city-combobox-menu li:hover, .city-combobox-menu li.selected { background:var(--surface-subtle); color:var(--accent); }
+
+.city-combobox > label { display:block; font-size:.85rem; font-weight:600; color:var(--ink-strong); }
+.city-combobox-menu { max-width:min(100%,520px); }
+.city-combobox-menu ul { margin:0; padding:0; list-style:none; }
+.city-combobox-menu li { min-height:44px; line-height:1.5; }
+.city-combobox-menu li svg { flex-shrink:0; }
+.city-combobox-menu li span { overflow-wrap:anywhere; }
+.city-combobox-menu > p { font-size:.72rem; font-weight:650; }
+.city-combobox-menu > small { font-size:.7rem; line-height:1.5; }

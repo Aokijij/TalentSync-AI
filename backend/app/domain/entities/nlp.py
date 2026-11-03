@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -14,3 +14,8 @@ class NLPResult:
     educations: list[dict]
     certifications: list[dict]
     embedding: list[float]
+    skill_context: list[dict] = field(default_factory=list)
+    entity_review: dict = field(default_factory=dict)
+    professional_summary: str | None = None
+    languages: list[dict] = field(default_factory=list)
+    projects: list[dict] = field(default_factory=list)

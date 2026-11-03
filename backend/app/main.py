@@ -1,6 +1,8 @@
 import asyncio
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
+from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,17 +11,55 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.api.v1.router import api_router
+from app.api.v1.routes.operations import health_router
 from app.application.errors import UseCaseError
 from app.core.config import settings
 from app.core.limiter import limiter
+from app.core.operations import metrics
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     task = None
+    workflow_task = None
+    model_task = None
+    mail_task = None
+    education_task = None
+    calendar_task = None
+    account_task = None
+    vacancy_task = None
+    health_task = None
     stop_event = asyncio.Event()
+    if settings.integration_health_checks_enabled:
+        from app.infrastructure.integration_health import periodic_integration_health
+        health_task = asyncio.create_task(periodic_integration_health(stop_event))
+    if settings.external_job_checks_enabled:
+        from app.infrastructure.vacancy_scheduler import periodic_vacancy_checks
+        vacancy_task = asyncio.create_task(periodic_vacancy_checks(stop_event))
+    if settings.match_model_path:
+        from app.infrastructure.nlp.matching_encoder import matching_encoder
+        await asyncio.to_thread(matching_encoder)
+    if settings.account_cleanup_enabled:
+        from app.infrastructure.account_retention import periodic_accounts
+        account_task = asyncio.create_task(periodic_accounts(stop_event))
+    if settings.calendar_sync_enabled:
+        from app.infrastructure.calendar_scheduler import periodic_calendar
+        calendar_task = asyncio.create_task(periodic_calendar(stop_event))
+    if settings.smtp_enabled or settings.resend_enabled or settings.gmail_mail_enabled:
+        from app.infrastructure.mail_scheduler import periodic_mail
+        mail_task = asyncio.create_task(periodic_mail(stop_event))
+    if settings.model_maintenance_enabled:
+        from app.infrastructure.model_scheduler import periodic_models
+        model_task = asyncio.create_task(periodic_models(stop_event))
+    if settings.public_learning_refresh_enabled:
+        from app.infrastructure.education_scheduler import periodic_education
+        education_task = asyncio.create_task(periodic_education(stop_event))
+    if settings.workflow_maintenance_enabled:
+        from app.infrastructure.workflow_scheduler import periodic_workflow
+        workflow_task = asyncio.create_task(periodic_workflow(stop_event))
     if settings.periodic_maintenance_enabled:
         from app.infrastructure.scheduling import periodic_maintenance
 
@@ -28,16 +68,36 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         stop_event.set()
+        if health_task:
+            await health_task
         if task:
             await task
+        if workflow_task:
+            await workflow_task
+        if model_task:
+            await model_task
+        if mail_task:
+            await mail_task
+        if education_task:
+            await education_task
+        if calendar_task:
+            await calendar_task
+        if account_task:
+            await account_task
+        if vacancy_task:
+            await vacancy_task
 
 
 def create_app() -> FastAPI:
+    production = settings.environment.casefold() in {"production", "staging"}
     app = FastAPI(
         title=settings.app_name,
         description="API REST para TalentSync AI, plataforma de matching laboral con NLP.",
         version="0.1.0",
         lifespan=lifespan,
+        docs_url=None if production else "/docs",
+        redoc_url=None if production else "/redoc",
+        openapi_url=None if production else "/openapi.json",
     )
 
     app.state.limiter = limiter
@@ -47,6 +107,7 @@ def create_app() -> FastAPI:
         TrustedHostMiddleware,
         allowed_hosts=settings.allowed_hosts,
     )
+    app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=3)
 
     app.add_middleware(
         CORSMiddleware,
@@ -57,11 +118,46 @@ def create_app() -> FastAPI:
         expose_headers=["*"],
     )
 
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        from time import perf_counter
+        started = perf_counter()
+        incoming = request.headers.get("x-request-id", "")
+        request_id = incoming if re.fullmatch(r"[A-Za-z0-9_-]{8,64}", incoming) else uuid4().hex
+        try:
+            response = await call_next(request)
+        except Exception:
+            route = getattr(request.scope.get("route"), "path", "unmatched")
+            metrics.observe(request.method, route, 500, (perf_counter() - started) * 1000)
+            raise
+        elapsed = (perf_counter() - started) * 1000
+        route = getattr(request.scope.get("route"), "path", "unmatched")
+        metrics.observe(request.method, route, response.status_code, elapsed)
+        response.headers["X-Request-ID"] = request_id
+        response.headers["Server-Timing"] = f"app;dur={elapsed:.2f}"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        if request.method == "GET" and request.url.path.startswith("/api/v1/profiles/me/export/preview/") and response.status_code == 200 and response.headers.get("content-type", "").startswith("application/pdf"):
+            origins = [origin for origin in settings.cors_origins if origin.startswith(("http://", "https://")) and not any(char in origin for char in " ;'\n\r")]
+            response.headers["Content-Security-Policy"] = "frame-ancestors 'self' " + " ".join(origins)
+        else:
+            response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = "camera=(self), microphone=(self), geolocation=()"
+        response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+        if production:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
+        if request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store"
+        return response
+
     @app.exception_handler(UseCaseError)
     async def use_case_error_handler(request: Request, exc: UseCaseError):
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
     app.include_router(api_router, prefix="/api/v1")
+    app.include_router(health_router)
 
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, str]:
@@ -77,7 +173,12 @@ def create_app() -> FastAPI:
 
             @app.get("/{full_path:path}", include_in_schema=False)
             def serve_frontend(full_path: str):
-                if full_path == "api" or full_path.startswith("api/"):
+                if (
+                    full_path == "api"
+                    or full_path.startswith("api/")
+                    or any(part.startswith(".") for part in Path(full_path).parts)
+                    or (production and full_path in {"docs", "redoc", "openapi.json"})
+                ):
                     return JSONResponse(status_code=404, content={"detail": "Not Found"})
                 requested = (static_dir / full_path).resolve()
                 if requested.is_relative_to(static_dir) and requested.is_file():

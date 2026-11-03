@@ -1,0 +1,37 @@
+.account-mail-page { min-height:100dvh; background:var(--canvas); color:var(--ink); padding:1.5rem; display:flex; flex-direction:column; align-items:center; }
+.account-mail-top { display:flex; align-items:center; justify-content:space-between; gap:1rem; width:100%; max-width:72rem; margin:0 auto 2.5rem; }
+.account-mail-top>a { min-width:0; }
+.account-mail-top>button { flex-shrink:0; }
+.account-mail-card .button-primary,.account-mail-card .button-secondary { white-space:normal; overflow-wrap:anywhere; text-align:center; }
+.account-mail-card { width:100%; max-width:32rem; background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--accent); border-radius:1.4rem; padding:2rem; box-shadow:0 14px 48px color-mix(in srgb,var(--ink) 5%,transparent); }
+.account-mail-symbol { display:grid; place-items:center; width:3.6rem; height:3.6rem; border-radius:1.1rem; background:color-mix(in srgb,var(--accent) 12%,var(--surface)); color:var(--accent); margin-bottom:1.5rem; }
+.account-mail-symbol.is-complete { color:var(--success); background:color-mix(in srgb,var(--success) 10%,var(--surface)); }
+.account-mail-card h1 { font-size:clamp(1.55rem,4vw,1.9rem); line-height:1.25; font-weight:750; letter-spacing:-.04em; margin:.5rem 0 .85rem; }
+.account-mail-description { color:var(--muted); font-size:.9rem; line-height:1.75; }
+.account-mail-form,.account-mail-result { display:grid; gap:1rem; margin-top:1.5rem; }
+.account-mail-form label { display:grid; gap:.5rem; font-size:.85rem; font-weight:600; min-width:0; }
+.account-mail-form .field-control { font-weight:400; width:100%; min-width:0; }
+.account-mail-form>.button-primary,.account-mail-result>.button-primary,.account-mail-card>.button-primary { width:100%; min-height:3rem; }
+.account-mail-card>.button-primary { margin-top:1.5rem; }
+.account-mail-password { position:relative; }
+.account-mail-password input { padding-right:3rem; }
+.account-mail-password button { position:absolute; right:.2rem; top:50%; transform:translateY(-50%); min-width:2.6rem; min-height:2.6rem; }
+.account-mail-guidance { color:var(--muted); font-size:.75rem; line-height:1.6; }
+.account-mail-expiry { display:flex; align-items:center; gap:.5rem; color:var(--muted); font-size:.75rem; line-height:1.6; }
+.account-mail-expiry svg,.account-mail-footer svg { flex-shrink:0; }
+.account-mail-recipient { display:flex; align-items:center; gap:.7rem; padding:1rem; border:1px solid var(--line); border-radius:.8rem; background:var(--surface-subtle); font-size:.9rem; }
+.account-mail-recipient svg { flex-shrink:0; color:var(--accent); }
+.account-mail-recipient strong { overflow-wrap:anywhere; min-width:0; }
+.account-mail-steps { display:grid; gap:.9rem; padding:0; margin:.2rem 0; list-style:none; }
+.account-mail-steps li { display:flex; align-items:flex-start; gap:.7rem; font-size:.85rem; line-height:1.6; color:var(--muted); }
+.account-mail-steps li span { flex-shrink:0; display:grid; place-items:center; width:1.5rem; height:1.5rem; border:1px solid var(--line); border-radius:.45rem; color:var(--accent); font-size:.7rem; font-weight:700; background:var(--surface-subtle); }
+.account-mail-confirmed { display:flex; align-items:flex-start; gap:.6rem; color:var(--success); padding:1rem; border-radius:.8rem; background:color-mix(in srgb,var(--success) 7%,var(--surface)); font-size:.85rem; line-height:1.7; }
+.account-mail-confirmed svg { flex-shrink:0; margin-top:.2rem; }
+.account-mail-footer { display:flex; align-items:flex-start; gap:.6rem; border-top:1px solid var(--line); padding-top:1.2rem; margin-top:1.5rem; color:var(--muted); font-size:.73rem; line-height:1.7; }
+.account-mail-footer svg { color:var(--accent); margin-top:.15rem; }
+.account-mail-back,.account-mail-text-link { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; color:var(--accent); font-size:.8rem; font-weight:600; min-height:2.75rem; }
+.account-mail-back { display:flex; margin-top:.75rem; }
+.account-mail-footnote { color:var(--muted); font-size:.7rem; margin:1.25rem 0; text-align:center; }
+.account-mail-development { margin-top:1rem; font-size:.75rem; color:var(--muted); }
+.account-mail-development a { display:block; padding:.65rem 0; color:var(--accent); }
+@media(max-width:560px) { .account-mail-page { padding:1rem; } .account-mail-top { margin-bottom:1.5rem; } .account-mail-card { padding:1.5rem 1.15rem; border-radius:1rem; } }

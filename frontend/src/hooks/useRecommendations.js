@@ -8,7 +8,10 @@ export function selectRecommendations(
   return recommendations
     .map((recommendation) => {
       const reasons = (recommendation.reasons ?? []).filter(
-        (reason) => !reason.startsWith("score:"),
+        (reason) =>
+          !["score:", "source:", "confidence:"].some((prefix) =>
+            reason.startsWith(prefix),
+          ),
       );
       const semanticSignal = reasons.find((reason) =>
         reason.toLowerCase().includes("alta similitud"),

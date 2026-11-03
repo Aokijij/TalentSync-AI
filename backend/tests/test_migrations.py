@@ -2,6 +2,7 @@ from io import StringIO
 from pathlib import Path
 
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, inspect, text
 
 from alembic import command
@@ -24,9 +25,20 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         schema = inspect(engine)
         assert set(schema.get_table_names()) == {
             "users", "profiles", "companies", "jobs", "applications",
-            "recommendations", "notifications", "company_followers", "alembic_version",
+            "recommendations", "notifications", "company_followers", "alembic_version", "event_log",
+            "user_sessions", "account_tokens", "mail_messages",
+            "company_members", "company_invitations",
+            "learning_plans", "assessment_attempts", "learning_resources", "learning_source_snapshots",
+            "trust_incidents", "model_audit_runs",
+            "interview_rooms", "interview_participants", "interview_signals",
+            "recommendation_feedback", "model_experiments", "offer_feedback",
+            "social_identities", "oauth_attempts", "career_coach_states", "resume_versions",
+            "mail_delivery_events", "calendar_connections", "calendar_events", "file_erasure_tasks",
         }
         profile_columns = {column["name"] for column in schema.get_columns("profiles")}
+        assert "registration_pending" in {column["name"] for column in schema.get_columns("users")}
+        assert "legal_acceptance" in {column["name"] for column in schema.get_columns("users")}
+        assert "authentication_authority" in {column["name"] for column in schema.get_columns("user_sessions")}
         assert {"department", "photo_filename", "resume_style", "resume_color", "languages"} <= profile_columns
         assert {
             "languages",
@@ -37,6 +49,8 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
             "external_url",
             "expires_at",
             "last_seen_at",
+            "required_education_level",
+            "required_study_fields",
         } <= {column["name"] for column in schema.get_columns("jobs")}
         assert {"is_external", "source_name"} <= {
             column["name"] for column in schema.get_columns("companies")
@@ -44,10 +58,54 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
         company_columns = {column["name"] for column in schema.get_columns("companies")}
         assert {"website", "sector", "size", "location", "mission", "values", "benefits", "logo_filename", "cover_filename"} <= company_columns
         application_columns = {column["name"] for column in schema.get_columns("applications")}
-        assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment"} <= application_columns
+        assert {"id", "user_id", "job_id", "snapshot", "pdf", "pdf_sha256", "request_key"} <= {column["name"] for column in schema.get_columns("resume_versions")}
+        for table, expected in [("jobs", "ix_jobs_company_status_created"), ("applications", "ix_applications_job_status"), ("recommendations", "ix_recommendations_job_user"), ("notifications", "ix_notifications_action_type_read_user"), ("assessment_attempts", "ix_attempts_user_passed_valid")]:
+            assert expected in {index["name"] for index in schema.get_indexes(table)}
+        assert {"purpose", "link_user_id", "link_session_id"} <= {column["name"] for column in schema.get_columns("oauth_attempts")}
+        assert {"pipeline_stage", "resolution_reason", "screening_answers", "screening_adjustment", "interview_evaluations", "interview_details"} <= application_columns
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM users")).scalar_one() == 0
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0019_external_job_imports"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == ScriptDirectory.from_config(migration_config()).get_current_head()
+        command.check(migration_config())
+    finally:
+        engine.dispose()
+
+
+def test_schema_alignment_preserves_data_and_normalizes_missing_collections(monkeypatch, tmp_path):
+    import json
+
+    import pytest
+    from sqlalchemy.exc import IntegrityError
+
+    url = f"sqlite:///{(tmp_path / 'alignment.sqlite3').as_posix()}"
+    monkeypatch.setattr(settings, "database_url", url)
+    command.upgrade(migration_config(), "0046_account_erasure")
+    engine = create_engine(url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO users (id,name,email,password_hash,role,created_at) VALUES (1,'Synthetic','synthetic@example.com','unchanged','CANDIDATE','2025-01-01')"))
+            connection.execute(text("INSERT INTO profiles (user_id,skills,experiences,educations,certifications,updated_at) VALUES (1,NULL,'null','[{\"title\":\"Preserved\"}]',NULL,NULL)"))
+            connection.execute(text("INSERT INTO companies (id,owner_user_id,name,nit) VALUES (1,1,'Synthetic','SYNTHETIC')"))
+            connection.execute(text("INSERT INTO jobs (id,company_id,title,description,requirements,modality,employment_type,status,skills,benefits,created_at) VALUES (1,1,'Synthetic','Preserved','Preserved','hybrid','full_time','active',NULL,'null',CURRENT_TIMESTAMP)"))
+            connection.execute(text("INSERT INTO applications (user_id,job_id,status,created_at) VALUES (1,1,'TECHNICAL_INTERVIEW',CURRENT_TIMESTAMP)"))
+            connection.execute(text("INSERT INTO recommendations (user_id,job_id,match_percentage,reasons,created_at) VALUES (1,1,75,NULL,CURRENT_TIMESTAMP)"))
+        command.upgrade(migration_config(), "head")
+        engine.dispose()
+        with engine.connect() as connection:
+            row = connection.execute(text("SELECT skills,experiences,educations,certifications,updated_at FROM profiles")).one()
+            assert [json.loads(value) for value in row[:4]] == [[], [], [{"title": "Preserved"}], []]
+            assert str(row[4]).startswith("2025-01-01")
+            assert tuple(connection.execute(text("SELECT skills,benefits FROM jobs")).one()) == ("[]", "[]")
+            assert connection.execute(text("SELECT reasons FROM recommendations")).scalar_one() == "[]"
+            assert connection.execute(text("SELECT status FROM applications")).scalar_one() == "TECHNICAL_INTERVIEW"
+            assert connection.execute(text("SELECT password_hash FROM users")).scalar_one() == "unchanged"
+            assert "AUTOINCREMENT" in connection.execute(text("SELECT sql FROM sqlite_master WHERE name='users'")).scalar_one()
+        with pytest.raises(IntegrityError), engine.begin() as connection:
+            connection.execute(text("UPDATE profiles SET skills=NULL"))
+        command.check(migration_config())
+        command.downgrade(migration_config(), "0046_account_erasure")
+        command.upgrade(migration_config(), "head")
+        command.check(migration_config())
     finally:
         engine.dispose()
 
@@ -61,6 +119,8 @@ def test_postgresql_migration_sql_creates_enum_types_once(monkeypatch):
     assert sql.count("CREATE TYPE applicationstatus AS ENUM") == 1
     assert "CAST(status AS TEXT)" in sql
     assert "0017_languages" in sql
+    assert "fk_oauth_link_session" in sql
+    assert "CREATE TABLE resume_versions" in sql and "pdf BYTEA" in sql
 
 
 def test_existing_language_requirements_are_preserved_on_upgrade(monkeypatch, tmp_path):
@@ -76,5 +136,68 @@ def test_existing_language_requirements_are_preserved_on_upgrade(monkeypatch, tm
             import json
             languages = connection.execute(text("SELECT languages FROM jobs")).scalar_one()
             assert json.loads(languages) == [{"name": "inglés", "level": "B1"}]
+    finally:
+        engine.dispose()
+
+
+def test_oauth_linking_migration_preserves_pending_logins(monkeypatch, tmp_path):
+    database_url = f"sqlite:///{(tmp_path / 'oauth-upgrade.sqlite3').as_posix()}"
+    monkeypatch.setattr(settings, "database_url", database_url)
+    command.upgrade(migration_config(), "0031_social_identity")
+    engine = create_engine(database_url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO oauth_attempts (provider,state_hash,browser_hash,verifier_cipher,expires_at) VALUES ('github','state-hash','browser-hash','encrypted-verifier','2030-01-01')"))
+        command.upgrade(migration_config(), "head")
+        with engine.connect() as connection:
+            row = connection.execute(text("SELECT purpose,link_user_id,link_session_id,verifier_cipher FROM oauth_attempts")).one()
+            assert tuple(row) == ("login", None, None, "encrypted-verifier")
+        command.downgrade(migration_config(), "0031_social_identity")
+        with engine.connect() as connection:
+            assert connection.execute(text("SELECT state_hash FROM oauth_attempts")).scalar_one() == "state-hash"
+        command.upgrade(migration_config(), "head")
+        engine.dispose()  # Inspect through a fresh SQLite connection after external DDL.
+        assert len(inspect(engine).get_foreign_keys("oauth_attempts")) == 2
+    finally:
+        engine.dispose()
+
+
+def test_corporate_authority_migration_preserves_existing_sessions(monkeypatch, tmp_path):
+    database_url = f"sqlite:///{(tmp_path / 'corporate-upgrade.sqlite3').as_posix()}"
+    monkeypatch.setattr(settings, "database_url", database_url)
+    command.upgrade(migration_config(), "0034_admin_sso")
+    engine = create_engine(database_url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO users (name,email,password_hash,role,created_at) VALUES ('Staff','staff@example.com','unchanged-hash','ADMIN',CURRENT_TIMESTAMP)"))
+            for token, method in [("password-token", "password"), ("workspace-token", "workspace")]:
+                connection.execute(text("INSERT INTO user_sessions (user_id,token_hash,csrf_hash,user_agent,created_at,last_seen_at,expires_at,mfa_verified,authentication_method) VALUES (1,:token,:token,'test',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'2030-01-01',false,:method)"), {"token": token, "method": method})
+        command.upgrade(migration_config(), "head")
+        with engine.connect() as connection:
+            rows = connection.execute(text("SELECT authentication_method,authentication_authority FROM user_sessions ORDER BY id")).all()
+            assert [tuple(row) for row in rows] == [("password", ""), ("workspace", "")]
+            assert connection.execute(text("SELECT password_hash FROM users")).scalar_one() == "unchanged-hash"
+        command.downgrade(migration_config(), "0034_admin_sso")
+        with engine.connect() as connection:
+            assert connection.execute(text("SELECT COUNT(*) FROM user_sessions")).scalar_one() == 2
+    finally:
+        engine.dispose()
+
+
+def test_mail_migration_preserves_local_messages_without_sending_them(monkeypatch, tmp_path):
+    url = f"sqlite:///{(tmp_path / 'mail-upgrade.sqlite3').as_posix()}"
+    monkeypatch.setattr(settings, "database_url", url)
+    command.upgrade(migration_config(), "0035_corporate_authority")
+    engine = create_engine(url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO mail_messages (recipient,subject,body,created_at) VALUES ('synthetic@example.com','Local','unchanged',CURRENT_TIMESTAMP)"))
+        command.upgrade(migration_config(), "head")
+        with engine.connect() as connection:
+            assert tuple(connection.execute(text("SELECT body,delivery_state,attempts,lease_token FROM mail_messages")).one()) == ("unchanged", "local", 0, "")
+        command.downgrade(migration_config(), "0035_corporate_authority")
+        with engine.connect() as connection:
+            assert connection.execute(text("SELECT body FROM mail_messages")).scalar_one() == "unchanged"
+        command.upgrade(migration_config(), "head")
     finally:
         engine.dispose()

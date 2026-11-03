@@ -1,0 +1,21 @@
+.external-catalog-panel { margin:1.25rem; padding:1.5rem; display:grid; gap:1.3rem; border:1px solid var(--line); border-radius:1rem; background:var(--surface-subtle); }
+.external-catalog-panel>header { display:flex; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
+.external-catalog-panel>header>div { flex:1 1 320px; min-width:0; }
+.external-catalog-panel h2 { font-size:1.2rem; font-weight:750; margin:.3rem 0 .45rem; }
+.external-catalog-panel p { font-size:.85rem; color:var(--muted); line-height:1.7; }
+.external-catalog-symbol { display:grid; place-items:center; width:48px; height:48px; border-radius:13px; color:var(--accent); background:var(--surface); }
+.external-catalog-badge { border:1px solid var(--line); padding:.45rem .7rem; border-radius:2rem; font-size:.75rem; font-weight:700; color:var(--accent); }
+.external-catalog-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.7rem; }
+.external-catalog-metrics>div { display:grid; gap:.3rem; padding:1rem; border:1px solid var(--line); border-radius:.8rem; background:var(--surface); }
+.external-catalog-metrics strong { font-size:1.8rem; color:var(--ink-strong); line-height:1.1; }
+.external-catalog-metrics span { font-size:.75rem; color:var(--muted); }
+.external-catalog-panel { min-width:0; overflow-wrap:anywhere; }
+.external-catalog-panel button { white-space:normal; }
+.external-catalog-progress>div { min-width:0; }
+.external-catalog-panel form { display:flex; flex-wrap:wrap; align-items:end; gap:.8rem; }
+.external-catalog-panel form>label { display:grid; gap:.5rem; flex:1 1 320px; min-width:0; font-size:.8rem; font-weight:650; }
+.external-catalog-progress { display:flex; gap:.8rem; align-items:center; padding:1rem; border:1px solid var(--line); border-radius:.7rem; }
+.external-catalog-progress>svg { color:var(--accent); flex-shrink:0; }
+.external-catalog-panel>footer { display:flex; align-items:flex-start; flex-wrap:wrap; gap:.7rem; padding-top:1rem; border-top:1px solid var(--line); }
+.external-catalog-panel>footer p { flex:1 1 300px; min-width:0; }
+@media(max-width:600px) { .external-catalog-panel { padding:1rem; margin:.8rem; }.external-catalog-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }.external-catalog-panel form>button { width:100%; } }

@@ -1,5 +1,14 @@
+import { OfferClarityBadge } from "../components/OfferClarity.jsx";
+import { useRecommendationUpdates } from "../hooks/useRecommendationUpdates.js";
+import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
+import { RequirementSupport } from "../components/RequirementSupport.jsx";
+import { SearchPreferences } from "../components/SearchPreferences.jsx";
+import { useAuth } from "../hooks/useAuth.js";
+import { readRecommendationSettings, saveRecommendationSetting } from "../utils/recommendationSettings.js";
+import { orderRecommendations } from "../utils/recommendationOrder.js";
+import { RecommendationControls } from "../components/RecommendationControls.jsx";
 import { useRecommendations } from "../hooks/useRecommendations.js";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -8,58 +17,72 @@ import {
   Send,
   Sparkles,
   TrendingUp,
+  Building2,
+  MapPin,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { api } from "../api/client.js";
+import { getRecommendations } from "../api/recommendations.js";
+import "../styles/recommendations.css";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { CompatibilityBar } from "../components/CompatibilityBar.jsx";
-import { SkillRadarChart } from "../components/SkillRadarChart.jsx";
+import { ApplicationStatusNotice } from "../components/ApplicationStatusNotice.jsx";
+import { VacancyLearningPanel } from "../components/VacancyLearningPanel.jsx";
+import { JobInterestButtons } from "../components/JobInterests.jsx";
+import { useJobInterests } from "../hooks/useJobInterests.js";
+import { searchJob, visibleInterest, meetsRequiredPreferences } from "../utils/jobDiscovery.js";
 import { MatchBreakdown } from "../components/MatchBreakdown.jsx";
+import { ApplicationSubmitDialog } from "../components/ApplicationSubmitDialog.jsx";
 import { ExternalApplicationDialog } from "../components/ExternalApplicationDialog.jsx";
 import { externalPortal } from "../utils/externalPortal.js";
 import { pageItems, totalPages } from "../utils/pagination.js";
 
 export function RecommendationsPage() {
+  const { user } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
+  const { refreshing: refreshingMatches, error: matchLoadError, retry: retryMatches } = useRecommendationUpdates(user.id, setRecommendations);
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
-  const [profile, setProfile] = useState(null);
+  const [preferences, setPreferences] = useState(null);
+  const interests = useJobInterests(true, () => load(false));
+  const [query, setQuery] = useState("");
+  const [rankingMode, setRankingMode] = useState("balanced");
+  const [respectPreferences, setRespectPreferences] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [externalJob, setExternalJob] = useState(null);
-  const [minCompatibility, setMinCompatibility] = useState(() => {
-    const saved = Number(localStorage.getItem("talentsync_recommendation_min"));
-    return [40, 50, 60, 70, 80, 90].includes(saved) ? saved : 40;
-  });
+  const [submitJob, setSubmitJob] = useState(null);
+  const [sourceFilter, setSourceFilter] = useState(() => readRecommendationSettings(localStorage, user.id).source);
+  const [minCompatibility, setMinCompatibility] = useState(() => readRecommendationSettings(localStorage, user.id).minimum);
 
   const [expandedReasons, setExpandedReasons] = useState({});
   const [page, setPage] = useState(1);
   const pageSize = 5;
+  const pendingLoad = useRef(null);
 
-  async function load() {
-    setLoading(true);
+  function load(showLoading = true) {
+    // React development effects and simultaneous filter updates can share a
+    // request; do not start duplicate expensive calculations for this screen.
+    if (pendingLoad.current) return pendingLoad.current;
+    pendingLoad.current = fetchRecommendations(showLoading).finally(() => { pendingLoad.current = null; });
+    return pendingLoad.current;
+  }
+  async function fetchRecommendations(showLoading) {
+    if (showLoading) setLoading(true);
     setError("");
     try {
-      const [
-        recommendationsResponse,
-        applicationsResponse,
-        jobsResponse,
-        profileResponse,
-      ] = await Promise.all([
-        api.get("/recommendations/me/jobs", { params: { include_all: true } }),
-        api.get("/applications/me"),
-        api.get("/jobs"),
-        api.get("/profiles/me"),
+      const results = await Promise.allSettled([
+        getRecommendations(user.id).then(({ data }) => setRecommendations(data)),
+        api.get("/applications/me").then(({ data }) => setApplications(data)),
+        api.get("/jobs").then(({ data }) => setJobs(data)),
+        api.get("/matching/preferences").then(({ data }) => setPreferences(data)),
       ]);
-      setRecommendations(recommendationsResponse.data);
-      setApplications(applicationsResponse.data);
-      setJobs(jobsResponse.data);
-      setProfile(profileResponse.data);
-    } catch (err) {
-      setError("No fue posible cargar las recomendaciones");
-      console.error("Failed to load recommendations:", err);
+      const failed = results.slice(0, 3).some((row) => row.status === "rejected" && row.reason?.code !== "ERR_CANCELED");
+      if (failed) setError("No pudimos cargar una parte de las recomendaciones. Puedes volver a intentarlo.");
+    } catch {
+      setError("No pudimos cargar las recomendaciones. Puedes volver a intentarlo.");
     } finally {
       setLoading(false);
     }
@@ -75,8 +98,16 @@ export function RecommendationsPage() {
   );
 
   const enriched = useRecommendations(recommendations, minCompatibility, false);
-  const pages = totalPages(enriched, pageSize);
-  const visibleRecommendations = pageItems(enriched, page, pageSize);
+  const filteredRecommendations = useMemo(
+    () =>
+      orderRecommendations(enriched, rankingMode).filter((item) => {
+        const job = jobsById.get(item.job_id);
+        return job && meetsRequiredPreferences(item, respectPreferences) && searchJob(job, query) && visibleInterest(job, interests.byId, "all") && (sourceFilter === "all" || job.source_kind === sourceFilter);
+      }),
+    [enriched, jobsById, sourceFilter, query, interests.byId, respectPreferences, rankingMode],
+  );
+  const pages = totalPages(filteredRecommendations, pageSize);
+  const visibleRecommendations = pageItems(filteredRecommendations, page, pageSize);
 
   useEffect(() => {
     setPage((current) => Math.min(current, pages));
@@ -86,45 +117,42 @@ export function RecommendationsPage() {
     const next = Number(value);
     setMinCompatibility(next);
     setPage(1);
-    localStorage.setItem("talentsync_recommendation_min", String(next));
+    saveRecommendationSetting(localStorage, user.id, "minimum", next);
   }
 
-  const appliedJobIds = useMemo(
-    () => new Set(applications.map((application) => application.job_id)),
+  function changeSource(value) {
+    setSourceFilter(value);
+    setPage(1);
+    saveRecommendationSetting(localStorage, user.id, "source", value);
+  }
+
+  const applicationsByJob = useMemo(
+    () => new Map(applications.map((application) => [application.job_id, application])),
     [applications],
   );
 
-  async function apply(job) {
-    setMessage("");
-    setError("");
-    if (job?.source_kind === "external" && job.external_url) {
-      setExternalJob(job);
-      return;
-    }
-    try {
-      await api.post("/applications", { job_id: job.id });
-      setMessage("Postulación registrada correctamente");
-      const { data } = await api.get("/applications/me");
-      setApplications(data);
-    } catch (requestError) {
-      setError(
-        requestError.response?.data?.detail ||
-          "No fue posible registrar la postulación",
-      );
-    }
+  function apply(job) {
+    setMessage(""); setError("");
+    if (job?.source_kind === "external" && job.external_url) setExternalJob(job);
+    else setSubmitJob(job);
   }
 
   return (
-    <div className="space-y-6">
+    <div className="recommendations-page min-w-0 space-y-6">
+      {refreshingMatches && <p role="status" className="text-sm text-[var(--muted)]">Actualizando compatibilidades… Puedes seguir usando la plataforma.</p>}
+      {matchLoadError && <p role="alert" className="surface-card p-4 text-[var(--error)]">{matchLoadError} <button className="underline" onClick={retryMatches}>Reintentar</button></p>}
       <PageHeader
         kicker="Recomendaciones"
         title="Empleos sugeridos para tu perfil"
         description="Cada vacante muestra compatibilidad, habilidades coincidentes y una guía para mejorar."
       />
 
+      <RecommendationControls interests={interests} jobs={jobs} onSaved={() => { setPage(1); return load(false); }} respectPreferences={respectPreferences} onRespectChange={(value) => { setRespectPreferences(value); setPage(1); }} excludedCount={enriched.filter((item) => !meetsRequiredPreferences(item)).length} />
+      <SearchPreferences data={preferences} onSaved={async (next) => { setPreferences(next); setPage(1); setError(""); try { const { data } = await getRecommendations(user.id); setRecommendations(data); } catch (failure) { if (failure.code !== "ERR_CANCELED") setError("No pudimos actualizar las recomendaciones. Puedes volver a intentarlo."); } }} />
+      <label className="block"><span className="sr-only">Buscar recomendaciones</span><input className="field-control" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por cargo, empresa, ciudad o habilidad" /></label>
       {error && (
         <p className="rounded-[var(--radius-lg)] border border-[var(--error)] bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)]">
-          {error}
+          {error} <button type="button" className="ml-3 underline" onClick={() => load()}>Reintentar</button>
         </p>
       )}
 
@@ -150,8 +178,9 @@ export function RecommendationsPage() {
       )}
 
       {!loading && !error && (
-        <section className="surface-card">
-          <div className="flex flex-col gap-3 border-b border-[var(--line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="recommendation-results">
+          <div className="recommendation-list-heading">
+            <div className="recommendation-list-topline">
             <div className="flex items-center gap-3">
               <BriefcaseBusiness className="text-[var(--success)]" size={20} />
               <div>
@@ -159,38 +188,45 @@ export function RecommendationsPage() {
                   Lista de empleo recomendada
                 </h2>
                 <p className="text-sm text-[var(--muted)]">
-                  Ordenadas por compatibilidad con tu trayectoria y habilidades.
+                  {rankingMode === "balanced" ? "Afinidad con tu perfil, información de la oferta y tus preferencias." : "De mayor a menor porcentaje de compatibilidad."}
                 </p>
               </div>
             </div>
-            <label className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface-subtle)] px-4 py-2 text-sm font-semibold text-[var(--muted)]">
-              Recomendar desde
-              <select
-                className="field-control input-sm w-24"
-                value={minCompatibility}
-                onChange={(event) => changeMinimum(event.target.value)}
-              >
-                {[40, 50, 60, 70, 80, 90].map((value) => (
-                  <option key={value} value={value}>
-                    {value}%
-                  </option>
-                ))}
-              </select>
-            </label>
+            <p className="recommendation-count" role="status" aria-live="polite"><strong>{filteredRecommendations.length}</strong><span>{filteredRecommendations.length === 1 ? "oferta recomendada" : "ofertas recomendadas"}<small>Con tus filtros actuales</small></span></p>
+            </div>
+            <div className="recommendation-filterbar">
+              <label className="filter-field">Ordenar<select className="field-control" aria-label="Ordenar recomendaciones" value={rankingMode} onChange={(event) => { setRankingMode(event.target.value); setPage(1); }}><option value="balanced">Recomendadas</option><option value="compatibility">Mayor compatibilidad</option></select></label>
+              <label className="filter-field">
+                Origen
+                <select className="field-control" value={sourceFilter} onChange={(event) => changeSource(event.target.value)}>
+                  <option value="all">Todas</option>
+                  <option value="internal">TalentSync</option>
+                  <option value="external">Externas</option>
+                </select>
+              </label>
+              <label className="filter-field">
+                Compatibilidad mínima
+                <select className="field-control" value={minCompatibility} onChange={(event) => changeMinimum(event.target.value)}>
+                  {[40, 50, 60, 70, 80, 90, 100].map((value) => <option key={value} value={value}>{value}%</option>)}
+                </select>
+              </label>
+            </div>
           </div>
 
-          <div className="divide-y divide-[var(--line)]">
+          <div className="recommendation-cards">
             {visibleRecommendations.map((item) => {
               const job = jobsById.get(item.job_id);
-              const applied = appliedJobIds.has(item.job_id);
+              const application = applicationsByJob.get(item.job_id);
+              const applied = Boolean(application);
+              const closedApplication = application?.released_at || application?.status === "rejected";
               const isExpanded = expandedReasons[item.id] ?? false;
 
               const reasonsShort = (item.reasons ?? []).slice(0, 2);
-              const reasonsFull = item.reasons ?? [];
+
 
               const categoryLabel =
                 item.category === "alta"
-                  ? "Alta probabilidad"
+                  ? "Alta compatibilidad"
                   : item.category === "buenas"
                     ? "Buena compatibilidad"
                     : "Con brechas";
@@ -204,13 +240,15 @@ export function RecommendationsPage() {
               return (
                 <article
                   key={item.id}
-                  className="grid gap-5 p-5 lg:grid-cols-[1fr_240px_180px] lg:items-center"
+                  className={`recommendation-card${applied ? " is-applied" : ""}${closedApplication ? " is-closed-application" : ""}`}
                 >
-                  <div>
+                  <div className="recommendation-card-copy">
+                    {applied && <ApplicationStatusNotice application={application} compact />}
+                    <p className="recommendation-card-company"><Building2 size={14} />{job?.company_name || "Empresa"}{job?.location && <span><MapPin size={13} />{job.location}</span>}</p>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-[var(--ink)]">
-                        {job?.title ?? `Vacante #${item.job_id}`}
-                      </p>
+                      <h3 className="font-semibold text-[var(--ink)]"><Link className="recommendation-title-link" to={`/vacantes/${item.job_id}`} state={{ returnTo: "/recomendaciones" }}>
+                        {job?.title ?? "Vacante"}
+                      </Link></h3>
                       <span
                         className={`rounded-[var(--radius-md)] border px-2 py-1 text-xs font-semibold text-[var(--ink)] ${categoryTone}`}
                       >
@@ -221,11 +259,7 @@ export function RecommendationsPage() {
                           Postulación en {externalPortal(job)}
                         </span>
                       ) : null}
-                      {applied ? (
-                        <span className="rounded-[var(--radius-md)] bg-[var(--success)]/10 px-2 py-1 text-xs font-semibold text-[var(--ink)]">
-                          Postulado
-                        </span>
-                      ) : null}
+                      <OfferClarityBadge job={job} />
                     </div>
 
                     <p className="mt-1 line-clamp-2 text-sm text-[var(--muted)]">
@@ -234,33 +268,36 @@ export function RecommendationsPage() {
 
                     <div className="mt-2 space-y-2">
                       <p
-                        className={`text-xs text-[var(--muted)] ${isExpanded ? "" : "line-clamp-2"}`}
+                        className="line-clamp-2 text-xs text-[var(--muted)]"
                       >
-                        {(isExpanded ? reasonsFull : reasonsShort).join(". ")}
+                        {reasonsShort[0] || "Compara los requisitos con las habilidades de tu perfil."}
                       </p>
-                      {reasonsFull.length > 2 ? (
+                      {(
                         <button
                           type="button"
+                          aria-expanded={isExpanded}
                           onClick={() =>
                             setExpandedReasons((prev) => ({
                               ...prev,
                               [item.id]: !isExpanded,
                             }))
                           }
-                          className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--success)] hover:underline hover-lift"
+                          className="recommendation-insight-button"
                         >
                           <TrendingUp
                             size={14}
                             className="text-[var(--success)]"
                           />
-                          {isExpanded ? "Ver menos" : "Cómo mejorar"}
+                          {isExpanded ? "Ocultar detalle" : "Ver compatibilidad y formación"}
                         </button>
-                      ) : null}
+                      )}
                     </div>
 
+                    <JobInterestButtons job={job} interests={interests} />
                     <div className="mt-3">
                       <Link
                         to={`/vacantes/${item.job_id}`}
+                        state={{ returnTo: "/recomendaciones" }}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline hover-lift"
                       >
                         Ver detalle
@@ -278,51 +315,50 @@ export function RecommendationsPage() {
                     confidence={item.data_confidence_percentage}
                   />
 
-                  <div className="flex items-center justify-end">
-                    <button
+                  <div className="recommendation-card-apply">
+                    {applied ? <Link className="button-primary" to={application.id ? `/procesos/${application.id}` : "/postulaciones"}>{application.id ? "Ver mi proceso" : "Mis postulaciones"}<ArrowRight size={16} /></Link> : <button
                       type="button"
-                      disabled={applied}
                       onClick={() => apply(job)}
-                      className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--success)] px-3 py-2 text-sm font-semibold text-white hover:bg-[var(--success)]/90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="button-primary"
                     >
-                      <Send size={16} className="text-white" />
-                      {applied ? "Enviada" : "Postularme"}
-                    </button>
+                      <Send size={16}  />
+                      Postularme
+                    </button>}
                   </div>
                   {isExpanded ? (
-                    <div className="grid gap-6 border-t border-[var(--line)] pt-5 lg:col-span-3 lg:grid-cols-2">
+                    <div className="recommendation-card-details grid gap-6 border-t border-[var(--line)] pt-5 lg:grid-cols-2">
+                      <p className="lg:col-span-2 text-xs text-[var(--muted)]">{item.discovery?.notice}</p>
                       <MatchBreakdown
+                        details={item.match_details}
                         skillMatch={item.skill_match_percentage}
                         semanticMatch={item.professional_context_percentage ?? item.semantic_match_percentage}
                         languageMatch={item.language_match_percentage}
                       />
-                      <SkillRadarChart
-                        candidateSkills={profile?.skills ?? []}
-                        requiredSkills={job?.skills ?? []}
-                        matchPercentage={item.match_percentage}
-                      />
+                      <div className="skill-evidence-panel"><SkillRadarChart requirements={item.match_details?.requirements || []} matchPercentage={item.match_percentage} /><RequirementSupport details={item.match_details} /><Link className="mt-4 inline-block text-xs text-[var(--accent)]" to="/perfil#evidencias">Gestionar mis evidencias →</Link></div>
+
+                      <div className="lg:col-span-2"><VacancyLearningPanel jobId={item.job_id} /></div>
                     </div>
                   ) : null}
                 </article>
               );
             })}
 
-            {enriched.length === 0 ? (
+            {filteredRecommendations.length === 0 ? (
               <div className="px-5 py-10 text-center text-[var(--muted)]">
                 <Sparkles
                   size={20}
                   className="mx-auto mb-3 text-[var(--accent)]"
                 />
-                No hay vacantes que alcancen el {minCompatibility}% de
-                compatibilidad. Puedes reducir el porcentaje o completar mejor
-                tu experiencia y habilidades.
+                No hay recomendaciones con estos filtros. Puedes cambiar la
+                búsqueda, cambiar el
+                origen o reducir el mínimo de {minCompatibility}%.
               </div>
             ) : null}
           </div>
-          {enriched.length > pageSize ? (
+          {filteredRecommendations.length > pageSize ? (
             <nav className="flex flex-col gap-3 border-t border-[var(--line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between" aria-label="Paginación de recomendaciones">
               <p className="text-sm text-[var(--muted)]">
-                Mostrando {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, enriched.length)} de {enriched.length}
+                Mostrando {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredRecommendations.length)} de {filteredRecommendations.length}
               </p>
               <div className="flex items-center gap-2">
                 <button type="button" className="button-secondary button-sm" disabled={page === 1} onClick={() => setPage((current) => current - 1)}><ChevronLeft size={15} />Anterior</button>
@@ -356,6 +392,7 @@ export function RecommendationsPage() {
           </Link>
         </div>
       </section>
+      {submitJob && <ApplicationSubmitDialog key={submitJob.id} job={submitJob} onClose={() => setSubmitJob(null)} onSubmitted={(submitted) => { setApplications((current) => [...current.filter((row) => row.job_id !== submitted.job_id), submitted]); setSubmitJob(null); setMessage("Postulación registrada correctamente"); }} />}
       <ExternalApplicationDialog
         job={externalJob}
         onClose={() => setExternalJob(null)}

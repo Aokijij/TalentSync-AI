@@ -10,6 +10,8 @@ test("preserves recommendation metadata and does not mutate API records", () => 
     reasons: Object.freeze([
       "categoria:buenas",
       "score:skills:80",
+      "source:external",
+      "confidence:data:91.25",
       "Skills fuertes: python",
     ]),
   });
@@ -17,7 +19,7 @@ test("preserves recommendation metadata and does not mutate API records", () => 
   assert.equal(selected.category, "buenas");
   assert.equal(selected.strongSkills, true);
   assert.deepEqual(selected.reasons, ["Skills fuertes: python"]);
-  assert.equal(record.reasons.length, 3);
+  assert.equal(record.reasons.length, 5);
 });
 
 test("respects the percentage selected by the candidate without hidden thresholds", () => {

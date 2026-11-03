@@ -1,8 +1,14 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
-from app.api.deps import get_text_analysis, get_unit_of_work, require_roles
+from app.api.deps import (
+    get_job_availability,
+    get_optional_user,
+    get_text_analysis,
+    get_unit_of_work,
+    require_roles,
+)
 from app.api.schemas.job import (
     JobCreate,
     JobReopen,
@@ -15,14 +21,52 @@ from app.api.schemas.recommendation import RecommendationResponse
 from app.application.ports.services import TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import jobs as use_cases
+from app.core.limiter import limiter
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import Job, User
 
 router = APIRouter()
 
 
+@router.post("/{job_id}/external-access")
+@limiter.limit("20/hour")
+def external_access(job_id: int, request: Request, user=Depends(require_roles(UserRole.CANDIDATE, UserRole.ADMIN)), db=Depends(get_unit_of_work), gateway=Depends(get_job_availability)):
+    from datetime import timedelta
+
+    from app.api.v1.routes.account import _origin
+    from app.application.errors import UseCaseError
+    from app.application.use_cases.job_availability import check_job
+    from app.domain.services.job_freshness import externally_available
+    _origin(request)
+    job = db.jobs.get(job_id)
+    if not job or job.source_kind != "external":
+        raise UseCaseError(status_code=404, detail="No se encontró la oferta externa")
+    now = datetime.utcnow()
+    if job.status != "active":
+        raise UseCaseError(status_code=409, detail="Esta oferta ya no está disponible")
+    if job.external_admission_reasons:
+        raise UseCaseError(status_code=409, detail="La oferta no cumple el filtro del catálogo: requiere publicación reciente, tres habilidades distintas, funciones, requisitos, experiencia mínima y formación explícitos.")
+    # Reuse a recent real check, including negative results; do not hammer a blocked source.
+    if not job.external_checked_at or job.external_checked_at < now - timedelta(minutes=15):
+        check_job(db, job, gateway, now=now)
+    if not externally_available(job, now):
+        raise UseCaseError(status_code=409, detail="No podemos confirmar que esta oferta siga abierta. Se retiró de las recomendaciones mientras se revisa su vigencia.")
+    return {"url": job.external_url, "checked_at": job.external_checked_at, "available": True}
+
+
+@router.get("/mine/board")
+def company_board_jobs(current_user=Depends(require_roles(UserRole.COMPANY)), db=Depends(get_unit_of_work)):
+    return use_cases.company_board_jobs(current_user, db)
+
+
+@router.get("/mine/choices")
+def company_job_choices(search: str = Query(default="", max_length=120), offset: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=100), current_user=Depends(require_roles(UserRole.COMPANY)), db=Depends(get_unit_of_work)):
+    return use_cases.company_job_choices(current_user, db, search=search, offset=offset, limit=limit)
+
+
 @router.get("", response_model=list[JobResponse])
 def list_jobs(
+    current_user=Depends(get_optional_user),
     search: str | None = None,
     modality: str | None = None,
     location: str | None = None,
@@ -49,6 +93,7 @@ def list_jobs(
         created_after=created_after,
         sort=sort,
         db=db,
+        current_user=current_user,
     )
 
 
@@ -73,8 +118,8 @@ def create_job(
 
 
 @router.get("/{job_id}", response_model=JobResponse)
-def get_job(job_id: int, db: UnitOfWork = Depends(get_unit_of_work)) -> Job:
-    return use_cases.get_job(job_id=job_id, db=db)
+def get_job(job_id: int, db: UnitOfWork = Depends(get_unit_of_work), current_user=Depends(get_optional_user)) -> Job:
+    return use_cases.get_job(job_id=job_id, db=db, current_user=current_user)
 
 
 @router.get(
@@ -98,9 +143,12 @@ def update_job(
     *,
     nlp: TextAnalysis = Depends(get_text_analysis),
 ) -> Job:
+    changes = payload.model_dump(exclude_unset=True)
+    if "skill_requirements" in changes:
+        changes["skill_requirements"] = [row.model_dump() for row in payload.skill_requirements]
     return use_cases.update_job(
         job_id=job_id,
-        payload=payload.model_dump(exclude_unset=True),
+        payload=changes,
         current_user=current_user,
         db=db,
         nlp=nlp,

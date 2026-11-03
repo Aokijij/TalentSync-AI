@@ -1,0 +1,2 @@
+# Install in a separate interpreter: Docling's Pillow range differs from PDF export.
+docling[easyocr]==2.125.0
