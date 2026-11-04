@@ -46,6 +46,16 @@ class RegisterRequest(LegalAcceptanceRequest):
         return value
 
 
+class CompanyRegistrationCompletionRequest(LegalAcceptanceRequest):
+    name: str = Field(min_length=2, max_length=120)
+    confirmed: StrictBool
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def clean_name(cls, value):
+        return " ".join(value.split()) if isinstance(value, str) else value
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(max_length=72)

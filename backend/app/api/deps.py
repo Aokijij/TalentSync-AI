@@ -90,8 +90,9 @@ def get_public_learning_catalog():
 def _registration_access(request, user):
     if user.registration_pending and request.url.path not in {
         "/api/v1/auth/me", "/api/v1/auth/social/registration", "/api/v1/auth/session/logout",
+        "/api/v1/auth/company/registration/complete",
     }:
-        raise HTTPException(status_code=403, detail="Confirma tu nombre y profesión para completar tu registro")
+        raise HTTPException(status_code=403, detail="Confirma tus datos y autorizaciones para completar tu registro")
 
 
 def get_current_user(

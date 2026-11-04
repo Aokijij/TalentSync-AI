@@ -84,7 +84,7 @@ Los entornos de OCR, extracción de entidades y comparación tienen dependencias
 
 ## Operación
 
-La preparación de una exposición con organización, vacantes y perfiles ficticios se describe en [DEMONSTRACION.md](DEMONSTRACION.md). Incluye fichas de partida y un recorrido por los tres roles.
+El recorrido de exposición con el espacio empresarial interno de TalentSync y la cuenta de candidato elegida por su titular se describe en [DEMONSTRACION.md](DEMONSTRACION.md). Incluye borradores de partida y un recorrido por los tres roles.
 
 ### Redacción opcional con Groq
 

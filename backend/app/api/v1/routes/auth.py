@@ -5,8 +5,10 @@ from app.api.deps import (
     get_current_user,
     get_text_analysis,
     get_unit_of_work,
+    require_roles,
 )
 from app.api.schemas.auth import (
+    CompanyRegistrationCompletionRequest,
     LoginRequest,
     RegisterRequest,
     TokenResponse,
@@ -19,9 +21,23 @@ from app.application.use_cases import auth as use_cases
 from app.application.use_cases.account_security import request_action
 from app.core.config import settings
 from app.core.limiter import limiter
+from app.domain.entities.enums import UserRole
 from app.domain.entities.records import User
 
 router = APIRouter()
+
+
+@router.post("/company/registration/complete", response_model=UserResponse)
+@limiter.limit("20/hour")
+def complete_company_registration(
+    request: Request,
+    payload: CompanyRegistrationCompletionRequest,
+    current_user=Depends(require_roles(UserRole.COMPANY)),
+    db=Depends(get_unit_of_work),
+):
+    from app.api.v1.routes.account import _origin
+    _origin(request)
+    return use_cases.complete_company_registration(payload.model_dump(), current_user, db)
 
 
 @router.post(
