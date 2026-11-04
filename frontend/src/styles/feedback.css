@@ -23,3 +23,5 @@
 .confirmation-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.65rem; padding-top:1.25rem; margin-top:1.25rem; border-top:1px solid var(--line); }
 :is(.confirmation-dialog,.feedback-stack) button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 @media(max-width:600px) { .feedback-stack { bottom:max(1rem,env(safe-area-inset-bottom)); right:1rem; } .confirmation-dialog { padding:1.25rem; } .confirmation-actions { flex-direction:column-reverse; } .confirmation-actions>button { width:100%; } }
+
+@media(max-width:480px){.feedback-toast{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.6rem}.feedback-toast>svg{grid-column:1;grid-row:1}.feedback-toast>button{grid-column:2;grid-row:1;justify-self:end}.feedback-toast-copy{grid-column:1/-1;grid-row:2;width:100%}}

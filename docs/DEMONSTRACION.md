@@ -19,10 +19,10 @@ Las fichas de preparación están en [exposicion.json](exposicion.json). Sus imp
 
 | Vacante | Modalidad | Habilidades principales | Funcionalidades que permite recorrer |
 | --- | --- | --- | --- |
-| Desarrollo Frontend Junior | Remota | HTML, CSS, JavaScript, React, Git | Proyectos, CV, evidencias y selección técnica. |
-| Análisis de Datos Junior | Híbrida, Medellín | Excel, SQL, Python, Power BI | Compatibilidad, requisitos esenciales/deseables y aprendizaje. |
-| QA Funcional Junior | Remota | Pruebas funcionales, documentación, SQL, comunicación | Preselección, casos de prueba y entrevista. |
-| Auxiliar de Operaciones | Presencial, Medellín | Excel, inventarios, organización, comunicación | Filtros de ubicación, habilidades transferibles y formación. |
+| Desarrollador Frontend React · TalentSync | Remota | HTML, CSS, JavaScript, React, Git | Proyectos, CV, evidencias y selección técnica. |
+| Analista de Datos y Calidad de Vacantes · TalentSync | Remota | Excel, SQL, Python, Power BI | Compatibilidad, requisitos esenciales/deseables y aprendizaje. |
+| Analista QA de Plataforma Web · TalentSync | Remota | Pruebas funcionales, documentación, SQL, comunicación | Preselección, casos de prueba y entrevista. |
+| Analista de Soporte y Operación · TalentSync | Remota | Comunicación, servicio al cliente, documentación, Excel | Filtros de ubicación, habilidades transferibles y formación. |
 
 ## Recorrido sugerido: 15–20 minutos
 
@@ -42,3 +42,7 @@ Las fichas de preparación están en [exposicion.json](exposicion.json). Sus imp
 - Mantener los borradores hasta confirmar sus condiciones y decidir qué oferta se usará.
 - Evitar mostrar contraseñas, códigos de recuperación, documentos de identidad y datos privados en la pantalla compartida.
 - Las acciones de la plataforma publicada tienen efectos reales: las postulaciones, invitaciones y notificaciones que se ejecuten quedan registradas.
+
+## Ejercicios de calidad y revisión
+
+También se preparan dos borradores incompletos para Backend Python y Diseño UX/UI. Los textos y la progresión de 38 a 100 están en [MEJORAR_BORRADORES.md](MEJORAR_BORRADORES.md). El paso a paso de la revisión interna de TalentSync y de la verificación legal de otras organizaciones está en [VERIFICACION_EMPRESA.md](VERIFICACION_EMPRESA.md).

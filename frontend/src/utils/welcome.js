@@ -35,7 +35,7 @@ export function companyWelcomeState(organization, user, accessOptions = {}) {
   const mfaReady = accessOptions.company_mfa_required === false || user.mfa_enabled === true;
   return {
     owner: organization.role === "owner", allowed, ready: allowed && !!user.email_verified && mfaReady,
-    submitted: !!organization.submission?.submitted_at || ["reviewing", "information_required", "rejected", "verified"].includes(status),
+    submitted: !!organization.submission?.submitted_at || ["reviewing", "information_required", "rejected", "verified", "internal_approved"].includes(status),
     reviewLabel: ({ pending: "Por presentar", reviewing: "En revisión", information_required: "Requiere correcciones", rejected: "Solicitud rechazada", verified: "Verificada", suspended: "Suspendida" })[status] || "Estado por confirmar",
     reviewText: status === "suspended" ? "La actividad está suspendida. Revisa el motivo y la solicitud con el propietario." : approved ? "La administración aprobó la organización. Las vacantes conservan su propia revisión de calidad." : exempt ? "Esta organización no tiene la verificación obligatoria activada. Esto no equivale a una aprobación administrativa." : status === "reviewing" ? "La solicitud está presentada y espera revisión administrativa. Puedes preparar borradores mientras tanto." : ["information_required", "rejected"].includes(status) ? "Revisa la respuesta de administración, corrige la solicitud y vuelve a presentarla." : "El propietario debe presentar los datos y soportes de la organización. La revisión es manual.",
     mfaReady,

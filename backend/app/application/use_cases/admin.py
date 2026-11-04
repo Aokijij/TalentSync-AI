@@ -186,6 +186,7 @@ def list_admin_companies(
                 "location": company.location,
                 "sector": company.sector,
                 "verification_status": company.verification_status,
+                "verification_required": company.verification_required,
                 "source_portal": next(
                     (job.source_portal for job in company.jobs if job.source_portal),
                     None,

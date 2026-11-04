@@ -15,9 +15,9 @@ export function registrationDestination({ company, invitation, accessOptions }) 
 export function loginDestination({ company, from, user, accessOptions }) {
   if (user.registration_pending) return "/completar-cuenta";
   const invitation = company ? invitationTokenFromPath(from) : null;
-  if (company && accessOptions.mode === "session" && accessOptions.company_mfa_required !== false && !user.mfa_enabled) return `/seguridad${invitation ? `?invitation=${encodeURIComponent(invitation)}` : ""}`;
+  if (company && accessOptions.mode === "session" && accessOptions.company_mfa_required !== false && !user.mfa_enabled) return invitation ? `/seguridad?invitation=${encodeURIComponent(invitation)}` : "/empresa/bienvenida";
   if (invitation) return invitationPath(invitation);
   const local = typeof from === "string" && from.startsWith("/") && !from.startsWith("//") && !from.includes("\\");
   const allowed = local && (company ? from.startsWith("/empresa") : !/^\/(empresa|admin|administracion|equipo)/.test(from));
-  return allowed ? from : company ? "/empresa" : "/candidato";
+  return allowed ? from : company ? "/empresa/bienvenida" : "/candidato";
 }

@@ -126,17 +126,17 @@ test("Company checklist distinguishes corrections, exemption and suspension from
   for (const [status, label] of [["pending", "Por presentar"], ["information_required", "Requiere correcciones"], ["rejected", "Solicitud rechazada"], ["verified", "Verificada"]]) {
     context.state.organization = { ...baseOrganization, verification_status: status, feedback: status === "information_required" ? "Debes actualizar el soporte de registro de la empresa." : null };
     await context.open();
-    await expect(page.locator(".welcome-step-title>span").filter({ hasText: label }).first()).toBeVisible();
-    if (status === "verified") await expect(page.getByRole("link", { name: "Preparar una vacante", exact: true })).toBeVisible();
+    await expect(page.locator(".company-start-check span").filter({ hasText: label }).first()).toBeVisible();
+    if (status === "verified") await expect(page.getByRole("link", { name: "Entrar al panel", exact: true })).toBeVisible();
     else await expect(page.getByRole("link", { name: "Preparar un borrador", exact: true })).toBeVisible();
   }
   context.state.organization = { ...baseOrganization, verification_required: false, verification_status: "pending" };
   await context.open();
-  await expect(page.getByText(/Esto no equivale a una aprobación administrativa/)).toBeVisible();
+  await expect(page.getByText(/Su habilitación no equivale a una verificación legal/)).toBeVisible();
   context.state.organization.verification_status = "suspended";
   await context.open();
   await expect(page.getByRole("heading", { name: "La empresa está suspendida", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Preparar una vacante", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Entrar al panel", exact: true })).toHaveCount(0);
   expect(context.calls.filter((row) => row.method !== "GET")).toEqual([]);
   expect(context.errors).toEqual([]);
 });

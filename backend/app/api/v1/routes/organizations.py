@@ -6,6 +6,7 @@ from app.api.deps import get_unit_of_work, require_roles
 from app.api.schemas.organization import (
     AcceptInvitation,
     AccessReviewRequest,
+    InternalVerificationSubmission,
     InterviewAssignments,
     TeamInvitation,
     TeamUpdate,
@@ -41,6 +42,11 @@ def organization(user=Depends(company_user), db=Depends(get_unit_of_work)):
 @router.post("/organization/verification")
 def submit(payload: VerificationSubmission, user=Depends(company_user), db=Depends(get_unit_of_work)):
     return cases.submit_verification(db, user, payload.model_dump(mode="json"))
+
+
+@router.post("/organization/internal-review")
+def internal_review(payload: InternalVerificationSubmission, user=Depends(company_user), db=Depends(get_unit_of_work)):
+    return cases.submit_internal_review(db, user, payload.model_dump(mode="json"))
 
 
 @router.get("/organization/team")
@@ -110,7 +116,7 @@ def verifications(user=Depends(admin_user), db=Depends(get_unit_of_work)):
 
 
 @router.get("/admin/verification-queue")
-def verification_page(status: Literal["all", "pending", "reviewing", "information_required", "verified", "rejected", "suspended"] = "all",
+def verification_page(status: Literal["all", "pending", "reviewing", "information_required", "verified", "internal_approved", "rejected", "suspended"] = "all",
                       search: str = Query(default="", max_length=120), page: int = Query(default=1, ge=1),
                       page_size: int = Query(default=5, ge=1, le=50), user=Depends(admin_user), db=Depends(get_unit_of_work)):
     return cases.verification_page(db, status=status, search=search.strip(), page=page, page_size=page_size)

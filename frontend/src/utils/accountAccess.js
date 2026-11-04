@@ -6,6 +6,7 @@ export function requiresAuthenticator(user, options = {}) {
 export function accountHome(user, options = {}) {
   if (!user) return "/login";
   if (user.registration_pending) return "/completar-cuenta";
+  if (user.role === "company") return "/empresa/bienvenida";
   if (requiresAuthenticator(user, options)) return "/seguridad";
   return user.role === "company" ? "/empresa" : user.role === "admin" ? "/admin" : "/candidato";
 }

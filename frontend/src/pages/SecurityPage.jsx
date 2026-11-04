@@ -67,6 +67,6 @@ export function SecurityPage() {
     {panel === "data" && <AccountDataPanel user={user} onDeleted={logout} />}
     {panel === "sessions" && <SecuritySessions sessions={sessions} busy={busy} onRevoke={async (session) => { if (!await confirm({ title: "Cerrar esta sesión", description: session.current ? "Saldrás de la cuenta en este dispositivo." : "Este dispositivo tendrá que iniciar sesión de nuevo.", confirmLabel: "Cerrar sesión" })) return; act(async () => { if (session.current) await logout(); else { await api.delete(`/account/sessions/${session.id}`); await load(); } }); }} />}
     </div></div>
-    <footer className="security-page-footer"><Link className="button-secondary" to={params.get("invitation") ? `/equipo/invitacion?token=${encodeURIComponent(params.get("invitation"))}` : user.role === "candidate" ? "/candidato" : user.role === "company" ? "/empresa/equipo" : "/admin"}>Continuar a mi espacio<ArrowRight size={16} aria-hidden="true" /></Link></footer>
+    <footer className="security-page-footer"><Link className="button-secondary" to={params.get("invitation") ? `/equipo/invitacion?token=${encodeURIComponent(params.get("invitation"))}` : user.role === "candidate" ? "/candidato" : user.role === "company" ? "/empresa/bienvenida" : "/admin"}>Continuar a mi espacio<ArrowRight size={16} aria-hidden="true" /></Link></footer>
   </div>;
 }

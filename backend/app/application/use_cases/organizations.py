@@ -25,7 +25,9 @@ def company_summary(db, user):
     return {"id": company.id, "name": company.name, "nit": company.nit, "role": "owner" if company.owner_user_id == user.id else member.role,
             "verification_status": company.verification_status, "verification_required": company.verification_required,
             "submission": company.verification_submission if company.owner_user_id == user.id else {},
-            "feedback": company.verification_feedback, "verification_missing": verification_missing(company.verification_submission)}
+            "feedback": company.verification_feedback, "verification_kind": "legal" if company.verification_required else "internal",
+            "description": company.description, "website": company.website, "location": company.location,
+            "verification_missing": verification_missing(company.verification_submission, internal=not company.verification_required)}
 
 
 def authorize_request(db, user, path, method):
@@ -80,10 +82,13 @@ def review_verification(db, admin, company_id, payload):
     company = db.companies.get(company_id)
     if company is None or company.is_external:
         raise UseCaseError(status_code=404, detail="Empresa interna no encontrada")
-    if payload["status"] == "verified" and (verification_missing(company.verification_submission) or not company.owner.email_verified):
+    internal = not company.verification_required
+    if internal and payload["status"] == "verified" or not internal and payload["status"] == "internal_approved":
+        raise UseCaseError(status_code=422, detail="Elige una decisión que corresponda al tipo de revisión de esta organización")
+    if payload["status"] in {"verified", "internal_approved"} and (verification_missing(company.verification_submission, internal=internal) or not company.owner.email_verified):
         raise UseCaseError(status_code=422, detail="Completa los datos y soportes de la solicitud y confirma el correo antes de aprobar")
     previous = company.verification_status
-    company.verification_required = True
+    company.verification_required = not internal
     company.verification_status = payload["status"]
     company.verification_feedback = payload["feedback"]
     if company.verification_status == "suspended":
@@ -255,9 +260,25 @@ def assignments(db, user):
             for job in company.jobs if job.id in allowed]
 
 
+def submit_internal_review(db, user, payload):
+    company = context(db, user, owner=True)
+    if company.verification_required or company.is_external:
+        raise UseCaseError(422, "Esta organización utiliza el formulario de verificación legal")
+    if not user.email_verified:
+        raise UseCaseError(403, "Confirma primero tu correo en Seguridad")
+    company.verification_submission = {**payload, "kind": "internal", "submitted_at": datetime.utcnow().isoformat()}
+    if company.verification_status != "suspended":
+        company.verification_status = "reviewing"
+        company.verification_feedback = None
+    record_event(db, "company.internal_review_submitted", "company", company.id, actor_user_id=user.id)
+    db.commit()
+    return company_summary(db, user)
+
+
 def verification_queue(db):
     return [{"id": row.id, "name": row.name, "nit": row.nit, "status": row.verification_status,
-             "submission": row.verification_submission, "feedback": row.verification_feedback, "email_verified": row.owner.email_verified, "verification_missing": verification_missing(row.verification_submission)}
+             "submission": row.verification_submission, "feedback": row.verification_feedback, "email_verified": row.owner.email_verified,
+             "verification_kind": "legal" if row.verification_required else "internal", "verification_missing": verification_missing(row.verification_submission, internal=not row.verification_required)}
             for row in db.organizations.verification_queue()]
 
 
@@ -265,7 +286,8 @@ def verification_page(db, **filters):
     result = db.organizations.verification_page(**filters)
     result["items"] = [{"id": row.id, "name": row.name, "nit": row.nit, "status": row.verification_status,
                         "submission": row.verification_submission, "feedback": row.verification_feedback,
-                        "email_verified": row.owner.email_verified, "verification_missing": verification_missing(row.verification_submission)} for row in result["items"]]
+                        "email_verified": row.owner.email_verified, "verification_kind": "legal" if row.verification_required else "internal",
+                        "verification_missing": verification_missing(row.verification_submission, internal=not row.verification_required)} for row in result["items"]]
     return result
 
 
@@ -276,8 +298,12 @@ VERIFICATION_FIELDS = {"legal_name": "Razón social", "tax_id": "Identificación
     "registry_document_url": "Soporte del registro", "accuracy_confirmed": "Declaración de veracidad"}
 
 
-def verification_missing(submission):
-    return [label for key, label in VERIFICATION_FIELDS.items() if not (submission or {}).get(key)]
+def verification_missing(submission, *, internal=False):
+    fields = {"platform_url": "Enlace de la plataforma", "business_activity": "Actividad", "responsible_name": "Responsable", "contact_email": "Correo", "notes": "Descripción de la solicitud", "accuracy_confirmed": "Confirmación del responsable"} if internal else VERIFICATION_FIELDS
+    missing = [label for key, label in fields.items() if not (submission or {}).get(key)]
+    if internal and (submission or {}).get("kind") != "internal":
+        missing.append("Solicitud de revisión interna")
+    return missing
 
 
 def access_status(db, user):
@@ -285,8 +311,10 @@ def access_status(db, user):
     company = db.companies.get(member.company_id) if member else db.companies.find_by_owner(user.id)
     if company is None:
         return {"active": True, "role": "owner", "company_name": None, "verification_status": "pending", "feedback": None}
-    return {"active": member.active if member else True, "role": member.role if member else "owner",
+    return {"id": company.id, "name": company.name, "active": member.active if member else True, "role": member.role if member else "owner",
             "company_name": company.name, "verification_status": company.verification_status,
+            "verification_required": company.verification_required, "verification_kind": "legal" if company.verification_required else "internal",
+            "submission": {"submitted_at": company.verification_submission.get("submitted_at")} if company.verification_submission else {},
             "feedback": company.verification_feedback}
 
 

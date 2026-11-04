@@ -78,9 +78,12 @@ class CatalogRefreshService:
                 # source check is still required before making a role visible.
                 jobs = db.jobs.external_listings()
                 for job in jobs:
+                    db.jobs.lock(job)
                     content, details, _, _ = extract_content(job.title, job.description, job.requirements, published_at=job.external_published_at)
                     job.external_content = {**(job.external_content or {}), **content}
                     job.quality_details = {**(job.quality_details or {}), **details}
+                    from app.domain.services.editorial_jobs import apply_editorial
+                    apply_editorial(job)
                 db.commit()
                 boards = set()
                 boards.update({"https://job-boards.greenhouse.io/agencywithin", "https://job-boards.greenhouse.io/goodsservices"})

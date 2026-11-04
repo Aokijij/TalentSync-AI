@@ -448,6 +448,7 @@ class Job(Base):
     moderation_status: Mapped[str] = mapped_column(String(20), default="automatic", server_default="automatic", nullable=False)
     moderation_note: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False)
     moderation_revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    editorial_overrides: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
 
     external_check_state: Mapped[str] = mapped_column(String(24), default="pending", server_default="pending", nullable=False)
     external_checked_at: Mapped[datetime | None] = mapped_column(DateTime)
@@ -950,3 +951,14 @@ class FileErasureTask(Base):
     next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class ExternalJobExclusion(Base):
+    __tablename__ = "external_job_exclusions"
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    source_name: Mapped[str | None] = mapped_column(String(80))
+    external_id: Mapped[str | None] = mapped_column(String(180))
+    external_url: Mapped[str | None] = mapped_column(String(1000))
+    reason: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    actor_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

@@ -1,6 +1,36 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+
+
+class ExternalContentFields(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    description: str | None = Field(default=None, min_length=40, max_length=40000)
+    requirements: str | None = Field(default=None, min_length=20, max_length=20000)
+    salary: float | None = Field(default=None, ge=0, le=1_000_000_000, allow_inf_nan=False)
+    skills: list[str] | None = Field(default=None, max_length=50)
+    required_education_level: Literal["secondary", "technical", "technologist", "university", "postgraduate"] | None = None
+    required_study_fields: list[str] | None = Field(default=None, max_length=20)
+
+    @field_validator("description", "requirements", "skills", "required_study_fields")
+    @classmethod
+    def reject_null(cls, value):
+        if value is None:
+            raise ValueError("Usa un valor explícito para actualizar este campo")
+        return value
+
+
+class ExternalContentReview(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    revision: int = Field(ge=0)
+    source_url: HttpUrl
+    note: str = Field(min_length=10, max_length=2000)
+    fields: ExternalContentFields
+
+
+class CatalogCleanupRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    ids: list[int] = Field(min_length=1, max_length=200)
 
 
 class PublicationReview(BaseModel):

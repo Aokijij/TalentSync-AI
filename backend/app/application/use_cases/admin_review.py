@@ -4,9 +4,11 @@ from datetime import datetime, timedelta
 from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
 from app.domain.entities.enums import UserRole
+from app.domain.services.editorial_jobs import apply_editorial, exclusion_key
 from app.domain.services.external_job_content import admission_reasons
 from app.domain.services.job_freshness import FRESH_HOURS, externally_available
 from app.domain.services.offer_review import review_offer
+from app.domain.services.skills import normalize_skills
 
 
 def require_admin(user):
@@ -19,7 +21,7 @@ def job_detail(db, user, job_id):
     job = db.jobs.get(job_id)
     if job is None:
         raise UseCaseError(404, "Vacante no encontrada")
-    fields = ("id", "title", "description", "requirements", "salary", "location", "department", "modality", "employment_type", "sector", "status", "benefits", "skills", "skill_requirements", "languages", "required_education_level", "required_study_fields", "created_at", "expires_at", "source_kind", "source_name", "external_url", "external_published_at", "external_checked_at", "external_check_state", "external_check_reason", "external_available", "external_admission_reasons", "source_portal", "quality_details", "response_days", "moderation_status", "moderation_note", "moderation_revision")
+    fields = ("id", "title", "description", "requirements", "salary", "location", "department", "modality", "employment_type", "sector", "status", "benefits", "skills", "skill_requirements", "languages", "required_education_level", "required_study_fields", "created_at", "expires_at", "source_kind", "source_name", "external_url", "external_published_at", "external_checked_at", "external_check_state", "external_check_reason", "external_available", "external_admission_reasons", "source_portal", "quality_details", "response_days", "moderation_status", "moderation_note", "moderation_revision", "editorial_overrides")
     data = {key: getattr(job, key, None) for key in fields}
     data.update(company_id=job.company_id, company_name=job.company.name if job.company else "", applications_count=len(job.applications))
     if job.source_kind == "external":
@@ -91,6 +93,95 @@ def company_detail(db, user, company_id):
     data = {key: getattr(record, key, None) for key in fields}
     data["nit"] = None if record.is_external else record.nit
     data["owner_email"] = record.owner.email if record.owner else None
+    data["logo_url"] = record.logo_url
+    data["cover_url"] = record.cover_url
     data["jobs"] = [{"id": item.id, "title": item.title, "status": item.status, "applications_count": len(item.applications)} for item in sorted(record.jobs, key=lambda item: item.id, reverse=True)[:30]]
     data["jobs_count"] = len(record.jobs)
     return data
+
+
+def edit_external_content(db, user, job_id, payload, *, nlp):
+    require_admin(user)
+    job = db.jobs.get(job_id)
+    if job is None or job.source_kind != "external":
+        raise UseCaseError(404, "Vacante externa no encontrada")
+    db.jobs.lock(job)
+    if job.moderation_revision != payload["revision"]:
+        raise UseCaseError(409, "La ficha cambió. Actualiza antes de guardar el contenido")
+    if exclusion_key(str(payload["source_url"])) != exclusion_key(job.external_url):
+        raise UseCaseError(422, "El complemento debe referenciar la oferta original de esta vacante")
+    fields = dict(payload["fields"])
+    if not fields:
+        raise UseCaseError(422, "Indica al menos un campo para complementar")
+    if "skills" in fields:
+        fields["skills"] = normalize_skills(fields["skills"])
+    previous = job.editorial_overrides or {}
+    source = dict(previous.get("source") or {})
+    for key in fields:
+        if key not in source:
+            source[key] = getattr(job, key)
+    metadata = {"fields": {**previous.get("fields", {}), **fields}, "source": source,
+                "source_url": job.external_url, "note": payload["note"], "reviewed_at": datetime.utcnow().isoformat() + "Z"}
+    if not db.jobs.update_editorial(job.id, payload["revision"], metadata):
+        raise UseCaseError(409, "Otra revisión se guardó primero. Actualiza la ficha")
+    db.refresh(job)
+    apply_editorial(job)
+    job.embedding = nlp.analyze_job(f"{job.title} {job.description} {job.requirements}").embedding
+    record_event(db, "job.content_reviewed", "job", job.id, actor_user_id=user.id,
+                 details={"version": job.moderation_revision, "source": "original_listing"})
+    db.commit()
+    return job_detail(db, user, job.id)
+
+
+def cleanup_reason(job, *, now=None):
+    now = now or datetime.utcnow()
+    if job.source_kind != "external" or job.applications:
+        return None
+    if job.status == "active" and externally_available(job, now):
+        return None
+    if job.status == "closed" or job.external_check_state == "closed":
+        return "closed_at_source"
+    if job.expires_at and job.expires_at <= now:
+        return "expired"
+    if "publication_too_old" in admission_reasons(job.external_published_at, job.skills, now=now):
+        return "old_publication"
+    if not job.external_url:
+        return "missing_original_url"
+    if len((job.description or "").strip()) < 40 and len((job.requirements or "").strip()) < 20:
+        return "empty_content"
+    return None
+
+
+def catalog_cleanup_preview(db, user):
+    require_admin(user)
+    rows = []
+    for job in db.jobs.external_listings():
+        reason = cleanup_reason(job)
+        if reason:
+            rows.append({"id": job.id, "title": job.title, "company_name": job.company.name if job.company else "",
+                         "reason": reason, "external_url": job.external_url})
+    return {"total": len(rows), "items": rows[:200], "protected": "Los fallos temporales y las ofertas incompletas con fuente válida se conservan para revisión."}
+
+
+def catalog_cleanup(db, user, ids):
+    require_admin(user)
+    deleted, skipped = [], []
+    for job_id in dict.fromkeys(ids):
+        job = db.jobs.get(job_id)
+        if job is None:
+            skipped.append(job_id)
+            continue
+        db.jobs.lock(job)
+        reason = cleanup_reason(job)
+        if not reason:
+            skipped.append(job_id)
+            continue
+        if job.external_url:
+            db.jobs.exclude_external(exclusion_key(job.external_url), source_name=job.source_name,
+                                    external_id=job.external_id, external_url=job.external_url,
+                                    reason=reason, actor_user_id=user.id)
+        record_event(db, "job.catalog_removed", "job", job.id, actor_user_id=user.id, details={"reason_code": reason})
+        db.delete(job)
+        deleted.append(job_id)
+    db.commit()
+    return {"deleted": len(deleted), "deleted_ids": deleted, "skipped": skipped}

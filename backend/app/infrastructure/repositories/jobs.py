@@ -3,11 +3,32 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import joinedload, load_only, selectinload
 
-from app.infrastructure.database.models import Application, Company, Job, OfferFeedback
+from app.infrastructure.database.models import (
+    Application,
+    Company,
+    ExternalJobExclusion,
+    Job,
+    OfferFeedback,
+)
 from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class JobRepository(SqlAlchemyRepository[Job]):
+    def lock(self, job):
+        self.session.refresh(job, with_for_update=True)
+
+    def update_editorial(self, job_id, revision, overrides):
+        return self.session.query(Job).filter(Job.id == job_id, Job.moderation_revision == revision).update(
+            {Job.editorial_overrides: overrides, Job.moderation_revision: revision + 1}, synchronize_session=False) == 1
+
+    def excluded_external(self, key):
+        return self.session.get(ExternalJobExclusion, key) is not None
+
+    def exclude_external(self, key, **values):
+        if not self.excluded_external(key):
+            self.session.add(ExternalJobExclusion(key=key, **values))
+            self.session.flush()
+
     def update_moderation(self, job_id, revision, status, note):
         return self.session.query(Job).filter(Job.id == job_id, Job.moderation_revision == revision).update(
             {Job.moderation_status: status, Job.moderation_note: note, Job.moderation_revision: revision + 1}, synchronize_session=False) == 1
