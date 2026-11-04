@@ -140,7 +140,7 @@ def create_job(
         **{key: value for key, value in payload.items() if key != "company_id"},
         company_id=company.id,
         quality_revision=1 if payload.get("quality_details") else 0,
-        skills=analysis.skills,
+        skills=[row["skill"] for row in payload["skill_requirements"]] if payload.get("skill_requirements") or payload.get("quality_details") else analysis.skills,
         embedding=analysis.embedding,
     )
     db.add(job)
@@ -295,6 +295,8 @@ def update_job(
         analysis = nlp.analyze_job(f"{job.title} {job.description} {job.requirements}")
         job.skills = analysis.skills
         job.embedding = analysis.embedding
+    if "skill_requirements" in changes or job.skill_requirements or job.quality_details:
+        job.skills = [row["skill"] for row in (job.skill_requirements or [])]
     if previous_status != "closed" and job.status == "closed":
         from app.application.use_cases.workflow import FINAL, transition
         for application in job.applications:
