@@ -13,6 +13,7 @@ export function registrationDestination({ company, invitation, accessOptions }) 
 }
 
 export function loginDestination({ company, from, user, accessOptions }) {
+  if (user.registration_pending) return "/completar-cuenta";
   const invitation = company ? invitationTokenFromPath(from) : null;
   if (company && accessOptions.mode === "session" && accessOptions.company_mfa_required !== false && !user.mfa_enabled) return `/seguridad${invitation ? `?invitation=${encodeURIComponent(invitation)}` : ""}`;
   if (invitation) return invitationPath(invitation);

@@ -81,7 +81,7 @@ function RequireAuth({ children }) {
     );
     return <Navigate to={adminArea ? "/acceso-administracion" : location.pathname.startsWith("/empresa") ? "/empresa/login" : "/login"} state={{ from: location.pathname + location.search }} replace />;
   }
-  if (user.registration_pending && location.pathname !== "/completar-cuenta") return <Navigate to="/completar-cuenta" replace />;
+  if (user.registration_pending) return location.pathname === "/completar-cuenta" ? children : <Navigate to="/completar-cuenta" replace />;
   if (requiresAuthenticator(user, accessOptions) && location.pathname !== "/seguridad") return <Navigate to="/seguridad" replace />;
   return children;
 }

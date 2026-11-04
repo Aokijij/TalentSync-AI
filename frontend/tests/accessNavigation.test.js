@@ -3,6 +3,12 @@ import assert from "node:assert/strict";
 import { invitationPath, invitationTokenFromPath, loginDestination, registrationDestination } from "../src/utils/accessNavigation.js";
 import { accountHome } from "../src/utils/accountAccess.js";
 
+test("Pending registration takes precedence over the company authenticator and saved destinations", () => {
+  for (const company of [false, true]) for (const mfa_enabled of [false, true]) {
+    assert.equal(loginDestination({ company, from: "/empresa/vacantes", user: { registration_pending: true, mfa_enabled }, accessOptions: { mode: "session", company_mfa_required: true } }), "/completar-cuenta");
+  }
+});
+
 test("authenticated entry prioritizes incomplete registration, MFA and the user's own role", () => {
   assert.equal(accountHome(null), "/login");
   assert.equal(accountHome({ role: "candidate", registration_pending: true }), "/completar-cuenta");
