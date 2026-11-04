@@ -25,7 +25,7 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ad
   await dialog.getByRole("button", { name: "Contenido y edición", exact: true }).click();
   await dialog.getByRole("button", { name: "Editar contenido", exact: true }).click();
   const form = dialog.locator(".external-job-editor");
-  await form.getByRole("button", { name: "Requisitos", exact: true }).click();
+  await form.getByRole("combobox", { name: "Apartado de edición", exact: true }).selectOption("requirements");
   await form.getByRole("checkbox", { name: /^Categoría A1:/ }).check();
   await expect(form.getByRole("checkbox", { name: /^Categoría A1:/ })).toBeChecked();
   const picker = form.getByRole("combobox", { name: "Profesiones aceptadas", exact: true });
@@ -47,7 +47,7 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ad
   await picker.press("Enter");
   await expect(form.getByRole("list", { name: "Profesiones aceptadas: elementos añadidos" })).toContainText("Diseño de experiencias inmersivas");
   expect(await form.locator("datalist").count()).toBe(0);
-  await form.getByRole("button", { name: "Condiciones", exact: true }).click();
+  await form.getByRole("combobox", { name: "Apartado de edición", exact: true }).selectOption("conditions");
   await expect(form.getByRole("button", { name: "Dejar horario sin informar", exact: true })).toBeDisabled();
   await form.getByRole("button", { name: "Escribir horario", exact: true }).click();
   await form.getByRole("textbox", { name: "Describe la jornada", exact: true }).fill("Lunes a viernes de 8:00 a 17:00.");
