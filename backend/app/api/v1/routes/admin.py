@@ -24,6 +24,7 @@ from app.api.deps import (
 from app.api.schemas.admin import (
     CatalogCleanupRequest,
     EmployerBoardRequest,
+    ExternalCatalogStatus,
     ExternalContentReview,
     JobCatalogSyncRequest,
     PublicationReview,
@@ -53,6 +54,11 @@ def cleanup_catalog(payload: CatalogCleanupRequest, current_user=Depends(require
 @router.patch("/jobs/{job_id}/content")
 def update_source_content(job_id: int, payload: ExternalContentReview, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis)):
     return admin_review.edit_external_content(db, current_user, job_id, payload.model_dump(mode="json", exclude_unset=True), nlp=nlp)
+
+
+@router.patch("/jobs/{job_id}/catalog-status")
+def change_catalog_status(job_id: int, payload: ExternalCatalogStatus, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return admin_review.change_external_status(db, current_user, job_id, payload.model_dump())
 
 
 @router.get("/users/{user_id}")

@@ -3,6 +3,7 @@ import { COLOMBIA_LOCATIONS } from "../constants/colombianCities.js";
 const fold = (value) => String(value || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
 const colombianCities = new Set(Object.values(COLOMBIA_LOCATIONS).flat().map(fold));
 export function remoteScopeFromLegacy(location = "") {
+  location = String(location || "");
   const country = REMOTE_COUNTRIES.find((row) => [row.code, row.name, row.english_name].some((name) => fold(name) === fold(location)));
   if (country) return { mode: "regions", countries: [country.code], continents: [] };
   if (colombianCities.has(fold(location.split(",")[0]))) return { mode: "regions", countries: ["CO"], continents: [] };

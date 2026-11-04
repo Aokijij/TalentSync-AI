@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from app.application.errors import UseCaseError
 from app.application.use_cases.integration_observations import record
+from app.domain.services.editorial_jobs import apply_editorial
 from app.domain.services.job_freshness import externally_available
 
 REASONS = {"source_api": "La fuente original publica esta oferta.", "structured_date": "Vigencia publicada en la oferta original.",
@@ -13,6 +14,7 @@ REASONS = {"source_api": "La fuente original publica esta oferta.", "structured_
 def check_job(db, job, gateway, *, now=None):
     if job.source_kind != "external":
         raise UseCaseError(status_code=422, detail="Esta comprobación corresponde a vacantes externas")
+    apply_editorial(job)
     now = now or datetime.utcnow()
     if job.expires_at and job.expires_at <= now:
         state, reason, valid_until = "closed", "expired", None
