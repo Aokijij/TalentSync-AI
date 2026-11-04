@@ -1,1 +1,11 @@
-.ai-writing-disclosure{display:grid;gap:.7rem;min-width:0;padding:1rem;border:1px solid var(--line);border-radius:10px;background:var(--surface-subtle);font-size:.8rem;line-height:1.65;overflow-wrap:anywhere}.ai-writing-disclosure a{color:var(--accent);text-decoration:underline}.ai-writing-disclosure>label{display:flex!important;align-items:flex-start;gap:.65rem;font-weight:600}.ai-writing-disclosure input{flex:none;width:18px;height:18px;margin-top:.2rem;accent-color:var(--accent)}.ai-writing-disclosure label>span{min-width:0}
+.ai-writing-disclosure{display:grid;gap:1rem;min-width:0;margin:.4rem 0 1.2rem;padding:1.15rem;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow-wrap:anywhere}
+.ai-writing-heading{display:flex;align-items:center;gap:.7rem;min-width:0}.ai-writing-heading>strong{flex:1;min-width:0;font-size:.88rem;font-weight:650;line-height:1.45;color:var(--ink-strong)}
+.ai-writing-symbol{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:10px;background:color-mix(in srgb,var(--accent) 9%,var(--surface));color:var(--accent)}
+.ai-writing-provider{flex:none;border:1px solid var(--line);border-radius:20px;padding:.15rem .6rem;font-size:.67rem;color:var(--muted)}
+.ai-writing-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem;padding:.25rem 0 .15rem}
+.ai-writing-details>div{display:flex;align-items:flex-start;gap:.6rem;min-width:0}.ai-writing-details>div>svg{flex:none;margin-top:2px;color:var(--muted)}.ai-writing-details>div>div{min-width:0}
+.ai-writing-details strong{display:block;margin-bottom:.3rem;color:var(--ink-strong);font-size:.76rem;font-weight:650;line-height:1.6}
+.ai-writing-disclosure .ai-writing-copy{margin:0;max-width:none;color:var(--muted);font-size:.76rem;line-height:1.75}
+.ai-writing-disclosure .ai-writing-privacy{display:flex;align-items:center;gap:.35rem;width:fit-content;max-width:100%;min-height:30px;margin:0;color:var(--accent);font-size:.73rem;line-height:1.6;text-decoration:underline;text-underline-offset:3px}
+.ai-writing-privacy>svg{flex:none}
+@media(max-width:640px){.ai-writing-disclosure{padding:1rem}.ai-writing-details{grid-template-columns:minmax(0,1fr);gap:.9rem}.ai-writing-provider{display:none}}

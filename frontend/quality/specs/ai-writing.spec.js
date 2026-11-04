@@ -58,14 +58,15 @@ for (const [width, theme] of [[360, "dark"], [1280, "light"]]) test(`Groq summar
   expect(context.errors).toEqual([]);
 });
 
-test("Groq experience sends only after consent and resets authorization for another experience", async ({ page }) => {
-  const context = await setup(page);
+for (const [width, theme] of [[360, "dark"], [1280, "light"]]) test(`Groq experience sends only after consent and resets authorization · ${theme} · ${width}`, async ({ page }) => {
+  const context = await setup(page, { width, theme });
   await page.getByRole("button", { name: /Ideas para mejorar tu hoja de vida/ }).click();
   await page.getByRole("tab", { name: "Mejorar un texto", exact: true }).click();
   const generate = page.getByRole("button", { name: "Generar una propuesta con IA", exact: true });
   await expect(generate).toBeDisabled();
   const consent = page.getByRole("checkbox", { name: /Autorizo enviar/ });
   await consent.check();
+  await page.locator(".ai-writing-disclosure").screenshot({ path: `../.local/consent-design-20261103/writing-${theme}-${width}.png` });
   await generate.click();
   await expect(page.getByRole("heading", { name: "Tu propuesta está lista", exact: true })).toBeVisible();
   expect(context.calls).toEqual([{ path: "/api/v1/profiles/me/coach/writing/generate", body: expect.objectContaining({ experience_index: 0, external_ai_consent: true }) }]);
