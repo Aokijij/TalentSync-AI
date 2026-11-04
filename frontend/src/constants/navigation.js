@@ -60,7 +60,7 @@ export const navigationLinks = [
     roles: ["candidate"],
   },
   {
-    to: "/empresa",
+    to: "/empresa/bienvenida",
     label: "Inicio",
     icon: LayoutDashboard,
     roles: ["company"],

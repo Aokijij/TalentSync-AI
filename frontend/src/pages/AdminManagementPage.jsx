@@ -27,6 +27,8 @@ import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import { ExternalCatalogPanel } from "../components/ExternalCatalogPanel.jsx";
 import { EmployerBoardImport } from "../components/EmployerBoardImport.jsx";
 import { ExternalVacancyStatus } from "../components/ExternalVacancyStatus.jsx";
+import { CatalogCleanupPanel } from "../components/CatalogCleanupPanel.jsx";
+import "../styles/admin-console.css";
 import { AdminRecordDialog } from "../components/AdminRecordDialog.jsx";
 
 const tabs = [
@@ -54,6 +56,7 @@ export function AdminManagementPage() {
   const { user } = useAuth();
   const [params] = useSearchParams();
   const requestedJob = Number(params.get("vacante")), initialJob = Number.isInteger(requestedJob) && requestedJob > 0 ? requestedJob : null;
+  const [jobView, setJobView] = useState("list");
   const [activeTab, setActiveTab] = useState(initialJob ? "jobs" : "users");
   const [stats, setStats] = useState({});
   const [scope, setScope] = useState(initialJob ? "all" : "platform");
@@ -223,8 +226,9 @@ export function AdminManagementPage() {
   }, [activeTab, query, pageSize, scope, jobStatus, accountRole]);
   useEffect(() => { if (managed && page > pageCount) setPage(pageCount); }, [managed, page, pageCount]);
 
+  const showRecords = activeTab !== "jobs" || jobView === "list";
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 admin-console" data-job-view={activeTab === "jobs" ? jobView : "list"}>
       <PageHeader
         kicker="Control de plataforma"
         title="Consola administrativa"
@@ -260,7 +264,7 @@ export function AdminManagementPage() {
         />
       </section>
 
-      <section className="grid items-start gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
+      <section className="admin-console-workspace">
         <aside className="surface-card p-3 lg:sticky lg:top-8">
           <p className="px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
             Recursos
@@ -303,14 +307,15 @@ export function AdminManagementPage() {
           </div>
         </aside>
         <div className="surface-card min-w-0 overflow-hidden !p-0">
-          <header className="flex flex-col gap-4 border-b border-[var(--line)] p-5 xl:flex-row xl:items-end xl:justify-between">
+          {activeTab === "jobs" && <nav className="admin-console-job-tabs" aria-label="Gestión de vacantes">{[["list", "Catálogo de vacantes"], ["sources", "Fuentes y sincronización"], ["cleanup", "Limpieza"]].map(([key, name]) => <button key={key} type="button" aria-pressed={jobView === key} onClick={() => setJobView(key)}>{name}</button>)}</nav>}
+          <header className="admin-console-record-header border-b border-[var(--line)] p-5">
             <div>
               <p className="section-kicker">{activeMeta?.label}</p>
               <h2 className="mt-1 text-xl font-bold text-[var(--ink-strong)]">
                 {activeMeta?.description}
               </h2>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">{activeTab === "users" && <label className="text-xs font-bold text-[var(--muted)]">Tipo de cuenta<select className="field-control input-sm mt-1.5" value={accountRole} onChange={(event) => setAccountRole(event.target.value)}><option value="candidate">Candidatos</option><option value="company">Empresas</option><option value="admin">Administradores</option><option value="">Todas las cuentas</option></select></label>}
+            <div className="admin-console-filters">{activeTab === "users" && <label className="text-xs font-bold text-[var(--muted)]">Tipo de cuenta<select className="field-control input-sm mt-1.5" value={accountRole} onChange={(event) => setAccountRole(event.target.value)}><option value="candidate">Candidatos</option><option value="company">Empresas</option><option value="admin">Administradores</option><option value="">Todas las cuentas</option></select></label>}
               {activeTab !== "users" ? (
                 <label className="text-xs font-bold text-[var(--muted)]">
                   Origen
@@ -341,7 +346,7 @@ export function AdminManagementPage() {
               </label>
             </div>
           </header>
-          {activeTab === "jobs" ? (
+          {activeTab === "jobs" && jobView === "sources" ? (
             <><ExternalCatalogPanel onChanged={async () => { await loadOverview(); await loadManagedRecords(); }} />
             <details className="border-b border-[var(--line)]"><summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-[var(--accent)]">Consultar un portal empresarial específico</summary><EmployerBoardImport onChanged={loadManagedRecords} /></details>
             <details className="border-b border-[var(--line)]"><summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-[var(--accent)]">Otras fuentes: archivo autorizado y agregadores</summary>
@@ -361,6 +366,8 @@ export function AdminManagementPage() {
               onSyncJsearch={syncJsearch}
             /></details></>
           ) : null}
+          {activeTab === "jobs" && jobView === "cleanup" && <CatalogCleanupPanel onChanged={async () => { await Promise.all([loadOverview(), loadManagedRecords()]); }} />}
+          {showRecords && <>
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface-subtle)] px-5 py-3 text-xs font-semibold text-[var(--muted)]">
             <span>
               {loading
@@ -416,6 +423,7 @@ export function AdminManagementPage() {
               </button>
             </div>
           </footer>
+          </>}
         </div>
       </section>
       {selectedRecord && <AdminRecordDialog record={selectedRecord} onSelect={setSelectedRecord} onClose={() => setSelectedRecord(null)} onChanged={async () => { await Promise.all([loadOverview(), loadManagedRecords()]); }} />}
@@ -699,7 +707,7 @@ function RecordRow({ kind, item, protectedRecord, onDelete, onView }) {
           <div>
             <p className="font-bold text-[var(--ink-strong)]">{title}</p>
             {kind === "users" && <><p className="mt-1 text-xs text-[var(--muted)]">{item.profession || (item.role === "candidate" ? "Perfil por completar" : item.role === "company" ? "Acceso empresarial" : "Acceso administrativo")}{item.location ? ` · ${item.location}` : ""}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.skills?.join(" · ") || "Sin habilidades registradas"}</p></>}
-            {kind === "companies" && <p className="mt-1 text-xs text-[var(--muted)]">{[item.sector, item.location, item.verification_status === "verified" ? "Verificada" : item.source_kind === "external" ? "Fuente externa" : "Verificación pendiente"].filter(Boolean).join(" · ")}</p>}
+            {kind === "companies" && <p className="mt-1 text-xs text-[var(--muted)]">{[item.sector, item.location, item.verification_required === false && item.source_kind !== "external" ? "Espacio interno" : item.verification_status === "verified" ? "Verificada" : item.source_kind === "external" ? "Fuente externa" : "Verificación pendiente"].filter(Boolean).join(" · ")}</p>}
             {item.source_name ? (
               <p className="mt-0.5 text-xs font-semibold text-[var(--accent)]">
                 {item.source_kind === "external"
@@ -713,7 +721,7 @@ function RecordRow({ kind, item, protectedRecord, onDelete, onView }) {
               </p>
             ) : null}
             {kind === "jobs" && item.location && <p className="mt-1 text-xs text-[var(--muted)]">{item.location}{item.department ? ` · ${item.department}` : ""}</p>}
-            {kind === "jobs" && item.source_kind === "external" && <ExternalVacancyStatus job={item} admin />}
+            {kind === "jobs" && item.source_kind === "external" && <ExternalVacancyStatus job={item} />}
             {kind === "companies" ? (
               <p className="max-w-xs truncate text-xs text-[var(--muted)]">
                 {item.description || "Sin descripción"}
@@ -727,7 +735,7 @@ function RecordRow({ kind, item, protectedRecord, onDelete, onView }) {
           <RoleBadge role={item.role} />
         ) : kind === "companies" ? (
           <span className="text-[var(--muted)]">
-            {item.source_kind === "external" ? "Empresa externa" : `NIT ${item.nit}`}
+            {item.source_kind === "external" ? "Empresa externa" : `${item.verification_required === false ? "ID interno" : "NIT"} ${item.nit}`}
           </span>
         ) : item.source_kind === "external" ? (
           <span className="font-semibold text-[var(--muted)]">

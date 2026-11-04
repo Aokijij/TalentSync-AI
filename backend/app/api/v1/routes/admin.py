@@ -22,7 +22,9 @@ from app.api.deps import (
     require_roles,
 )
 from app.api.schemas.admin import (
+    CatalogCleanupRequest,
     EmployerBoardRequest,
+    ExternalContentReview,
     JobCatalogSyncRequest,
     PublicationReview,
 )
@@ -36,6 +38,21 @@ from app.domain.entities.enums import UserRole
 from app.domain.entities.records import User
 
 router = APIRouter()
+
+
+@router.get("/jobs/cleanup")
+def cleanup_preview(current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return admin_review.catalog_cleanup_preview(db, current_user)
+
+
+@router.post("/jobs/cleanup")
+def cleanup_catalog(payload: CatalogCleanupRequest, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return admin_review.catalog_cleanup(db, current_user, payload.ids)
+
+
+@router.patch("/jobs/{job_id}/content")
+def update_source_content(job_id: int, payload: ExternalContentReview, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis)):
+    return admin_review.edit_external_content(db, current_user, job_id, payload.model_dump(mode="json", exclude_unset=True), nlp=nlp)
 
 
 @router.get("/users/{user_id}")

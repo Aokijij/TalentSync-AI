@@ -1,98 +1,1161 @@
 {
-  "purpose": "Fichas de preparación para el espacio empresarial interno de TalentSync; condiciones propuestas para revisar en borrador.",
-  "company": {
-    "name": "TalentSync",
-    "description": "Equipo de TalentSync: espacio de la plataforma para gestionar vacantes, aprendizaje y procesos de selección con información clara.",
-    "sector": "Tecnologia y software",
-    "location": "Medellín",
-    "mission": "Conectar la trayectoria y las habilidades de las personas con oportunidades y aprendizaje, facilitando procesos de selección claros.",
-    "values": [
-      "Claridad",
-      "Colaboración",
-      "Aprendizaje"
-    ],
-    "benefits": []
-  },
+  "purpose": "Propuestas de vacantes para desarrollar y operar TalentSync. Todas se preparan en borrador; dos se entregan incompletas para practicar la mejora de calidad.",
   "jobs": [
     {
-      "title": "Desarrollo Frontend Junior",
-      "status": "draft",
-      "modality": "remote",
-      "location": "Colombia",
-      "employment_type": "full_time",
-      "salary": 3200000,
-      "description": "Construir interfaces responsivas con HTML, CSS y JavaScript, revisar su accesibilidad y documentar los cambios con Git. Colaborar en la integración de componentes React.",
-      "requirements": "Fundamentos de HTML, CSS, JavaScript y Git. Se aceptan proyectos académicos como experiencia inicial. React puede reforzarse durante el acompañamiento. Formación técnica, tecnológica o universitaria relacionada; se aceptan estudios en curso.",
-      "skills": [
-        "html",
-        "css",
-        "javascript",
-        "react",
-        "git"
-      ],
-      "selection_example": "Revisión del proyecto aportado y entrevista técnica sobre una interfaz"
+      "title": "Desarrollador Frontend React · TalentSync",
+      "preparation": "complete",
+      "draft": {
+        "quality_details": {
+          "credential_requirements": {
+            "driving_categories": [],
+            "professional_cards": []
+          },
+          "version": 1,
+          "salary_max": 3600000.0,
+          "variable_pay": "",
+          "salary_currency": "COP",
+          "salary_period": "monthly",
+          "salary_basis": "gross_base",
+          "weekly_hours": 40.0,
+          "contract_type": "indefinite",
+          "schedule": "Lunes a viernes, de 08:00 a 17:00, con una hora de descanso.",
+          "work_schedule": {
+            "mode": "fixed",
+            "days": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "start": "08:00",
+            "end": "17:00",
+            "break_minutes": 60,
+            "notes": ""
+          },
+          "seniority": "junior",
+          "experience_years": null,
+          "experience_months": 0,
+          "education_accepts_in_progress": true,
+          "education_field_policy": "related",
+          "remote_scope": {
+            "mode": "regions",
+            "countries": [
+              "CO"
+            ],
+            "continents": []
+          },
+          "learnable_skills": [
+            "react"
+          ],
+          "missions": [
+            {
+              "outcome": "Entregar una mejora del flujo de perfil o del portal empresarial, con estados de error y carga resueltos.",
+              "measure": "Revisión del código, comprobación de accesibilidad y pruebas del recorrido en móvil y escritorio.",
+              "days": 30,
+              "skill": "html"
+            }
+          ],
+          "interview_count": 2,
+          "process_days": 14
+        },
+        "blind_hiring": true,
+        "response_days": 5,
+        "skill_requirements": [
+          {
+            "skill": "html",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "css",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "javascript",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "react",
+            "essential": false,
+            "weight": 1,
+            "level": "basic"
+          },
+          {
+            "skill": "git",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          }
+        ],
+        "status": "draft",
+        "languages": [],
+        "company_id": null,
+        "title": "Desarrollador Frontend React · TalentSync",
+        "description": "Desarrollar y mantener las interfaces de candidatos, empresas y administración de TalentSync con React. Implementar formularios de perfil y vacantes, vistas de compatibilidad y componentes de aprendizaje. Integrar la API de la plataforma, tratar estados de carga y error, y mejorar la accesibilidad y el uso en dispositivos móviles. Documentar los cambios y revisarlos con el equipo antes de cada publicación.",
+        "requirements": "Fundamentos de HTML, CSS, JavaScript y Git, y conocimiento inicial de React. Se aceptan proyectos académicos o personales que muestren interfaces responsivas e integración de APIs. Formación técnica, tecnológica o universitaria relacionada con desarrollo de software; se aceptan estudios en curso. No se exige experiencia laboral previa.",
+        "salary": 3200000.0,
+        "location": "Colombia",
+        "department": null,
+        "modality": "remote",
+        "employment_type": "full_time",
+        "sector": "Tecnologia y software",
+        "benefits": [
+          "Acompañamiento inicial y formación relacionada con las funciones del cargo."
+        ],
+        "pipeline_stages": [
+          {
+            "id": "submitted",
+            "title": "Recibidas"
+          },
+          {
+            "id": "reviewing",
+            "title": "En revisión"
+          },
+          {
+            "id": "interview",
+            "title": "Entrevista"
+          },
+          {
+            "id": "hired",
+            "title": "Contratados"
+          },
+          {
+            "id": "rejected",
+            "title": "No seleccionados"
+          }
+        ],
+        "application_questions": [
+          {
+            "category": "screening",
+            "id": "proyecto-relacionado",
+            "prompt": "Describe un proyecto o actividad que se relacione con estas funciones y tu participación concreta.",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          },
+          {
+            "category": "screening",
+            "id": "primera-tarea",
+            "prompt": "¿Cómo organizarías una primera tarea de este cargo y comunicarías un bloqueo al equipo?",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          }
+        ],
+        "required_education_level": "technical",
+        "required_study_fields": []
+      }
     },
     {
-      "title": "Análisis de Datos Junior",
-      "status": "draft",
-      "modality": "hybrid",
-      "location": "Medellín",
-      "department": "Antioquia",
-      "employment_type": "full_time",
-      "salary": 3500000,
-      "description": "Organizar fuentes de datos, preparar consultas SQL y reportes en Excel, documentar las comprobaciones y presentar un tablero de seguimiento.",
-      "requirements": "Conocimientos de Excel y SQL. Se aceptan proyectos académicos como experiencia inicial. Python y Power BI son deseables. Formación técnica, tecnológica o universitaria afín; se aceptan estudios en curso.",
-      "skills": [
-        "excel",
-        "sql",
-        "python",
-        "power bi"
-      ],
-      "selection_example": "Revisión de un reporte aportado y conversación sobre calidad de datos"
+      "title": "Analista de Datos y Calidad de Vacantes · TalentSync",
+      "preparation": "complete",
+      "draft": {
+        "quality_details": {
+          "credential_requirements": {
+            "driving_categories": [],
+            "professional_cards": []
+          },
+          "version": 1,
+          "salary_max": 3900000.0,
+          "variable_pay": "",
+          "salary_currency": "COP",
+          "salary_period": "monthly",
+          "salary_basis": "gross_base",
+          "weekly_hours": 40.0,
+          "contract_type": "indefinite",
+          "schedule": "Lunes a viernes, de 08:00 a 17:00, con una hora de descanso.",
+          "work_schedule": {
+            "mode": "fixed",
+            "days": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "start": "08:00",
+            "end": "17:00",
+            "break_minutes": 60,
+            "notes": ""
+          },
+          "seniority": "junior",
+          "experience_years": null,
+          "experience_months": 0,
+          "education_accepts_in_progress": true,
+          "education_field_policy": "related",
+          "remote_scope": {
+            "mode": "regions",
+            "countries": [
+              "CO"
+            ],
+            "continents": []
+          },
+          "learnable_skills": [
+            "power bi"
+          ],
+          "missions": [
+            {
+              "outcome": "Preparar un informe reproducible sobre vigencia, duplicados y campos faltantes en el catálogo externo.",
+              "measure": "Consultas revisadas por el equipo y contraste de una muestra de resultados con sus fuentes originales.",
+              "days": 30,
+              "skill": "sql"
+            }
+          ],
+          "interview_count": 2,
+          "process_days": 14
+        },
+        "blind_hiring": true,
+        "response_days": 5,
+        "skill_requirements": [
+          {
+            "skill": "sql",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "python",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "excel",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "power bi",
+            "essential": false,
+            "weight": 1,
+            "level": "basic"
+          },
+          {
+            "skill": "documentacion",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          }
+        ],
+        "status": "draft",
+        "languages": [],
+        "company_id": null,
+        "title": "Analista de Datos y Calidad de Vacantes · TalentSync",
+        "description": "Analizar la calidad del catálogo de vacantes y los datos operativos de TalentSync. Detectar duplicados, fechas inconsistentes y requisitos incompletos en las fuentes externas. Preparar consultas SQL y reportes sobre disponibilidad, cobertura de habilidades y avance de los procesos. Documentar reglas de calidad y comunicar hallazgos sin exponer datos personales de candidatos.",
+        "requirements": "Conocimientos de SQL, Python, Excel y documentación de análisis. Se aceptan proyectos formativos de limpieza y visualización de datos como experiencia inicial. Power BI es deseable y puede aprenderse con acompañamiento. Formación técnica, tecnológica o universitaria afín; se aceptan estudios en curso. No se exige experiencia laboral previa.",
+        "salary": 3500000.0,
+        "location": "Colombia",
+        "department": null,
+        "modality": "remote",
+        "employment_type": "full_time",
+        "sector": "Tecnologia y software",
+        "benefits": [
+          "Acompañamiento inicial y formación relacionada con las funciones del cargo."
+        ],
+        "pipeline_stages": [
+          {
+            "id": "submitted",
+            "title": "Recibidas"
+          },
+          {
+            "id": "reviewing",
+            "title": "En revisión"
+          },
+          {
+            "id": "interview",
+            "title": "Entrevista"
+          },
+          {
+            "id": "hired",
+            "title": "Contratados"
+          },
+          {
+            "id": "rejected",
+            "title": "No seleccionados"
+          }
+        ],
+        "application_questions": [
+          {
+            "category": "screening",
+            "id": "proyecto-relacionado",
+            "prompt": "Describe un proyecto o actividad que se relacione con estas funciones y tu participación concreta.",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          },
+          {
+            "category": "screening",
+            "id": "primera-tarea",
+            "prompt": "¿Cómo organizarías una primera tarea de este cargo y comunicarías un bloqueo al equipo?",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          }
+        ],
+        "required_education_level": "technical",
+        "required_study_fields": []
+      }
     },
     {
-      "title": "QA Funcional Junior",
-      "status": "draft",
-      "modality": "remote",
-      "location": "Colombia",
-      "employment_type": "full_time",
-      "salary": 3000000,
-      "description": "Preparar casos de prueba, ejecutar comprobaciones funcionales, documentar incidencias y comunicar resultados al equipo de desarrollo.",
-      "requirements": "Fundamentos de pruebas funcionales, documentación y consultas SQL. Se aceptan prácticas y proyectos formativos como experiencia inicial. Formación técnica, tecnológica o universitaria relacionada; se aceptan estudios en curso.",
-      "skills": [
-        "pruebas funcionales",
-        "documentacion",
-        "sql",
-        "comunicacion"
-      ],
-      "selection_example": "Revisión de casos de prueba aportados y evaluación de entrevista"
+      "title": "Analista QA de Plataforma Web · TalentSync",
+      "preparation": "complete",
+      "draft": {
+        "quality_details": {
+          "credential_requirements": {
+            "driving_categories": [],
+            "professional_cards": []
+          },
+          "version": 1,
+          "salary_max": 3400000.0,
+          "variable_pay": "",
+          "salary_currency": "COP",
+          "salary_period": "monthly",
+          "salary_basis": "gross_base",
+          "weekly_hours": 40.0,
+          "contract_type": "indefinite",
+          "schedule": "Lunes a viernes, de 08:00 a 17:00, con una hora de descanso.",
+          "work_schedule": {
+            "mode": "fixed",
+            "days": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "start": "08:00",
+            "end": "17:00",
+            "break_minutes": 60,
+            "notes": ""
+          },
+          "seniority": "junior",
+          "experience_years": null,
+          "experience_months": 0,
+          "education_accepts_in_progress": true,
+          "education_field_policy": "related",
+          "remote_scope": {
+            "mode": "regions",
+            "countries": [
+              "CO"
+            ],
+            "continents": []
+          },
+          "learnable_skills": [
+            "sql"
+          ],
+          "missions": [
+            {
+              "outcome": "Entregar una suite de regresión del acceso empresarial y la publicación de una vacante con evidencias reproducibles.",
+              "measure": "Ejecución de los casos en la versión acordada y revisión de las incidencias y resultados documentados.",
+              "days": 30,
+              "skill": "pruebas funcionales"
+            }
+          ],
+          "interview_count": 2,
+          "process_days": 14
+        },
+        "blind_hiring": true,
+        "response_days": 5,
+        "skill_requirements": [
+          {
+            "skill": "pruebas funcionales",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "testing",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "documentacion",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "sql",
+            "essential": false,
+            "weight": 1,
+            "level": "basic"
+          },
+          {
+            "skill": "git",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          }
+        ],
+        "status": "draft",
+        "languages": [],
+        "company_id": null,
+        "title": "Analista QA de Plataforma Web · TalentSync",
+        "description": "Diseñar y ejecutar pruebas de los recorridos de acceso, importación de hojas de vida, publicación de vacantes y seguimiento de candidaturas en TalentSync. Reproducir incidencias con pasos claros, revisar permisos por rol y comprobar formularios, exportación de PDF y modos claro y oscuro. Colaborar en pruebas automatizadas con Playwright y pytest y mantener los casos de regresión de cada versión.",
+        "requirements": "Fundamentos de pruebas funcionales, testing, documentación de incidencias y Git. Las consultas SQL y las herramientas de automatización pueden reforzarse durante el acompañamiento. Se aceptan proyectos de formación y portafolios de casos de prueba. Formación técnica, tecnológica o universitaria relacionada; se aceptan estudios en curso. No se exige experiencia laboral previa.",
+        "salary": 3000000.0,
+        "location": "Colombia",
+        "department": null,
+        "modality": "remote",
+        "employment_type": "full_time",
+        "sector": "Tecnologia y software",
+        "benefits": [
+          "Acompañamiento inicial y formación relacionada con las funciones del cargo."
+        ],
+        "pipeline_stages": [
+          {
+            "id": "submitted",
+            "title": "Recibidas"
+          },
+          {
+            "id": "reviewing",
+            "title": "En revisión"
+          },
+          {
+            "id": "interview",
+            "title": "Entrevista"
+          },
+          {
+            "id": "hired",
+            "title": "Contratados"
+          },
+          {
+            "id": "rejected",
+            "title": "No seleccionados"
+          }
+        ],
+        "application_questions": [
+          {
+            "category": "screening",
+            "id": "proyecto-relacionado",
+            "prompt": "Describe un proyecto o actividad que se relacione con estas funciones y tu participación concreta.",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          },
+          {
+            "category": "screening",
+            "id": "primera-tarea",
+            "prompt": "¿Cómo organizarías una primera tarea de este cargo y comunicarías un bloqueo al equipo?",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          }
+        ],
+        "required_education_level": "technical",
+        "required_study_fields": []
+      }
     },
     {
-      "title": "Auxiliar de Operaciones",
-      "status": "draft",
-      "modality": "onsite",
-      "location": "Medellín",
-      "department": "Antioquia",
-      "employment_type": "full_time",
-      "salary": 2300000,
-      "description": "Organizar registros de inventario, preparar reportes en Excel y coordinar la comunicación de novedades con el equipo.",
-      "requirements": "Excel, organización de registros e inventarios. Se aceptan prácticas y formación inicial como experiencia. Formación técnica o tecnológica en áreas administrativas u operativas, completa o en curso.",
-      "skills": [
-        "excel",
-        "inventarios",
-        "organizacion",
-        "comunicacion"
-      ],
-      "selection_example": "Contraste de un reporte aportado y entrevista sobre el flujo de inventario"
+      "title": "Analista de Soporte y Operación · TalentSync",
+      "preparation": "complete",
+      "draft": {
+        "quality_details": {
+          "credential_requirements": {
+            "driving_categories": [],
+            "professional_cards": []
+          },
+          "version": 1,
+          "salary_max": 2700000.0,
+          "variable_pay": "",
+          "salary_currency": "COP",
+          "salary_period": "monthly",
+          "salary_basis": "gross_base",
+          "weekly_hours": 40.0,
+          "contract_type": "indefinite",
+          "schedule": "Lunes a viernes, de 08:00 a 17:00, con una hora de descanso.",
+          "work_schedule": {
+            "mode": "fixed",
+            "days": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "start": "08:00",
+            "end": "17:00",
+            "break_minutes": 60,
+            "notes": ""
+          },
+          "seniority": "junior",
+          "experience_years": null,
+          "experience_months": 0,
+          "education_accepts_in_progress": true,
+          "education_field_policy": "related",
+          "remote_scope": {
+            "mode": "regions",
+            "countries": [
+              "CO"
+            ],
+            "continents": []
+          },
+          "learnable_skills": [
+            "excel"
+          ],
+          "missions": [
+            {
+              "outcome": "Preparar una guía de resolución de incidencias frecuentes y un registro de seguimiento de solicitudes de la plataforma.",
+              "measure": "Revisión de la claridad de la guía y comprobación de que los casos de ejemplo se resuelven con sus instrucciones.",
+              "days": 30,
+              "skill": "servicio al cliente"
+            }
+          ],
+          "interview_count": 2,
+          "process_days": 14
+        },
+        "blind_hiring": true,
+        "response_days": 5,
+        "skill_requirements": [
+          {
+            "skill": "servicio al cliente",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "comunicacion",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "documentacion",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "excel",
+            "essential": false,
+            "weight": 1,
+            "level": "basic"
+          },
+          {
+            "skill": "resolucion de problemas",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          }
+        ],
+        "status": "draft",
+        "languages": [],
+        "company_id": null,
+        "title": "Analista de Soporte y Operación · TalentSync",
+        "description": "Acompañar a candidatos y empresas en el uso de TalentSync, documentar solicitudes e identificar problemas que requieran revisión técnica. Mantener las guías de acceso, verificación y uso del perfil, y apoyar la revisión editorial de vacantes y recursos de formación. Clasificar incidencias, dar seguimiento a sus respuestas y comunicar avances de forma clara, respetando los permisos y datos privados de cada cuenta.",
+        "requirements": "Habilidades de comunicación, servicio al cliente, documentación y resolución de problemas. Se aceptan prácticas o proyectos de atención y soporte como experiencia inicial. Excel es deseable para el seguimiento de solicitudes. Formación técnica, tecnológica o universitaria afín; se aceptan estudios en curso. No se exige experiencia laboral previa.",
+        "salary": 2300000.0,
+        "location": "Colombia",
+        "department": null,
+        "modality": "remote",
+        "employment_type": "full_time",
+        "sector": "Tecnologia y software",
+        "benefits": [
+          "Acompañamiento inicial y formación relacionada con las funciones del cargo."
+        ],
+        "pipeline_stages": [
+          {
+            "id": "submitted",
+            "title": "Recibidas"
+          },
+          {
+            "id": "reviewing",
+            "title": "En revisión"
+          },
+          {
+            "id": "interview",
+            "title": "Entrevista"
+          },
+          {
+            "id": "hired",
+            "title": "Contratados"
+          },
+          {
+            "id": "rejected",
+            "title": "No seleccionados"
+          }
+        ],
+        "application_questions": [
+          {
+            "category": "screening",
+            "id": "proyecto-relacionado",
+            "prompt": "Describe un proyecto o actividad que se relacione con estas funciones y tu participación concreta.",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          },
+          {
+            "category": "screening",
+            "id": "primera-tarea",
+            "prompt": "¿Cómo organizarías una primera tarea de este cargo y comunicarías un bloqueo al equipo?",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          }
+        ],
+        "required_education_level": "technical",
+        "required_study_fields": []
+      }
+    },
+    {
+      "title": "Desarrollador Backend Python · TalentSync",
+      "preparation": "incomplete",
+      "draft": {
+        "quality_details": {
+          "credential_requirements": {
+            "driving_categories": [],
+            "professional_cards": []
+          },
+          "version": 1,
+          "salary_max": null,
+          "variable_pay": "",
+          "salary_currency": null,
+          "salary_period": null,
+          "salary_basis": null,
+          "weekly_hours": null,
+          "contract_type": "",
+          "schedule": "",
+          "work_schedule": null,
+          "seniority": "",
+          "experience_years": null,
+          "experience_months": null,
+          "education_accepts_in_progress": false,
+          "education_field_policy": "related",
+          "remote_scope": null,
+          "learnable_skills": [],
+          "missions": [],
+          "interview_count": null,
+          "process_days": null
+        },
+        "blind_hiring": true,
+        "response_days": 5,
+        "skill_requirements": [
+          {
+            "skill": "python",
+            "essential": false,
+            "weight": 1,
+            "level": "unspecified"
+          }
+        ],
+        "status": "draft",
+        "languages": [],
+        "company_id": null,
+        "title": "Desarrollador Backend Python · TalentSync",
+        "description": "Apoyar las mejoras de la plataforma y colaborar con el equipo.",
+        "requirements": "Conocimientos iniciales y disposición para aprender.",
+        "salary": null,
+        "location": "Colombia",
+        "department": null,
+        "modality": "remote",
+        "employment_type": "full_time",
+        "sector": "Tecnologia y software",
+        "benefits": [
+          "Acompañamiento inicial y formación relacionada con las funciones del cargo."
+        ],
+        "pipeline_stages": [
+          {
+            "id": "submitted",
+            "title": "Recibidas"
+          },
+          {
+            "id": "reviewing",
+            "title": "En revisión"
+          },
+          {
+            "id": "interview",
+            "title": "Entrevista"
+          },
+          {
+            "id": "hired",
+            "title": "Contratados"
+          },
+          {
+            "id": "rejected",
+            "title": "No seleccionados"
+          }
+        ],
+        "application_questions": [
+          {
+            "category": "screening",
+            "id": "proyecto-relacionado",
+            "prompt": "Describe un proyecto o actividad que se relacione con estas funciones y tu participación concreta.",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          },
+          {
+            "category": "screening",
+            "id": "primera-tarea",
+            "prompt": "¿Cómo organizarías una primera tarea de este cargo y comunicarías un bloqueo al equipo?",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          }
+        ],
+        "required_education_level": null,
+        "required_study_fields": []
+      },
+      "complete_reference": {
+        "quality_details": {
+          "credential_requirements": {
+            "driving_categories": [],
+            "professional_cards": []
+          },
+          "version": 1,
+          "salary_max": 4400000.0,
+          "variable_pay": "",
+          "salary_currency": "COP",
+          "salary_period": "monthly",
+          "salary_basis": "gross_base",
+          "weekly_hours": 40.0,
+          "contract_type": "indefinite",
+          "schedule": "Lunes a viernes, de 08:00 a 17:00, con una hora de descanso.",
+          "work_schedule": {
+            "mode": "fixed",
+            "days": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "start": "08:00",
+            "end": "17:00",
+            "break_minutes": 60,
+            "notes": ""
+          },
+          "seniority": "junior",
+          "experience_years": null,
+          "experience_months": 0,
+          "education_accepts_in_progress": true,
+          "education_field_policy": "related",
+          "remote_scope": {
+            "mode": "regions",
+            "countries": [
+              "CO"
+            ],
+            "continents": []
+          },
+          "learnable_skills": [
+            "pytest"
+          ],
+          "missions": [
+            {
+              "outcome": "Entregar una mejora de la API con validación, permisos por rol y migración de datos cuando corresponda.",
+              "measure": "Revisión del cambio y ejecución de pruebas de autorización, persistencia y manejo de errores.",
+              "days": 30,
+              "skill": "python"
+            }
+          ],
+          "interview_count": 2,
+          "process_days": 14
+        },
+        "blind_hiring": true,
+        "response_days": 5,
+        "skill_requirements": [
+          {
+            "skill": "python",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "fastapi",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "sql",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "git",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "pytest",
+            "essential": false,
+            "weight": 1,
+            "level": "basic"
+          }
+        ],
+        "status": "draft",
+        "languages": [],
+        "company_id": null,
+        "title": "Desarrollador Backend Python · TalentSync",
+        "description": "Desarrollar y mantener la API de TalentSync con Python y FastAPI. Implementar validaciones, permisos y procesos transaccionales para perfiles, vacantes, aprendizaje y entrevistas. Revisar consultas SQL y migraciones, integrar fuentes de datos autorizadas y escribir pruebas de regresión. Documentar errores, contratos de la API y decisiones de arquitectura para facilitar el mantenimiento del equipo.",
+        "requirements": "Fundamentos de Python, FastAPI, SQL y Git. Se aceptan proyectos personales o académicos con una API documentada, persistencia de datos y pruebas. pytest puede reforzarse durante el acompañamiento. Formación técnica, tecnológica o universitaria relacionada con desarrollo de software; se aceptan estudios en curso. No se exige experiencia laboral previa.",
+        "salary": 4000000.0,
+        "location": "Colombia",
+        "department": null,
+        "modality": "remote",
+        "employment_type": "full_time",
+        "sector": "Tecnologia y software",
+        "benefits": [
+          "Acompañamiento inicial y formación relacionada con las funciones del cargo."
+        ],
+        "pipeline_stages": [
+          {
+            "id": "submitted",
+            "title": "Recibidas"
+          },
+          {
+            "id": "reviewing",
+            "title": "En revisión"
+          },
+          {
+            "id": "interview",
+            "title": "Entrevista"
+          },
+          {
+            "id": "hired",
+            "title": "Contratados"
+          },
+          {
+            "id": "rejected",
+            "title": "No seleccionados"
+          }
+        ],
+        "application_questions": [
+          {
+            "category": "screening",
+            "id": "proyecto-relacionado",
+            "prompt": "Describe un proyecto o actividad que se relacione con estas funciones y tu participación concreta.",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          },
+          {
+            "category": "screening",
+            "id": "primera-tarea",
+            "prompt": "¿Cómo organizarías una primera tarea de este cargo y comunicarías un bloqueo al equipo?",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          }
+        ],
+        "required_education_level": "technical",
+        "required_study_fields": []
+      },
+      "quality_steps": [
+        {
+          "step": "Estado inicial",
+          "score": 38
+        },
+        {
+          "step": "Condiciones claras",
+          "score": 64
+        },
+        {
+          "step": "Responsabilidades y resultados",
+          "score": 80
+        },
+        {
+          "step": "Requisitos priorizados",
+          "score": 93
+        },
+        {
+          "step": "Proceso de selección",
+          "score": 100
+        }
+      ]
+    },
+    {
+      "title": "Diseñador UX/UI de Producto · TalentSync",
+      "preparation": "incomplete",
+      "draft": {
+        "quality_details": {
+          "credential_requirements": {
+            "driving_categories": [],
+            "professional_cards": []
+          },
+          "version": 1,
+          "salary_max": null,
+          "variable_pay": "",
+          "salary_currency": null,
+          "salary_period": null,
+          "salary_basis": null,
+          "weekly_hours": null,
+          "contract_type": "",
+          "schedule": "",
+          "work_schedule": null,
+          "seniority": "",
+          "experience_years": null,
+          "experience_months": null,
+          "education_accepts_in_progress": false,
+          "education_field_policy": "related",
+          "remote_scope": null,
+          "learnable_skills": [],
+          "missions": [],
+          "interview_count": null,
+          "process_days": null
+        },
+        "blind_hiring": true,
+        "response_days": 5,
+        "skill_requirements": [
+          {
+            "skill": "figma",
+            "essential": false,
+            "weight": 1,
+            "level": "unspecified"
+          }
+        ],
+        "status": "draft",
+        "languages": [],
+        "company_id": null,
+        "title": "Diseñador UX/UI de Producto · TalentSync",
+        "description": "Apoyar las mejoras de la plataforma y colaborar con el equipo.",
+        "requirements": "Conocimientos iniciales y disposición para aprender.",
+        "salary": null,
+        "location": "Colombia",
+        "department": null,
+        "modality": "remote",
+        "employment_type": "full_time",
+        "sector": "Tecnologia y software",
+        "benefits": [
+          "Acompañamiento inicial y formación relacionada con las funciones del cargo."
+        ],
+        "pipeline_stages": [
+          {
+            "id": "submitted",
+            "title": "Recibidas"
+          },
+          {
+            "id": "reviewing",
+            "title": "En revisión"
+          },
+          {
+            "id": "interview",
+            "title": "Entrevista"
+          },
+          {
+            "id": "hired",
+            "title": "Contratados"
+          },
+          {
+            "id": "rejected",
+            "title": "No seleccionados"
+          }
+        ],
+        "application_questions": [
+          {
+            "category": "screening",
+            "id": "proyecto-relacionado",
+            "prompt": "Describe un proyecto o actividad que se relacione con estas funciones y tu participación concreta.",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          },
+          {
+            "category": "screening",
+            "id": "primera-tarea",
+            "prompt": "¿Cómo organizarías una primera tarea de este cargo y comunicarías un bloqueo al equipo?",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          }
+        ],
+        "required_education_level": null,
+        "required_study_fields": []
+      },
+      "complete_reference": {
+        "quality_details": {
+          "credential_requirements": {
+            "driving_categories": [],
+            "professional_cards": []
+          },
+          "version": 1,
+          "salary_max": 3800000.0,
+          "variable_pay": "",
+          "salary_currency": "COP",
+          "salary_period": "monthly",
+          "salary_basis": "gross_base",
+          "weekly_hours": 40.0,
+          "contract_type": "indefinite",
+          "schedule": "Lunes a viernes, de 08:00 a 17:00, con una hora de descanso.",
+          "work_schedule": {
+            "mode": "fixed",
+            "days": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "start": "08:00",
+            "end": "17:00",
+            "break_minutes": 60,
+            "notes": ""
+          },
+          "seniority": "junior",
+          "experience_years": null,
+          "experience_months": 0,
+          "education_accepts_in_progress": true,
+          "education_field_policy": "related",
+          "remote_scope": {
+            "mode": "regions",
+            "countries": [
+              "CO"
+            ],
+            "continents": []
+          },
+          "learnable_skills": [
+            "prototipado"
+          ],
+          "missions": [
+            {
+              "outcome": "Preparar un prototipo del inicio empresarial y la ficha de revisión de vacantes con sus estados principales.",
+              "measure": "Revisión de los criterios de accesibilidad y una prueba guiada del recorrido con el equipo de producto.",
+              "days": 30,
+              "skill": "figma"
+            }
+          ],
+          "interview_count": 2,
+          "process_days": 14
+        },
+        "blind_hiring": true,
+        "response_days": 5,
+        "skill_requirements": [
+          {
+            "skill": "figma",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "usabilidad",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "accesibilidad",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          },
+          {
+            "skill": "prototipado",
+            "essential": false,
+            "weight": 1,
+            "level": "basic"
+          },
+          {
+            "skill": "comunicacion",
+            "essential": true,
+            "weight": 2,
+            "level": "basic"
+          }
+        ],
+        "status": "draft",
+        "languages": [],
+        "company_id": null,
+        "title": "Diseñador UX/UI de Producto · TalentSync",
+        "description": "Diseñar y mejorar los recorridos de candidatos, empresas y administradores de TalentSync. Preparar flujos, prototipos y componentes en Figma; revisar jerarquía de información, formularios y estados vacíos y de error. Comprobar accesibilidad y legibilidad en móvil, escritorio y modo oscuro, y documentar las decisiones para su implementación con el equipo frontend.",
+        "requirements": "Fundamentos de Figma, usabilidad, accesibilidad y comunicación de decisiones de diseño. Se aceptan portafolios académicos o personales que expliquen el problema, las alternativas y la solución. El prototipado puede reforzarse durante el acompañamiento. Formación técnica, tecnológica o universitaria relacionada; se aceptan estudios en curso. No se exige experiencia laboral previa.",
+        "salary": 3400000.0,
+        "location": "Colombia",
+        "department": null,
+        "modality": "remote",
+        "employment_type": "full_time",
+        "sector": "Tecnologia y software",
+        "benefits": [
+          "Acompañamiento inicial y formación relacionada con las funciones del cargo."
+        ],
+        "pipeline_stages": [
+          {
+            "id": "submitted",
+            "title": "Recibidas"
+          },
+          {
+            "id": "reviewing",
+            "title": "En revisión"
+          },
+          {
+            "id": "interview",
+            "title": "Entrevista"
+          },
+          {
+            "id": "hired",
+            "title": "Contratados"
+          },
+          {
+            "id": "rejected",
+            "title": "No seleccionados"
+          }
+        ],
+        "application_questions": [
+          {
+            "category": "screening",
+            "id": "proyecto-relacionado",
+            "prompt": "Describe un proyecto o actividad que se relacione con estas funciones y tu participación concreta.",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          },
+          {
+            "category": "screening",
+            "id": "primera-tarea",
+            "prompt": "¿Cómo organizarías una primera tarea de este cargo y comunicarías un bloqueo al equipo?",
+            "type": "open",
+            "required": true,
+            "options": [],
+            "option_scores": {}
+          }
+        ],
+        "required_education_level": "technical",
+        "required_study_fields": []
+      },
+      "quality_steps": [
+        {
+          "step": "Estado inicial",
+          "score": 38
+        },
+        {
+          "step": "Condiciones claras",
+          "score": 64
+        },
+        {
+          "step": "Responsabilidades y resultados",
+          "score": 80
+        },
+        {
+          "step": "Requisitos priorizados",
+          "score": 93
+        },
+        {
+          "step": "Proceso de selección",
+          "score": 100
+        }
+      ]
     }
-  ],
-  "conditions_to_complete_in_each_job": [
-    "Jornada y horario",
-    "Tipo de contrato",
-    "Rango salarial y componente variable",
-    "Plazo de respuesta",
-    "Etapas del proceso",
-    "Preguntas de preselección",
-    "Habilidades esenciales y deseables"
   ]
 }

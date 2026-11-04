@@ -85,10 +85,10 @@ class OrganizationRepository:
         return result.rowcount == 1
 
     def verification_queue(self):
-        return self.session.query(Company).filter(Company.verification_required.is_(True)).order_by(Company.id.desc()).limit(200).all()
+        return self.session.query(Company).filter(Company.is_external.is_(False)).order_by(Company.id.desc()).limit(200).all()
 
     def verification_page(self, *, status, search, page, page_size):
-        query = self.session.query(Company).filter(Company.verification_required.is_(True), Company.is_external.is_(False))
+        query = self.session.query(Company).filter(Company.is_external.is_(False))
         counts = dict(query.with_entities(Company.verification_status, func.count()).group_by(Company.verification_status).all())
         if status == "pending":
             query = query.filter(Company.verification_status.in_(["pending", "reviewing", "information_required"]))

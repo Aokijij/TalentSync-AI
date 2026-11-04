@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth.js";
 import { AppLayout } from "../layouts/AppLayout.jsx";
+import { RouteRecoveryBoundary } from "../components/RouteRecoveryBoundary.jsx";
 
 const lazyNamed = (loader, name) =>
   lazy(() => loader().then((module) => ({ default: module[name] })));
@@ -82,7 +83,7 @@ function RequireAuth({ children }) {
     return <Navigate to={adminArea ? "/acceso-administracion" : location.pathname.startsWith("/empresa") ? "/empresa/login" : "/login"} state={{ from: location.pathname + location.search }} replace />;
   }
   if (user.registration_pending) return location.pathname === "/completar-cuenta" ? children : <Navigate to="/completar-cuenta" replace />;
-  if (requiresAuthenticator(user, accessOptions) && location.pathname !== "/seguridad") return <Navigate to="/seguridad" replace />;
+  if (requiresAuthenticator(user, accessOptions) && !["/seguridad", "/guia", ...(user.role === "company" ? ["/empresa/bienvenida"] : [])].includes(location.pathname)) return <Navigate to={user.role === "company" ? "/empresa/bienvenida" : "/seguridad#security-mfa"} state={{ accessStep: "authenticator", from: location.pathname }} replace />;
   return children;
 }
 
@@ -109,7 +110,7 @@ function RequireRole({ roles, children }) {
 
 export function AppRoutes() {
   return (
-    <Suspense fallback={<div className="grid min-h-screen place-items-center text-[var(--muted)]">Cargando sección...</div>}>
+    <RouteRecoveryBoundary><Suspense fallback={<div role="status" className="grid min-h-screen place-items-center text-[var(--muted)]">Cargando sección...</div>}>
       <Routes>
       <Route path="/login" element={<LoginPage key="candidate" />} />
       <Route path="/acceso-social" element={<SocialAccessPage />} />
@@ -284,6 +285,6 @@ export function AppRoutes() {
         />
       </Route>
       </Routes>
-    </Suspense>
+    </Suspense></RouteRecoveryBoundary>
   );
 }

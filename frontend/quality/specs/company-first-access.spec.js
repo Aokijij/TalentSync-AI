@@ -59,7 +59,9 @@ test("Pending company completes account before mandatory authenticator setup", a
   await expect(page.getByLabel("Ruta de revisión", { exact: true })).toHaveText("/completar-cuenta");
   for (const checkbox of await page.getByRole("checkbox").all()) await checkbox.check();
   await page.getByRole("button", { name: "Confirmar y continuar", exact: true }).click();
-  await expect(page.getByLabel("Ruta de revisión", { exact: true })).toHaveText("/seguridad");
+  await expect(page.getByLabel("Ruta de revisión", { exact: true })).toHaveText("/empresa/bienvenida");
+  await page.getByRole("link", { name: "Configurar autenticador", exact: true }).click();
+  await expect(page.getByLabel("Ruta de revisión", { exact: true })).toHaveText("/seguridad#security-mfa");
   await expect(page.getByRole("heading", { name: "Seguridad de cuenta", exact: true })).toBeVisible();
   expect(completed).toBe(true);
   expect(errors).toEqual([]);

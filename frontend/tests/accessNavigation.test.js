@@ -12,9 +12,9 @@ test("Pending registration takes precedence over the company authenticator and s
 test("authenticated entry prioritizes incomplete registration, MFA and the user's own role", () => {
   assert.equal(accountHome(null), "/login");
   assert.equal(accountHome({ role: "candidate", registration_pending: true }), "/completar-cuenta");
-  assert.equal(accountHome({ role: "company" }, { mode: "session", company_mfa_required: true }), "/seguridad");
+  assert.equal(accountHome({ role: "company" }, { mode: "session", company_mfa_required: true }), "/empresa/bienvenida");
   assert.equal(accountHome({ role: "admin" }, { mode: "session", admin_mfa_required: true }), "/seguridad");
-  for (const [role, path] of [["candidate", "/candidato"], ["company", "/empresa"], ["admin", "/admin"]]) assert.equal(accountHome({ role, mfa_enabled: true }), path);
+  for (const [role, path] of [["candidate", "/candidato"], ["company", "/empresa/bienvenida"], ["admin", "/admin"]]) assert.equal(accountHome({ role, mfa_enabled: true }), path);
 });
 
 test("invited registration returns to acceptance with or without MFA", () => {
@@ -38,7 +38,7 @@ test("login return paths cannot redirect offsite or across access portals", () =
   const args = { company: true, user: { mfa_enabled: true }, accessOptions: { mode: "session" } };
   for (const from of ["https://example.com/equipo/invitacion?token=x", "//example.com/equipo/invitacion?token=x", "/\\example.com/equipo/invitacion?token=x"]) {
     assert.equal(invitationTokenFromPath(from), null);
-    assert.equal(loginDestination({ ...args, from }), "/empresa");
+    assert.equal(loginDestination({ ...args, from }), "/empresa/bienvenida");
   }
   assert.equal(loginDestination({ ...args, from: "/empresa/vacantes" }), "/empresa/vacantes");
   assert.equal(loginDestination({ ...args, company: false, from: invitationPath("x") }), "/candidato");

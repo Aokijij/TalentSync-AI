@@ -35,6 +35,7 @@ def test_fresh_database_migrates_without_preloaded_accounts(monkeypatch, tmp_pat
             "social_identities", "oauth_attempts", "career_coach_states", "resume_versions",
             "mail_delivery_events", "calendar_connections", "calendar_events", "file_erasure_tasks",
             "ai_writer_usage",
+            "external_job_exclusions",
         }
         profile_columns = {column["name"] for column in schema.get_columns("profiles")}
         assert "registration_pending" in {column["name"] for column in schema.get_columns("users")}

@@ -92,6 +92,7 @@ class Job(Protocol):
     moderation_status: str
     moderation_note: str
     moderation_revision: int
+    editorial_overrides: dict
     external_published_at: datetime | None
     external_content: dict | None
     quality_details: dict | None

@@ -429,6 +429,9 @@ def _import_rows(
                 row.get("enlace_externo"), "enlace_externo", required=True
             )
             url_identity = listing_url_identity(external_url)
+            from app.domain.services.editorial_jobs import exclusion_key
+            if db.jobs.excluded_external(exclusion_key(external_url)):
+                raise ValueError("Oferta descartada por administración; no se vuelve a incorporar automáticamente")
             if url_identity in seen_urls:
                 raise ValueError("La dirección original de la oferta ya apareció en esta importación")
             company_url = _url(row.get("sitio_empresa"), "sitio_empresa")
@@ -560,6 +563,7 @@ def _import_rows(
                 created += 1
             else:
                 # JSearch can publish one listing through several aggregators.
+                db.jobs.lock(job)
                 if job.external_url == external_url and job.status == "active":
                     for check_key in ("external_check_state", "external_next_check_at", "external_check_reason"):
                         values.pop(check_key, None)
@@ -574,6 +578,10 @@ def _import_rows(
                     job.created_at = published_at
                 existing_listings[fingerprint] = job
                 updated += 1
+            from app.domain.services.editorial_jobs import apply_editorial
+            apply_editorial(job, refresh_source=True)
+            if (job.editorial_overrides or {}).get("fields"):
+                job.embedding = nlp.analyze_job(f"{job.title} {job.description} {job.requirements}").embedding
             seen_urls.add(url_identity)
             existing_urls[url_identity] = job
         except ValueError as error:

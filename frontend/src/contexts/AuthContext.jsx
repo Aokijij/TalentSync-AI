@@ -40,8 +40,9 @@ export function AuthProvider({ children }) {
   }
 
   async function refreshAccessOptions() {
+    const revision = generation.current;
     const { data } = await api.get("/auth/options", { timeout: 8000, __skipRetry: true, __skipSessionEvent: true });
-    setAccessOptions(data);
+    if (revision === generation.current) setAccessOptions(data);
     return data;
   }
 
@@ -60,13 +61,14 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let active = true;
     async function initialize() {
+      const revision = generation.current;
       try {
         const { data } = await api.get("/auth/options", { timeout: 8000, __skipRetry: true, __skipSessionEvent: true });
-        if (!active) return;
+        if (!active || revision !== generation.current) return;
         setAccessOptions(data);
         if (data.mode === "session") localStorage.removeItem("talentsync_token");
       } catch {
-        if (!active) return;
+        if (!active || revision !== generation.current) return;
         setAuthError("El servicio de acceso no está disponible. Intenta de nuevo.");
         setLoading(false);
         return;
@@ -99,7 +101,9 @@ export function AuthProvider({ children }) {
 
   async function login(email, password, options = {}) {
     generation.current += 1;
+    const revision = generation.current;
     cancelPendingRequests();
+    try {
     const suffix = options.admin ? "admin/login" : `${options.portal || "candidate"}/login`;
     if (accessOptions.mode === "legacy") {
       const { data } = await api.post(`/auth/${suffix}`, { email, password, portal: options.portal });
@@ -115,6 +119,9 @@ export function AuthProvider({ children }) {
     setAuthError("");
     localStorage.setItem("talentsync_last_method", "email");
     return me.data;
+    } finally {
+      if (revision === generation.current) setLoading(false);
+    }
   }
 
   async function register(payload) {
@@ -139,6 +146,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("talentsync_token");
     setUser(null);
     setAuthError("");
+    setLoading(false);
   }
 
   const value = useMemo(

@@ -43,7 +43,7 @@ const output = (page) => page.getByLabel("Ruta de revisión", { exact: true });
 async function noOverflow(page) { expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1); }
 
 for (const role of ["candidate", "company", "admin"]) test(`Signed ${role} cannot return to any login or registration`, async ({ page }) => {
-  const destination = role === "candidate" ? "/candidato" : role === "company" ? "/empresa" : "/admin";
+  const destination = role === "candidate" ? "/candidato" : role === "company" ? "/empresa/bienvenida" : "/admin";
   for (const path of ["/login", "/registro", "/empresa/login", "/empresa/registro", "/acceso-administracion"]) {
     await setup(page, { role, path });
     await expect(output(page)).toHaveText(destination);

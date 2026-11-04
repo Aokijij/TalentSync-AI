@@ -9,6 +9,7 @@ import { api } from "../api/client.js";
 import { BrandLogo } from "../components/brand/BrandLogo.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { ThemeToggle } from "../components/ThemeToggle.jsx";
+import { requiresAuthenticator } from "../utils/accountAccess.js";
 
 
 const roleCopy = {
@@ -20,11 +21,11 @@ const roleCopy = {
   admin: { label: "Administrador", caption: "Operación y salud de plataforma" },
 };
 
-const navigationOrder = ["/candidato", "/empresa", "/admin", "/recomendaciones", "/vacantes", "/empresa/vacantes", "/postulaciones", "/empresa/postulaciones", "/empresa/talento", "/compatibilidad", "/aprendizaje", "/entrevistas", "/mis-intereses", "/empresa/calidad", "/confianza", "/admin/verificaciones", "/admin/ecosistema", "/admin/modelos", "/admin/aprendizaje", "/perfil", "/empresa/perfil", "/empresa/equipo", "/administracion", "/notificaciones", "/seguridad"];
+const navigationOrder = ["/candidato", "/empresa/bienvenida", "/empresa", "/admin", "/recomendaciones", "/vacantes", "/empresa/vacantes", "/postulaciones", "/empresa/postulaciones", "/empresa/talento", "/compatibilidad", "/aprendizaje", "/entrevistas", "/mis-intereses", "/empresa/calidad", "/confianza", "/admin/verificaciones", "/admin/ecosistema", "/admin/modelos", "/admin/aprendizaje", "/perfil", "/empresa/perfil", "/empresa/equipo", "/administracion", "/notificaciones", "/seguridad"];
 
 function Navigation({ linksForRole, unreadNotifications, onNavigate, role }) {
   const Container = role ? "nav" : "div";
-  const groups = role === "company" ? [["Contratación", ["/empresa", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"]], ["Organización", ["/empresa/perfil", "/empresa/equipo", "/confianza"]], ["Tu cuenta", ["/notificaciones", "/seguridad", "/guia"]]] : role === "admin" ? [["Supervisión", ["/admin", "/admin/verificaciones", "/admin/ecosistema", "/vacantes"]], ["Plataforma", ["/admin/modelos", "/admin/aprendizaje", "/administracion"]], ["Tu cuenta", ["/seguridad", "/guia"]]] : [["Oportunidades", ["/candidato", "/recomendaciones", "/vacantes", "/postulaciones"]], ["Tu trayectoria", ["/aprendizaje", "/perfil"]], ["Tu cuenta", ["/notificaciones", "/confianza", "/seguridad", "/guia"]]];
+  const groups = role === "company" ? [["Contratación", ["/empresa/bienvenida", "/empresa/vacantes", "/empresa/postulaciones", "/empresa/talento", "/empresa/calidad"]], ["Organización", ["/empresa/perfil", "/empresa/equipo", "/confianza"]], ["Tu cuenta", ["/notificaciones", "/seguridad", "/guia"]]] : role === "admin" ? [["Supervisión", ["/admin", "/admin/verificaciones", "/admin/ecosistema", "/vacantes"]], ["Plataforma", ["/admin/modelos", "/admin/aprendizaje", "/administracion"]], ["Tu cuenta", ["/seguridad", "/guia"]]] : [["Oportunidades", ["/candidato", "/recomendaciones", "/vacantes", "/postulaciones"]], ["Tu trayectoria", ["/aprendizaje", "/perfil"]], ["Tu cuenta", ["/notificaciones", "/confianza", "/seguridad", "/guia"]]];
   return (
     <Container className="space-y-1" aria-label={role ? "Navegación principal" : undefined}>
       {role ? groups.map(([label, routes]) => { const group = routes.map((to) => linksForRole.find((link) => link.to === to)).filter(Boolean); return group.length ? <div key={label} className="navigation-group app-nav-group"><p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--sidebar-muted)]">{label}</p><Navigation linksForRole={group} unreadNotifications={unreadNotifications} onNavigate={onNavigate} /></div> : null; }) : linksForRole.map(({ to, label, icon: Icon }) => (
@@ -57,7 +58,7 @@ function Navigation({ linksForRole, unreadNotifications, onNavigate, role }) {
 }
 
 export function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, accessOptions } = useAuth();
   const location = useLocation();
   useEffect(() => {
     document.documentElement.dataset.role = user.role;
@@ -86,7 +87,7 @@ export function AppLayout() {
     .sort((left, right) => navigationOrder.indexOf(left.to) - navigationOrder.indexOf(right.to));
 
   useEffect(() => {
-    if (user.role !== "candidate" && user.role !== "company") return;
+    if (user.role !== "candidate" && user.role !== "company" || requiresAuthenticator(user, accessOptions)) return;
     let active = true;
     const refreshCount = () => {
       if (document.hidden) return;
@@ -109,7 +110,7 @@ export function AppLayout() {
       window.removeEventListener("focus", refreshCount);
       document.removeEventListener("visibilitychange", refreshCount);
     };
-  }, [user.role]);
+  }, [user.role, user.mfa_enabled, accessOptions]);
 
   useEffect(() => {
     if (user.role !== "company") {
@@ -118,7 +119,7 @@ export function AppLayout() {
     }
     let current = true;
     api.get("/organization/access").then(async ({ data: access }) => {
-      const data = access.active === false ? access : { ...access, ...(await api.get("/organization/me")).data };
+      const data = access;
       if (current) { setOrganizationName(data.company_name || data.name || ""); setOrganization(data); }
     }).catch(() => { if (current) setOrganizationName(""); });
     return () => { current = false; };
@@ -189,7 +190,7 @@ export function AppLayout() {
       ) : null}
 
       <main id="main-content" tabIndex={-1} className="lg:pl-72">
-        {user.role === "company" && <header className="business-workspace-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface)] px-6 py-4"><div><p className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Centro de contratación</p><p className="mt-1 font-bold">{organizationName || "Mi organización"}</p></div><div className="flex items-center gap-3 text-xs"><span className="rounded-full border border-[var(--line)] px-3 py-2">{organization?.active === false ? "Acceso retirado" : organization?.verification_status === "suspended" ? "Empresa suspendida" : organization?.verification_status === "verified" ? "Empresa verificada" : "Verificación pendiente"}</span><span>{organization?.role === "owner" ? "Propietario" : organization?.role === "interviewer" ? "Entrevistador" : "Reclutador"}</span></div></header>}
+        {user.role === "company" && <header className="business-workspace-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface)] px-6 py-4"><div><p className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Centro de contratación</p><p className="mt-1 font-bold">{organizationName || "Mi organización"}</p></div><div className="flex items-center gap-3 text-xs"><span className="rounded-full border border-[var(--line)] px-3 py-2">{organization?.active === false ? "Acceso retirado" : organization?.verification_status === "suspended" ? "Empresa suspendida" : organization?.verification_required === false ? "Espacio interno" : organization?.verification_status === "verified" ? "Empresa verificada" : "Verificación pendiente"}</span><span>{organization?.role === "owner" ? "Propietario" : organization?.role === "interviewer" ? "Entrevistador" : "Reclutador"}</span></div></header>}
         <div className="app-content mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
           {organization?.active === false && location.pathname !== "/seguridad" ? <CompanyAccessNotice access={organization} /> : <>{organization?.verification_status === "suspended" && <div className="mb-5"><CompanyAccessNotice access={organization} /></div>}<Outlet /></>}
         </div>

@@ -25,6 +25,15 @@ class AccessReviewRequest(BaseModel):
     message: str = Field(min_length=20, max_length=1000)
 
 
+class InternalVerificationSubmission(BaseModel):
+    platform_url: HttpUrl
+    business_activity: str = Field(min_length=10, max_length=500)
+    responsible_name: str = Field(min_length=3, max_length=160)
+    contact_email: EmailStr
+    notes: str = Field(min_length=20, max_length=1500)
+    accuracy_confirmed: Literal[True]
+
+
 class InterviewEvaluation(BaseModel):
     rating: int = Field(ge=1, le=5)
     recommendation: Literal["continue", "hold", "not_recommended"]
@@ -32,7 +41,7 @@ class InterviewEvaluation(BaseModel):
 
 
 class VerificationReview(BaseModel):
-    status: Literal["verified", "information_required", "rejected", "suspended"]
+    status: Literal["verified", "internal_approved", "information_required", "rejected", "suspended"]
     feedback: str = Field(min_length=10, max_length=1500)
 
 
