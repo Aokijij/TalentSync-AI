@@ -9,9 +9,10 @@ export function ExternalVacancyStatus({ job, admin = false, onChecked, onBusyCha
   const available = result ? result.available : job.external_available;
   const state = result?.state || job.external_check_state;
   const reasons = job.external_admission_reasons || [];
-  const label = job.moderation_status === "held" ? "Retirada por administración" : reasons.length ? "Fuera del filtro del catálogo" : available ? "Vigencia comprobada" : state === "closed" ? "Retirada o vencida" : state === "unavailable" ? "Fuente no disponible" : "Vigencia por confirmar";
+  const manual = (result?.verification_method || job.external_verification_method) === "manual";
+  const label = job.moderation_status === "held" ? "Retirada por administración" : reasons.length ? "Fuera del filtro del catálogo" : available ? manual ? "Revisada por administración" : "Vigencia comprobada" : state === "closed" ? "Retirada o vencida" : state === "unavailable" ? "Fuente no disponible" : "Vigencia por confirmar";
   const Icon = available ? CheckCircle2 : state === "closed" ? AlertTriangle : Clock3;
-  const date = result?.checked_at || job.external_checked_at;
+  const date = manual ? result?.manual_verified_at || job.external_manual_verified_at : result?.checked_at || job.external_checked_at;
   async function check() {
     setBusy(true); onBusyChange?.(true); setError("");
     try { const { data } = await api.post(`/admin/jobs/${job.id}/availability/check`, {}, { __quiet: true }); setResult(data); await onChecked?.(data); }

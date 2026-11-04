@@ -26,7 +26,8 @@ import { VacancyCvAdvice } from "../components/VacancyCvAdvice.jsx";
 import { ApplicationSubmitDialog } from "../components/ApplicationSubmitDialog.jsx";
 import { ApplicationPreparation } from "../components/ApplicationPreparation.jsx";
 import { OfferFeedback } from "../components/OfferFeedback.jsx";
-import { salaryLabel } from "../utils/offerQuality.js";
+import { CONTRACTS, salaryLabel } from "../utils/offerQuality.js";
+import { subscribeVacancyChanges } from "../utils/vacancyEvents.js";
 import { loadVacancyData } from "../utils/vacancyRequests.js";
 
 import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
@@ -63,19 +64,21 @@ function JobDetailContent({ jobId }) {
   const [availableJobs, setAvailableJobs] = useState([]);
   const [companyId, setCompanyId] = useState(null);
   const [companyRole, setCompanyRole] = useState(null);
+  const [revision, setRevision] = useState(0);
+  useEffect(() => subscribeVacancyChanges(jobId, () => setRevision(value => value + 1)), [jobId]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "auto" }); }, [jobId]);
   useEffect(() => { if (routeLocation.hash === "#postularme" && job && job.source_kind !== "external") setShowSubmit(!alreadyApplied); }, [job, routeLocation.hash, alreadyApplied]);
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
     return loadVacancyData(api, { jobId, role: user?.role }, {
-      job: (data) => setJob({ ...data, location: data.source_kind === "external" ? cleanExternalLocation(data.location) : data.location }),
+      job: (data) => { setErrorMessage(""); setJob({ ...data, location: data.source_kind === "external" ? cleanExternalLocation(data.location) : data.location }); },
       catalog: (data) => setAvailableJobs(data.map((item) => ({ ...item, location: item.source_kind === "external" ? cleanExternalLocation(item.location) : item.location }))),
       match: setMatch,
       matchError: (failure) => setMatchError(getApiErrorMessage(failure, "No pudimos calcular la compatibilidad de esta oferta.")),
       applications: (data) => setApplication(data.find((item) => Number(item.job_id) === Number(jobId)) || null),
       company: (data) => { setCompanyId(data?.id ?? null); setCompanyRole(data?.active === false ? null : data?.role); },
-      error: () => setErrorMessage("No pudimos cargar esta vacante. Vuelve a intentarlo."),
+      error: (failure) => { if (failure?.response?.status === 404) setJob(null); setErrorMessage("No pudimos cargar esta vacante. Vuelve a intentarlo."); },
     });
-  }, [jobId, user?.role]);
+  }, [jobId, user?.role, revision]);
 
   const isOwnCompanyJob = user?.role === "company" && Number(companyId) === Number(job?.company_id);
 
@@ -100,13 +103,14 @@ function JobDetailContent({ jobId }) {
   if (!job)
     return (
       <div className="surface-card p-8 text-[var(--muted)]">
-        {errorMessage || "Cargando vacante…"}
+        {errorMessage || "Cargando vacante…"}{errorMessage && <button className="button-secondary ml-3" onClick={() => setRevision(value => value + 1)}>Reintentar</button>}
       </div>
     );
   const displayedSkills = [...new Map([...(job.skill_requirements || []).map((row) => row.skill), ...(job.skills || [])].map((skill) => [skillKey(skill), skill])).values()];
   const minimumLevels = Object.fromEntries((job.skill_requirements || []).map((row) => [skillKey(row.skill), row.level]));
   return (
     <div className="job-detail-page min-w-0 space-y-6">
+      {errorMessage && <div className="vacancy-match-notice" role="alert"><p>{errorMessage}</p><button type="button" onClick={() => setRevision(value => value + 1)}>Actualizar ficha</button></div>}
       <div className="flex flex-wrap items-center justify-between gap-3"><Link
         to={user?.role === "company" ? "/empresa/vacantes" : (routeLocation.state?.returnTo || "/vacantes")}
         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] hover:underline"
@@ -142,10 +146,11 @@ function JobDetailContent({ jobId }) {
               </span>
               <span className="flex items-center gap-1">
                 <Clock3 size={16} />
-                {{ full_time: "Tiempo completo", part_time: "Medio tiempo", contract: "Contrato", internship: "Prácticas", temporary: "Temporal" }[job.employment_type] || "Tipo de contrato no especificado"}
+                {CONTRACTS[job.quality_details?.contract_type] || "Tipo de contrato no especificado"}
               </span>
+              {({ full_time: "Tiempo completo", part_time: "Medio tiempo", contract: "Por contrato", internship: "Prácticas", temporary: "Temporal" })[job.employment_type] && <span className="flex items-center gap-1"><Clock3 size={16} />{{ full_time: "Tiempo completo", part_time: "Medio tiempo", contract: "Por contrato", internship: "Prácticas", temporary: "Temporal" }[job.employment_type]}</span>}
               <span className="flex items-center gap-1"><BriefcaseBusiness size={16} />{{ remote: "Remoto", hybrid: "Híbrido", onsite: "Presencial" }[job.modality] || "Modalidad no especificada"}</span>
-              <span className="flex items-center gap-1"><CalendarDays size={16} />Publicada {formatRelativeTime(job.created_at).toLowerCase()}</span>
+              <span className="flex items-center gap-1"><CalendarDays size={16} />Publicada {formatRelativeTime(job.external_published_at || job.created_at).toLowerCase()}</span>
               <span className="flex items-center gap-1">
                 <CircleDollarSign size={16} />
                 {job.salary

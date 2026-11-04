@@ -2,6 +2,7 @@ import axios from "axios";
 import { validationMessage } from "./errors.js";
 import { resolveApiBase } from "./config.js";
 import { shouldNotifyMutation, mutationMessage } from "./feedback.js";
+import { notifyVacancyMutation } from "../utils/vacancyEvents.js";
 
 export const api = axios.create({
   baseURL: resolveApiBase(import.meta.env.VITE_API_URL, window.location),
@@ -31,6 +32,7 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
+    notifyVacancyMutation(response.config);
     if (shouldNotifyMutation(response.config)) {
       window.dispatchEvent(new CustomEvent("talentsync:feedback", { detail: { message: mutationMessage(response.config, response.data) } }));
     }

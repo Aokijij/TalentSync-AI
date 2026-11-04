@@ -453,8 +453,18 @@ class Job(Base):
     external_check_state: Mapped[str] = mapped_column(String(24), default="pending", server_default="pending", nullable=False)
     external_checked_at: Mapped[datetime | None] = mapped_column(DateTime)
     external_verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    external_manual_verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    external_manual_verified_until: Mapped[datetime | None] = mapped_column(DateTime)
+    external_manual_verified_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    external_manual_note: Mapped[str | None] = mapped_column(Text)
+    external_manual_source_url: Mapped[str | None] = mapped_column(String(1000))
     external_check_reason: Mapped[str] = mapped_column(String(40), default="", server_default="", nullable=False)
     external_next_check_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    @property
+    def external_verification_method(self):
+        from app.domain.services.job_freshness import verification_method
+        return verification_method(self)
 
     @property
     def external_available(self):
