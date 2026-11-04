@@ -10,6 +10,7 @@ from app.api.deps import (
     get_resume_reader,
     get_text_analysis,
     get_unit_of_work,
+    get_writing_service,
     require_roles,
 )
 from app.api.schemas.career_coach import (
@@ -44,9 +45,8 @@ router = APIRouter()
 
 
 @router.get("/me/writing-service")
-def writing_service(user=Depends(require_roles(UserRole.CANDIDATE))):
-    from app.infrastructure.nlp.groq_writer import writer_status
-    return writer_status(settings)
+def writing_service(user=Depends(require_roles(UserRole.CANDIDATE)), service=Depends(get_writing_service)):
+    return service
 
 
 @router.post("/me/summary/generate")
@@ -73,9 +73,8 @@ def market_skill(payload: MarketSkill, user=Depends(require_roles(UserRole.CANDI
 
 
 @router.get("/me/coach")
-def coach_overview(user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
-    from app.infrastructure.nlp.groq_writer import writer_status
-    return {**coach.overview(db, user), "writing_service": writer_status(settings)}
+def coach_overview(user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work), service=Depends(get_writing_service)):
+    return {**coach.overview(db, user), "writing_service": service}
 
 
 @router.post("/me/coach/writing")

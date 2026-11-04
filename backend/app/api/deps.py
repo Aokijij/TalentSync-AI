@@ -48,6 +48,11 @@ def get_job_availability():
     return JobAvailability()
 
 
+def get_writing_service():
+    from app.infrastructure.nlp.groq_writer import writer_status
+    return writer_status(settings)
+
+
 @lru_cache
 def get_career_writer():
     if settings.career_writer_provider == "groq":
