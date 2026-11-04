@@ -144,3 +144,25 @@ def login(
 
 def me(current_user: User) -> User:
     return current_user
+
+
+def complete_company_registration(payload, current_user, db):
+    if current_user.role != UserRole.COMPANY:
+        raise UseCaseError(403, "Esta confirmación corresponde a una cuenta empresarial")
+    consent = registration_consent(payload, channel="company_setup")
+    if not payload["confirmed"]:
+        raise UseCaseError(422, "Confirma que administrarás esta cuenta empresarial")
+    db.profiles.lock_owner(current_user.id)
+    db.refresh(current_user)
+    if not current_user.registration_pending:
+        raise UseCaseError(409, "Tu registro ya está completo")
+    company = db.companies.find_by_owner(current_user.id)
+    if company is None or company.owner_user_id != current_user.id:
+        raise UseCaseError(403, "La cuenta debe tener una empresa propia asignada")
+    current_user.name = payload["name"]
+    current_user.legal_acceptance = consent
+    current_user.registration_pending = False
+    record_event(db, "account.registration_completed", "user", current_user.id,
+                 actor_user_id=current_user.id, details={"role": "company", "source": "company_setup"})
+    db.commit()
+    return current_user
