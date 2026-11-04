@@ -87,7 +87,10 @@ class JobRepository(SqlAlchemyRepository[Job]):
         from app.domain.services.external_job_content import three_months_ago
         from app.domain.services.job_freshness import FRESH_HOURS
         return and_(Job.moderation_status != "held", or_(Job.source_kind != "external", and_(
-            Job.external_check_state == "verified", Job.external_verified_at >= now - timedelta(hours=FRESH_HOURS),
+            or_(and_(Job.external_check_state == "verified", Job.external_verified_at >= now - timedelta(hours=FRESH_HOURS), Job.external_verified_at <= now),
+                and_(Job.external_manual_verified_by.is_not(None), Job.external_manual_verified_at <= now,
+                     Job.external_manual_verified_until > now, Job.external_manual_source_url == Job.external_url,
+                     or_(Job.external_check_state != "closed", Job.external_checked_at.is_(None), Job.external_checked_at < Job.external_manual_verified_at))),
             Job.external_published_at >= three_months_ago(now), Job.external_published_at <= now,
             func.json_array_length(Job.skills) >= 3,
             Job.external_content["admission"]["clarity_passed"].as_boolean().is_(True))))

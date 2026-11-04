@@ -78,11 +78,19 @@ class CatalogCleanupRequest(BaseModel):
     ids: list[int] = Field(min_length=1, max_length=200)
 
 
+class ManualSourceReview(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    source_url: HttpUrl
+    confirmed_open: Literal[True]
+    note: str = Field(min_length=20, max_length=2000)
+
+
 class ExternalCatalogStatus(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     status: Literal["active", "draft", "paused", "closed"]
     revision: int = Field(ge=0)
     note: str = Field(min_length=5, max_length=2000)
+    manual_verification: ManualSourceReview | None = None
 
 
 class PublicationReview(BaseModel):

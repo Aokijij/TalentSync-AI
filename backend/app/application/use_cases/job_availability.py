@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from app.application.errors import UseCaseError
 from app.application.use_cases.integration_observations import record
 from app.domain.services.editorial_jobs import apply_editorial
-from app.domain.services.job_freshness import externally_available
+from app.domain.services.job_freshness import externally_available, verification_method
 
 REASONS = {"source_api": "La fuente original publica esta oferta.", "structured_date": "Vigencia publicada en la oferta original.",
            "source_removed": "La fuente retiró la oferta.", "expired": "La fecha de cierre ya pasó.", "source_unavailable": "No se pudo consultar la fuente; no implica que la oferta esté cerrada.",
@@ -29,9 +29,13 @@ def check_job(db, job, gateway, *, now=None):
             job.expires_at = min(filter(None, (job.expires_at, valid_until)))
     if state == "closed":
         job.status = "closed"
+        if job.external_manual_verified_until and job.external_manual_verified_until > now:
+            job.external_manual_verified_until = now
     record(db, "external_jobs", "provider_error" if state == "unavailable" else "", commit=False, operation="availability_check")
     db.commit()
-    return {"id": job.id, "state": state, "reason": REASONS.get(reason, REASONS["unconfirmed"]), "checked_at": now, "available": externally_available(job, now)}
+    return {"id": job.id, "state": state, "reason": REASONS.get(reason, REASONS["unconfirmed"]), "checked_at": now, "available": externally_available(job, now),
+            "verification_method": verification_method(job, now), "manual_verified_at": job.external_manual_verified_at,
+            "manual_verified_until": job.external_manual_verified_until}
 
 
 def check_due(db, gateway, *, limit=20, budget_seconds=45):

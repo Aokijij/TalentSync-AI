@@ -209,6 +209,9 @@ class JobResponse(BaseModel):
     external_check_state: str = "pending"
     external_checked_at: datetime | None = None
     external_verified_at: datetime | None = None
+    external_verification_method: str = "unconfirmed"
+    external_manual_verified_at: datetime | None = None
+    external_manual_verified_until: datetime | None = None
     external_check_reason: str = ""
     external_available: bool = False
     external_published_at: datetime | None = None

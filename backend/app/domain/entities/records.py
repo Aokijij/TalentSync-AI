@@ -127,6 +127,11 @@ class Job(Protocol):
     external_check_state: str
     external_checked_at: datetime | None
     external_verified_at: datetime | None
+    external_manual_verified_at: datetime | None
+    external_manual_verified_until: datetime | None
+    external_manual_verified_by: int | None
+    external_manual_note: str | None
+    external_manual_source_url: str | None
     external_check_reason: str
     external_next_check_at: datetime | None
     company: Company
