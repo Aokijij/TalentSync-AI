@@ -175,6 +175,8 @@ def get_job(job_id: int, db: UnitOfWork, current_user: User | None = None) -> Jo
     job = db.jobs.get_with_company(job_id)
     if job is None:
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
+    if getattr(job, "moderation_status", "automatic") == "held" and (not current_user or current_user.role != UserRole.ADMIN):
+        raise UseCaseError(404, "Esta oferta no está disponible en el catálogo")
     if job.status == "draft":
         if current_user is None:
             raise UseCaseError(status_code=404, detail="Vacante no encontrada")
@@ -195,6 +197,8 @@ def update_job(
         raise UseCaseError(status_code=404, detail="Vacante no encontrada")
     ensure_job_access(db, job, current_user)
     changes = dict(payload)
+    if job.source_kind == "external":
+        raise UseCaseError(422, "Las ofertas externas conservan los datos de su fuente. Gestiona su publicación desde la revisión del catálogo")
     if changes.get("required_education_level", job.required_education_level) == "secondary":
         if job.required_study_fields or "required_study_fields" in changes:
             changes["required_study_fields"] = []

@@ -445,6 +445,9 @@ class Job(Base):
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime)
     external_published_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
     external_content: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    moderation_status: Mapped[str] = mapped_column(String(20), default="automatic", server_default="automatic", nullable=False)
+    moderation_note: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False)
+    moderation_revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
 
     external_check_state: Mapped[str] = mapped_column(String(24), default="pending", server_default="pending", nullable=False)
     external_checked_at: Mapped[datetime | None] = mapped_column(DateTime)

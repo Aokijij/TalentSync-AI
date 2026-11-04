@@ -26,7 +26,7 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1366]) test(`Ro
   await expect(page.getByText(/administrador|administración/i)).toHaveCount(0);
   const candidateAccent = await page.locator(".role-landing").evaluate((element) => getComputedStyle(element).getPropertyValue("--accent"));
   await page.getByRole("checkbox", { name: "Comunicación", exact: true }).check();
-  await expect(page.locator(".role-demo-match strong")).toContainText("2");
+  await expect(page.locator(".role-demo-match strong")).toContainText("67");
   await fits();
   await page.screenshot({ path: `../.local/public-site/candidate-${theme}-${width}.png`, fullPage: true });
   await page.getByRole("navigation", { name: "Elige tu espacio" }).getByRole("link", { name: "Para empresas" }).click();

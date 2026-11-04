@@ -8,6 +8,10 @@ from app.infrastructure.repositories.entity import SqlAlchemyRepository
 
 
 class JobRepository(SqlAlchemyRepository[Job]):
+    def update_moderation(self, job_id, revision, status, note):
+        return self.session.query(Job).filter(Job.id == job_id, Job.moderation_revision == revision).update(
+            {Job.moderation_status: status, Job.moderation_note: note, Job.moderation_revision: revision + 1}, synchronize_session=False) == 1
+
     def board_choices(self, company_id):
         count = select(func.count(Application.id)).where(Application.job_id == Job.id).correlate(Job).scalar_subquery()
         rows = self.session.query(
@@ -32,7 +36,7 @@ class JobRepository(SqlAlchemyRepository[Job]):
             load_only(
                 Job.id, Job.company_id, Job.title, Job.description, Job.source_kind, Job.source_name,
                 Job.external_url, Job.status, Job.created_at, Job.expires_at, Job.sector, Job.location,
-                Job.skills, Job.salary, Job.modality, Job.employment_type, Job.quality_details),
+                Job.skills, Job.salary, Job.modality, Job.employment_type, Job.quality_details, Job.moderation_status),
         ).filter(Job.created_at >= since)
         return (query.filter(Job.source_name == "radar-demo", Job.status == "draft") if demo else self._available(query)).all()
 
@@ -50,6 +54,7 @@ class JobRepository(SqlAlchemyRepository[Job]):
         now = datetime.utcnow()
         return query.filter(
             Job.status == "active",
+            Job.moderation_status != "held",
             or_(Job.expires_at.is_(None), Job.expires_at >= now),
             JobRepository.fresh_external(now),
         )
@@ -60,11 +65,11 @@ class JobRepository(SqlAlchemyRepository[Job]):
 
         from app.domain.services.external_job_content import three_months_ago
         from app.domain.services.job_freshness import FRESH_HOURS
-        return or_(Job.source_kind != "external", and_(
+        return and_(Job.moderation_status != "held", or_(Job.source_kind != "external", and_(
             Job.external_check_state == "verified", Job.external_verified_at >= now - timedelta(hours=FRESH_HOURS),
             Job.external_published_at >= three_months_ago(now), Job.external_published_at <= now,
             func.json_array_length(Job.skills) >= 3,
-            Job.external_content["admission"]["clarity_passed"].as_boolean().is_(True)))
+            Job.external_content["admission"]["clarity_passed"].as_boolean().is_(True))))
 
     def due_external(self, now, limit=20):
         from app.domain.services.external_job_content import three_months_ago
@@ -187,8 +192,10 @@ class JobRepository(SqlAlchemyRepository[Job]):
             available_ids = self._available(self.session.query(Job.id))
             if status_filter == "active":
                 query = query.filter(Job.id.in_(available_ids))
-            elif status_filter == "closed":
-                query = query.filter(Job.status == "closed")
+            elif status_filter in {"closed", "draft", "paused", "filled"}:
+                query = query.filter(Job.status == status_filter)
+            elif status_filter in {"held", "approved"}:
+                query = query.filter(Job.moderation_status == status_filter)
             else:
                 query = query.filter(Job.status != "closed", ~Job.id.in_(available_ids))
         total = query.count()

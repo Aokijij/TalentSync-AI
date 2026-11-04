@@ -84,6 +84,8 @@ Los entornos de OCR, extracción de entidades y comparación tienen dependencias
 
 ## Operación
 
+La preparación de una exposición con organización, vacantes y perfiles ficticios se describe en [DEMONSTRACION.md](DEMONSTRACION.md). Incluye fichas de partida y un recorrido por los tres roles.
+
 ### Redacción opcional con Groq
 
 `CAREER_WRITER_PROVIDER=groq` habilita borradores de experiencias y resúmenes usando `openai/gpt-oss-20b`. Requiere `GROQ_API_KEY` solo en el backend, una cuenta gratuita y **Inference APIs ZDR** activado en la organización de Groq. Después de comprobar esos ajustes, establecer `GROQ_FREE_PLAN_CONFIRMED=true` y `GROQ_ZERO_DATA_RETENTION_CONFIRMED=true`. Estas confirmaciones son operativas; la API de generación no verifica el plan de facturación. No activar una suscripción de pago para esta función.

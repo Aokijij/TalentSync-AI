@@ -1,4 +1,21 @@
-from pydantic import BaseModel, Field, field_validator
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class PublicationReview(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["automatic", "approved", "held"]
+    note: str = Field(min_length=5, max_length=2000)
+    revision: int = Field(ge=0)
+
+    @field_validator("note")
+    @classmethod
+    def clean_note(cls, value):
+        value = value.strip()
+        if len(value) < 5:
+            raise ValueError("Indica un motivo para registrar la decisión")
+        return value
 
 
 class JobCatalogSyncRequest(BaseModel):
