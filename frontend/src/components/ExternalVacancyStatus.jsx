@@ -9,7 +9,7 @@ export function ExternalVacancyStatus({ job, admin = false }) {
   const available = result ? result.available : job.external_available;
   const state = result?.state || job.external_check_state;
   const reasons = job.external_admission_reasons || [];
-  const label = reasons.length ? "Fuera del filtro del catálogo" : available ? "Vigencia comprobada" : state === "closed" ? "Retirada o vencida" : state === "unavailable" ? "Fuente no disponible" : "Vigencia por confirmar";
+  const label = job.moderation_status === "held" ? "Retirada por administración" : reasons.length ? "Fuera del filtro del catálogo" : available ? "Vigencia comprobada" : state === "closed" ? "Retirada o vencida" : state === "unavailable" ? "Fuente no disponible" : "Vigencia por confirmar";
   const Icon = available ? CheckCircle2 : state === "closed" ? AlertTriangle : Clock3;
   const date = result?.checked_at || job.external_checked_at;
   async function check() {

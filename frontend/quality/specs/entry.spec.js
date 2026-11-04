@@ -53,9 +53,9 @@ for (const screen of ["landing", "candidate", "company"]) for (const theme of ["
     await expect(page.getByRole("navigation", { name: "Elige tu espacio" }).getByRole("link", { name: "Para empresas" })).toHaveAttribute("href", "/empresas");
     await expect(page.locator(".role-preview footer")).toContainText("Datos ficticios");
     await page.getByRole("checkbox", { name: "Análisis de datos", exact: true }).check();
-    await expect(page.locator(".role-demo-match strong")).toContainText("2");
+    await expect(page.locator(".role-demo-match strong")).toContainText("67");
     await page.getByRole("checkbox", { name: "Comunicación", exact: true }).check();
-    await expect(page.locator(".role-demo-match strong")).toContainText("3");
+    await expect(page.locator(".role-demo-match strong")).toContainText("100");
     expect(context.calls).toEqual([]);
   } else if (screen === "candidate") {
     await expect(page.getByLabel("Cargo o área de interés", { exact: true })).toHaveValue(baseProfile.profession);

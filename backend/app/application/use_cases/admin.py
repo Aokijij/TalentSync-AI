@@ -17,6 +17,7 @@ def platform_stats(current_user: User, db: UnitOfWork) -> dict[str, int]:
         "platform_companies": db.companies.count_by_scope("platform"),
         "external_companies": db.companies.count_by_scope("external"),
         "jobs": db.jobs.count(),
+        "available_jobs": db.jobs.count_active(),
         "platform_jobs": db.jobs.count_by_scope("platform"),
         "external_jobs": db.jobs.count_by_scope("external"),
         "applications": db.applications.count(),
@@ -140,6 +141,11 @@ def list_users(
                 "name": user.name,
                 "email": user.email,
                 "role": user.role.value,
+                "profession": user.profile.profession if user.profile else None,
+                "location": user.profile.location if user.profile else None,
+                "skills": (user.profile.skills or [])[:5] if user.profile else [],
+                "email_verified": user.email_verified,
+                "created_at": user.created_at,
             }
             for user in users
         ],
@@ -177,6 +183,9 @@ def list_admin_companies(
                 ),
                 "source_kind": "external" if company.is_external else "internal",
                 "source_name": company.source_name,
+                "location": company.location,
+                "sector": company.sector,
+                "verification_status": company.verification_status,
                 "source_portal": next(
                     (job.source_portal for job in company.jobs if job.source_portal),
                     None,
@@ -221,6 +230,9 @@ def list_admin_jobs(
                 if job.source_kind == "internal"
                 else None,
                 "status": job.status,
+                "moderation_status": job.moderation_status,
+                "modality": job.modality,
+                "employment_type": job.employment_type,
                 "source_kind": job.source_kind,
                 "source_name": job.source_name,
                 "source_portal": job.source_portal,

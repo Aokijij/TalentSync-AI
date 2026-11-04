@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Building2,
   BriefcaseBusiness,
@@ -6,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Eye,
   ExternalLink,
   FileSpreadsheet,
   RefreshCw,
@@ -25,12 +27,13 @@ import { ConfirmModal } from "../components/ConfirmModal.jsx";
 import { ExternalCatalogPanel } from "../components/ExternalCatalogPanel.jsx";
 import { EmployerBoardImport } from "../components/EmployerBoardImport.jsx";
 import { ExternalVacancyStatus } from "../components/ExternalVacancyStatus.jsx";
+import { AdminRecordDialog } from "../components/AdminRecordDialog.jsx";
 
 const tabs = [
   {
     id: "users",
-    label: "Candidatos",
-    description: "Perfiles y postulaciones",
+    label: "Cuentas",
+    description: "Perfiles y accesos",
     icon: UsersRound,
   },
   {
@@ -49,14 +52,18 @@ const tabs = [
 
 export function AdminManagementPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("users");
+  const [params] = useSearchParams();
+  const requestedJob = Number(params.get("vacante")), initialJob = Number.isInteger(requestedJob) && requestedJob > 0 ? requestedJob : null;
+  const [activeTab, setActiveTab] = useState(initialJob ? "jobs" : "users");
   const [stats, setStats] = useState({});
-  const [scope, setScope] = useState("platform");
+  const [scope, setScope] = useState(initialJob ? "all" : "platform");
   const [jobStatus, setJobStatus] = useState("");
+  const [accountRole, setAccountRole] = useState("candidate");
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [overviewLoading, setOverviewLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [selectedRecord, setSelectedRecord] = useState(initialJob ? { kind: "jobs", id: initialJob } : null);
   const [deleting, setDeleting] = useState(false);
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -71,7 +78,7 @@ export function AdminManagementPage() {
   const [syncingJsearch, setSyncingJsearch] = useState(false);
 
   const search = useDebouncedValue(query);
-  const { data: managed, loading: recordsLoading, error: recordsError, reload: loadManagedRecords } = usePagedList(`/admin/${activeTab}`, { page, page_size: pageSize, search: search || undefined, scope: activeTab === "users" ? undefined : scope, status_filter: activeTab === "jobs" ? jobStatus || undefined : undefined, role: activeTab === "users" ? "candidate" : undefined });
+  const { data: managed, loading: recordsLoading, error: recordsError, reload: loadManagedRecords } = usePagedList(`/admin/${activeTab}`, { page, page_size: pageSize, search: search || undefined, scope: activeTab === "users" ? undefined : scope, status_filter: activeTab === "jobs" ? jobStatus || undefined : undefined, role: activeTab === "users" ? accountRole || undefined : undefined });
   const loading = overviewLoading || recordsLoading || search !== query.trim();
   const displayError = error || recordsError;
 
@@ -213,7 +220,7 @@ export function AdminManagementPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, query, pageSize, scope, jobStatus]);
+  }, [activeTab, query, pageSize, scope, jobStatus, accountRole]);
   useEffect(() => { if (managed && page > pageCount) setPage(pageCount); }, [managed, page, pageCount]);
 
   return (
@@ -221,7 +228,7 @@ export function AdminManagementPage() {
       <PageHeader
         kicker="Control de plataforma"
         title="Consola administrativa"
-        description="Busca, revisa y administra los recursos principales con una vista más compacta."
+        description="Revisa cuentas, organizaciones y ofertas. Consulta sus fichas y gestiona la publicación con información completa."
       />
       {displayError ? (
         <p
@@ -247,9 +254,9 @@ export function AdminManagementPage() {
         />
         <Summary
           icon={BriefcaseBusiness}
-          value={stats.platform_jobs ?? 0}
-          label="Vacantes TalentSync"
-          detail={`${stats.external_jobs ?? 0} registros externos · ${stats.applications ?? 0} postulaciones`}
+          value={stats.jobs ?? 0}
+          label="Vacantes en control"
+          detail={`${stats.available_jobs ?? 0} disponibles · ${stats.applications ?? 0} postulaciones`}
         />
       </section>
 
@@ -266,7 +273,8 @@ export function AdminManagementPage() {
                 onClick={() => {
                   setActiveTab(id);
                   setQuery("");
-                  setScope("platform");
+                  setScope(id === "jobs" ? "all" : "platform");
+                  setJobStatus("");
                 }}
                 aria-pressed={activeTab === id}
                 className={`flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-3 text-left transition-colors ${activeTab === id ? "bg-[var(--accent)] text-white" : "text-[var(--ink-strong)] hover:bg-[var(--surface-hover)]"}`}
@@ -290,8 +298,7 @@ export function AdminManagementPage() {
           <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--surface-subtle)] p-3">
             <ShieldCheck size={17} className="text-[var(--accent)]" />
             <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-              Las eliminaciones requieren confirmación y respetan las relaciones
-              del sistema.
+              Abre una ficha para revisar la información, las vacantes y las decisiones de publicación. Los cambios conservan su historial.
             </p>
           </div>
         </aside>
@@ -303,7 +310,7 @@ export function AdminManagementPage() {
                 {activeMeta?.description}
               </h2>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">{activeTab === "users" && <label className="text-xs font-bold text-[var(--muted)]">Tipo de cuenta<select className="field-control input-sm mt-1.5" value={accountRole} onChange={(event) => setAccountRole(event.target.value)}><option value="candidate">Candidatos</option><option value="company">Empresas</option><option value="admin">Administradores</option><option value="">Todas las cuentas</option></select></label>}
               {activeTab !== "users" ? (
                 <label className="text-xs font-bold text-[var(--muted)]">
                   Origen
@@ -318,7 +325,7 @@ export function AdminManagementPage() {
                   </select>
                 </label>
               ) : null}
-              {activeTab === "jobs" && <label className="text-xs font-bold text-[var(--muted)]">Disponibilidad<select className="field-control input-sm mt-1.5" value={jobStatus} onChange={(event) => setJobStatus(event.target.value)}><option value="">Todos los estados</option><option value="active">Disponibles</option><option value="review">En revisión</option><option value="closed">Cerradas</option></select></label>}
+              {activeTab === "jobs" && <label className="text-xs font-bold text-[var(--muted)]">Disponibilidad<select className="field-control input-sm mt-1.5" value={jobStatus} onChange={(event) => setJobStatus(event.target.value)}><option value="">Todos los estados</option><option value="active">Disponibles</option><option value="review">En revisión</option><option value="held">Retiradas por administración</option><option value="approved">Aprobadas por administración</option><option value="draft">Borradores</option><option value="paused">Pausadas</option><option value="closed">Cerradas</option><option value="filled">Cubiertas</option></select></label>}
               <label className="relative block sm:w-80">
                 <span className="sr-only">Buscar</span>
                 <Search
@@ -380,6 +387,7 @@ export function AdminManagementPage() {
             loading={loading}
             currentUserId={user.id}
             onDelete={setPendingDelete}
+            onView={setSelectedRecord}
           />
           <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] px-5 py-4">
             <p className="text-xs text-[var(--muted)]">
@@ -410,6 +418,7 @@ export function AdminManagementPage() {
           </footer>
         </div>
       </section>
+      {selectedRecord && <AdminRecordDialog record={selectedRecord} onSelect={setSelectedRecord} onClose={() => setSelectedRecord(null)} onChanged={async () => { await Promise.all([loadOverview(), loadManagedRecords()]); }} />}
       <ConfirmModal
         open={Boolean(pendingDelete)}
         title="Confirmar eliminación"
@@ -609,7 +618,7 @@ function Summary({ icon: Icon, value, label, detail }) {
   );
 }
 
-function RecordsTable({ kind, records, loading, currentUserId, onDelete }) {
+function RecordsTable({ kind, records, loading, currentUserId, onDelete, onView }) {
   if (loading) return <p role="status" className="px-5 py-10 text-center text-sm text-[var(--muted)]">Cargando registros…</p>;
   if (!records.length)
     return (
@@ -656,6 +665,7 @@ function RecordsTable({ kind, records, loading, currentUserId, onDelete }) {
               kind={kind}
               item={item}
               protectedRecord={kind === "users" && item.id === currentUserId}
+              onView={() => onView({ kind, id: item.id })}
               onDelete={() =>
                 onDelete({
                   kind,
@@ -671,7 +681,7 @@ function RecordsTable({ kind, records, loading, currentUserId, onDelete }) {
   );
 }
 
-function RecordRow({ kind, item, protectedRecord, onDelete }) {
+function RecordRow({ kind, item, protectedRecord, onDelete, onView }) {
   const Icon =
     kind === "users"
       ? UserRound
@@ -688,6 +698,8 @@ function RecordRow({ kind, item, protectedRecord, onDelete }) {
           </div>
           <div>
             <p className="font-bold text-[var(--ink-strong)]">{title}</p>
+            {kind === "users" && <><p className="mt-1 text-xs text-[var(--muted)]">{item.profession || (item.role === "candidate" ? "Perfil por completar" : item.role === "company" ? "Acceso empresarial" : "Acceso administrativo")}{item.location ? ` · ${item.location}` : ""}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.skills?.join(" · ") || "Sin habilidades registradas"}</p></>}
+            {kind === "companies" && <p className="mt-1 text-xs text-[var(--muted)]">{[item.sector, item.location, item.verification_status === "verified" ? "Verificada" : item.source_kind === "external" ? "Fuente externa" : "Verificación pendiente"].filter(Boolean).join(" · ")}</p>}
             {item.source_name ? (
               <p className="mt-0.5 text-xs font-semibold text-[var(--accent)]">
                 {item.source_kind === "external"
@@ -732,24 +744,24 @@ function RecordRow({ kind, item, protectedRecord, onDelete }) {
           ? item.email
           : kind === "companies"
             ? `${item.active_jobs} activas de ${item.jobs}`
-            : `${item.status === "active" ? "Activa" : item.status} · ${item.skills?.slice(0, 3).join(", ") || "Sin habilidades"}`}
+            : `${item.source_kind === "external" ? item.moderation_status === "held" ? "Retirada del catálogo" : item.external_available ? "Disponible en TalentSync" : "Pendiente de revisión" : ({ active: "Activa", paused: "Pausada", draft: "Borrador", closed: "Cerrada", filled: "Cubierta" }[item.status] || item.status)} · ${item.skills?.slice(0, 3).join(", ") || "Sin habilidades"}`}
       </td>
-      <td className="px-5 py-4 text-right">
+      <td className="px-5 py-4 text-right"><div className="admin-row-actions"><button type="button" className="button-secondary button-sm" onClick={onView}><Eye size={15} />Ver ficha</button>
         {protectedRecord ? (
           <span className="text-xs font-semibold text-[var(--muted)]">
             Tu cuenta
           </span>
         ) : (
-          <button
+          <details><summary aria-label={`Más opciones de ${title}`}>⋯</summary><button
             type="button"
             className="button-ghost button-sm text-[var(--error)] hover:bg-[var(--error)]/10"
             onClick={onDelete}
           >
             <Trash2 size={15} />
             Eliminar
-          </button>
+          </button></details>
         )}
-      </td>
+      </div></td>
     </tr>
   );
 }

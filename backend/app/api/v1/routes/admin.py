@@ -21,17 +21,41 @@ from app.api.deps import (
     get_unit_of_work,
     require_roles,
 )
-from app.api.schemas.admin import EmployerBoardRequest, JobCatalogSyncRequest
+from app.api.schemas.admin import (
+    EmployerBoardRequest,
+    JobCatalogSyncRequest,
+    PublicationReview,
+)
 from app.application.errors import UseCaseError
 from app.application.ports.services import JobCatalog, ResumeReader, TextAnalysis
 from app.application.ports.unit_of_work import UnitOfWork
 from app.application.use_cases import admin as use_cases
-from app.application.use_cases import job_imports
+from app.application.use_cases import admin_review, job_imports
 from app.core.limiter import limiter
 from app.domain.entities.enums import UserRole
 from app.domain.entities.records import User
 
 router = APIRouter()
+
+
+@router.get("/users/{user_id}")
+def user_record(user_id: int, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return admin_review.user_detail(db, current_user, user_id)
+
+
+@router.get("/companies/{company_id}")
+def company_record(company_id: int, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return admin_review.company_detail(db, current_user, company_id)
+
+
+@router.get("/jobs/{job_id}/review")
+def job_record(job_id: int, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return admin_review.job_detail(db, current_user, job_id)
+
+
+@router.patch("/jobs/{job_id}/review")
+def review_job(job_id: int, payload: PublicationReview, current_user=Depends(require_roles(UserRole.ADMIN)), db=Depends(get_unit_of_work)):
+    return admin_review.review_publication(db, current_user, job_id, payload.model_dump())
 
 
 @router.post("/jobs/availability/check")
@@ -146,7 +170,7 @@ def list_admin_jobs(
     page_size: int = Query(default=20, ge=5, le=100),
     search: str | None = Query(default=None, max_length=120),
     scope: str = Query(default="platform", pattern="^(platform|external|all)$"),
-    status_filter: str | None = Query(default=None, pattern="^(active|review|closed)$"),
+    status_filter: str | None = Query(default=None, pattern="^(active|review|closed|draft|paused|filled|held|approved)$"),
     current_user: User = Depends(require_roles(UserRole.ADMIN)),
     db: UnitOfWork = Depends(get_unit_of_work),
 ) -> dict:

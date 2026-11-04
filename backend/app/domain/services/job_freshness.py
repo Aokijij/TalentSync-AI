@@ -5,7 +5,9 @@ from app.domain.services.external_job_content import admission_reasons
 FRESH_HOURS = 72
 
 
-def externally_available(job, now=None):
+def externally_available(job, now=None, *, ignore_moderation=False):
+    if not ignore_moderation and getattr(job, "moderation_status", "automatic") == "held":
+        return False
     if getattr(job, "source_kind", "internal") != "external":
         return True
     now = now or datetime.utcnow()

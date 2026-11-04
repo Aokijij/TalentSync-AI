@@ -1,0 +1,53 @@
+{
+  "purpose": "Propuesta ficticia para preparar una exposición; no publica ni crea cuentas automáticamente",
+  "company": {
+    "name": "TalentSync · Demostración",
+    "description": "Organización ficticia para demostrar TalentSync. Las vacantes y candidaturas de este espacio no representan procesos de contratación reales.",
+    "sector": "Tecnologia y software",
+    "location": "Medellín",
+    "mission": "Mostrar cómo se conectan trayectoria, aprendizaje y selección con información clara.",
+    "values": ["Claridad", "Colaboración", "Aprendizaje"],
+    "benefits": ["Acompañamiento inicial en el escenario ficticio", "Plan de formación de demostración"]
+  },
+  "profiles": [
+    {"name": "Candidato 01 · Frontend", "profession": "Desarrollo Frontend", "skills": ["html", "css", "javascript", "git"], "learning_gap": "react"},
+    {"name": "Candidato 02 · Datos", "profession": "Análisis de Datos", "skills": ["excel", "sql", "python"], "learning_gap": "power bi"},
+    {"name": "Candidato 03 · QA", "profession": "QA Funcional", "skills": ["pruebas funcionales", "documentacion", "sql"], "learning_gap": "comunicacion"},
+    {"name": "Candidato 04 · Operaciones", "profession": "Auxiliar de Operaciones", "skills": ["excel", "inventarios", "organizacion"], "learning_gap": "comunicacion"}
+  ],
+  "jobs": [
+    {
+      "title": "Desarrollo Frontend Junior · Demostración",
+      "status": "draft", "modality": "remote", "location": "Colombia", "employment_type": "full_time", "salary": 3200000,
+      "description": "Construir interfaces responsivas con HTML, CSS y JavaScript, revisar su accesibilidad y documentar los cambios con Git. Colaborar en la integración de componentes React. Vacante ficticia de demostración.",
+      "requirements": "Fundamentos de HTML, CSS, JavaScript y Git. Se aceptan proyectos académicos como experiencia inicial. React puede reforzarse durante el acompañamiento. Formación técnica, tecnológica o universitaria relacionada; se aceptan estudios en curso.",
+      "skills": ["html", "css", "javascript", "react", "git"],
+      "selection_example": "Revisión del proyecto aportado y entrevista técnica sobre una interfaz"
+    },
+    {
+      "title": "Análisis de Datos Junior · Demostración",
+      "status": "draft", "modality": "hybrid", "location": "Medellín", "department": "Antioquia", "employment_type": "full_time", "salary": 3500000,
+      "description": "Organizar fuentes de datos, preparar consultas SQL y reportes en Excel, documentar las comprobaciones y presentar un tablero de seguimiento. Vacante ficticia de demostración.",
+      "requirements": "Conocimientos de Excel y SQL. Se aceptan proyectos académicos como experiencia inicial. Python y Power BI son deseables. Formación técnica, tecnológica o universitaria afín; se aceptan estudios en curso.",
+      "skills": ["excel", "sql", "python", "power bi"],
+      "selection_example": "Revisión de un reporte aportado y conversación sobre calidad de datos"
+    },
+    {
+      "title": "QA Funcional Junior · Demostración",
+      "status": "draft", "modality": "remote", "location": "Colombia", "employment_type": "full_time", "salary": 3000000,
+      "description": "Preparar casos de prueba, ejecutar comprobaciones funcionales, documentar incidencias y comunicar resultados al equipo de desarrollo. Vacante ficticia de demostración.",
+      "requirements": "Fundamentos de pruebas funcionales, documentación y consultas SQL. Se aceptan prácticas y proyectos formativos como experiencia inicial. Formación técnica, tecnológica o universitaria relacionada; se aceptan estudios en curso.",
+      "skills": ["pruebas funcionales", "documentacion", "sql", "comunicacion"],
+      "selection_example": "Revisión de casos de prueba aportados y evaluación de entrevista"
+    },
+    {
+      "title": "Auxiliar de Operaciones · Demostración",
+      "status": "draft", "modality": "onsite", "location": "Medellín", "department": "Antioquia", "employment_type": "full_time", "salary": 2300000,
+      "description": "Organizar registros de inventario, preparar reportes en Excel y coordinar la comunicación de novedades con el equipo. Vacante ficticia de demostración.",
+      "requirements": "Excel, organización de registros e inventarios. Se aceptan prácticas y formación inicial como experiencia. Formación técnica o tecnológica en áreas administrativas u operativas, completa o en curso.",
+      "skills": ["excel", "inventarios", "organizacion", "comunicacion"],
+      "selection_example": "Contraste de un reporte aportado y entrevista sobre el flujo de inventario"
+    }
+  ],
+  "conditions_to_complete_in_each_job": ["Jornada y horario", "Tipo de contrato", "Rango salarial y componente variable", "Plazo de respuesta", "Etapas del proceso", "Preguntas de preselección", "Habilidades esenciales y deseables"]
+}

@@ -34,6 +34,10 @@
 .role-demo-match>div>span { font-size:.72rem; color:var(--muted); }
 .role-demo-match>p { display:flex; align-items:flex-start; gap:.5rem; font-size:.73rem; color:var(--muted); line-height:1.7; margin-top:.8rem; }
 .role-demo-match>p>svg { flex:none; margin-top:.15rem; color:var(--accent); }
+.public-demo-progress{height:7px;overflow:hidden;border-radius:10px;background:color-mix(in srgb,var(--accent) 15%,var(--surface));margin-top:.8rem}
+.public-demo-progress>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 65%,white));transition:width .25s ease}
+.role-demo-match>.role-demo-change{color:var(--accent);font-weight:600}
+@media(prefers-reduced-motion:reduce){.public-demo-progress>span{transition:none}}
 .role-preview>footer { padding-top:1rem; margin-top:1rem; border-top:1px solid var(--line); font-size:.66rem; color:var(--muted); line-height:1.8; }
 .role-pillars { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-block:1px solid var(--line); gap:2rem; padding-block:1.7rem; }
 .role-pillars article { display:flex; align-items:flex-start; gap:.9rem; }

@@ -48,7 +48,7 @@ class UserRepository(SqlAlchemyRepository[User]):
         search: str | None = None,
         role: str | None = None,
     ) -> tuple[list[User], int]:
-        query = self.session.query(User)
+        query = self.session.query(User).options(joinedload(User.profile))
         if role:
             query = query.filter(User.role == UserRole(role))
         if search:
