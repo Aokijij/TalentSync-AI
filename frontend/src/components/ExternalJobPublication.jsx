@@ -4,6 +4,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 const states = { active: "Publicada", draft: "Borrador", paused: "Pausada", closed: "Cerrada" };
 export function ExternalJobPublication({ data, busy, setBusy, onError, onSaved }) {
   const [status, setStatus] = useState(data.status in states ? data.status : "draft"), [note, setNote] = useState("");
+  const current = data.status === "active" ? data.external_available ? "Visible en el catálogo" : data.moderation_status === "held" ? "Retirada por administración" : "En revisión, todavía no visible" : states[data.status] || data.status;
   const blockers = (data.review?.checks || []).slice(1).filter(row => !row.passed);
   async function submit(event) {
     event.preventDefault(); setBusy(true); onError("");
@@ -19,6 +20,6 @@ export function ExternalJobPublication({ data, busy, setBusy, onError, onSaved }
     {status === "active" && blockers.length > 0 && <div role="status"><strong>Antes de publicar:</strong><ul>{blockers.map(row => <li key={row.label}>{row.label}</li>)}</ul><p>Completa la información en Contenido y edición o usa Comprobar fuente para actualizar su vigencia.</p></div>}
     <label>Motivo de la decisión<textarea className="field-control" rows={3} minLength={5} maxLength={2000} required placeholder="Explica qué revisaste y por qué eliges este estado" disabled={busy} value={note} onChange={event => setNote(event.target.value)} /></label>
     <button type="submit" className="button-primary" disabled={busy}>{busy ? "Guardando…" : status === "active" ? "Publicar vacante" : "Guardar estado"}</button>
-    <small>Estado actual: {states[data.status] || data.status}{data.moderation_status === "held" ? " · fuera del catálogo por decisión editorial" : ""}. Los cambios de estado y contenido quedan registrados.</small>
+    <small>Estado actual: {current}. Los cambios de estado y contenido quedan registrados.</small>
   </form>;
 }
