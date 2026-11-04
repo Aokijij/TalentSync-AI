@@ -22,14 +22,15 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ad
       job = { ...job, ...body.fields, moderation_revision: 2, editorial_overrides: { fields: body.fields, note: body.note, source_url: body.source_url } };
       return route.fulfill({ json: job });
     }
-    if (path.endsWith("/admin/jobs/41/review")) {
-      if (request.method() === "PATCH") {
+    if (path.endsWith("/admin/jobs/41/catalog-status")) {
+      {
         if (fail) { fail = false; return route.fulfill({ status: 503, json: { detail: "No se pudo guardar la revisión de ejemplo." } }); }
         const body = request.postDataJSON();
-        job = { ...job, moderation_status: body.status, moderation_note: body.note, moderation_revision: 1, external_available: false, history: [{ id: 9, event: "job.publication_reviewed", created_at: "2026-11-03T12:00:00Z", details: { status: body.status } }] };
+        job = { ...job, status: body.status, moderation_status: "held", moderation_note: body.note, moderation_revision: 1, external_available: false, history: [{ id: 9, event: "job.status_updated", created_at: "2026-11-03T12:00:00Z", details: { status: body.status } }] };
       }
       return route.fulfill({ json: job });
     }
+    if (path.endsWith("/admin/jobs/41/review")) return route.fulfill({ json: job });
     if (["/api/v1/admin/users", "/api/v1/admin/companies", "/api/v1/admin/jobs"].includes(path)) return route.fulfill({ json: { items: path.endsWith("users") ? [account] : path.endsWith("companies") ? [company] : [job], total: 1 } });
     if (path.endsWith("/admin/jobs/catalog-status")) return route.fulfill({ json: { running: false } });
     return route.fulfill({ json: {} });
@@ -51,19 +52,19 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ad
   const dialog = page.getByRole("dialog", { name: "Revisar vacante", exact: true });
   await expect(dialog.getByText(job.requirements, { exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Publicación", exact: true }).click();
-  await dialog.getByRole("combobox", { name: "Decisión editorial", exact: true }).selectOption("held");
+  await dialog.getByRole("combobox", { name: "Estado en TalentSync", exact: true }).selectOption("paused");
   await dialog.getByRole("textbox", { name: "Motivo de la decisión", exact: true }).fill("Revisar las condiciones antes de mostrar la oferta.");
-  await dialog.getByRole("button", { name: "Guardar decisión", exact: true }).click();
+  await dialog.getByRole("button", { name: "Guardar estado", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("No se pudo guardar");
   await expect(dialog.getByRole("textbox", { name: "Motivo de la decisión", exact: true })).toHaveValue("Revisar las condiciones antes de mostrar la oferta.");
   expect(calls).toHaveLength(1);
-  await dialog.getByRole("button", { name: "Guardar decisión", exact: true }).click();
-  await expect(dialog.getByRole("status")).toContainText("Decisión editorial guardada");
+  await dialog.getByRole("button", { name: "Guardar estado", exact: true }).click();
+  await expect(dialog.getByRole("status")).toContainText("Estado de la vacante actualizado");
   expect(calls).toHaveLength(2);
-  expect(calls[1].body).toMatchObject({ status: "held", revision: 0 });
+  expect(calls[1].body).toMatchObject({ status: "paused", revision: 0 });
   await dialog.screenshot({ path: `../.local/platform-polish-20261104/publication-${theme}-${width}.png` });
   await dialog.getByRole("button", { name: "Historial", exact: true }).click();
-  await expect(dialog.getByText("Revisión editorial", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Cambio de estado", { exact: true })).toBeVisible();
   await dialog.screenshot({ path: `../.local/admin-review-20261103/review-${theme}-${width}.png` });
   await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
   await expect.poll(() => dialog.evaluate((node) => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1);

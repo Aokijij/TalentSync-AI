@@ -4,7 +4,11 @@ from datetime import datetime, timedelta
 from app.application.errors import UseCaseError
 from app.application.use_cases.events import record_event
 from app.domain.entities.enums import UserRole
-from app.domain.services.editorial_jobs import apply_editorial, exclusion_key
+from app.domain.services.editorial_jobs import (
+    apply_editorial,
+    exclusion_key,
+    source_value,
+)
 from app.domain.services.external_job_content import admission_reasons
 from app.domain.services.job_freshness import FRESH_HOURS, externally_available
 from app.domain.services.offer_review import review_offer
@@ -28,13 +32,13 @@ def job_detail(db, user, job_id):
         now = datetime.utcnow()
         recent = bool(job.external_verified_at and job.external_verified_at >= now - timedelta(hours=FRESH_HOURS))
         checks = [
-            {"label": "Oferta activa en la fuente", "passed": job.status == "active"},
+            {"label": "Vacante habilitada en el catálogo", "passed": job.status == "active"},
             {"label": "Vigencia confirmada recientemente", "passed": recent and job.external_check_state == "verified"},
             {"label": "Fecha de publicación y habilidades suficientes", "passed": not admission_reasons(job.external_published_at, job.skills, now=now)},
-            {"label": "Funciones, requisitos, experiencia y formación claros", "passed": bool(((job.external_content or {}).get("admission") or {}).get("clarity_passed"))},
+            {"label": "Funciones y requisitos claros", "passed": bool(((job.external_content or {}).get("admission") or {}).get("clarity_passed"))},
             {"label": "Dentro del plazo de la oferta", "passed": not job.expires_at or job.expires_at > now},
         ]
-        data["review"] = {"checks": checks, "can_publish": all(row["passed"] for row in checks), "score": None}
+        data["review"] = {"checks": checks, "can_publish": all(row["passed"] for row in checks), "can_activate": all(row["passed"] for row in checks[1:]), "score": None}
     else:
         review = review_offer(job)
         checks = [{"label": row["label"], "passed": row["passed"]} for row in review["checks"]]
@@ -115,17 +119,32 @@ def edit_external_content(db, user, job_id, payload, *, nlp):
         raise UseCaseError(422, "Indica al menos un campo para complementar")
     if "skills" in fields:
         fields["skills"] = normalize_skills(fields["skills"])
+    if "skills" in fields and "skill_requirements" in fields and set(fields["skills"]) != {row["skill"] for row in fields["skill_requirements"]}:
+        raise UseCaseError(422, "Las habilidades y los requisitos estructurados deben coincidir")
+    if "skills" in fields and "skill_requirements" not in fields:
+        existing = {row["skill"]: row for row in (job.skill_requirements or [])}
+        fields["skill_requirements"] = [existing.get(name, {"skill": name, "essential": False, "weight": 1, "level": "unspecified"}) for name in fields["skills"]]
     previous = job.editorial_overrides or {}
+    if "quality_details" in fields:
+        quality = fields["quality_details"]
+        if "experience_months" in quality:
+            quality["experience_years"] = None
+        fields["quality_details"] = {**previous.get("fields", {}).get("quality_details", {}), **quality}
+    if "skill_requirements" in fields:
+        fields["skills"] = [row["skill"] for row in fields["skill_requirements"]]
     source = dict(previous.get("source") or {})
     for key in fields:
         if key not in source:
-            source[key] = getattr(job, key)
+            source[key] = source_value(getattr(job, key))
     metadata = {"fields": {**previous.get("fields", {}), **fields}, "source": source,
                 "source_url": job.external_url, "note": payload["note"], "reviewed_at": datetime.utcnow().isoformat() + "Z"}
     if not db.jobs.update_editorial(job.id, payload["revision"], metadata):
         raise UseCaseError(409, "Otra revisión se guardó primero. Actualiza la ficha")
     db.refresh(job)
     apply_editorial(job)
+    maximum = (job.quality_details or {}).get("salary_max")
+    if maximum is not None and job.salary is not None and maximum < job.salary:
+        raise UseCaseError(422, "El salario máximo debe ser mayor o igual al salario base")
     job.embedding = nlp.analyze_job(f"{job.title} {job.description} {job.requirements}").embedding
     record_event(db, "job.content_reviewed", "job", job.id, actor_user_id=user.id,
                  details={"version": job.moderation_revision, "source": "original_listing"})
@@ -185,3 +204,30 @@ def catalog_cleanup(db, user, ids):
         deleted.append(job_id)
     db.commit()
     return {"deleted": len(deleted), "deleted_ids": deleted, "skipped": skipped}
+
+
+def change_external_status(db, user, job_id, payload):
+    require_admin(user)
+    job = db.jobs.get(job_id)
+    if job is None or job.source_kind != "external":
+        raise UseCaseError(404, "Vacante externa no encontrada")
+    db.jobs.lock(job)
+    if job.moderation_revision != payload["revision"]:
+        raise UseCaseError(409, "La ficha cambió. Actualiza antes de cambiar el estado")
+    apply_editorial(job)
+    if payload["status"] == "active" and not externally_available(job, ignore_moderation=True):
+        detail = job_detail(db, user, job_id)
+        missing = [row["label"] for row in detail["review"]["checks"][1:] if not row["passed"]]
+        raise UseCaseError(422, "Antes de publicar, revisa: " + "; ".join(missing))
+    previous = job.status
+    metadata = {**(job.editorial_overrides or {}), "catalog_status": payload["status"]}
+    if not db.jobs.update_editorial(job.id, payload["revision"], metadata):
+        raise UseCaseError(409, "Otra revisión se guardó primero. Actualiza la ficha")
+    db.refresh(job)
+    job.status = payload["status"]
+    job.moderation_status = "approved" if job.status == "active" else "held"
+    job.moderation_note = payload["note"]
+    record_event(db, "job.status_updated", "job", job.id, actor_user_id=user.id,
+                 details={"previous_status": previous, "status": job.status, "version": job.moderation_revision})
+    db.commit()
+    return job_detail(db, user, job.id)
