@@ -36,14 +36,14 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ex
   await dialog.getByRole("button", { name: "Contenido y edición", exact: true }).click();
   await dialog.getByRole("button", { name: "Editar contenido", exact: true }).click();
   const form = dialog.locator(".external-job-editor");
-  await form.getByRole("button", { name: "Requisitos", exact: true }).click();
+  await form.getByRole("combobox", { name: "Apartado de edición", exact: true }).selectOption("requirements");
   await form.getByRole("spinbutton", { name: /Experiencia mínima/ }).fill("24");
   await form.getByRole("button", { name: /^Añadir idioma/ }).click();
   await form.getByRole("combobox", { name: "Idioma 1", exact: true }).fill("inglés");
   await form.getByRole("option", { name: "inglés", exact: true }).click();
   await form.getByRole("combobox", { name: "Nivel del idioma 1", exact: true }).click();
   await form.getByRole("option", { name: "B2 · Intermedio alto", exact: true }).click();
-  await form.getByRole("button", { name: "Condiciones", exact: true }).click();
+  await form.getByRole("combobox", { name: "Apartado de edición", exact: true }).selectOption("conditions");
   expect(errors).toEqual([]);
   await form.getByRole("textbox", { name: "Salario mensual publicado en COP", exact: true }).fill("3200000");
   await expect(form.getByRole("textbox", { name: "Salario mensual publicado en COP", exact: true })).toHaveValue("3.200.000");
@@ -61,7 +61,7 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ex
   await dialog.getByRole("button", { name: "Editar contenido", exact: true }).click();
   await form.getByRole("textbox", { name: "Funciones y descripción", exact: true }).fill("Preparar reportes de seguimiento y contrastar los registros del equipo. Documentar diferencias y comunicar resultados.");
   await form.getByRole("textbox", { name: "Requisitos de la oferta", exact: true }).fill("Manejo de SQL, Python y Excel para revisar los registros y preparar reportes del equipo.");
-  await form.getByRole("button", { name: "Condiciones", exact: true }).click();
+  await form.getByRole("combobox", { name: "Apartado de edición", exact: true }).selectOption("conditions");
   await expect(form.getByRole("textbox", { name: "Salario mensual publicado en COP", exact: true })).toHaveValue("3.200.000");
   await expect(form.getByRole("combobox", { name: "Modalidad", exact: true })).toHaveValue("hybrid");
   await form.getByRole("textbox", { name: "Qué información contrastaste en la oferta original", exact: true }).fill("Se completaron las funciones y requisitos desde el portal original.");
@@ -84,12 +84,12 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ex
   await page.getByRole("button", { name: "Ver ficha", exact: true }).click();
   await dialog.getByRole("button", { name: "Contenido y edición", exact: true }).click();
   await dialog.getByRole("button", { name: "Editar contenido", exact: true }).click();
-  await form.getByRole("button", { name: "Requisitos", exact: true }).click();
+  await form.getByRole("combobox", { name: "Apartado de edición", exact: true }).selectOption("requirements");
   await expect(form.getByRole("spinbutton", { name: /Experiencia mínima/ })).toHaveValue("24");
   await expect(form.getByRole("combobox", { name: "Idioma 1", exact: true })).toHaveValue("inglés");
   await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
   for (const name of ["Contenido", "Condiciones", "Requisitos"]) {
-    await form.getByRole("button", { name, exact: true }).click();
+    await form.getByRole("combobox", { name: "Apartado de edición", exact: true }).selectOption(({ Contenido: "content", Condiciones: "conditions", Requisitos: "requirements" })[name]);
     expect(await dialog.evaluate(node => node.scrollWidth - node.clientWidth), name).toBeLessThanOrEqual(1);
   }
   expect(errors).toEqual([]);

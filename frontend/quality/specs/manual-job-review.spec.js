@@ -58,7 +58,7 @@ test("saved contract updates an already open vacancy in another tab", async ({ c
   const dialog = editor.getByRole("dialog", { name: "Revisar vacante", exact: true });
   await dialog.getByRole("button", { name: "Contenido y edición", exact: true }).click();
   await dialog.getByRole("button", { name: "Editar contenido", exact: true }).click();
-  await dialog.getByRole("button", { name: "Condiciones", exact: true }).click();
+  await dialog.getByRole("combobox", { name: "Apartado de edición", exact: true }).selectOption("conditions");
   await dialog.getByRole("combobox", { name: /Tipo de contrato/ }).selectOption("fixed_term");
   await dialog.getByRole("textbox", { name: "Qué información contrastaste en la oferta original", exact: true }).fill("Contrato a término fijo contrastado en la fuente original.");
   await dialog.getByRole("button", { name: "Guardar contenido", exact: true }).click();

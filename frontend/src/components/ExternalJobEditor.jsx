@@ -33,7 +33,7 @@ export function ExternalJobEditor({ data, busy, setBusy, onError, onSaved }) {
   }
   return <form className="external-job-editor" onSubmit={submit}>
     <p>Completa los datos que figuran en la oferta original. Puedes guardar cada apartado y volver a editarlo, aunque falte información en los demás.</p>
-    <nav aria-label="Apartados de edición">{[["content", "Contenido"], ["conditions", "Condiciones"], ["requirements", "Requisitos"]].map(([key, title]) => <button type="button" disabled={busy} aria-pressed={section === key} key={key} onClick={() => setSection(key)}>{title}</button>)}</nav>
+    <div className="external-editor-section-picker"><label>Apartado de edición<select className="field-control" disabled={busy} value={section} onChange={event => setSection(event.target.value)}><option value="content">Contenido</option><option value="conditions">Condiciones</option><option value="requirements">Requisitos</option></select></label><small>Puedes cambiar de apartado sin perder lo que escribiste. Guarda todos los cambios con Guardar contenido.</small></div>
     <fieldset disabled={busy}>
       {section === "content" && <>
         <label>Cargo publicado<input className="field-control" maxLength={180} value={values.title} onChange={e => change("title", e.target.value)} /></label>
@@ -66,7 +66,7 @@ export function ExternalJobEditor({ data, busy, setBusy, onError, onSaved }) {
         <div className="external-editor-grid">
           <label>Experiencia mínima (meses)<input type="number" className="field-control" min={0} max={600} value={q.experience_months ?? (q.experience_years == null ? "" : q.experience_years * 12)} onChange={e => quality("experience_months", number(e.target.value))} /><small>0 indica sin experiencia; 12 meses equivalen a un año. Vacío significa sin informar.</small></label>
           <label>Nivel del cargo<select className="field-control" value={q.seniority || ""} onChange={e => quality("seniority", e.target.value)}>{Object.entries({ "": "Sin especificar", entry: "Inicial", junior: "Junior", mid: "Intermedio", senior: "Senior", lead: "Líder" }).map(([key, text]) => <option key={key} value={key}>{text}</option>)}</select></label>
-          <label>Formación exigida en la fuente<select className="field-control" value={values.required_education_level || ""} onChange={e => change("required_education_level", e.target.value || null)}><option value="">Sin requisito estructurado</option>{Object.entries(EDUCATION_LEVELS).map(([key, title]) => <option key={key} value={key}>{title}</option>)}</select></label>
+          <label>Formación mínima exigida en la fuente<select className="field-control" value={values.required_education_level || ""} onChange={e => change("required_education_level", e.target.value || null)}><option value="">Sin requisito estructurado</option>{Object.entries(EDUCATION_LEVELS).map(([key, title]) => <option key={key} value={key}>{title}</option>)}</select><small>Es el nivel mínimo solicitado; también pueden cumplirlo niveles superiores. Las áreas de estudio se revisan por separado.</small></label>
           <label>Áreas de estudio, separadas por comas<input className="field-control" value={studyText} onChange={e => { setStudyText(e.target.value); change("required_study_fields", split(e.target.value)); }} /></label>
         </div>
         <label className="external-editor-check"><input type="checkbox" checked={!!q.education_accepts_in_progress} onChange={e => quality("education_accepts_in_progress", e.target.checked)} />La oferta acepta estudios en curso</label>
