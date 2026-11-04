@@ -1,3 +1,4 @@
+import { RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { externalJobFields, externalJobChanges } from "../utils/externalJobEditor.js";
@@ -59,7 +60,7 @@ export function ExternalJobEditor({ data, busy, setBusy, onError, onSaved }) {
         </div>
         {values.modality === "remote" && <RemoteScopeEditor value={q.remote_scope} legacyLocation={values.location} onChange={v => quality("remote_scope", v)} />}
         <WorkScheduleEditor details={q} onChange={v => change("quality_details", v)} />
-        <button type="button" className="button-secondary button-sm" onClick={() => change("quality_details", { ...q, schedule: "", work_schedule: null, weekly_hours: null })}>Dejar horario sin informar</button>
+        <div className="schedule-clear-row"><div><strong>Horario opcional</strong><small>{q.schedule || q.work_schedule ? "Puedes retirarlo si la oferta original no lo especifica." : "No hay un horario guardado en esta oferta."}</small></div><button type="button" className="schedule-clear-button" aria-label="Dejar horario sin informar" disabled={!q.schedule && !q.work_schedule && q.weekly_hours == null} onClick={() => change("quality_details", { ...q, schedule: "", work_schedule: null, weekly_hours: null })}><RotateCcw size={16} />Quitar horario</button></div>
       </>}
       {section === "requirements" && <>
         <div className="external-editor-grid">

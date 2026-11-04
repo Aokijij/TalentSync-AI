@@ -52,7 +52,7 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ad
   const dialog = page.getByRole("dialog", { name: "Revisar vacante", exact: true });
   await expect(dialog.getByText(job.requirements, { exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Publicación", exact: true }).click();
-  await dialog.getByRole("combobox", { name: "Estado en TalentSync", exact: true }).selectOption("paused");
+  await dialog.getByRole("radio", { name: "Pausada", exact: true }).check();
   await dialog.getByRole("textbox", { name: "Motivo de la decisión", exact: true }).fill("Revisar las condiciones antes de mostrar la oferta.");
   await dialog.getByRole("button", { name: "Guardar estado", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("No se pudo guardar");

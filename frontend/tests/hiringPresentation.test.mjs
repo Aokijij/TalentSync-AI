@@ -297,8 +297,9 @@ test("extracted employment months remain visible and education suggestions allow
   assert.match(html, /jul/);
   assert.match(html, /nov/);
   const editor = renderToStaticMarkup(createElement(TextItemsEditor, { label: "Carreras", value: [], onChange() {}, suggestions: ["Contaduría Pública", "Gestión de Proyectos"] }));
-  assert.match(editor, /<datalist/);
-  assert.match(editor, /value="Gestión de Proyectos"/);
+  assert.match(editor, /role="combobox"/);
+  assert.match(editor, /aria-autocomplete="list"/);
+  assert.ok(!editor.includes("<datalist"));
   assert.ok(!editor.includes("readonly"));
 });
 

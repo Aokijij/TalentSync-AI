@@ -32,6 +32,7 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ex
   await page.getByRole("navigation", { name: "Recursos administrativos", exact: true }).getByRole("button", { name: /Vacantes/ }).click();
   await page.getByRole("button", { name: "Ver ficha", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Revisar vacante", exact: true });
+  await expect(dialog.getByRole("link", { name: /Ver vacante completa/ })).toHaveCount(0);
   await dialog.getByRole("button", { name: "Contenido y edición", exact: true }).click();
   await dialog.getByRole("button", { name: "Editar contenido", exact: true }).click();
   const form = dialog.locator(".external-job-editor");
@@ -70,11 +71,13 @@ for (const theme of ["light", "dark"]) for (const width of [360, 1280]) test(`Ex
   await dialog.getByRole("button", { name: "Comprobar fuente", exact: true }).click();
   await expect(dialog.getByText("Cumple los controles", { exact: true })).toBeVisible();
   for (const [status, button] of [["active", "Publicar vacante"], ["paused", "Guardar estado"], ["active", "Publicar vacante"]]) {
-    await dialog.getByRole("combobox", { name: "Estado en TalentSync", exact: true }).selectOption(status);
+    await dialog.getByRole("radio", { name: ({ active: "Publicada", paused: "Pausada", draft: "Borrador", closed: "Cerrada" })[status], exact: true }).check();
     await dialog.getByRole("textbox", { name: "Motivo de la decisión", exact: true }).fill("Revisión de contenido y condiciones completada en el portal original.");
     await dialog.getByRole("button", { name: button, exact: true }).click();
     await expect(dialog.getByRole("status")).toContainText("Estado de la vacante actualizado");
     await expect(dialog.getByRole("textbox", { name: "Motivo de la decisión", exact: true })).toHaveValue("");
+    if (status === "active") { await expect(dialog.getByRole("link", { name: /Ver vacante completa/ })).toHaveAttribute("href", "/vacantes/41"); }
+    else { await expect(dialog.getByRole("link", { name: /Ver vacante completa/ })).toHaveCount(0); }
   }
   expect(writes.map(row => row.body.revision)).toEqual([0, 1, 2, 3, 4]);
   await page.getByRole("button", { name: "Cerrar ventana", exact: true }).click();
