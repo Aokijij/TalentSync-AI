@@ -5,6 +5,7 @@ import { api, getApiErrorMessage } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { ProfessionPicker } from "../components/ProfessionPicker.jsx";
 import { RegistrationConsent, registrationLegalPayload } from "../components/RegistrationConsent.jsx";
+import { ConsentChoice } from "../components/ConsentChoice.jsx";
 import "../styles/search-settings.css";
 
 export function SocialRegistrationPage() {
@@ -34,7 +35,7 @@ export function SocialRegistrationPage() {
     <form onSubmit={submit}><fieldset disabled={busy}>
       <label>Tu nombre<input aria-label="Tu nombre" className="field-control" required minLength={2} maxLength={120} autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Escribe tu nombre y apellidos" aria-describedby="social-name-help" /><small id="social-name-help">Usa el nombre con el que quieres presentarte profesionalmente; revisa si tu proveedor envió un alias.</small></label>
       <ProfessionPicker value={profession} onChange={setProfession} required />
-      <label className="social-confirm-identity"><input type="checkbox" required checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /><span>Confirmo que este nombre y esta profesión corresponden a mi perfil.</span></label>
+      <ConsentChoice title="Confirmo que este nombre y esta profesión corresponden a mi perfil." required checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
     </fieldset><RegistrationConsent values={legal} onChange={(key, value) => { setLegal((current) => ({ ...current, [key]: value })); setLegalError(""); }} error={legalError} disabled={busy} />{error && <p role="alert" className="welcome-error">{error}</p>}
     <footer><button type="submit" disabled={busy} className="button-primary">{busy ? "Preparando tu cuenta…" : "Confirmar y continuar"}<ArrowRight size={17} /></button><button type="button" className="button-secondary" disabled={busy} onClick={async () => { try { await logout(); navigate("/login", { replace: true }); } catch (failure) { setError(getApiErrorMessage(failure)); } }}><LogOut size={16} />Salir</button></footer></form>
   </section></main>;

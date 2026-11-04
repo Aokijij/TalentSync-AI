@@ -9,19 +9,19 @@
 .welcome-guide-link p{font-size:.82rem;color:var(--muted);margin-top:.25rem}
 .welcome-guide-link h2{font-size:.95rem;font-weight:650}
 .social-registration{display:grid;place-items:center;min-height:100dvh;background:var(--canvas);padding:2rem 1rem}
-.social-registration-card{width:100%;max-width:620px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:2rem;box-shadow:0 20px 70px #00000012}
+.social-registration-card{width:100%;min-width:0;max-width:620px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:2rem;box-shadow:0 20px 70px #00000012;overflow-wrap:anywhere}
 .social-registration-icon{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface));margin-bottom:1.25rem}
 .social-registration h1{font-size:1.8rem;font-weight:750;margin-top:.5rem;line-height:1.25}
 .social-registration header>p:last-child{font-size:.9rem;color:var(--muted);margin-top:.6rem;line-height:1.7}
 .social-verified-email{display:flex;align-items:center;gap:.8rem;padding:1rem;margin-block:1.5rem;border:1px solid var(--line);border-radius:12px;background:var(--surface-subtle)}
 .social-verified-email>svg{color:var(--success);flex:none}.social-verified-email strong,.social-verified-email span>span{display:block;overflow-wrap:anywhere;font-size:.8rem;line-height:1.7}
 .social-verified-email span>span{color:var(--muted)}
+.social-verified-email>span{min-width:0}
 .social-registration fieldset{display:grid;gap:1.25rem;min-width:0}
 .social-registration label{display:block;font-size:.85rem;font-weight:600}.social-registration .field-control{margin-top:.5rem}
 .social-registration small{display:block;font-size:.75rem;color:var(--muted);line-height:1.7;margin-top:.4rem;font-weight:400}
-.social-registration .social-confirm-identity{display:flex;align-items:flex-start;gap:.7rem;line-height:1.65;font-size:.8rem;padding:1rem;background:var(--surface-subtle);border:1px solid var(--line);border-radius:10px}
-.social-confirm-identity input{margin-top:.25rem;flex:none}
 .social-registration footer{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--line)}
 .social-registration footer>.button-primary{flex:1}
+.social-registration footer>button{min-width:0;white-space:normal;line-height:1.5}
 @media(max-width:1000px){.search-settings .welcome-layout{grid-template-columns:1fr}}
 @media(max-width:600px){.work-preference-fields{grid-template-columns:1fr}.search-settings .welcome-actions>*{flex:1 1 100%}.social-registration-card{padding:1.25rem}.social-registration footer>*{flex:1 1 100%}}
