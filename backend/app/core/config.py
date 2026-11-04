@@ -119,6 +119,17 @@ class Settings(BaseSettings):
     model_maintenance_enabled: bool = False
     match_model_path: str = ""
     career_writer_model: str = ""
+    career_writer_provider: Literal["local", "groq", "disabled"] = "local"
+    groq_api_key: SecretStr | None = None
+    groq_model: Literal["openai/gpt-oss-20b", "openai/gpt-oss-120b"] = "openai/gpt-oss-20b"
+    groq_free_plan_confirmed: bool = False
+    groq_zero_data_retention_confirmed: bool = False
+    groq_timeout_seconds: float = Field(default=25, ge=5, le=60)
+    groq_daily_requests: int = Field(default=500, ge=1, le=500)
+    groq_minute_requests: int = Field(default=20, ge=1, le=20)
+    groq_daily_tokens: int = Field(default=180000, ge=1000, le=180000)
+    groq_minute_tokens: int = Field(default=7500, ge=1000, le=7500)
+    groq_user_daily_requests: int = Field(default=20, ge=1, le=50)
     career_writer_executable: str = ""
     career_writer_timeout_seconds: float = Field(default=90, ge=10, le=120)
     match_model_cpu_threads: int = Field(default=2, ge=1, le=8)

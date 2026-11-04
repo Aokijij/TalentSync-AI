@@ -17,6 +17,7 @@ from app.application.use_cases.integration_observations import (
 from app.core.config import settings
 from app.domain.entities.enums import UserRole
 from app.domain.services.integration_readiness import integration_readiness
+from app.infrastructure.nlp.groq_writer import writer_status
 
 router = APIRouter()
 candidate = require_roles(UserRole.CANDIDATE)
@@ -48,6 +49,7 @@ def status(user=Depends(admin), db=Depends(get_unit_of_work), nlp=Depends(get_te
     result = cases.model_status(db, nlp)
     result["integrations"] = integration_readiness(
         neural_active=getattr(nlp, "match_method", "").startswith("local-sentence-transformer:"),
+        writing_service=writer_status(settings),
         local_mail=settings.local_mail_enabled, smtp=settings.smtp_enabled, gmail=settings.gmail_mail_enabled,
         calendar=calendar.configured, mail_events=bool(settings.resend_enabled and settings.resend_webhook_secret),
         resend=settings.resend_enabled, learn=bool(settings.learn_enabled and settings.learn_tenant_id and settings.learn_client_id and settings.learn_client_secret), github_projects=settings.github_project_analysis_enabled,

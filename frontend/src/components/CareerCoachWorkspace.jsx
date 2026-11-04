@@ -13,6 +13,7 @@ import { experiencePeriod } from "../utils/experienceDates.js";
 import { skillName } from "../utils/skillNames.js";
 import { browseRadarSkills } from "../utils/radarSkills.js";
 import { CareerCoach } from "./CareerCoach.jsx";
+import { WritingConsent } from "./WritingConsent.jsx";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { formatLearningHours } from "../utils/learningPresentation.js";
 import "../styles/career-coach.css";
@@ -32,6 +33,7 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
   const [skillQuery, setSkillQuery] = useState(""), [skillPage, setSkillPage] = useState(1);
   const [selectedSkill, setSelectedSkill] = useState("");
   const [focusWriting, setFocusWriting] = useState(false);
+  const [writingConsent, setWritingConsent] = useState(false);
   const reviewRef = useRef(null);
   const disabled = editing || busy;
 
@@ -49,6 +51,7 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
   }, [tab, profile.preferred_sector, radar, externalRadar]);
   useEffect(() => { if (externalRadar !== undefined) { setRadar(externalRadar); setSkillPage(1); setSkillQuery(""); setSelectedSkill(""); } }, [externalRadar]);
   useEffect(() => { if (proposalId) reviewRef.current?.focus(); }, [proposalId, data]);
+  useEffect(() => { setWritingConsent(false); }, [data?.source_version, index]);
 
   function startWriting(experienceIndex) {
     setIndex(experienceIndex ?? 0); setResult(""); setProposalId(""); setTab("writing"); setError(""); setMessage(""); setFocusWriting(true);
@@ -101,12 +104,14 @@ export function CareerCoachWorkspace({ profile, editing, onProfileChanged, onEdi
           <p className="coach-help">La propuesta es un borrador generado a partir de tus datos. Revísala antes de usarla.</p>
           {!data && <p role="status">Cargando tus experiencias…</p>}
           {data && !data.experiences.length && <div className="coach-empty"><PencilLine size={28} /><h4>Empieza con una experiencia</h4><p>Puede ser un empleo, una práctica o una colaboración real. Escribe una frase sobre lo que hiciste y te ayudaremos a presentarla.</p><button type="button" className="button-primary" onClick={() => onEdit("profile-experiences")}>Añadir mi experiencia<ArrowRight size={15} /></button></div>}
-          {!!data?.experiences.length && <form className="coach-form" onSubmit={(event) => { event.preventDefault(); act(async () => { const { data: response } = await api.post("/profiles/me/coach/writing/generate", { experience_index: Number(index), source_version: data.source_version, style, result }, { timeout: 100000 }); setProposalId(response.id); setMessage("Revisa la propuesta. Tu perfil sigue igual hasta que decidas usarla."); }); }}>
+          {!!data?.experiences.length && <form className="coach-form" onSubmit={(event) => { event.preventDefault(); act(async () => { const { data: response } = await api.post("/profiles/me/coach/writing/generate", { experience_index: Number(index), source_version: data.source_version, style, result, external_ai_consent: writingConsent }, { timeout: 100000, __skipRetry: true }); setProposalId(response.id); setMessage("Revisa la propuesta. Tu perfil sigue igual hasta que decidas usarla."); }); }}>
             <label>¿Qué experiencia quieres mejorar?<select id="coach-experience" className="field-control" value={index} onChange={(event) => { setIndex(Number(event.target.value)); setResult(""); setProposalId(""); }}>{data.experiences.map((row, i) => <option key={i} value={i}>{row.role || "Cargo por completar"} · {row.company || "Organización"}</option>)}</select></label>
             <blockquote><strong>Lo que escribiste</strong>{experience?.description || "Añade una frase sobre tus responsabilidades para poder generar una propuesta."}</blockquote>
             <fieldset className="coach-style-picker"><legend>¿Cómo quieres presentarlo?</legend>{[["paragraph", "Una descripción completa"], ["bullets", "Una lista de acciones"]].map(([value, label]) => <label key={value}><input type="radio" name="coach-writing-style" value={value} checked={style === value} onChange={() => setStyle(value)} />{label}</label>)}</fieldset>
             <details className="coach-optional"><summary>¿Quieres añadir un resultado? Es opcional</summary><label>Un resultado real que quieras incluir<textarea className="field-control" rows={2} maxLength={700} value={result} onChange={(event) => setResult(event.target.value)} placeholder="Describe el resultado real de tu trabajo." /></label><p>No hace falta una cifra. También sirve una entrega o un cambio concreto.</p></details>
-            <button type="submit" className="button-primary" disabled={disabled || !experience?.description?.trim()}><Sparkles size={16} />{busy ? "Preparando…" : "Generar una propuesta con IA"}</button>
+            <WritingConsent service={data?.writing_service} checked={writingConsent} onChange={setWritingConsent} disabled={disabled} />
+            {data?.writing_service?.available === false && <p role="status" className="coach-help">La redacción asistida no está disponible en este momento. Puedes seguir editando tu texto.</p>}
+            <button type="submit" className="button-primary" disabled={disabled || !experience?.description?.trim() || data?.writing_service?.available === false || data?.writing_service?.external && !writingConsent}><Sparkles size={16} />{busy ? "Preparando…" : "Generar una propuesta con IA"}</button>
             {!experience?.description?.trim() && <button className="button-secondary" type="button" onClick={() => onEdit(`experience-description-${index}`)}>Escribir mi experiencia primero</button>}
           </form>}
           {proposal && writingCard(proposal, true)}

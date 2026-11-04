@@ -32,3 +32,4 @@ class SummaryGeneration(BaseModel):
     model_config = ConfigDict(extra="forbid")
     tone: Literal["professional", "concise"] = "professional"
     profile: SummaryProfile | None = None
+    external_ai_consent: bool = False

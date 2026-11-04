@@ -43,6 +43,12 @@ from app.domain.services.resume_filename import resume_disposition, resume_filen
 router = APIRouter()
 
 
+@router.get("/me/writing-service")
+def writing_service(user=Depends(require_roles(UserRole.CANDIDATE))):
+    from app.infrastructure.nlp.groq_writer import writer_status
+    return writer_status(settings)
+
+
 @router.post("/me/summary/generate")
 def generate_summary(payload: SummaryGeneration, user=Depends(require_roles(UserRole.CANDIDATE)), writer=Depends(get_career_writer), nlp=Depends(get_text_analysis)):
     return professional_summary.generate(user, payload.model_dump(), writer=writer, nlp=nlp)
@@ -68,7 +74,8 @@ def market_skill(payload: MarketSkill, user=Depends(require_roles(UserRole.CANDI
 
 @router.get("/me/coach")
 def coach_overview(user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
-    return coach.overview(db, user)
+    from app.infrastructure.nlp.groq_writer import writer_status
+    return {**coach.overview(db, user), "writing_service": writer_status(settings)}
 
 
 @router.post("/me/coach/writing")

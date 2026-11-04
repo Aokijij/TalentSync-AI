@@ -787,6 +787,19 @@ class ModelAuditRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class AIWriterUsage(Base):
+    """Shared reservations only; never stores prompts, output or credentials."""
+    __tablename__ = "ai_writer_usage"
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    requests: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    minute: Mapped[str] = mapped_column(String(12), default="", nullable=False)
+    minute_requests: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    minute_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    __mapper_args__ = {"version_id_col": version}
+
+
 class LearningSourceSnapshot(Base):
     __tablename__ = "learning_source_snapshots"
     id: Mapped[str] = mapped_column(String(100), primary_key=True)

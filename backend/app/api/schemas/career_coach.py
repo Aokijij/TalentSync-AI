@@ -31,6 +31,7 @@ class WritingGeneration(BaseModel):
     source_version: str = Field(min_length=64, max_length=64)
     style: Literal["paragraph", "bullets"] = "paragraph"
     result: str = Field(default="", max_length=700)
+    external_ai_consent: bool = False
 
 
 class ResumeVersionCreate(BaseModel):
