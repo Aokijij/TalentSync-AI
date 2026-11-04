@@ -15,9 +15,7 @@ import local
 
 
 def node_executable():
-    installed = shutil.which("node")
-    bundled = Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe"
-    return installed or (str(bundled) if bundled.is_file() else None)
+    return shutil.which("node")
 
 
 def migration_head(root):
@@ -64,7 +62,7 @@ def diagnose():
         checks.append({"name": name, "passed": bool(passed), "required": required, "detail": detail})
 
     add("python", local.PYTHON.is_file(), "Entorno Python del proyecto")
-    add("node", node_executable() is not None, "Node en PATH o runtime local conocido")
+    add("node", node_executable() is not None, "Node disponible en PATH")
     frontend = local.ROOT / "frontend"
     add("frontend_dependencies", all((frontend / "node_modules" / item).is_file() for item in ["eslint/bin/eslint.js", "vite/bin/vite.js"]), "Dependencias frontend instaladas")
     env = None
