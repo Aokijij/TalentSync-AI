@@ -28,6 +28,7 @@ import { ApplicationPreparation } from "../components/ApplicationPreparation.jsx
 import { OfferFeedback } from "../components/OfferFeedback.jsx";
 import { CONTRACTS, salaryLabel } from "../utils/offerQuality.js";
 import { subscribeVacancyChanges } from "../utils/vacancyEvents.js";
+import { jobStateLabels } from "../utils/companyJobs.js";
 import { loadVacancyData } from "../utils/vacancyRequests.js";
 
 import { api, apiFileUrl, getApiErrorMessage } from "../api/client.js";
@@ -120,7 +121,8 @@ function JobDetailContent({ jobId }) {
       </Link>
       {isOwnCompanyJob && ["owner", "recruiter"].includes(companyRole) && <Link className="button-secondary" to={`/empresa/calidad?vacante=${job.id}`}><PencilLine size={16} />Editar vacante</Link>}</div>
       {user?.role === "admin" && <AdminVacancyActions job={job} onChanged={setJob} />}
-      <section className="surface-card p-6">
+      <section className="surface-card job-detail-hero p-6">
+        {job.source_kind !== "external" && job.status !== "active" && <div className="job-preview-ribbon" role="status"><BriefcaseBusiness size={18} /><div><strong>{jobStateLabels[job.status] || job.status}{job.status === "draft" ? " · Vista previa del equipo" : ""}</strong><p>{job.status === "draft" ? "Esta oferta todavía no está en el catálogo ni recibe postulaciones. Puedes revisarla y editarla antes de publicar." : job.status === "paused" ? "La publicación está pausada. Los procesos existentes conservan su seguimiento." : "Esta vacante no recibe nuevas postulaciones. Se conserva el historial del proceso."}</p></div></div>}
         {matchError && <div className="vacancy-match-notice" role="status"><p>{matchError}</p><button type="button" onClick={async () => { setMatchError(""); try { setMatch((await api.post(`/jobs/${jobId}/match`, {}, { __quiet: true })).data); } catch (failure) { setMatchError(getApiErrorMessage(failure, "La compatibilidad aún no está disponible.")); } }}>Volver a calcular</button></div>}
         <div className={match ? "job-detail-hero-grid grid items-start gap-6" : "block"}>
           <div>
@@ -138,7 +140,7 @@ function JobDetailContent({ jobId }) {
                 Oferta disponible en {externalPortal(job)}
               </p>
             ) : null}
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[var(--muted)]">
+            <div className="job-detail-meta mt-4 flex flex-wrap gap-4 text-sm text-[var(--muted)]">
               <span className="flex items-center gap-1">
                 <MapPin size={16} />
                 {[job.location, job.department].filter(Boolean).join(", ") ||
@@ -208,8 +210,8 @@ function JobDetailContent({ jobId }) {
               ) : null}
             </div>
           </div> : null}
-          <div className="rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface-subtle)] p-5">
-            <div className="flex items-start gap-4">
+          <div className="job-company-summary rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface-subtle)] p-5">
+            <div className="job-company-summary-head flex items-start gap-4">
               {job.company_logo_url ? <img src={apiFileUrl(job.company_logo_url)} alt={`Logo de ${job.company_name}`} className="h-14 w-14 rounded-xl border border-[var(--line)] bg-white object-contain p-1" /> : <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Building2 size={26} /></span>}
               <div className="min-w-0 flex-1">
                 <p className="section-kicker">Conoce a la empresa</p>
