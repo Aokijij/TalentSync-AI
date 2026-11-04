@@ -40,6 +40,7 @@ El candidato puede entender sus oportunidades y prepararse para ellas. La empres
 
 - **Un perfil con trayectoria.** Experiencia, formación, habilidades, idiomas, certificaciones y evidencias en un mismo lugar.
 - **Hoja de vida con control.** Importación de PDF con revisión de los datos extraídos, versiones guardadas, personalización y exportación.
+- **Redacción asistida opcional.** Propuestas para experiencias y resumen profesional con autorización previa para compartir los fragmentos necesarios con Groq. Cada borrador se revisa antes de aplicarlo y conserva como referencia los hechos aportados.
 - **Búsqueda con contexto.** Filtros de ubicación, modalidad, sector, contrato y salario; comparación de ofertas y recomendaciones explicadas.
 - **Postulaciones con seguimiento.** Preparación de la candidatura, respuestas de preselección, etapas, compromisos de respuesta e historial.
 - **Preparación y aprendizaje.** Orientación profesional, cursos, planes y retos relacionados con habilidades que se quieren reforzar.

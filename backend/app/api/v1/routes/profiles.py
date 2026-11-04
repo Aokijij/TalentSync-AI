@@ -10,6 +10,7 @@ from app.api.deps import (
     get_resume_reader,
     get_text_analysis,
     get_unit_of_work,
+    get_writing_service,
     require_roles,
 )
 from app.api.schemas.career_coach import (
@@ -43,6 +44,11 @@ from app.domain.services.resume_filename import resume_disposition, resume_filen
 router = APIRouter()
 
 
+@router.get("/me/writing-service")
+def writing_service(user=Depends(require_roles(UserRole.CANDIDATE)), service=Depends(get_writing_service)):
+    return service
+
+
 @router.post("/me/summary/generate")
 def generate_summary(payload: SummaryGeneration, user=Depends(require_roles(UserRole.CANDIDATE)), writer=Depends(get_career_writer), nlp=Depends(get_text_analysis)):
     return professional_summary.generate(user, payload.model_dump(), writer=writer, nlp=nlp)
@@ -67,8 +73,8 @@ def market_skill(payload: MarketSkill, user=Depends(require_roles(UserRole.CANDI
 
 
 @router.get("/me/coach")
-def coach_overview(user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work)):
-    return coach.overview(db, user)
+def coach_overview(user=Depends(require_roles(UserRole.CANDIDATE)), db=Depends(get_unit_of_work), service=Depends(get_writing_service)):
+    return {**coach.overview(db, user), "writing_service": service}
 
 
 @router.post("/me/coach/writing")

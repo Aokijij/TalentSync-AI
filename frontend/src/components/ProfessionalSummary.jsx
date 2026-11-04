@@ -3,6 +3,7 @@ import { Check, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { summaryInput } from "../utils/professionalSummary.js";
 import { CoachDialog } from "./CoachDialog.jsx";
+import { WritingConsent } from "./WritingConsent.jsx";
 
 export function ProfessionalSummary({ profile, editing, onChange, onEdit }) {
   const [generating, setGenerating] = useState(false);
@@ -17,13 +18,20 @@ export function ProfessionalSummary({ profile, editing, onChange, onEdit }) {
 function SummaryGenerationDialog({ profile, onClose, onApply }) {
   const [tone, setTone] = useState("professional"), [proposal, setProposal] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState(""), [source, setSource] = useState("");
   const request = useRef(null);
+  const [service, setService] = useState(null), [consent, setConsent] = useState(false);
   useEffect(() => () => request.current?.abort(), []);
+  useEffect(() => {
+    let active = true;
+    api.get("/profiles/me/writing-service", { __quiet: true }).then(({ data }) => { if (active) setService(data); })
+      .catch(() => { if (active) setService({ available: false, summary_available: false }); });
+    return () => { active = false; };
+  }, []);
   const data = summaryInput(profile), currentSource = JSON.stringify(data), outdated = source && source !== currentSource;
   async function generate() {
     request.current?.abort(); const controller = new AbortController(); request.current = controller;
     setBusy(true); setError("");
     try {
-      const response = await api.post("/profiles/me/summary/generate", { tone, profile: data }, { signal: controller.signal, timeout: 120000, __skipRetry: true, __quiet: true });
+      const response = await api.post("/profiles/me/summary/generate", { tone, profile: data, external_ai_consent: consent }, { signal: controller.signal, timeout: 120000, __skipRetry: true, __quiet: true });
       if (!controller.signal.aborted) { setProposal(response.data.text); setSource(currentSource); }
     } catch (failure) { if (!controller.signal.aborted) setError(getApiErrorMessage(failure, "No pudimos generar la propuesta. Tu resumen se conserva.")); }
     finally { if (!controller.signal.aborted) setBusy(false); }
@@ -31,7 +39,9 @@ function SummaryGenerationDialog({ profile, onClose, onApply }) {
   return <CoachDialog open title="Un nuevo resumen para tu perfil" className="summary-generation-dialog" onClose={onClose}><div className="summary-generation-body">
     <p className="summary-generation-intro">Prepararemos un borrador con tu profesión, funciones, formación y habilidades. Revisa y edita el texto antes de usarlo; no se añaden logros ni estudios que no hayas registrado.</p>
     <fieldset className="summary-tone-picker" disabled={busy}><legend>¿Cómo quieres presentarte?</legend>{[["professional", "Completo", "Un párrafo con tus fortalezas y trayectoria"], ["concise", "Breve", "Una presentación directa y compacta"]].map(([value, title, description]) => <label key={value} className={tone === value ? "selected" : ""}><input type="radio" name="summary-tone" checked={tone === value} onChange={() => setTone(value)} /><span><strong>{title}</strong><small>{description}</small></span></label>)}</fieldset>
-    <button type="button" className="button-primary summary-generate-action" disabled={busy} onClick={generate}>{busy ? <LoaderCircle size={17} className="animate-spin" /> : proposal ? <RefreshCw size={17} /> : <Sparkles size={17} />}{busy ? "Preparando tu propuesta…" : proposal ? "Generar otra versión" : "Generar propuesta"}</button>
+    <WritingConsent service={service} checked={consent} onChange={setConsent} disabled={busy} summary />
+    {service?.summary_available === false && <p role="status">No pudimos habilitar la redacción asistida. Puedes preparar tu resumen directamente en el perfil.</p>}
+    <button type="button" className="button-primary summary-generate-action" disabled={busy || !service || service.summary_available === false || service.external && !consent} onClick={generate}>{busy ? <LoaderCircle size={17} className="animate-spin" /> : proposal ? <RefreshCw size={17} /> : <Sparkles size={17} />}{busy ? "Preparando tu propuesta…" : proposal ? "Generar otra versión" : "Generar propuesta"}</button>
     {busy && <p role="status" className="summary-generation-status">Estamos organizando la información de tu perfil. Tu resumen actual se conserva.</p>}
     {error && <p role="alert" className="summary-generation-error">{error}</p>}
     {proposal && <label className="professional-summary-field summary-proposal">Propuesta editable<textarea className="field-control" aria-label="Propuesta de resumen profesional" value={proposal} rows={7} maxLength={3000} disabled={busy} onChange={(event) => setProposal(event.target.value)} /><span><small>Revisa que cada frase refleje tu experiencia real.</small><small>{proposal.length}/3000</small></span></label>}

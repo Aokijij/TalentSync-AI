@@ -116,9 +116,16 @@ def generate_writing(db, user, payload, *, writer=None):
     if not str(record.get("description") or "").strip():
         raise UseCaseError(status_code=422, detail="Escribe primero una frase sobre lo que hiciste en esta experiencia")
     if writer is None:
-        raise UseCaseError(status_code=503, detail="La IA local todavía no está preparada. No se conectará una API de pago")
+        raise UseCaseError(status_code=503, detail="La redacción asistida todavía no está disponible. Puedes editar tu texto directamente")
+    outbound = record
+    if getattr(writer, "external", False):
+        if not payload.get("external_ai_consent"):
+            raise UseCaseError(422, "Confirma el envío de este texto a Groq antes de generar la propuesta")
+        from app.domain.services.writing_privacy import private_writing_terms
+        outbound = {**record, "_owner_id": user.id, "_private_terms": private_writing_terms(user, profile)}
     try:
-        generated = validate_generated_text(writer.generate(record, style=payload["style"], result=payload["result"]), record, payload["result"])
+        generated = validate_generated_text(writer.generate(outbound, style=payload["style"], result=payload["result"]), record, payload["result"])
+        generated["method"] = getattr(writer, "method", "local-ai")
     except ValueError as error:
         raise UseCaseError(status_code=422, detail=str(error)) from None
     row, data = state(db, user, locked=True)
@@ -126,6 +133,8 @@ def generate_writing(db, user, payload, *, writer=None):
         raise UseCaseError(status_code=409, detail="Editaste el perfil mientras se preparaba la propuesta. Genera otra con tu información actualizada")
     proposal = {"id": uuid4().hex, "index": index, "record": record, "before": record.get("description") or "", "after": generated.pop("text"),
                 "status": "prepared", "created_at": datetime.utcnow().isoformat() + "Z", **generated}
+    if getattr(writer, "external", False):
+        proposal["external_ai_consent_at"] = proposal["created_at"]
     data["writing"] = [proposal, *data.get("writing", [])][:20]
     save(db, row, data)
     return proposal

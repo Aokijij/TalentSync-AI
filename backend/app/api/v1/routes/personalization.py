@@ -7,6 +7,7 @@ from app.api.deps import (
     get_social_identity_provider,
     get_text_analysis,
     get_unit_of_work,
+    get_writing_service,
     require_roles,
 )
 from app.application.use_cases import personalization as cases
@@ -44,10 +45,11 @@ def remove(job_id: int, user=Depends(candidate), db=Depends(get_unit_of_work)):
 
 
 @router.get("/admin/models")
-def status(user=Depends(admin), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis), gateway=Depends(get_social_identity_provider), calendar=Depends(get_calendar_gateway)):
+def status(user=Depends(admin), db=Depends(get_unit_of_work), nlp=Depends(get_text_analysis), gateway=Depends(get_social_identity_provider), calendar=Depends(get_calendar_gateway), writing_service=Depends(get_writing_service)):
     result = cases.model_status(db, nlp)
     result["integrations"] = integration_readiness(
         neural_active=getattr(nlp, "match_method", "").startswith("local-sentence-transformer:"),
+        writing_service=writing_service,
         local_mail=settings.local_mail_enabled, smtp=settings.smtp_enabled, gmail=settings.gmail_mail_enabled,
         calendar=calendar.configured, mail_events=bool(settings.resend_enabled and settings.resend_webhook_secret),
         resend=settings.resend_enabled, learn=bool(settings.learn_enabled and settings.learn_tenant_id and settings.learn_client_id and settings.learn_client_secret), github_projects=settings.github_project_analysis_enabled,

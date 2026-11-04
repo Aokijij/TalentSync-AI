@@ -23,6 +23,7 @@ import { JobComparison } from "../src/components/JobComparison.jsx";
 import { InterviewAgenda } from "../src/components/InterviewAgenda.jsx";
 import { FeedbackProvider } from "../src/contexts/FeedbackContext.jsx";
 import { VacancyCard } from "../src/components/VacancyCard.jsx";
+import { VacancyLearningPanel } from "../src/components/VacancyLearningPanel.jsx";
 import { ApplicationAnswersModal } from "../src/components/ApplicationAnswersModal.jsx";
 import { ApplicationSubmitDialog } from "../src/components/ApplicationSubmitDialog.jsx";
 import { ApplicationPreparation } from "../src/components/ApplicationPreparation.jsx";
@@ -64,6 +65,7 @@ function QualityPage() {
   const [tab, setTab] = useState("cv"), [filters, setFilters] = useState({}), [answers, setAnswers] = useState({}), [dirty, setDirty] = useState(false), [saved, setSaved] = useState(false);
   const [form, setForm] = useState({ summary: data.profile.summary, experiences: [0], skills: data.profile.skills, style: "modern", includePhoto: false });
   if (params.has("entry")) return <EntryReview params={params} />;
+  if (params.has("vacancyLearning")) return <MemoryRouter><FeedbackProvider><main className="quality-shell role-candidate"><VacancyLearningPanel jobId={1} /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("externalSources")) return <MemoryRouter><FeedbackProvider><main className={`quality-shell role-${role}`}><ExternalSourcesReview /></main></FeedbackProvider></MemoryRouter>;
   if (params.has("auth")) return <AuthAccessReview params={params} />;
   if (params.has("design")) return <DesignClosureReview role={role} theme={params.get("theme") || "light"} />;

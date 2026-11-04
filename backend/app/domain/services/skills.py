@@ -42,6 +42,13 @@ def skill_set(skills: list[str] | None) -> set[str]:
     return {skill_key(skill) for skill in skills or [] if str(skill).strip()}
 
 
+def skill_display_name(skill: object) -> str:
+    """Display casing only; matching and stored skill identifiers stay unchanged."""
+    value = str(skill).strip()
+    names = {"api rest": "API REST", "rest api": "API REST", "html": "HTML", "html5": "HTML5", "css": "CSS", "css3": "CSS3", "sql": "SQL", "mysql": "MySQL", "postgresql": "PostgreSQL", "javascript": "JavaScript", "typescript": "TypeScript", "nodejs": "Node.js", "fastapi": "FastAPI", "power bi": "Power BI", "github": "GitHub", "wordpress": "WordPress", "php": "PHP", "qa": "QA", "aws": "AWS", "c#": "C#", "c++": "C++", ".net": ".NET", "devops": "DevOps"}
+    return names.get(skill_key(value), value[:1].upper() + value[1:])
+
+
 # Directional relationships describe a learning foundation, never equivalence.
 SKILL_FOUNDATIONS = {
     "spring boot": {"java", "arquitectura mvc"},

@@ -48,10 +48,18 @@ def get_job_availability():
     return JobAvailability()
 
 
+def get_writing_service():
+    from app.infrastructure.nlp.groq_writer import writer_status
+    return writer_status(settings)
+
+
 @lru_cache
 def get_career_writer():
+    if settings.career_writer_provider == "groq":
+        from app.infrastructure.nlp.groq_writer import GroqCareerWriter, writer_status
+        return GroqCareerWriter(settings) if writer_status(settings)["available"] else None
     from app.infrastructure.nlp.career_writer import LocalCareerWriter
-    if not settings.career_writer_model or not settings.career_writer_executable:
+    if settings.career_writer_provider != "local" or not settings.career_writer_model or not settings.career_writer_executable:
         return None
     return LocalCareerWriter(settings.career_writer_model, settings.career_writer_executable, settings.career_writer_timeout_seconds)
 

@@ -27,7 +27,7 @@ from app.domain.services.professions import EDUCATION_LEVEL_LABELS
 from app.domain.services.profile_links import link_label, professional_link_url
 from app.domain.services.resume_filename import resume_filename
 from app.domain.services.skill_levels import SKILL_LEVEL_LABELS, declared_skill_levels
-from app.domain.services.skills import skill_key
+from app.domain.services.skills import skill_display_name, skill_key
 from app.domain.services.training_types import TRAINING_TYPES
 from app.infrastructure.resume_pdf import date_label, portrait
 
@@ -153,45 +153,51 @@ class SkillPills(Flowable):
             x += width + 5
 
 
-class SkillMeter(Flowable):
-    """A wrapped label and a discrete declared-level bar, with real layout height."""
-    def __init__(self, skill, level, accent, background, ink):
+class SkillTag(Flowable):
+    """Compact tags reserve their wrapped height inside the column."""
+    def __init__(self, skill, level, accent, background, ink, modern=False):
         super().__init__()
-        self.label = Paragraph(escape(str(skill)), ParagraphStyle("MeterLabel", fontName="ResumeBold", fontSize=7.2, leading=10, textColor=ink))
-        self.level = level
+        name = skill_display_name(skill)
+        self.level = SKILL_LEVEL_LABELS.get(level, "")
+        label = name if modern or not self.level else name + " · " + self.level
+        self.label = Paragraph(escape(label), ParagraphStyle("SkillTag", fontName="ResumeBold", fontSize=6.8, leading=10, textColor=colors.white if modern else accent))
         self.accent, self.background, self.ink = accent, background, ink
-        self.width = min(124, max(45, pdfmetrics.stringWidth(str(skill), "ResumeBold", 7.2) + 16, pdfmetrics.stringWidth(SKILL_LEVEL_LABELS.get(level, "Sin nivel indicado"), "Resume", 6) + 14))
+        self.modern = modern
+        self.width = min(124, max(45, pdfmetrics.stringWidth(label, "ResumeBold", 6.8) + 16, pdfmetrics.stringWidth(self.level, "Resume", 6) + 16 if modern else 0))
         self.spaceAfter = 0
 
     def wrap(self, width, height):
         self.width = min(self.width, width)
         self.label_height = self.label.wrap(self.width - 14, height)[1]
-        self.height = self.label_height + 21
+        self.height = self.label_height + (17 if self.modern and self.level else 10)
         return self.width, self.height
 
     def draw(self):
         c = self.canv
-        c.setFillColor(self.background)
-        c.roundRect(0, 0, self.width, self.height, 7, fill=1, stroke=0)
+        c.saveState()
+        if self.modern:
+            path = c.beginPath(); path.roundRect(0, 0, self.width, self.height, 7)
+            c.clipPath(path, stroke=0, fill=0)
+            start = colors.Color(*[value * .68 for value in (self.accent.red, self.accent.green, self.accent.blue)])
+            end = colors.Color(*[value * .88 + .12 for value in (self.accent.red, self.accent.green, self.accent.blue)])
+            gradient_panel(c, 0, 0, self.width, self.height, start, end)
+        else:
+            c.setFillColor(colors.white); c.setStrokeColor(self.background); c.setLineWidth(.5)
+            c.roundRect(0, 0, self.width, self.height, min(10, self.height / 2), fill=1, stroke=1)
         self.label.drawOn(c, 7, self.height - 5 - self.label_height)
-        c.setFont("Resume", 6)
-        c.setFillColor(self.ink)
-        c.drawString(7, 10, SKILL_LEVEL_LABELS.get(self.level, "Sin nivel indicado"))
-        c.setFillColor(colors.HexColor("#cbd5e1"))
-        c.roundRect(7, 4, self.width - 14, 3, 1.5, fill=1, stroke=0)
-        steps = {"learning": 1, "basic": 2, "intermediate": 3, "advanced": 4, "expert": 5}
-        if self.level in steps:
-            gradient_panel(c, 7, 4, (self.width - 14) * steps[self.level] / 5, 3, self.accent, colors.HexColor("#0d9488"))
+        if self.modern and self.level:
+            c.setFont("Resume", 6); c.setFillColor(colors.white); c.drawString(7, 5, self.level)
+        c.restoreState()
 
 
-def skill_meter_rows(skills, levels, accent, background, ink):
+def skill_tag_rows(skills, levels, accent, background, ink, modern=False):
     row, used = [], 0
     def table():
         result = Table([list(row)], colWidths=[item.width + (5 if index < len(row) - 1 else 0) for index, item in enumerate(row)], hAlign="LEFT", spaceAfter=5)
         result.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 0)]))
         return result
     for skill in skills:
-        meter = SkillMeter(skill, levels.get(skill_key(skill)), accent, background, ink)
+        meter = SkillTag(skill, levels.get(skill_key(skill)), accent, background, ink, modern)
         if row and used + 5 + meter.width > 124:
             yield table()
             row, used = [], 0
@@ -331,7 +337,7 @@ def build_resume(user, included, include_photo, photo):
         section(target, "Habilidades", not single_column)
         levels = declared_skill_levels(profile)
         if single_column:
-            skills = [f"{skill} · {SKILL_LEVEL_LABELS[levels[skill_key(skill)]]}" if skill_key(skill) in levels else skill for skill in profile.skills]
+            skills = [f"{skill_display_name(skill)} · {SKILL_LEVEL_LABELS[levels[skill_key(skill)]]}" if skill_key(skill) in levels else skill_display_name(skill) for skill in profile.skills]
             # Each pill remains a splittable paragraph, so long skill lists never clip.
             pill = ParagraphStyle("Pill", parent=side_body if not single_column else body, fontName=PILL_FONT, fontSize=PILL_SIZE, leading=11, backColor=colors.white if classic else soft_accent if not minimal else tint,
                                   textColor=accent if classic else colors.white if not minimal else ink, borderColor=line if classic else side_line if not minimal else line,
@@ -349,18 +355,8 @@ def build_resume(user, included, include_photo, photo):
                     flush(); used = 0
                 row.append(str(skill)); used += length + 5
             flush()
-        elif modern:
-            target.extend(skill_meter_rows(profile.skills, levels, accent, tint, ink))
         else:
-            # A full-width card reserves its real wrapped height, including padding.
-            # Paragraph borders previously painted outside their allocated row.
-            skill_style = ParagraphStyle("SkillCard", parent=side_body, fontName="Resume", fontSize=7.2, leading=10.5, spaceAfter=0)
-            for skill in profile.skills:
-                level = SKILL_LEVEL_LABELS.get(levels.get(skill_key(skill)))
-                text = "<b>" + escape(str(skill)) + "</b>" + ('<br/><font size="6.7">' + escape(level) + '</font>' if level else "")
-                card = Table([[Paragraph(text, skill_style)]], colWidths=[124], hAlign="LEFT", splitInRow=0, cornerRadii=[6, 6, 6, 6], spaceAfter=5)
-                card.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), colors.white if classic else soft_accent if modern else tint), ("BOX", (0, 0), (-1, -1), .5, line if classic or minimal else side_line), ("LEFTPADDING", (0, 0), (-1, -1), 7), ("RIGHTPADDING", (0, 0), (-1, -1), 7), ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
-                target.append(card)
+            target.extend(skill_tag_rows(profile.skills, levels, accent, line, ink, modern))
     ancillary_sections = []
     if "languages" in included and profile.languages:
         if not single_column:

@@ -1,4 +1,4 @@
-"""On-device generation. No HTTP client, API key, paid provider or prompt log."""
+"""Shared factual drafting and an optional on-device inference adapter."""
 import json
 import os
 import secrets
@@ -32,15 +32,9 @@ Pregunta «¿Qué ... utilizaste/entregaste/atendiste?». No des consejos ni pre
 Devuelve únicamente el JSON, sin explicaciones."""
 
 
-class LocalCareerWriter:
-    def __init__(self, model, executable, timeout=90):
-        self.model, self.executable = Path(model), Path(executable)
-        if not all(path.is_absolute() and path.is_file() for path in (self.model, self.executable)):
-            raise UseCaseError(status_code=503, detail="El modelo local de redacción todavía no está preparado")
-        with self.model.open("rb") as source:
-            if source.read(4) != b"GGUF":
-                raise UseCaseError(status_code=503, detail="El modelo local no tiene un formato válido")
-        self.timeout, self.lock = timeout, Lock()
+class CareerWriter:
+    method = "local-ai"
+    external = False
 
     def generate(self, record, *, style, result):
         return self._actions(record, style=style, result=result)
@@ -51,13 +45,14 @@ class LocalCareerWriter:
                  "actual": record.get("is_current", False), "formato": "lista de acciones" if style == "bullets" else "párrafo"}
         action = {"type": "object", "properties": {"index": {"type": "integer"}, "text": {"type": "string"}}, "required": ["index", "text"], "additionalProperties": False}
         schema = {"type": "object", "properties": {"actions": {"type": "array", "items": action, "minItems": len(parts), "maxItems": len(parts)}, "idea": {"type": "string"}}, "required": ["actions", "idea"], "additionalProperties": False}
-        generated = self._complete(facts, SYSTEM, schema, min(1000, 160 + len(parts) * 110), temperature=temperature, seed=seed)
+        generated = self._complete(facts, SYSTEM, schema, min(1000, 160 + len(parts) * 110), temperature=temperature, seed=seed,
+                                   owner_id=record.get("_owner_id"), private_terms=record.get("_private_terms", ()))
         if not isinstance(generated.get("actions"), list) or not isinstance(generated.get("idea"), str):
-            raise UseCaseError(status_code=503, detail="No pudimos obtener una propuesta completa del modelo local. Tu texto se conserva")
+            raise UseCaseError(status_code=503, detail="No pudimos obtener una propuesta completa. Tu texto se conserva")
         return {**generated, "style": style}
 
     def generate_summary(self, facts, *, tone):
-        # Keep identity, skills and study status exact; let the local model rewrite
+        # Keep identity, skills and study status exact; let the selected model rewrite
         # selected responsibilities with the same grounding checks as the coach.
         profession = str(facts.get("profesion") or "").strip().rstrip(".")
         skills = list(dict.fromkeys(facts.get("habilidades", [])))[:3 if tone == "concise" else 5]
@@ -78,7 +73,8 @@ class LocalCareerWriter:
             if len(duties) >= limit:
                 break
         source = "\n".join(duties) or str(facts.get("resumen_actual") or "")[:800] or opening
-        record = {"role": profession, "description": source, "is_current": False}
+        record = {"role": profession, "description": source, "is_current": False,
+                  "_owner_id": facts.get("_owner_id"), "_private_terms": facts.get("_private_terms", ())}
         proposal = self._actions(record, style="paragraph", result="", temperature=.35, seed=secrets.randbelow(2_147_483_647))
         rewritten = validate_generated_text(proposal, record)["text"]
         # A model may rephrase functions, but it cannot turn a degree into a course
@@ -93,7 +89,18 @@ class LocalCareerWriter:
                     sentences.append(("Actualmente estudio " if row.get("en_curso") else "Mi formación académica es en ") + degree + ".")
         return {"summary": " ".join(sentences)}
 
-    def _complete(self, facts, system, schema, max_tokens, *, temperature=.1, seed=42):
+
+class LocalCareerWriter(CareerWriter):
+    def __init__(self, model, executable, timeout=90):
+        self.model, self.executable = Path(model), Path(executable)
+        if not all(path.is_absolute() and path.is_file() for path in (self.model, self.executable)):
+            raise UseCaseError(status_code=503, detail="El modelo local de redacción todavía no está preparado")
+        with self.model.open("rb") as source:
+            if source.read(4) != b"GGUF":
+                raise UseCaseError(status_code=503, detail="El modelo local no tiene un formato válido")
+        self.timeout, self.lock = timeout, Lock()
+
+    def _complete(self, facts, system, schema, max_tokens, *, temperature=.1, seed=42, owner_id=None, private_terms=()):
         if not self.lock.acquire(blocking=False):
             raise UseCaseError(status_code=429, detail="Hay una propuesta en preparación. Inténtalo de nuevo en un momento")
         try:

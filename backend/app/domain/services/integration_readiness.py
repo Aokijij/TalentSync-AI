@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from app.domain.services.market_radar import MINIMUM_SAMPLE
 
 
-def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog, resend=False, gmail=False, learn=False, github_projects=False, codewars=False, youtube=False, public_learning=False, observations=None, now=None, catalog_providers=None, calendar=False, mail_events=False, health_reports=None):
+def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog, resend=False, gmail=False, learn=False, github_projects=False, codewars=False, youtube=False, public_learning=False, observations=None, now=None, catalog_providers=None, calendar=False, mail_events=False, health_reports=None, writing_service=None):
     now = now or datetime.utcnow()
     observations = observations or {}
     rows = []
@@ -43,6 +43,9 @@ def integration_readiness(*, neural_active, local_mail, smtp, providers, catalog
         rows.append(row)
 
     add("matching", "Modelo de compatibilidad", "local_ready" if neural_active else "local_fallback", "Modelo neuronal activo en este proceso." if neural_active else "Compatibilidad léxica disponible como alternativa local.", "Revisar afinidad y brechas con los escenarios de candidato.")
+    if writing_service and writing_service.get("external"):
+        available = writing_service["available"]
+        add("career_writer", "Redacción asistida · Groq", "configured" if available else "provider_required", "Propuestas por solicitud del candidato, con autorización previa y límites de uso. La comprobación automática consulta los modelos disponibles; no envía textos ni consume generaciones.", "Revisar la configuración del servidor y las cuotas de la cuenta gratuita si la conexión no está disponible.", configured=available)
     add("mail", "Correo y avisos", "local_ready" if local_mail else "configured" if smtp or resend or gmail else "disabled", "Bandeja de desarrollo; no entrega correo externo." if local_mail else "Envío mediante Gmail autorizado; la aceptación no confirma entrega al destinatario." if gmail else "Transporte externo configurado; la aceptación no confirma entrega al destinatario." if smtp or resend else "No hay transporte habilitado.", "Revisar la bandeja local." if local_mail else "Comprobar envío, entrega y rebotes con una cuenta autorizada.", configured=True if local_mail else bool(smtp or resend or gmail), enabled=bool(local_mail or smtp or resend or gmail))
     add("calendar", "Google Calendar", "configured" if calendar else "provider_required", "Sincronización de entrevistas elegidas; cambios y cancelaciones con reintentos." if calendar else "Sincronización implementada; falta habilitar la aplicación de Google Calendar.", "Conectar desde Seguridad y añadir una entrevista desde la agenda. Comprobar sus detalles, cambios y cancelaciones.", configured=calendar, action_url="/seguridad#security-calendar", action_label="Revisar calendario")
     if resend:

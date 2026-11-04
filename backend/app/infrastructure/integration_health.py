@@ -10,6 +10,7 @@ from app.infrastructure.database.models import CalendarConnection
 from app.infrastructure.database.session import SessionLocal
 from app.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 from app.infrastructure.google_calendar import GoogleCalendar
+from app.infrastructure.nlp.groq_writer import writer_status
 from app.infrastructure.security.accounts import AccountSecurity
 from app.infrastructure.security.gmail import GmailDelivery
 
@@ -60,6 +61,13 @@ def cycle():
                 with client.stream("GET", "https://www.googleapis.com/youtube/v3/i18nLanguages", params={"part": "snippet", "key": settings.youtube_api_key}) as response:
                     response.raise_for_status()
             check("youtube", "source_api", youtube)
+        if settings.career_writer_provider == "groq" and writer_status(settings)["available"]:
+            def groq():
+                response = client.get("https://api.groq.com/openai/v1/models", headers={"Authorization": "Bearer " + settings.groq_api_key.get_secret_value()})
+                response.raise_for_status()
+                if not any(row.get("id") == settings.groq_model for row in response.json().get("data", [])):
+                    raise ValueError("Configured model unavailable")
+            check("career_writer", "provider_metadata", groq)
         snapshot = db.learning.source_snapshot("integration-health")
         if snapshot is None:
             snapshot = db.learning.new_source_snapshot(id="integration-health", content=rows)

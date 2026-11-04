@@ -84,4 +84,14 @@ Los entornos de OCR, extracción de entidades y comparación tienen dependencias
 
 ## Operación
 
+### Redacción opcional con Groq
+
+`CAREER_WRITER_PROVIDER=groq` habilita borradores de experiencias y resúmenes usando `openai/gpt-oss-20b`. Requiere `GROQ_API_KEY` solo en el backend, una cuenta gratuita y **Inference APIs ZDR** activado en la organización de Groq. Después de comprobar esos ajustes, establecer `GROQ_FREE_PLAN_CONFIRMED=true` y `GROQ_ZERO_DATA_RETENTION_CONFIRMED=true`. Estas confirmaciones son operativas; la API de generación no verifica el plan de facturación. No activar una suscripción de pago para esta función.
+
+Aplicar `alembic upgrade head` antes de habilitarla. La tabla `ai_writer_usage` reserva solicitudes y tokens de forma compartida entre procesos, antes de cada llamada. Los valores de `.env.example` limitan el conjunto de candidatos a 500 solicitudes y 180.000 tokens diarios, 20 solicitudes y 7.500 tokens por minuto, y 20 solicitudes por candidato al día. El cómputo diario cambia a medianoche UTC. Las cuotas de Groq pueden variar y otros usos de la misma organización también consumen su saldo; consultar [sus límites vigentes](https://console.groq.com/docs/rate-limits). No hay reintentos automáticos, cambio automático de proveedor ni ampliación del plan.
+
+Cada envío exige autorización del candidato. Se seleccionan las funciones necesarias, se ocultan contactos y nombres conocidos, y se valida cada responsabilidad al recibir la respuesta. Esta minimización no garantiza anonimato: el candidato debe revisar el texto antes de compartirlo. El resultado requiere revisión y aplicación explícita. No se envía el PDF completo ni se utiliza Groq para extraer CV. Los fallos conservan el texto original. La comprobación periódica consulta `/models`, sin enviar perfiles ni generar textos. Revisar [el tratamiento de datos de Groq](https://console.groq.com/docs/your-data) si cambia la configuración de la organización.
+
+`CAREER_WRITER_PROVIDER=local` conserva el adaptador GGUF existente; sin modelo local, el resumen estructurado sigue disponible. `disabled` desactiva la inferencia. Ninguno de estos modos contacta con Groq.
+
 Las referencias vigentes de despliegue e integraciones están en `infra/production/`. Consultar [AWS](../infra/production/AWS.md), [archivos privados R2](../infra/production/R2.md), [correo](../infra/production/MAIL.md) y [publicación web](../infra/production/PUBLIC_SITE.md). El `Dockerfile` y las plantillas de infraestructura siguen siendo parte del proyecto.

@@ -132,8 +132,8 @@ def test_modern_color_themes_export_real_gradients_without_losing_skill_names_or
     assert response.status_code == 200
     reader = PdfReader(BytesIO(response.content))
     contents = " ".join(page.extract_text() for page in reader.pages)
-    assert "css" in contents and "Básico" in contents
-    assert "aseguramiento de calidad" in contents and "Avanzado" in contents
+    assert "CSS" in contents and "Básico" in contents
+    assert "Aseguramiento de calidad" in contents and "Avanzado" in contents
     shadings = reader.pages[0]["/Resources"]["/Shading"].get_object()
     assert len(shadings) >= 2  # Sidebar and avatar retain actual vector gradients.
     for reference in shadings.values():
@@ -150,7 +150,7 @@ def test_long_profiles_keep_last_skill_and_experience_across_pages(client, style
     profile.update(resume_style=style, experiences=[{"role": f"Cargo marcador {index}", "company": "Organización de prueba", "start_date": "2020-01", "end_date": "2021-01", "description": "Preparación de entregables y documentación de actividades. " * 8} for index in range(12)])
     response = client.post("/api/v1/profiles/me/export", headers=headers, json={"profile": profile})
     contents = text(response)
-    assert "habilidad-marcador-79" in contents and "Cargo marcador 11" in contents
+    assert "Habilidad-marcador-79" in contents and "Cargo marcador 11" in contents
     assert len(PdfReader(BytesIO(response.content)).pages) > 1
 
 
@@ -174,7 +174,17 @@ def test_modern_sidebar_does_not_create_an_extra_page_just_for_preferences(clien
     assert len(reader.pages) == 1
     contents = reader.pages[0].extract_text()
     for marker in (*skills, "Cargo conservado", "Formación conservada", "Resumen marcador", "Excel básico", "Tecnología y software", "Remoto", "Inmediata"):
-        assert marker in contents
+        assert marker.casefold() in contents.casefold()
+
+
+@pytest.mark.parametrize("style", ["classic", "modern", "minimal"])
+def test_skill_display_preserves_technical_casing_and_initial_capitals_without_changing_profile(client, style):
+    _, headers = register(client, "skill-case-" + style, skills=["css", "javascript", "api rest", "comunicación"])
+    before = client.get("/api/v1/profiles/me", headers=headers).json()
+    contents = text(client.post("/api/v1/profiles/me/export", headers=headers, json={"sections": ["skills"], "profile": {**before, "resume_style": style}}))
+    for label in ["CSS", "JavaScript", "API REST", "Comunicación"]:
+        assert label in contents
+    assert client.get("/api/v1/profiles/me", headers=headers).json() == before
 
 
 def test_minimal_education_cards_split_across_pages_without_losing_long_descriptions(client):

@@ -1,8 +1,4 @@
-"""Generate an editable, local rewrite from the candidate's actual words.
-
-This is a conservative language generator, not a remote language model. It
-changes presentation, never supplies achievements, tools or numbers.
-"""
+"""Validate draft wording against the candidate's actual responsibilities."""
 import re
 
 from app.domain.services.skill_context import fold
@@ -42,7 +38,7 @@ def validate_generated_text(generated, record, result=""):
     for tool in tools:
         if re.search(r"(?<!\w)" + re.escape(tool) + r"(?!\w)", fold(text)) and not re.search(r"(?<!\w)" + re.escape(tool) + r"(?!\w)", source):
             raise ValueError("La propuesta añadió una herramienta sin respaldo. No se guardó ningún cambio")
-    return {"text": text, "method": "local-ai", "changes": ["Propuesta redactada con IA local a partir de tu descripción. Revisa que cada frase refleje tu experiencia."],
+    return {"text": text, "method": "local-ai", "changes": ["Propuesta redactada a partir de tu descripción. Revisa que cada frase refleje tu experiencia."],
             "questions": [generated["idea"].strip()[:300]] if generated.get("idea", "").strip() else []}
 
 
