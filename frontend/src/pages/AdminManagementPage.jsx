@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Building2,
   BriefcaseBusiness,
@@ -19,6 +19,7 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import { isJobPublished } from "../utils/jobVisibility.js";
 import { api, getApiErrorMessage } from "../api/client.js";
 import { PageHeader } from "../components/PageHeader.jsx";
 import { useAuth } from "../hooks/useAuth.js";
@@ -754,7 +755,7 @@ function RecordRow({ kind, item, protectedRecord, onDelete, onView }) {
             ? `${item.active_jobs} activas de ${item.jobs}`
             : `${item.source_kind === "external" ? item.moderation_status === "held" ? "Retirada del catálogo" : item.external_available ? "Disponible en TalentSync" : "Pendiente de revisión" : ({ active: "Activa", paused: "Pausada", draft: "Borrador", closed: "Cerrada", filled: "Cubierta" }[item.status] || item.status)} · ${item.skills?.slice(0, 3).join(", ") || "Sin habilidades"}`}
       </td>
-      <td className="px-5 py-4 text-right"><div className="admin-row-actions"><button type="button" className="button-secondary button-sm" onClick={onView}><Eye size={15} />Ver ficha</button>
+      <td className="px-5 py-4 text-right"><div className="admin-row-actions">{kind === "jobs" && isJobPublished(item) && <Link className="button-secondary button-sm admin-public-row-link" to={`/vacantes/${item.id}`} target="_blank" rel="noopener noreferrer"><ExternalLink size={15} />Ver vacante completa</Link>}<button type="button" className="button-secondary button-sm" onClick={onView}><Eye size={15} />Ver ficha</button>
         {protectedRecord ? (
           <span className="text-xs font-semibold text-[var(--muted)]">
             Tu cuenta
